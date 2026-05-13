@@ -1,0 +1,20 @@
+{
+  "name": "traccar-overlay",
+  "version": "1.0.0",
+  "description": "Traccar overlay application for Vercel",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "vercel build",
+    "start": "vercel start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "traccar",
+    "overlay"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
