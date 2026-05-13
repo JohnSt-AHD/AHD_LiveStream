@@ -318,6 +318,40 @@ body {
     min-height: 1.35em;
 }
 
+.speed-launcher-panel {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 191, 255, 0.35);
+}
+
+.speed-launcher-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #00bfff;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.speed-launcher-lead {
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.speed-coords-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.speed-transparent-toggle {
+    margin-top: 6px;
+    margin-bottom: 2px;
+    justify-content: flex-start;
+}
+
 .speed-legend {
     position: absolute;
     z-index: 900;
@@ -363,6 +397,10 @@ body {
 }
 
 @media (max-width: 600px) {
+    .speed-coords-grid {
+        grid-template-columns: 1fr;
+    }
+
     .overlay-panel {
         width: calc(100vw - 24px);
         left: 12px;

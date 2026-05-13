@@ -103,11 +103,11 @@ function initHistoryDateDefaultsIfNeeded() {
     historyDefaultsApplied = true;
 }
 
-function populateHistoryDeviceSelect() {
-    const sel = document.getElementById('historyDevice');
+function populateDeviceSelect(selectId, placeholder) {
+    const sel = document.getElementById(selectId);
     if (!sel) return;
     const prev = sel.value;
-    sel.innerHTML = '<option value="">Choose device…</option>';
+    sel.innerHTML = `<option value="">${escapeHtml(placeholder)}</option>`;
     devices.forEach((d) => {
         const opt = document.createElement('option');
         opt.value = String(d.id);
@@ -117,6 +117,14 @@ function populateHistoryDeviceSelect() {
     if (prev && [...sel.options].some((o) => o.value === prev)) {
         sel.value = prev;
     }
+}
+
+function populateHistoryDeviceSelect() {
+    populateDeviceSelect('historyDevice', 'Choose device…');
+}
+
+function populateSpeedScreenDeviceSelect() {
+    populateDeviceSelect('speedScreenDevice', 'Choose device…');
 }
 
 function speedMpsForColor(pos) {
@@ -309,6 +317,59 @@ function wireHistoryPanel() {
     });
 }
 
+function buildSpeedScreenUrl() {
+    const id = document.getElementById('speedScreenDevice')?.value;
+    if (!id) return null;
+    const x = document.getElementById('speedPosX')?.value ?? '72';
+    const y = document.getElementById('speedPosY')?.value ?? '10';
+    const w = document.getElementById('speedPosW')?.value ?? '28';
+    const transparent = document.getElementById('speedTransparentBg')?.checked;
+    const u = new URL('speed.html', window.location.href);
+    u.searchParams.set('deviceId', id);
+    u.searchParams.set('x', String(x));
+    u.searchParams.set('y', String(y));
+    u.searchParams.set('w', String(w));
+    if (transparent) {
+        u.searchParams.set('transparent', '1');
+    }
+    return u.toString();
+}
+
+function wireSpeedLauncher() {
+    document.getElementById('openSpeedScreenBtn')?.addEventListener('click', () => {
+        const url = buildSpeedScreenUrl();
+        const status = document.getElementById('speedLauncherStatus');
+        if (!url) {
+            if (status) status.textContent = 'Choose a device first.';
+            return;
+        }
+        if (status) status.textContent = '';
+        window.open(url, '_blank', 'noopener,noreferrer');
+    });
+
+    document.getElementById('copySpeedLinkBtn')?.addEventListener('click', async () => {
+        const url = buildSpeedScreenUrl();
+        const status = document.getElementById('speedLauncherStatus');
+        if (!url) {
+            if (status) status.textContent = 'Choose a device first.';
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            if (status) {
+                status.textContent = 'Link copied to clipboard.';
+                setTimeout(() => {
+                    if (status.textContent === 'Link copied to clipboard.') {
+                        status.textContent = '';
+                    }
+                }, 2500);
+            }
+        } catch {
+            window.prompt('Copy this URL:', url);
+        }
+    });
+}
+
 function updateMapMarkers() {
     if (!map) return;
 
@@ -385,6 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMap();
     wireLiveToggle();
     wireHistoryPanel();
+    wireSpeedLauncher();
     initHistoryDateDefaultsIfNeeded();
     authenticate();
     startPolling();
@@ -457,6 +519,7 @@ async function updateData() {
 
         initHistoryDateDefaultsIfNeeded();
         populateHistoryDeviceSelect();
+        populateSpeedScreenDeviceSelect();
 
         renderDevices();
         updateMapMarkers();

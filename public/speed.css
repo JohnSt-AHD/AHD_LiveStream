@@ -1,0 +1,86 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    background: #0a1628;
+    color: #fff;
+}
+
+body.speed-transparent {
+    background: transparent;
+}
+
+.speed-card {
+    position: fixed;
+    z-index: 10;
+    padding: 16px 20px 14px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.88);
+    border: 3px solid #00bfff;
+    box-shadow: 0 8px 32px rgba(0, 191, 255, 0.35);
+    min-width: min(200px, 90vw);
+}
+
+.speed-card-device {
+    font-size: 14px;
+    font-weight: 700;
+    color: #00bfff;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    max-width: 100%;
+    word-break: break-word;
+}
+
+.speed-card-value {
+    font-size: clamp(2.5rem, 12vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.speed-card-value.speed-warn {
+    color: #ff8a80;
+}
+
+.speed-card-sub {
+    font-size: 13px;
+    color: #9ad8ff;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.speed-card-meta {
+    font-size: 11px;
+    color: #888;
+    margin-top: 10px;
+}
+
+.speed-card-back {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #00bfff;
+}
+
+.speed-page-error {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 90vw;
+    padding: 16px 20px;
+    border-radius: 8px;
+    background: rgba(80, 0, 0, 0.9);
+    border: 1px solid #ff6b6b;
+    color: #ffc9c9;
+    font-size: 14px;
+    line-height: 1.45;
+    z-index: 20;
+}

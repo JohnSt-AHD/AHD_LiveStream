@@ -46,6 +46,39 @@
                 <div class="history-status" id="historyStatus"></div>
             </div>
 
+            <div class="speed-launcher-panel" id="speedLauncherPanel">
+                <div class="speed-launcher-title">Speed screen (separate page)</div>
+                <p class="speed-launcher-lead">Same project, second URL. Position uses X/Y as % of the viewport (set here on the main page).</p>
+                <label class="history-field">
+                    <span>Device</span>
+                    <select id="speedScreenDevice" aria-label="Device for speed page"></select>
+                </label>
+                <div class="speed-coords-grid">
+                    <label class="history-field">
+                        <span>X from left (%)</span>
+                        <input type="number" id="speedPosX" min="0" max="100" value="72" step="1">
+                    </label>
+                    <label class="history-field">
+                        <span>Y from top (%)</span>
+                        <input type="number" id="speedPosY" min="0" max="100" value="10" step="1">
+                    </label>
+                </div>
+                <label class="history-field">
+                    <span>Panel width (%)</span>
+                    <input type="number" id="speedPosW" min="12" max="96" value="28" step="1">
+                </label>
+                <label class="live-toggle speed-transparent-toggle">
+                    <input type="checkbox" id="speedTransparentBg">
+                    <span class="live-toggle-label">Transparent page background</span>
+                    <span class="live-toggle-hint">for overlays / OBS</span>
+                </label>
+                <div class="history-actions">
+                    <button type="button" class="history-btn history-btn-primary" id="openSpeedScreenBtn">Open speed page</button>
+                    <button type="button" class="history-btn" id="copySpeedLinkBtn">Copy link</button>
+                </div>
+                <div class="history-status" id="speedLauncherStatus"></div>
+            </div>
+
             <div class="devices-container" id="devicesContainer">
                 <div class="loading">Loading device data...</div>
             </div>
