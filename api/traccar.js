@@ -26,13 +26,40 @@ function extractCookieHeader(response) {
 }
 
 async function traccarLogin() {
-    const base = process.env.TRACCAR_URL;
-    const email = process.env.TRACCAR_EMAIL || process.env.TRACCAR_USERNAME;
-    const password = process.env.TRACCAR_PASSWORD;
+    let base =
+        process.env.TRACCAR_URL ||
+        process.env.TRACCAR_BASE_URL ||
+        process.env.TRACCAR_HOST ||
+        '';
+    base = String(base).trim();
+    if (base && !/^https?:\/\//i.test(base)) {
+        base = `https://${base.replace(/^\/+/, '')}`;
+    }
+
+    const email = (
+        process.env.TRACCAR_EMAIL ||
+        process.env.TRACCAR_USERNAME ||
+        process.env.TRACCAR_USER ||
+        process.env.TRACCAR_LOGIN ||
+        ''
+    ).trim();
+
+    const password = (
+        process.env.TRACCAR_PASSWORD ||
+        process.env.TRACCAR_PASS ||
+        process.env.TRACCAR_PWD ||
+        ''
+    ).trim();
 
     if (!base || !email || !password) {
+        const missing = [];
+        if (!base) missing.push('TRACCAR_URL (or TRACCAR_BASE_URL / TRACCAR_HOST)');
+        if (!email) missing.push('TRACCAR_EMAIL (or TRACCAR_USERNAME / TRACCAR_USER / TRACCAR_LOGIN)');
+        if (!password) missing.push('TRACCAR_PASSWORD (or TRACCAR_PASS / TRACCAR_PWD)');
         const err = new Error(
-            'Missing TRACCAR_URL, TRACCAR_EMAIL (or TRACCAR_USERNAME), or TRACCAR_PASSWORD on the server'
+            `Missing: ${missing.join(
+                '; '
+            )}. In Vercel open this project → Settings → Environment Variables, add those keys, check both Production and Preview, save, then Redeploy.`
         );
         err.statusCode = 503;
         throw err;
