@@ -4,6 +4,7 @@
   "description": "Traccar overlay application for Vercel",
   "main": "index.js",
   "scripts": {
+    "build": "exit 0",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

@@ -20,12 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
 async function authenticate() {
     try {
         const response = await fetch(`${API_BASE}?action=auth`);
+        const session = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-            throw new Error(`Authentication failed: ${response.status}`);
+            throw new Error(session.error || `Authentication failed: ${response.status}`);
         }
 
-        const session = await response.json();
         authToken = session.token || true;
         
         console.log('Authentication successful');
