@@ -1,7 +1,5 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "vercel dev",
-  "installCommand": "npm install",
-  "framework": "other",
-  "outputDirectory": "public"
+  "framework": "static",
+  "public": "public",
+  "buildCommand": "echo 'No build needed'"
 }
