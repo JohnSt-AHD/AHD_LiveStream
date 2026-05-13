@@ -170,53 +170,62 @@ async function authenticate() {
     }
 }
 
-async function fetchDevices() {
-    try {
-        const response = await fetch(`${API_BASE}?action=devices`);
+/**
+ * If /api/devices is empty but we have positions, show those deviceIds so map/list still work.
+ */
+function mergeDevicesFromPositions(deviceList, positionsMap) {
+    const list = Array.isArray(deviceList) ? deviceList.slice() : [];
+    const seen = new Set(list.map((d) => d && d.id).filter((id) => id != null));
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch devices: ${response.status}`);
+    for (const key of Object.keys(positionsMap)) {
+        const id = Number(key);
+        if (!Number.isFinite(id) || seen.has(id)) {
+            continue;
         }
-
-        devices = await response.json();
-        return devices;
-    } catch (error) {
-        console.error('Error fetching devices:', error);
-        return [];
-    }
-}
-
-async function fetchPositions() {
-    try {
-        const response = await fetch(`${API_BASE}?action=positions`);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch positions: ${response.status}`);
+        const pos = positionsMap[id];
+        let name = `Device ${id}`;
+        if (pos && typeof pos.deviceName === 'string' && pos.deviceName.trim()) {
+            name = pos.deviceName.trim();
         }
-
-        const positionsList = await response.json();
-        positions = {};
-
-        positionsList.forEach((pos) => {
-            positions[pos.deviceId] = pos;
-        });
-
-        return positions;
-    } catch (error) {
-        console.error('Error fetching positions:', error);
-        return {};
+        list.push({ id, name });
+        seen.add(id);
     }
+
+    list.sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' }));
+    return list;
 }
 
 async function updateData() {
-    await Promise.all([fetchDevices(), fetchPositions()]);
+    try {
+        const response = await fetch(`${API_BASE}?action=snapshot`);
+        const data = await response.json().catch(() => ({}));
 
-    renderDevices();
-    updateMapMarkers();
-    updateTimestamp();
+        if (!response.ok) {
+            showError(data.error || `Request failed: ${response.status}`);
+            return;
+        }
 
-    if (map) {
-        requestAnimationFrame(() => map.invalidateSize());
+        const rawDevices = Array.isArray(data.devices) ? data.devices : [];
+        positions = {};
+        const posList = Array.isArray(data.positions) ? data.positions : [];
+        posList.forEach((pos) => {
+            if (pos && pos.deviceId != null) {
+                positions[pos.deviceId] = pos;
+            }
+        });
+
+        devices = mergeDevicesFromPositions(rawDevices, positions);
+
+        renderDevices();
+        updateMapMarkers();
+        updateTimestamp();
+
+        if (map) {
+            requestAnimationFrame(() => map.invalidateSize());
+        }
+    } catch (error) {
+        console.error('Error loading snapshot:', error);
+        showError(error.message || 'Failed to load device data');
     }
 }
 
@@ -224,7 +233,8 @@ function renderDevices() {
     const container = document.getElementById('devicesContainer');
 
     if (devices.length === 0) {
-        container.innerHTML = '<div class="error">No devices found</div>';
+        container.innerHTML =
+            '<div class="error">No devices or positions for this account. Check Traccar user access and Vercel env credentials (TRACCAR_EMAIL / TRACCAR_PASSWORD).</div>';
         return;
     }
 

@@ -1,15 +1,19 @@
 /**
- * Extract JSESSIONID from Traccar POST /api/session response.
- * Node fetch does not forward Set-Cookie across requests; callers must pass Cookie manually.
+ * Build Cookie header from Traccar POST /api/session response.
+ * Node fetch does not persist Set-Cookie across requests.
  */
-function extractJsessionCookie(response) {
+function extractCookieHeader(response) {
+    const parts = [];
     if (typeof response.headers.getSetCookie === 'function') {
-        const list = response.headers.getSetCookie();
-        for (const c of list) {
-            if (c.startsWith('JSESSIONID=')) {
-                return c.split(';')[0];
+        for (const c of response.headers.getSetCookie()) {
+            const nv = c.split(';')[0].trim();
+            if (nv && !parts.includes(nv)) {
+                parts.push(nv);
             }
         }
+    }
+    if (parts.length > 0) {
+        return parts.join('; ');
     }
     const raw = response.headers.get('set-cookie');
     if (raw) {
@@ -43,7 +47,7 @@ async function traccarLogin() {
         body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
     });
 
-    const cookie = extractJsessionCookie(authResponse);
+    const cookie = extractCookieHeader(authResponse);
     await authResponse.json().catch(() => ({}));
 
     if (!authResponse.ok) {
@@ -51,11 +55,35 @@ async function traccarLogin() {
     }
     if (!cookie) {
         throw new Error(
-            'Traccar login succeeded but no JSESSIONID cookie was returned; check TRACCAR_URL and server version'
+            'Traccar login succeeded but no session cookie was returned; check TRACCAR_URL and server version'
         );
     }
 
     return { traccarUrl, cookie };
+}
+
+function normalizeDevicesPayload(data) {
+    return Array.isArray(data) ? data : [];
+}
+
+function normalizePositionsPayload(data) {
+    return Array.isArray(data) ? data : [];
+}
+
+async function traccarGetJson(traccarUrl, cookie, path) {
+    const upstream = await fetch(`${traccarUrl}${path}`, {
+        headers: {
+            Cookie: cookie,
+            Accept: 'application/json',
+        },
+    });
+
+    if (!upstream.ok) {
+        const text = await upstream.text().catch(() => '');
+        throw new Error(`Traccar request failed (${path}): ${upstream.status} ${text.slice(0, 200)}`);
+    }
+
+    return upstream.json();
 }
 
 export default async function handler(req, res) {
@@ -81,18 +109,22 @@ export default async function handler(req, res) {
             return;
         }
 
+        if (action === 'snapshot') {
+            const { traccarUrl, cookie } = await traccarLogin();
+            const [devicesRaw, positionsRaw] = await Promise.all([
+                traccarGetJson(traccarUrl, cookie, '/api/devices'),
+                traccarGetJson(traccarUrl, cookie, '/api/positions'),
+            ]);
+            const devices = normalizeDevicesPayload(devicesRaw);
+            const positions = normalizePositionsPayload(positionsRaw);
+            res.status(200).json({ devices, positions });
+            return;
+        }
+
         if (action === 'devices' || action === 'positions') {
             const { traccarUrl, cookie } = await traccarLogin();
             const path = action === 'devices' ? '/api/devices' : '/api/positions';
-            const upstream = await fetch(`${traccarUrl}${path}`, {
-                headers: { Cookie: cookie },
-            });
-
-            if (!upstream.ok) {
-                throw new Error(`Traccar ${action} failed: ${upstream.status}`);
-            }
-
-            const data = await upstream.json();
+            const data = await traccarGetJson(traccarUrl, cookie, path);
             res.status(200).json(data);
             return;
         }
