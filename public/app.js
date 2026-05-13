@@ -1,9 +1,5 @@
-// Traccar Configuration
-const TRACCAR_CONFIG = {
-    url: "https://xmvjx05iw.traccar.com",
-    username: "j.w.storey21@gmail.com",
-    password: "admin"
-};
+// API Configuration
+const API_BASE = '/api/traccar';
 
 // Refresh interval in milliseconds (10 seconds)
 const REFRESH_INTERVAL = 10000;
@@ -19,17 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Authenticate with Traccar API
+ * Authenticate with Traccar API via backend proxy
  */
 async function authenticate() {
     try {
-        const response = await fetch(`${TRACCAR_CONFIG.url}/api/session`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `email=${encodeURIComponent(TRACCAR_CONFIG.username)}&password=${encodeURIComponent(TRACCAR_CONFIG.password)}`
-        });
+        const response = await fetch(`${API_BASE}?action=auth`);
 
         if (!response.ok) {
             throw new Error(`Authentication failed: ${response.status}`);
@@ -47,23 +37,11 @@ async function authenticate() {
 }
 
 /**
- * Fetch devices from Traccar API
+ * Fetch devices from Traccar API via backend proxy
  */
 async function fetchDevices() {
     try {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        // Add auth header if token exists
-        if (authToken && authToken !== true) {
-            headers['Authorization'] = `Bearer ${authToken}`;
-        }
-
-        const response = await fetch(`${TRACCAR_CONFIG.url}/api/devices`, {
-            headers: headers,
-            credentials: 'include'
-        });
+        const response = await fetch(`${API_BASE}?action=devices`);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch devices: ${response.status}`);
@@ -78,22 +56,11 @@ async function fetchDevices() {
 }
 
 /**
- * Fetch positions from Traccar API
+ * Fetch positions from Traccar API via backend proxy
  */
 async function fetchPositions() {
     try {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        if (authToken && authToken !== true) {
-            headers['Authorization'] = `Bearer ${authToken}`;
-        }
-
-        const response = await fetch(`${TRACCAR_CONFIG.url}/api/positions`, {
-            headers: headers,
-            credentials: 'include'
-        });
+        const response = await fetch(`${API_BASE}?action=positions`);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch positions: ${response.status}`);
@@ -142,7 +109,6 @@ function renderDevices() {
     devices.forEach(device => {
         const position = positions[device.id];
         const isOnline = position && isPositionRecent(position.fixTime);
-        const speed = position ? (position.speed * 1.944).toFixed(1) : 'N/A'; // Convert m/s to knots
         const speedKmh = position ? (position.speed * 3.6).toFixed(1) : 'N/A'; // Convert m/s to km/h
         const latitude = position ? position.latitude.toFixed(6) : 'N/A';
         const longitude = position ? position.longitude.toFixed(6) : 'N/A';
