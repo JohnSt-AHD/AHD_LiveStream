@@ -4,42 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traccar Overlay</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 500px;
-        }
-        h1 {
-            color: #333;
-            margin: 0 0 1rem 0;
-        }
-        p {
-            color: #666;
-            line-height: 1.6;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>🗺️ Traccar Overlay</h1>
-        <p>Welcome to your Vercel-hosted Traccar Overlay application!</p>
-        <p>This is a placeholder page. Add your application content here.</p>
-        <p style="font-size: 0.9rem; color: #999; margin-top: 2rem;">
-            Built with ❤️ • Deployed on Vercel
-        </p>
+        <div class="overlay-panel">
+            <div class="header">
+                <h1>Vehicle Tracking</h1>
+            </div>
+            
+            <div class="devices-container" id="devicesContainer">
+                <div class="loading">Loading device data...</div>
+            </div>
+            
+            <div class="footer">
+                <span class="last-update" id="lastUpdate">Last updated: --:--:--</span>
+            </div>
+        </div>
     </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
