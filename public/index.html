@@ -4,25 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traccar Overlay</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-root">
+        <div id="map" role="application" aria-label="Device map"></div>
         <div class="overlay-panel">
             <div class="header">
                 <h1>Vehicle Tracking</h1>
+                <label class="live-toggle">
+                    <input type="checkbox" id="liveUpdatesToggle" checked>
+                    <span class="live-toggle-label">Live updates</span>
+                    <span class="live-toggle-hint">every 10s</span>
+                </label>
             </div>
-            
+
             <div class="devices-container" id="devicesContainer">
                 <div class="loading">Loading device data...</div>
             </div>
-            
+
             <div class="footer">
                 <span class="last-update" id="lastUpdate">Last updated: --:--:--</span>
             </div>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
