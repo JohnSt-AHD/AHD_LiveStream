@@ -10,6 +10,11 @@
 <body>
     <div class="app-root">
         <div id="map" role="application" aria-label="Device map"></div>
+        <div id="speedLegend" class="speed-legend" hidden>
+            <div class="speed-legend-title">Speed (m/s)</div>
+            <div class="speed-legend-bar" aria-hidden="true"></div>
+            <div class="speed-legend-labels"><span>0</span><span>20</span></div>
+        </div>
         <div class="overlay-panel">
             <div class="header">
                 <h1>Vehicle Tracking</h1>
@@ -18,6 +23,27 @@
                     <span class="live-toggle-label">Live updates</span>
                     <span class="live-toggle-hint">every 10s</span>
                 </label>
+            </div>
+
+            <div class="history-panel" id="historyPanel">
+                <div class="history-title">Route history</div>
+                <label class="history-field">
+                    <span>Device</span>
+                    <select id="historyDevice" aria-label="Device for history"></select>
+                </label>
+                <label class="history-field">
+                    <span>From</span>
+                    <input type="datetime-local" id="historyFrom" step="60">
+                </label>
+                <label class="history-field">
+                    <span>To</span>
+                    <input type="datetime-local" id="historyTo" step="60">
+                </label>
+                <div class="history-actions">
+                    <button type="button" class="history-btn history-btn-primary" id="historyLoadBtn">Load on map</button>
+                    <button type="button" class="history-btn" id="historyClearBtn">Clear route</button>
+                </div>
+                <div class="history-status" id="historyStatus"></div>
             </div>
 
             <div class="devices-container" id="devicesContainer">

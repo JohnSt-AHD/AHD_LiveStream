@@ -242,6 +242,126 @@ body {
     margin-bottom: 6px;
 }
 
+.history-panel {
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 191, 255, 0.35);
+}
+
+.history-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #00bfff;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+.history-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: #aaa;
+}
+
+.history-field span {
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.history-field select,
+.history-field input {
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 191, 255, 0.45);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+}
+
+.history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.history-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 191, 255, 0.5);
+    background: rgba(0, 191, 255, 0.12);
+    color: #00e5ff;
+    cursor: pointer;
+}
+
+.history-btn:hover {
+    background: rgba(0, 191, 255, 0.22);
+}
+
+.history-btn-primary {
+    background: rgba(0, 191, 255, 0.35);
+    color: #fff;
+    font-weight: 600;
+}
+
+.history-status {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #9ad8ff;
+    line-height: 1.35;
+    min-height: 1.35em;
+}
+
+.speed-legend {
+    position: absolute;
+    z-index: 900;
+    right: 16px;
+    bottom: 24px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(0, 191, 255, 0.45);
+    color: #e0e0e0;
+    font-size: 11px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.speed-legend-title {
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #00bfff;
+}
+
+.speed-legend-bar {
+    height: 12px;
+    border-radius: 4px;
+    background: linear-gradient(
+        to right,
+        hsl(0, 92%, 52%),
+        hsl(60, 92%, 50%),
+        hsl(120, 88%, 48%),
+        hsl(180, 90%, 46%),
+        hsl(240, 88%, 58%),
+        hsl(300, 92%, 52%)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.speed-legend-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    color: #bbb;
+    font-family: 'Courier New', monospace;
+}
+
 @media (max-width: 600px) {
     .overlay-panel {
         width: calc(100vw - 24px);
@@ -250,5 +370,10 @@ body {
         top: auto;
         bottom: 12px;
         max-height: 45vh;
+    }
+
+    .speed-legend {
+        right: 12px;
+        bottom: calc(45vh + 20px);
     }
 }

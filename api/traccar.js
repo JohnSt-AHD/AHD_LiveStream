@@ -148,6 +148,26 @@ export default async function handler(req, res) {
             return;
         }
 
+        if (action === 'route') {
+            const deviceId = req.query.deviceId;
+            const from = req.query.from;
+            const to = req.query.to;
+            if (deviceId == null || deviceId === '' || !from || !to) {
+                res.status(400).json({ error: 'Missing deviceId, from, or to (use ISO 8601 datetimes)' });
+                return;
+            }
+            const { traccarUrl, cookie } = await traccarLogin();
+            const q = new URLSearchParams({
+                deviceId: String(deviceId),
+                from: String(from),
+                to: String(to),
+            });
+            const path = `/api/reports/route?${q.toString()}`;
+            const data = await traccarGetJson(traccarUrl, cookie, path);
+            res.status(200).json(Array.isArray(data) ? data : []);
+            return;
+        }
+
         if (action === 'devices' || action === 'positions') {
             const { traccarUrl, cookie } = await traccarLogin();
             const path = action === 'devices' ? '/api/devices' : '/api/positions';

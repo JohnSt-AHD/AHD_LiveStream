@@ -1,4 +1,9 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "functions": {
+    "api/traccar.js": {
+      "maxDuration": 60
+    }
+  }
 }
