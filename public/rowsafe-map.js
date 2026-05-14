@@ -335,6 +335,18 @@ function wireSidebarCollapse() {
     });
 }
 
+function wireLeftCollapse() {
+    const btn = document.getElementById('rnzCollapseLeft');
+    const layout = document.getElementById('rnzLayout');
+    if (!btn || !layout) return;
+    btn.addEventListener('click', () => {
+        const collapsed = layout.classList.toggle('rnz-left-collapsed');
+        btn.setAttribute('aria-expanded', String(!collapsed));
+        btn.textContent = collapsed ? 'Show warnings' : 'Hide warnings';
+        setTimeout(() => map && map.invalidateSize(), 320);
+    });
+}
+
 function mergeDevicesFromPositions(deviceList, positionsMap) {
     const list = Array.isArray(deviceList) ? deviceList.slice() : [];
     const seen = new Set(list.map((d) => d && d.id).filter((id) => id != null));
@@ -516,6 +528,7 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
             warnEl.innerHTML = '';
         } else {
             warnBox.hidden = false;
+            if (warnBox.tagName === 'DETAILS') warnBox.open = true;
             warnEl.innerHTML =
                 '<ul class="rnz-alert-list rnz-alert-list--critical">' +
                 warnings
@@ -711,6 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMap();
     wireLiveToggle();
     wireSidebarCollapse();
+    wireLeftCollapse();
     wireDeviceNameFlyTo();
     authenticate();
     startPolling();

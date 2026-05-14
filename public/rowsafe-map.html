@@ -27,21 +27,29 @@
     </header>
 
     <main class="rnz-main" id="rnz-main">
-        <section class="rnz-hero" aria-label="Introduction">
-            <p class="rnz-intro">
-                <strong>NAU MAI, HAERE MAI</strong> — This page uses the same live Traccar data as the main
-                <a href="/">Altitude HD</a> map, presented in a layout inspired by the look and feel of
-                <a href="https://rowingnz.kiwi/">RowingHub</a> (Rowing New Zealand) for on-water situational awareness.
-                Geofences are loaded from your Traccar server; names containing <em>rowing</em>, <em>RNZ</em>, <em>RowSafe</em>, or <em>New Zealand</em> define the primary boundary (otherwise all circles/polygons are combined).
-            </p>
-            <p class="rnz-disclaimer">
-                This is not an official Rowing New Zealand or RowSafe product. For authoritative safety guidance, use RowSafe on RowingHub.
-            </p>
-        </section>
+        <div class="rnz-dashboard" id="rnzLayout">
+            <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Warnings">
+                <div class="rnz-column-toolbar">
+                    <button type="button" class="rnz-column-toggle" id="rnzCollapseLeft" aria-expanded="true" aria-controls="rnzLeftScroll">
+                        Hide warnings
+                    </button>
+                </div>
+                <div class="rnz-left-scroll" id="rnzLeftScroll">
+                    <details class="rnz-panel-details rnz-panel-details--warnings" id="rnzWarningBox" hidden>
+                        <summary class="rnz-panel-summary">Warnings — outside boundary 30+ min</summary>
+                        <div class="rnz-panel-inner rnz-panel-inner--critical">
+                            <p class="rnz-block-hint">Outside the boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name in the list to fly the map there.</p>
+                            <div id="rnzWarningsList"></div>
+                        </div>
+                    </details>
+                </div>
+            </aside>
 
-        <div class="rnz-layout" id="rnzLayout">
-            <div id="map" class="rnz-map" role="application" aria-label="Fleet map"></div>
-            <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Panels">
+            <div class="rnz-map-stage" aria-label="Map area">
+                <div id="map" class="rnz-map" role="application"></div>
+            </div>
+
+            <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
                 <div class="rnz-sidebar-head">
                     <img src="RNz.png" alt="" class="rnz-logo-sidebar" width="44" height="44" loading="lazy">
                     <button type="button" class="rnz-collapse-btn" id="rnzCollapseSidebar" aria-expanded="true" aria-controls="rnzSidebarScroll">
@@ -49,34 +57,37 @@
                     </button>
                 </div>
                 <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
-                    <section class="rnz-block" aria-labelledby="rnz-boundary-heading">
-                        <h2 class="rnz-block-title" id="rnz-boundary-heading">Geofences &amp; boundary</h2>
-                        <div id="rnzFenceSummary" class="rnz-fence-summary"></div>
-                    </section>
+                    <details class="rnz-panel-details" open>
+                        <summary class="rnz-panel-summary">Geofences &amp; boundary</summary>
+                        <div class="rnz-panel-inner">
+                            <div id="rnzFenceSummary" class="rnz-fence-summary"></div>
+                        </div>
+                    </details>
 
-                    <section class="rnz-block rnz-block--critical" id="rnzWarningBox" hidden aria-labelledby="rnz-warn-heading">
-                        <h2 class="rnz-block-title" id="rnz-warn-heading">Warnings — outside boundary 30+ min</h2>
-                        <p class="rnz-block-hint">Red card / marker: outside the boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name to fly the map there.</p>
-                        <div id="rnzWarningsList"></div>
-                    </section>
+                    <details class="rnz-panel-details" open>
+                        <summary class="rnz-panel-summary">Outside boundary now</summary>
+                        <div class="rnz-panel-inner">
+                            <div id="rnzOutsideList"></div>
+                        </div>
+                    </details>
 
-                    <section class="rnz-block" aria-labelledby="rnz-outside-heading">
-                        <h2 class="rnz-block-title" id="rnz-outside-heading">Outside boundary now</h2>
-                        <div id="rnzOutsideList"></div>
-                    </section>
-
-                    <div class="rnz-panel-head">
-                        <label class="rnz-toggle">
-                            <input type="checkbox" id="liveUpdatesToggle" checked>
-                            <span>Live updates (every 10s)</span>
-                        </label>
-                    </div>
-                    <div class="rnz-devices" id="devicesContainer">
-                        <div class="rnz-loading">Loading device data…</div>
-                    </div>
-                    <div class="rnz-footer-inline">
-                        <span id="lastUpdate">Last updated: —</span>
-                    </div>
+                    <details class="rnz-panel-details" open>
+                        <summary class="rnz-panel-summary">Live updates &amp; devices</summary>
+                        <div class="rnz-panel-inner">
+                            <div class="rnz-panel-head">
+                                <label class="rnz-toggle">
+                                    <input type="checkbox" id="liveUpdatesToggle" checked>
+                                    <span>Live updates (every 10s)</span>
+                                </label>
+                            </div>
+                            <div class="rnz-devices" id="devicesContainer">
+                                <div class="rnz-loading">Loading device data…</div>
+                            </div>
+                            <div class="rnz-footer-inline">
+                                <span id="lastUpdate">Last updated: —</span>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </aside>
         </div>
