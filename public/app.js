@@ -23,6 +23,14 @@ let customMapPins = [];
 const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
 
+/** Recent GPS trace: keep samples ~2 min; colour by speed (same scale as history). */
+const LIVE_TRAIL_TTL_MS = 2 * 60 * 1000;
+const LIVE_TRAIL_DEDUPE_MOVE_M = 4;
+const LIVE_TRAIL_DEDUPE_MS = 8000;
+
+let liveTrailLayer = null;
+const deviceLiveTrails = new Map();
+
 function escapeHtml(value) {
     if (value == null) return '';
     return String(value)
@@ -45,6 +53,7 @@ function initMap() {
 
     historyLayer = L.layerGroup().addTo(map);
     customPinsLayer = L.layerGroup().addTo(map);
+    liveTrailLayer = L.layerGroup().addTo(map);
 
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {
@@ -71,6 +80,8 @@ function stopPolling() {
         clearInterval(pollTimer);
         pollTimer = null;
     }
+    deviceLiveTrails.clear();
+    redrawLiveTrail();
 }
 
 function wireLiveToggle() {
@@ -152,6 +163,92 @@ function speedToRainbowColor(speedMps) {
     const t = Math.min(1, Math.max(0, speedMps / SPEED_COLOR_MAX_MS));
     const hue = t * 300;
     return `hsl(${hue}, 88%, 52%)`;
+}
+
+function haversineMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const toR = (d) => (d * Math.PI) / 180;
+    const dLat = toR(lat2 - lat1);
+    const dLon = toR(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toR(lat1)) * Math.cos(toR(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function recordLiveTrailSamples() {
+    if (!isLiveUpdatesEnabled()) return;
+    const now = Date.now();
+    const deviceIdSet = new Set(devices.map((d) => d.id));
+
+    for (const id of [...deviceLiveTrails.keys()]) {
+        if (!deviceIdSet.has(id)) {
+            deviceLiveTrails.delete(id);
+            continue;
+        }
+        const pruned = deviceLiveTrails.get(id).filter((p) => now - p.addedAt <= LIVE_TRAIL_TTL_MS);
+        if (pruned.length === 0) {
+            deviceLiveTrails.delete(id);
+        } else {
+            deviceLiveTrails.set(id, pruned);
+        }
+    }
+
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (
+            !pos ||
+            typeof pos.latitude !== 'number' ||
+            typeof pos.longitude !== 'number' ||
+            Number.isNaN(pos.latitude) ||
+            Number.isNaN(pos.longitude) ||
+            !isPositionRecent(pos.fixTime)
+        ) {
+            continue;
+        }
+
+        let arr = deviceLiveTrails.get(d.id);
+        if (!arr) {
+            arr = [];
+            deviceLiveTrails.set(d.id, arr);
+        }
+        arr = arr.filter((p) => now - p.addedAt <= LIVE_TRAIL_TTL_MS);
+
+        const last = arr[arr.length - 1];
+        if (
+            last &&
+            haversineMeters(last.lat, last.lng, pos.latitude, pos.longitude) < LIVE_TRAIL_DEDUPE_MOVE_M &&
+            now - last.addedAt < LIVE_TRAIL_DEDUPE_MS
+        ) {
+            deviceLiveTrails.set(d.id, arr);
+            continue;
+        }
+
+        const spd = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
+        arr.push({ lat: pos.latitude, lng: pos.longitude, speed: spd, addedAt: now });
+        deviceLiveTrails.set(d.id, arr);
+    }
+}
+
+function redrawLiveTrail() {
+    if (!liveTrailLayer || !map) return;
+    liveTrailLayer.clearLayers();
+    const now = Date.now();
+
+    for (const arr of deviceLiveTrails.values()) {
+        for (const p of arr) {
+            if (now - p.addedAt > LIVE_TRAIL_TTL_MS) continue;
+            const color = speedToRainbowColor(speedMpsForColor({ speed: p.speed }));
+            L.circleMarker([p.lat, p.lng], {
+                radius: 4,
+                weight: 1,
+                color: 'rgba(0,0,0,0.32)',
+                fillColor: color,
+                fillOpacity: 0.82,
+                interactive: false,
+            }).addTo(liveTrailLayer);
+        }
+    }
 }
 
 function sortRoutePoints(points) {
@@ -1013,7 +1110,9 @@ async function updateData() {
         populateSpeedScreenDeviceSelect();
 
         renderDevices();
+        recordLiveTrailSamples();
         updateMapMarkers();
+        redrawLiveTrail();
         updateTimestamp();
 
         if (map) {

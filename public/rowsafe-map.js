@@ -10,6 +10,18 @@ const STOP_MIN_MS = 30 * 60 * 1000;
 const MOVE_RESET_M = 35;
 const LS_STOPPED = 'rnzRowsafeStoppedOutside';
 
+/** Recent GPS trace on map: samples expire after ~2 min; fill colour from speed. */
+const LIVE_TRAIL_TTL_MS = 2 * 60 * 1000;
+const LIVE_TRAIL_DEDUPE_MOVE_M = 4;
+const LIVE_TRAIL_DEDUPE_MS = 8000;
+const LIVE_TRAIL_SPEED_COLOR_MAX_MS = 20;
+
+let liveTrailLayer = null;
+const deviceLiveTrails = new Map();
+
+/** On-water list: recent fix window and minimum speed (m/s) for “moving”. */
+const ON_WATER_FIX_MAX_MIN = 30;
+
 let authToken = null;
 let devices = [];
 let positions = {};
@@ -274,6 +286,7 @@ function initMap() {
     }).addTo(map);
 
     geofenceLayer = L.layerGroup().addTo(map);
+    liveTrailLayer = L.layerGroup().addTo(map);
 
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {
@@ -300,6 +313,8 @@ function stopPolling() {
         clearInterval(pollTimer);
         pollTimer = null;
     }
+    deviceLiveTrails.clear();
+    redrawLiveTrail();
 }
 
 function wireLiveToggle() {
@@ -394,6 +409,107 @@ function isPositionRecent(fixTime) {
     const fixTimeDate = new Date(fixTime);
     const now = new Date();
     return (now - fixTimeDate) / (1000 * 60) < 5;
+}
+
+function isFixWithinMinutes(fixTime, maxMinutes) {
+    const fixTimeDate = new Date(fixTime);
+    if (Number.isNaN(fixTimeDate.getTime())) return false;
+    const now = new Date();
+    return (now - fixTimeDate) / (1000 * 60) <= maxMinutes;
+}
+
+/** Moving recently: fix age and speed at or above slow/stopped threshold. */
+function isMovingRecently(pos, maxFixAgeMinutes, minSpeedMps) {
+    if (!pos || !pos.fixTime) return false;
+    if (!isFixWithinMinutes(pos.fixTime, maxFixAgeMinutes)) return false;
+    if (typeof pos.speed !== 'number' || Number.isNaN(pos.speed)) return false;
+    return pos.speed >= minSpeedMps;
+}
+
+function speedMpsForTrailColor(speed) {
+    const s = typeof speed === 'number' && !Number.isNaN(speed) ? speed : 0;
+    return Math.min(LIVE_TRAIL_SPEED_COLOR_MAX_MS, Math.max(0, s));
+}
+
+function trailSpeedToColor(speedMps) {
+    const t = Math.min(1, Math.max(0, speedMps / LIVE_TRAIL_SPEED_COLOR_MAX_MS));
+    const hue = t * 300;
+    return `hsl(${hue}, 88%, 52%)`;
+}
+
+function recordLiveTrailSamples() {
+    if (!isLiveUpdatesEnabled()) return;
+    const now = Date.now();
+    const deviceIdSet = new Set(devices.map((d) => d.id));
+
+    for (const id of [...deviceLiveTrails.keys()]) {
+        if (!deviceIdSet.has(id)) {
+            deviceLiveTrails.delete(id);
+            continue;
+        }
+        const pruned = deviceLiveTrails.get(id).filter((p) => now - p.addedAt <= LIVE_TRAIL_TTL_MS);
+        if (pruned.length === 0) {
+            deviceLiveTrails.delete(id);
+        } else {
+            deviceLiveTrails.set(id, pruned);
+        }
+    }
+
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (
+            !pos ||
+            typeof pos.latitude !== 'number' ||
+            typeof pos.longitude !== 'number' ||
+            Number.isNaN(pos.latitude) ||
+            Number.isNaN(pos.longitude) ||
+            !isPositionRecent(pos.fixTime)
+        ) {
+            continue;
+        }
+
+        let arr = deviceLiveTrails.get(d.id);
+        if (!arr) {
+            arr = [];
+            deviceLiveTrails.set(d.id, arr);
+        }
+        arr = arr.filter((p) => now - p.addedAt <= LIVE_TRAIL_TTL_MS);
+
+        const last = arr[arr.length - 1];
+        if (
+            last &&
+            haversineM(last.lat, last.lng, pos.latitude, pos.longitude) < LIVE_TRAIL_DEDUPE_MOVE_M &&
+            now - last.addedAt < LIVE_TRAIL_DEDUPE_MS
+        ) {
+            deviceLiveTrails.set(d.id, arr);
+            continue;
+        }
+
+        const spd = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
+        arr.push({ lat: pos.latitude, lng: pos.longitude, speed: spd, addedAt: now });
+        deviceLiveTrails.set(d.id, arr);
+    }
+}
+
+function redrawLiveTrail() {
+    if (!liveTrailLayer || !map) return;
+    liveTrailLayer.clearLayers();
+    const now = Date.now();
+
+    for (const arr of deviceLiveTrails.values()) {
+        for (const p of arr) {
+            if (now - p.addedAt > LIVE_TRAIL_TTL_MS) continue;
+            const color = trailSpeedToColor(speedMpsForTrailColor(p.speed));
+            L.circleMarker([p.lat, p.lng], {
+                radius: 4,
+                weight: 1,
+                color: 'rgba(0,0,0,0.28)',
+                fillColor: color,
+                fillOpacity: 0.82,
+                interactive: false,
+            }).addTo(liveTrailLayer);
+        }
+    }
 }
 
 function formatDateTime(dateString) {
@@ -588,7 +704,10 @@ async function updateData() {
 
         clearSnapshotError();
         renderFleetDevices();
+        renderOnWaterBoats(parts);
+        recordLiveTrailSamples();
         updateMapMarkers();
+        redrawLiveTrail();
         updateTimestamp();
 
         if (map) {
@@ -648,6 +767,50 @@ function renderFleetDevices() {
     container.innerHTML = html;
 }
 
+function renderOnWaterBoats(parts) {
+    const el = document.getElementById('rnzOnWaterBoatsList');
+    if (!el) return;
+
+    if (!parts || parts.length === 0) {
+        el.innerHTML =
+            '<p class="rnz-list-empty">Define circle/polygon geofences in Traccar to detect boats outside the Rowing NZ boundary.</p>';
+        return;
+    }
+
+    const boats = [];
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+        if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
+        if (!isMovingRecently(pos, ON_WATER_FIX_MAX_MIN, STOP_SPEED_MPS)) continue;
+        if (isInsideBoundaryParts(pos.latitude, pos.longitude, parts)) continue;
+        boats.push({ device: d, pos });
+    }
+
+    boats.sort((a, b) => String(a.device.name).localeCompare(String(b.device.name), undefined, { sensitivity: 'base' }));
+
+    if (boats.length === 0) {
+        el.innerHTML =
+            '<p class="rnz-list-empty">No boats match right now (need last fix within 30 min, speed ≥ 0.5 m/s, outside boundary).</p>';
+        return;
+    }
+
+    el.innerHTML = boats
+        .map(({ device, pos }) => {
+            const kmh = (pos.speed * 3.6).toFixed(1);
+            const fix = formatDateTime(pos.fixTime);
+            return (
+                `<button type="button" class="rnz-onwater-row device-name--fly" ` +
+                `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
+                `title="Show on map">` +
+                `<span class="rnz-onwater-name">${escapeHtml(device.name)}</span>` +
+                `<span class="rnz-onwater-meta">${kmh} km/h · last ${escapeHtml(fix)}</span>` +
+                `</button>`
+            );
+        })
+        .join('');
+}
+
 function wireDeviceNameFlyTo() {
     const handler = (e) => {
         const btn = e.target.closest('.device-name--fly');
@@ -672,6 +835,12 @@ function wireDeviceNameFlyTo() {
     if (fleet && fleet.dataset.rnzFlyBound !== '1') {
         fleet.dataset.rnzFlyBound = '1';
         fleet.addEventListener('click', handler);
+    }
+
+    const onWater = document.getElementById('rnzOnWaterBoatsList');
+    if (onWater && onWater.dataset.rnzFlyBound !== '1') {
+        onWater.dataset.rnzFlyBound = '1';
+        onWater.addEventListener('click', handler);
     }
 
     const warnList = document.getElementById('rnzWarningsList');
@@ -707,6 +876,10 @@ function showError(message) {
     const fleet = document.getElementById('rnzFleetDevicesList');
     if (fleet) {
         fleet.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+    }
+    const onWater = document.getElementById('rnzOnWaterBoatsList');
+    if (onWater) {
+        onWater.innerHTML = '';
     }
 }
 

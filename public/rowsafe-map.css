@@ -342,6 +342,84 @@ body.rnz-page {
     padding-top: 4px;
 }
 
+.rnz-onwater-inner {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.rnz-onwater-hint {
+    font-size: 0.72rem;
+    color: var(--rnz-muted);
+    line-height: 1.45;
+    margin: 0 0 10px;
+    flex-shrink: 0;
+}
+
+.rnz-onwater-list {
+    flex: 1;
+    min-height: 72px;
+    max-height: min(42vh, 360px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 2px;
+}
+
+.rnz-onwater-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border: 1px solid var(--rnz-line);
+    border-radius: 6px;
+    border-left: 4px solid var(--rnz-teal);
+    background: var(--rnz-cream);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rnz-onwater-row:hover {
+    background: #e0f2f1;
+    border-color: var(--rnz-teal);
+}
+
+.rnz-onwater-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--rnz-navy);
+    text-decoration: underline;
+    text-decoration-color: rgba(13, 148, 136, 0.45);
+    text-underline-offset: 2px;
+}
+
+.rnz-onwater-meta {
+    font-size: 0.72rem;
+    color: var(--rnz-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.rnz-page .rnz-onwater-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rnz-page .rnz-onwater-list::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 3px;
+}
+
+.rnz-page .rnz-onwater-list::-webkit-scrollbar-thumb {
+    background: rgba(13, 148, 136, 0.45);
+    border-radius: 3px;
+}
+
 .rnz-snapshot-error[hidden] {
     display: none !important;
 }
