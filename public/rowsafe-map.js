@@ -21,6 +21,10 @@ let mapInitialFitDone = false;
 let pollTimer = null;
 let geofenceLayer = null;
 
+/** Latest boundary + stopped timer (for red alerts & map styling). */
+let lastFenceParts = [];
+let lastStoppedState = {};
+
 function escapeHtml(value) {
     if (value == null) return '';
     return String(value)
@@ -250,6 +254,22 @@ function updateStoppedTracking(parts) {
     return next;
 }
 
+/**
+ * Outside RNZ boundary and (no fix for 30+ min OR slow outside 30+ min tracked).
+ */
+function isCriticalOutsideAlert(device, pos, parts, stoppedState) {
+    if (!parts || parts.length === 0) return false;
+    if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') return false;
+    if (isInsideBoundaryParts(pos.latitude, pos.longitude, parts)) return false;
+    const fixMs = pos.fixTime ? new Date(pos.fixTime).getTime() : 0;
+    const fixAgeMs = fixMs > 0 ? Date.now() - fixMs : Number.POSITIVE_INFINITY;
+    const slow = typeof pos.speed === 'number' && pos.speed < STOP_SPEED_MPS;
+    const st = stoppedState[device.id];
+    const stationaryLong = slow && st && Date.now() - st.t >= STOP_MIN_MS;
+    const offlineLong = fixAgeMs >= STOP_MIN_MS;
+    return offlineLong || stationaryLong;
+}
+
 function initMap() {
     map = L.map('map', {
         zoomControl: true,
@@ -375,14 +395,17 @@ function updateMapMarkers() {
         seenIds.add(device.id);
         const latlng = [position.latitude, position.longitude];
         const online = isPositionRecent(position.fixTime);
-        const fill = online ? '#14b8a6' : '#94a3b8';
-        const stroke = online ? '#0f766e' : '#475569';
+        const critical = isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
+        const fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
+        const stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
+        const radius = critical ? 14 : 11;
+        const weight = critical ? 3 : 2;
 
         let marker = markersByDeviceId.get(device.id);
         if (!marker) {
             marker = L.circleMarker(latlng, {
-                radius: 11,
-                weight: 2,
+                radius,
+                weight,
                 color: stroke,
                 fillColor: fill,
                 fillOpacity: 0.92,
@@ -390,7 +413,7 @@ function updateMapMarkers() {
             markersByDeviceId.set(device.id, marker);
         } else {
             marker.setLatLng(latlng);
-            marker.setStyle({ fillColor: fill, color: stroke });
+            marker.setStyle({ fillColor: fill, color: stroke, radius, weight });
         }
 
         const speedKmh = (position.speed * 3.6).toFixed(1);
@@ -450,11 +473,18 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
             if (!inside) {
                 const kmh = typeof pos.speed === 'number' ? (pos.speed * 3.6).toFixed(1) : '—';
                 outside.push({ device: d, pos, kmh });
-                const st = stoppedState[d.id];
-                const slow = typeof pos.speed === 'number' && pos.speed < STOP_SPEED_MPS;
-                if (slow && st && now - st.t >= STOP_MIN_MS) {
-                    const mins = Math.floor((now - st.t) / 60000);
-                    warnings.push({ device: d, pos, mins });
+                if (isCriticalOutsideAlert(d, pos, parts, stoppedState)) {
+                    const fixMs = pos.fixTime ? new Date(pos.fixTime).getTime() : 0;
+                    const fixAgeMs = fixMs > 0 ? now - fixMs : null;
+                    const slow = typeof pos.speed === 'number' && pos.speed < STOP_SPEED_MPS;
+                    const st = stoppedState[d.id];
+                    let detail = 'No fix for 30+ min';
+                    if (fixAgeMs != null && fixAgeMs < STOP_MIN_MS && slow && st) {
+                        detail = `Stationary outside ~${Math.floor((now - st.t) / 60000)} min`;
+                    } else if (fixAgeMs != null && fixAgeMs >= STOP_MIN_MS) {
+                        detail = `Last fix ${Math.floor(fixAgeMs / 60000)} min ago`;
+                    }
+                    warnings.push({ device: d, pos, detail });
                 }
             }
         }
@@ -491,7 +521,7 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
                 warnings
                     .map(
                         (w) =>
-                            `<li><strong>${escapeHtml(w.device.name)}</strong> — outside boundary, speed &lt; ${STOP_SPEED_MPS} m/s for ~<strong>${w.mins}</strong> min (since first detected stopped outside).</li>`
+                            `<li><strong>${escapeHtml(w.device.name)}</strong> — ${escapeHtml(w.detail)} (outside boundary).</li>`
                     )
                     .join('') +
                 '</ul>';
@@ -540,7 +570,10 @@ async function updateData() {
         const parts = boundaryPartsFromGeofences(matched);
         const stoppedState = updateStoppedTracking(parts);
 
-        drawGeofencesOnMap(geofences, matched, mode);
+        lastFenceParts = parts;
+        lastStoppedState = stoppedState;
+
+        drawGeofencesOnMap(geofences, matched);
         renderFenceAndLists(matched, mode, parts, stoppedState);
 
         renderDevices();
@@ -581,10 +614,23 @@ function renderDevices() {
         const statusClass = isOnline ? 'online' : 'offline';
         const statusText = isOnline ? 'Recent fix' : 'Stale fix';
         const speedClass = position && position.speed > 5 ? 'rnz-speed-warn' : '';
+        const critical =
+            position &&
+            isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
+        const cardMod = critical ? ' rnz-device-card--critical' : '';
+        const hasLoc =
+            position &&
+            typeof position.latitude === 'number' &&
+            typeof position.longitude === 'number' &&
+            !Number.isNaN(position.latitude) &&
+            !Number.isNaN(position.longitude);
+        const nameHtml = hasLoc
+            ? `<button type="button" class="rnz-device-name rnz-device-name--btn" data-device-id="${device.id}" data-lat="${position.latitude}" data-lng="${position.longitude}" title="Show on map">${escapeHtml(device.name)}</button>`
+            : `<div class="rnz-device-name">${escapeHtml(device.name)}</div>`;
 
         html += `
-            <div class="rnz-device-card">
-                <div class="rnz-device-name">${escapeHtml(device.name)}</div>
+            <div class="rnz-device-card${cardMod}">
+                ${nameHtml}
                 <div class="rnz-device-status ${statusClass}">${statusText}</div>
                 <div class="rnz-device-info">
                     <div class="rnz-info-row">
@@ -623,6 +669,30 @@ function renderDevices() {
     container.innerHTML = html;
 }
 
+function wireDeviceNameFlyTo() {
+    const container = document.getElementById('devicesContainer');
+    if (!container || container.dataset.rnzFlyBound === '1') return;
+    container.dataset.rnzFlyBound = '1';
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest('.rnz-device-name--btn');
+        if (!btn || !map) return;
+        const lat = parseFloat(btn.dataset.lat);
+        const lng = parseFloat(btn.dataset.lng);
+        const id = Number(btn.dataset.deviceId);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        const targetZoom = Math.max(map.getZoom(), 15);
+        if (typeof map.flyTo === 'function') {
+            map.flyTo([lat, lng], targetZoom, { duration: 0.65 });
+        } else {
+            map.setView([lat, lng], targetZoom);
+        }
+        const mk = markersByDeviceId.get(id);
+        if (mk) {
+            setTimeout(() => mk.openPopup(), 400);
+        }
+    });
+}
+
 function updateTimestamp() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2, '0');
@@ -641,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMap();
     wireLiveToggle();
     wireSidebarCollapse();
+    wireDeviceNameFlyTo();
     authenticate();
     startPolling();
 });

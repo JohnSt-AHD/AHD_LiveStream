@@ -77,10 +77,10 @@ body.rnz-page {
 }
 
 .rnz-logo-header {
-    width: 56px;
-    height: 56px;
+    width: clamp(88px, 14vw, 120px);
+    height: clamp(88px, 14vw, 120px);
     object-fit: contain;
-    border-radius: 6px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
 }
@@ -112,7 +112,7 @@ body.rnz-page {
     min-width: 0;
 }
 
-.rnz-header-title h1 {
+.rnz-kicker {
     display: block;
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -397,6 +397,44 @@ body.rnz-page {
 
 .rnz-device-card:hover {
     border-color: #94a3b8;
+}
+
+.rnz-device-card--critical {
+    background: #fef2f2;
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
+}
+
+.rnz-device-name--btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--rnz-navy);
+    margin-bottom: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(26, 95, 138, 0.45);
+    text-underline-offset: 3px;
+}
+
+.rnz-device-name--btn:hover {
+    color: var(--rnz-blue);
+    text-decoration-color: var(--rnz-blue);
+}
+
+.rnz-device-card--critical .rnz-device-name--btn {
+    color: #991b1b;
+}
+
+.rnz-device-card--critical .rnz-device-name--btn:hover {
+    color: #b91c1c;
 }
 
 .rnz-device-name {
