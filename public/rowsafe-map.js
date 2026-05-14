@@ -532,10 +532,19 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
             warnEl.innerHTML =
                 '<ul class="rnz-alert-list rnz-alert-list--critical">' +
                 warnings
-                    .map(
-                        (w) =>
-                            `<li><strong>${escapeHtml(w.device.name)}</strong> — ${escapeHtml(w.detail)} (outside boundary).</li>`
-                    )
+                    .map((w) => {
+                        const pos = w.pos;
+                        const hasLoc =
+                            pos &&
+                            typeof pos.latitude === 'number' &&
+                            typeof pos.longitude === 'number' &&
+                            !Number.isNaN(pos.latitude) &&
+                            !Number.isNaN(pos.longitude);
+                        const nameHtml = hasLoc
+                            ? `<button type="button" class="rnz-device-name rnz-device-name--btn rnz-device-name--btn-inline" data-device-id="${w.device.id}" data-lat="${pos.latitude}" data-lng="${pos.longitude}" title="Show on map">${escapeHtml(w.device.name)}</button>`
+                            : `<strong>${escapeHtml(w.device.name)}</strong>`;
+                        return `<li>${nameHtml} — ${escapeHtml(w.detail)} (outside boundary).</li>`;
+                    })
                     .join('') +
                 '</ul>';
         }
@@ -683,10 +692,7 @@ function renderDevices() {
 }
 
 function wireDeviceNameFlyTo() {
-    const container = document.getElementById('devicesContainer');
-    if (!container || container.dataset.rnzFlyBound === '1') return;
-    container.dataset.rnzFlyBound = '1';
-    container.addEventListener('click', (e) => {
+    const handler = (e) => {
         const btn = e.target.closest('.rnz-device-name--btn');
         if (!btn || !map) return;
         const lat = parseFloat(btn.dataset.lat);
@@ -703,7 +709,19 @@ function wireDeviceNameFlyTo() {
         if (mk) {
             setTimeout(() => mk.openPopup(), 400);
         }
-    });
+    };
+
+    const dev = document.getElementById('devicesContainer');
+    if (dev && dev.dataset.rnzFlyBound !== '1') {
+        dev.dataset.rnzFlyBound = '1';
+        dev.addEventListener('click', handler);
+    }
+
+    const warnList = document.getElementById('rnzWarningsList');
+    if (warnList && warnList.dataset.rnzFlyBound !== '1') {
+        warnList.dataset.rnzFlyBound = '1';
+        warnList.addEventListener('click', handler);
+    }
 }
 
 function updateTimestamp() {

@@ -148,8 +148,9 @@ body.rnz-page {
 
 /* --- Dashboard: warnings (left) | fixed map | data panel (right) --- */
 .rnz-dashboard {
-    --rnz-map-w: 960px;
-    --rnz-map-h: 600px;
+    --rnz-map-w: 1056px;
+    --rnz-map-h: 660px;
+    --rnz-side-col-h: min(calc(var(--rnz-map-h) + 100px), 90vh);
     flex: 1;
     display: grid;
     grid-template-columns: minmax(200px, 280px) var(--rnz-map-w) minmax(260px, 360px);
@@ -182,8 +183,9 @@ body.rnz-page {
     border-radius: 8px;
     border-left: 4px solid #dc2626;
     box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
-    min-height: min(var(--rnz-map-h), 82vh);
-    max-height: min(calc(var(--rnz-map-h) + 80px), 90vh);
+    height: var(--rnz-side-col-h);
+    max-height: var(--rnz-side-col-h);
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -254,8 +256,9 @@ body.rnz-page {
     border-right: 4px solid var(--rnz-teal);
     display: flex;
     flex-direction: column;
-    min-height: min(var(--rnz-map-h), 82vh);
-    max-height: min(calc(var(--rnz-map-h) + 80px), 90vh);
+    height: var(--rnz-side-col-h);
+    max-height: var(--rnz-side-col-h);
+    min-height: 0;
     min-width: 0;
     box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
     overflow: hidden;
@@ -382,8 +385,8 @@ body.rnz-page {
 
 @media (max-width: 1280px) {
     .rnz-dashboard {
-        --rnz-map-w: min(960px, calc(100vw - 48px));
-        --rnz-map-h: 520px;
+        --rnz-map-w: min(1056px, calc(100vw - 48px));
+        --rnz-map-h: 572px;
         grid-template-columns: minmax(180px, 1fr) minmax(400px, var(--rnz-map-w)) minmax(220px, 1fr);
     }
 }
@@ -416,6 +419,7 @@ body.rnz-page {
     .rnz-dashboard.rnz-left-collapsed .rnz-left-column,
     .rnz-dashboard.rnz-sidebar-collapsed .rnz-sidebar {
         max-height: none;
+        height: auto;
     }
 
     .rnz-dashboard.rnz-left-collapsed .rnz-column-toggle,
@@ -566,6 +570,23 @@ body.rnz-page {
 .rnz-device-name--btn:hover {
     color: var(--rnz-blue);
     text-decoration-color: var(--rnz-blue);
+}
+
+.rnz-device-name--btn.rnz-device-name--btn-inline {
+    display: inline;
+    width: auto;
+    margin-bottom: 0;
+    font-size: inherit;
+    font-weight: 700;
+    vertical-align: baseline;
+}
+
+.rnz-alert-list--critical .rnz-device-name--btn-inline {
+    color: #9a3412;
+}
+
+.rnz-alert-list--critical .rnz-device-name--btn-inline:hover {
+    color: #b45309;
 }
 
 .rnz-device-card--critical .rnz-device-name--btn {
