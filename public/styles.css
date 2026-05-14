@@ -42,6 +42,9 @@ body {
     flex-direction: column;
     z-index: 1000;
     pointer-events: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
 }
 
 .header {

@@ -207,11 +207,24 @@ function destroyHistoryChart() {
 
 const MAX_CHART_POINTS_PER_DEVICE = 450;
 
+function chartPointFromPosition(p) {
+    const t = new Date(p.fixTime || p.deviceTime).getTime();
+    const y = (typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0) * 3.6;
+    if (!Number.isFinite(t) || Number.isNaN(y)) return null;
+    return { x: t, y };
+}
+
 function renderHistorySpeedChart(deviceRoutes) {
     const wrap = document.getElementById('historyChartWrap');
     const canvas = document.getElementById('historySpeedChart');
-    if (!wrap || !canvas || typeof Chart === 'undefined') {
-        return;
+    if (!wrap || !canvas) {
+        return false;
+    }
+
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js not loaded; speed chart skipped.');
+        wrap.hidden = true;
+        return false;
     }
 
     destroyHistoryChart();
@@ -219,32 +232,42 @@ function renderHistorySpeedChart(deviceRoutes) {
     const hasData = deviceRoutes.some((r) => r.points && r.points.length > 0);
     if (!hasData) {
         wrap.hidden = true;
-        return;
+        return false;
+    }
+
+    const datasets = deviceRoutes
+        .map(({ id, name, points }) => {
+            const sorted = sortRoutePoints(points);
+            const dec = decimateRoutePoints(sorted, MAX_CHART_POINTS_PER_DEVICE);
+            const color = colorForDeviceId(id);
+            const data = [];
+            for (const p of dec) {
+                const pt = chartPointFromPosition(p);
+                if (pt) data.push(pt);
+            }
+            return {
+                label: name || `Device ${id}`,
+                data,
+                borderColor: color,
+                backgroundColor: color,
+                fill: false,
+                tension: 0.12,
+                pointRadius: data.length <= 2 ? 4 : 0,
+                pointHitRadius: 5,
+                borderWidth: 2,
+            };
+        })
+        .filter((ds) => ds.data.length > 0);
+
+    if (datasets.length === 0) {
+        wrap.hidden = true;
+        return false;
     }
 
     wrap.hidden = false;
+    void wrap.offsetHeight;
 
-    const datasets = deviceRoutes.map(({ id, name, points }) => {
-        const sorted = sortRoutePoints(points);
-        const dec = decimateRoutePoints(sorted, MAX_CHART_POINTS_PER_DEVICE);
-        const color = colorForDeviceId(id);
-        return {
-            label: name || `Device ${id}`,
-            data: dec.map((p) => ({
-                x: new Date(p.fixTime || p.deviceTime).getTime(),
-                y: (typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0) * 3.6,
-            })),
-            borderColor: color,
-            backgroundColor: color,
-            fill: false,
-            tension: 0.12,
-            pointRadius: 0,
-            pointHitRadius: 5,
-            borderWidth: 2,
-        };
-    });
-
-    historySpeedChart = new Chart(canvas, {
+    const chartOptions = {
         type: 'line',
         data: { datasets },
         options: {
@@ -281,7 +304,7 @@ function renderHistorySpeedChart(deviceRoutes) {
             },
             plugins: {
                 legend: {
-                    display: deviceRoutes.length > 1,
+                    display: datasets.length > 1,
                     labels: { color: '#e0e0e0', boxWidth: 12 },
                 },
                 tooltip: {
@@ -299,7 +322,32 @@ function renderHistorySpeedChart(deviceRoutes) {
                 },
             },
         },
-    });
+    };
+
+    try {
+        if (!canvas.getContext('2d')) {
+            wrap.hidden = true;
+            return false;
+        }
+        requestAnimationFrame(() => {
+            try {
+                historySpeedChart = new Chart(canvas, chartOptions);
+                requestAnimationFrame(() => {
+                    if (historySpeedChart) {
+                        historySpeedChart.resize();
+                    }
+                });
+            } catch (err) {
+                console.error('Chart create failed:', err);
+                wrap.hidden = true;
+            }
+        });
+        return true;
+    } catch (err) {
+        console.error('Chart setup failed:', err);
+        wrap.hidden = true;
+        return false;
+    }
 }
 
 function formatDateTimeFull(dateString) {
@@ -472,11 +520,16 @@ async function loadHistoryRoute() {
 
         renderHistoryRouteOnMap(deviceRoutes);
         const routeSummary = document.getElementById('historyStatus')?.textContent || '';
-        renderHistorySpeedChart(deviceRoutes);
+        const chartShown = renderHistorySpeedChart(deviceRoutes);
 
         let msg = routeSummary;
+        if (typeof Chart === 'undefined') {
+            msg = `${routeSummary} Chart.js did not load — check network or extensions; speed chart unavailable.`.trim();
+        } else if (!chartShown && deviceRoutes.some((r) => r.points && r.points.length > 0)) {
+            msg = `${routeSummary} Speed chart skipped (no valid time/speed points).`.trim();
+        }
         if (errors.length) {
-            msg = `Partial load — ${errors.join(' · ')}. ${routeSummary}`.trim();
+            msg = `Partial load — ${errors.join(' · ')}. ${msg}`.trim();
         }
         setHistoryStatus(msg);
     } catch (error) {
