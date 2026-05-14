@@ -72,19 +72,26 @@
                             </div>
                         </div>
                     </details>
-
-                    <details class="rnz-panel-details rnz-panel-stretch" open>
-                        <summary class="rnz-panel-summary">Devices &amp; status</summary>
-                        <div class="rnz-panel-inner rnz-panel-inner--fleet">
-                            <p class="rnz-fleet-hint">Online = last fix within 5 minutes. Boundary uses the same Rowing NZ / RNZ / RowSafe geofence rules as the map.</p>
-                            <div class="rnz-fleet-devices-scroll" id="rnzFleetDevicesList">
-                                <div class="loading">Loading device data…</div>
-                            </div>
-                        </div>
-                    </details>
                 </div>
             </aside>
         </div>
+
+        <section class="rnz-fleet-dock" aria-label="All devices">
+            <details class="rnz-fleet-dock-details" id="rnzFleetDock">
+                <summary class="rnz-fleet-dock-summary">
+                    <span class="rnz-fleet-dock-summary-label">All devices</span>
+                    <span class="rnz-fleet-dock-summary-hint">Expand for status and Traccar group</span>
+                </summary>
+                <div class="rnz-fleet-dock-inner">
+                    <p class="rnz-fleet-hint rnz-fleet-hint--dock">
+                        Online means last GPS fix within 5 minutes. Click a device name to show it on the map.
+                    </p>
+                    <div class="rnz-fleet-dock-grid" id="rnzFleetDevicesList">
+                        <div class="loading">Loading device data…</div>
+                    </div>
+                </div>
+            </details>
+        </section>
     </main>
 
     <footer class="rnz-footer">

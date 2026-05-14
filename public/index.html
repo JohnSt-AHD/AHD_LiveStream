@@ -90,6 +90,32 @@
                 <div class="footer-alt"><a href="rowsafe-map.html">Alternate map (RowingHub / RowSafe style)</a></div>
             </div>
         </div>
+
+            <aside class="overlay-panel-right" aria-label="Custom map markers">
+                <details class="custom-markers-details" id="customMarkersDetails">
+                    <summary class="custom-markers-summary">Custom markers</summary>
+                    <div class="custom-markers-body">
+                        <p class="custom-markers-lead">Pins appear on this map only (stored in this browser, not Traccar).</p>
+                        <label class="history-field">
+                            <span>Name</span>
+                            <input type="text" id="customMarkerName" maxlength="120" placeholder="e.g. Start line" autocomplete="off">
+                        </label>
+                        <label class="history-field">
+                            <span>Latitude (°)</span>
+                            <input type="number" id="customMarkerLat" step="any" placeholder="-36.8485" autocomplete="off">
+                        </label>
+                        <label class="history-field">
+                            <span>Longitude (°)</span>
+                            <input type="number" id="customMarkerLng" step="any" placeholder="174.7633" autocomplete="off">
+                        </label>
+                        <div class="history-actions">
+                            <button type="button" class="history-btn history-btn-primary" id="customMarkerAddBtn">Add marker</button>
+                        </div>
+                        <div class="history-status" id="customMarkersStatus"></div>
+                        <div id="customMarkersList" class="custom-markers-list"></div>
+                    </div>
+                </details>
+            </aside>
         </div>
 
         <div id="historyChartDock" class="history-chart-dock" hidden>

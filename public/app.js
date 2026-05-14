@@ -13,8 +13,12 @@ let mapInitialFitDone = false;
 let pollTimer = null;
 
 let historyLayer = null;
+let customPinsLayer = null;
 let historyDefaultsApplied = false;
 let historySpeedChart = null;
+
+const LS_CUSTOM_MAP_PINS = 'altitudeHdMainMapCustomPins_v1';
+let customMapPins = [];
 
 const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
@@ -40,6 +44,7 @@ function initMap() {
     }).addTo(map);
 
     historyLayer = L.layerGroup().addTo(map);
+    customPinsLayer = L.layerGroup().addTo(map);
 
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {
@@ -195,6 +200,171 @@ function scheduleMapResize() {
     queueMicrotask(() => map.invalidateSize());
     requestAnimationFrame(() => map.invalidateSize());
     setTimeout(() => map.invalidateSize(), 400);
+}
+
+function loadCustomMapPins() {
+    try {
+        const raw = localStorage.getItem(LS_CUSTOM_MAP_PINS);
+        if (!raw) {
+            customMapPins = [];
+            return;
+        }
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) {
+            customMapPins = [];
+            return;
+        }
+        customMapPins = arr
+            .filter(
+                (p) =>
+                    p &&
+                    typeof p.id === 'string' &&
+                    typeof p.name === 'string' &&
+                    Number.isFinite(p.lat) &&
+                    Number.isFinite(p.lng)
+            )
+            .map((p) => ({
+                id: String(p.id),
+                name: String(p.name).slice(0, 120),
+                lat: Number(p.lat),
+                lng: Number(p.lng),
+            }))
+            .filter((p) => p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180);
+    } catch {
+        customMapPins = [];
+    }
+}
+
+function saveCustomMapPins() {
+    try {
+        localStorage.setItem(LS_CUSTOM_MAP_PINS, JSON.stringify(customMapPins));
+    } catch (e) {
+        console.warn('Could not save custom markers', e);
+    }
+}
+
+function setCustomMarkersStatus(text) {
+    const el = document.getElementById('customMarkersStatus');
+    if (el) el.textContent = text || '';
+}
+
+function syncCustomPinsToMap() {
+    if (!customPinsLayer || !map) return;
+    customPinsLayer.clearLayers();
+    customMapPins.forEach((p) => {
+        const marker = L.marker([p.lat, p.lng]).addTo(customPinsLayer);
+        marker.bindPopup(
+            `<div class="map-popup-title">${escapeHtml(p.name)}</div>` +
+                `<div><strong>Lat:</strong> ${p.lat.toFixed(6)}</div>` +
+                `<div><strong>Lon:</strong> ${p.lng.toFixed(6)}</div>`,
+            { maxWidth: 260 }
+        );
+    });
+}
+
+function renderCustomMarkersList() {
+    const el = document.getElementById('customMarkersList');
+    if (!el) return;
+    if (customMapPins.length === 0) {
+        el.innerHTML = '<p class="custom-markers-empty">No custom markers yet.</p>';
+        return;
+    }
+    el.innerHTML =
+        '<ul class="custom-markers-ul">' +
+        customMapPins
+            .map(
+                (p) =>
+                    `<li class="custom-markers-li">` +
+                    `<span class="custom-markers-li-text">` +
+                    `<span class="custom-markers-li-name">${escapeHtml(p.name)}</span>` +
+                    `<span class="custom-markers-li-coords">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</span>` +
+                    `</span>` +
+                    `<button type="button" class="history-btn custom-markers-remove" data-remove-pin="${encodeURIComponent(
+                        p.id
+                    )}">Remove</button>` +
+                    `</li>`
+            )
+            .join('') +
+        '</ul>';
+}
+
+function addCustomMapPinFromForm() {
+    const nameInput = document.getElementById('customMarkerName');
+    const latInput = document.getElementById('customMarkerLat');
+    const lngInput = document.getElementById('customMarkerLng');
+    const name = ((nameInput && nameInput.value) || '').trim() || 'Unnamed';
+    const lat = latInput ? parseFloat(latInput.value) : NaN;
+    const lng = lngInput ? parseFloat(lngInput.value) : NaN;
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+        setCustomMarkersStatus('Enter a valid latitude between −90 and 90.');
+        return;
+    }
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+        setCustomMarkersStatus('Enter a valid longitude between −180 and 180.');
+        return;
+    }
+
+    const id = `pin_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    customMapPins.push({ id, name, lat, lng });
+    saveCustomMapPins();
+    syncCustomPinsToMap();
+    renderCustomMarkersList();
+    if (latInput) latInput.value = '';
+    if (lngInput) lngInput.value = '';
+    setCustomMarkersStatus('Marker added.');
+}
+
+function wireCustomMarkersPanel() {
+    const addBtn = document.getElementById('customMarkerAddBtn');
+    if (addBtn && addBtn.dataset.bound !== '1') {
+        addBtn.dataset.bound = '1';
+        addBtn.addEventListener('click', () => {
+            addCustomMapPinFromForm();
+        });
+    }
+
+    const listEl = document.getElementById('customMarkersList');
+    if (listEl && listEl.dataset.bound !== '1') {
+        listEl.dataset.bound = '1';
+        listEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-remove-pin]');
+            if (!btn) return;
+            const id = decodeURIComponent(btn.getAttribute('data-remove-pin') || '');
+            const before = customMapPins.length;
+            customMapPins = customMapPins.filter((p) => p.id !== id);
+            if (customMapPins.length === before) return;
+            saveCustomMapPins();
+            syncCustomPinsToMap();
+            renderCustomMarkersList();
+            setCustomMarkersStatus('Marker removed.');
+        });
+    }
+
+    const details = document.getElementById('customMarkersDetails');
+    if (details && details.dataset.resizeBound !== '1') {
+        details.dataset.resizeBound = '1';
+        details.addEventListener('toggle', () => scheduleMapResize());
+    }
+
+    const latEl = document.getElementById('customMarkerLat');
+    const lngEl = document.getElementById('customMarkerLng');
+    if (latEl && lngEl && latEl.dataset.enterBound !== '1') {
+        latEl.dataset.enterBound = '1';
+        lngEl.dataset.enterBound = '1';
+        const onEnter = (e) => {
+            if (e.key === 'Enter') addCustomMapPinFromForm();
+        };
+        latEl.addEventListener('keydown', onEnter);
+        lngEl.addEventListener('keydown', onEnter);
+    }
+}
+
+function initCustomMapPins() {
+    loadCustomMapPins();
+    syncCustomPinsToMap();
+    renderCustomMarkersList();
+    wireCustomMarkersPanel();
 }
 
 /** LayerGroup has no bringToFront in some Leaflet builds; fall back to per-layer. */
@@ -743,6 +913,7 @@ function updateMapMarkers() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
+    initCustomMapPins();
     wireLiveToggle();
     wireHistoryPanel();
     wireSpeedLauncher();

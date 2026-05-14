@@ -355,12 +355,76 @@ body.rnz-page {
     line-height: 1.45;
 }
 
-.rnz-panel-inner--fleet {
-    flex: 1;
-    min-height: 0;
+.rnz-fleet-dock {
+    flex-shrink: 0;
+    padding: 0 20px 20px;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+}
+
+.rnz-fleet-dock-details {
+    width: 100%;
+    max-width: 1392px;
+    border: 1px solid var(--rnz-line);
+    border-radius: 8px;
+    background: var(--rnz-white);
+    box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
     overflow: hidden;
+}
+
+.rnz-fleet-dock-summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 12px 14px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--rnz-navy);
+    background: var(--rnz-cream);
+    border-bottom: 1px solid var(--rnz-line);
+    position: relative;
+    padding-right: 32px;
+}
+
+.rnz-fleet-dock-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rnz-fleet-dock-summary::after {
+    content: '▾';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+}
+
+.rnz-fleet-dock-details[open] > .rnz-fleet-dock-summary::after {
+    transform: translateY(-50%) rotate(-180deg);
+}
+
+.rnz-fleet-dock-summary-label {
+    flex-shrink: 0;
+}
+
+.rnz-fleet-dock-summary-hint {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--rnz-muted);
+}
+
+.rnz-fleet-dock-inner {
+    padding: 12px 14px 14px;
 }
 
 .rnz-fleet-hint {
@@ -368,20 +432,43 @@ body.rnz-page {
     color: var(--rnz-muted);
     line-height: 1.45;
     margin: 0 0 8px;
-    flex-shrink: 0;
 }
 
-.rnz-fleet-devices-scroll {
-    flex: 1;
-    min-height: 0;
+.rnz-fleet-hint--dock {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.rnz-fleet-dock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    max-height: min(48vh, 440px);
     overflow-y: auto;
-    padding: 4px 2px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    padding: 2px;
+}
+
+.rnz-fleet-dock-error {
+    grid-column: 1 / -1;
+}
+
+.rnz-page .rnz-fleet-dock-grid::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.rnz-page .rnz-fleet-dock-grid::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 3px;
+}
+
+.rnz-page .rnz-fleet-dock-grid::-webkit-scrollbar-thumb {
+    background: rgba(13, 148, 136, 0.45);
+    border-radius: 3px;
 }
 
 .rnz-fleet-row {
+    min-height: 0;
     background: var(--rnz-cream);
     border: 1px solid var(--rnz-line);
     border-left: 4px solid var(--rnz-teal);
@@ -406,7 +493,7 @@ body.rnz-page {
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .rnz-fleet-name {
@@ -431,55 +518,14 @@ body.rnz-page {
 }
 
 .rnz-fleet-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    margin-top: 2px;
     font-size: 0.8rem;
     color: var(--rnz-text);
-}
-
-.rnz-fleet-chip {
-    display: inline-block;
-    align-self: flex-start;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-
-.rnz-boundary-in {
-    background: rgba(5, 150, 105, 0.15);
-    color: #047857;
-}
-
-.rnz-boundary-out {
-    background: rgba(194, 65, 12, 0.12);
-    color: #9a3412;
-}
-
-.rnz-boundary-na,
-.rnz-boundary-unknown {
-    background: rgba(100, 116, 139, 0.12);
-    color: #475569;
 }
 
 .rnz-fleet-group strong {
     font-weight: 700;
     color: var(--rnz-navy);
-}
-
-.rnz-page .rnz-fleet-devices-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-
-.rnz-page .rnz-fleet-devices-scroll::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.06);
-    border-radius: 3px;
-}
-
-.rnz-page .rnz-fleet-devices-scroll::-webkit-scrollbar-thumb {
-    background: rgba(13, 148, 136, 0.45);
-    border-radius: 3px;
 }
 
 .rnz-panel-inner--devices {

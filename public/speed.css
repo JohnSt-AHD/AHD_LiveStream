@@ -28,22 +28,12 @@ body.speed-transparent {
 .speed-card {
     position: fixed;
     z-index: 10;
-    padding: 16px 20px 14px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.88);
-    border: 3px solid #00bfff;
-    box-shadow: 0 8px 32px rgba(0, 191, 255, 0.35);
-    min-width: min(200px, 90vw);
-}
-
-.speed-card-device {
-    font-size: 14px;
-    font-weight: 700;
-    color: #00bfff;
-    margin-bottom: 6px;
-    letter-spacing: 0.5px;
-    max-width: 100%;
-    word-break: break-word;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    min-width: 0;
 }
 
 .speed-card-value {
@@ -53,30 +43,14 @@ body.speed-transparent {
     color: #fff;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
+    text-shadow:
+        0 0 3px rgba(0, 0, 0, 0.95),
+        0 2px 16px rgba(0, 0, 0, 0.85),
+        0 0 24px rgba(0, 0, 0, 0.55);
 }
 
 .speed-card-value.speed-warn {
     color: #ff8a80;
-}
-
-.speed-card-sub {
-    font-size: 13px;
-    color: #9ad8ff;
-    margin-top: 6px;
-    font-variant-numeric: tabular-nums;
-}
-
-.speed-card-meta {
-    font-size: 11px;
-    color: #888;
-    margin-top: 10px;
-}
-
-.speed-card-back {
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 11px;
-    color: #00bfff;
 }
 
 .speed-page-error {
@@ -85,12 +59,15 @@ body.speed-transparent {
     top: 50%;
     transform: translate(-50%, -50%);
     max-width: 90vw;
-    padding: 16px 20px;
-    border-radius: 8px;
-    background: rgba(80, 0, 0, 0.9);
-    border: 1px solid #ff6b6b;
-    color: #ffc9c9;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #ffb4b4;
     font-size: 14px;
     line-height: 1.45;
     z-index: 20;
+    text-align: center;
+    text-shadow:
+        0 0 4px rgba(0, 0, 0, 1),
+        0 2px 12px rgba(0, 0, 0, 0.9);
 }

@@ -57,6 +57,146 @@ body {
     min-height: 0;
 }
 
+.overlay-panel-right {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: min(320px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    background: rgba(0, 0, 0, 0.88);
+    border-right: 5px solid #00bfff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #fff;
+    box-shadow: 0 8px 32px rgba(0, 191, 255, 0.25);
+    z-index: 1000;
+    pointer-events: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+.custom-markers-details {
+    margin: 0;
+}
+
+.custom-markers-summary {
+    list-style: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    color: #00bfff;
+    letter-spacing: 0.5px;
+    padding: 8px 22px 8px 0;
+    position: relative;
+    user-select: none;
+}
+
+.custom-markers-summary::-webkit-details-marker {
+    display: none;
+}
+
+.custom-markers-summary::after {
+    content: '▾';
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    opacity: 0.75;
+    transition: transform 0.2s ease;
+}
+
+.custom-markers-details[open] > .custom-markers-summary::after {
+    transform: translateY(-50%) rotate(-180deg);
+}
+
+.custom-markers-body {
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 191, 255, 0.35);
+    margin-top: 4px;
+}
+
+.custom-markers-lead {
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.custom-markers-list {
+    margin-top: 10px;
+    max-height: min(40vh, 280px);
+    overflow-y: auto;
+}
+
+.custom-markers-empty {
+    font-size: 11px;
+    color: #888;
+    margin: 0;
+}
+
+.custom-markers-ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-markers-li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    background: rgba(0, 191, 255, 0.1);
+    border-left: 3px solid #00bfff;
+    font-size: 12px;
+}
+
+.custom-markers-li-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.custom-markers-li-name {
+    font-weight: 700;
+    color: #00e5ff;
+    word-break: break-word;
+}
+
+.custom-markers-li-coords {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #ccc;
+}
+
+.custom-markers-remove {
+    flex-shrink: 0;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+}
+
+.custom-markers-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-markers-list::-webkit-scrollbar-track {
+    background: rgba(0, 191, 255, 0.08);
+}
+
+.custom-markers-list::-webkit-scrollbar-thumb {
+    background: #00bfff;
+    border-radius: 3px;
+}
+
 .header {
     text-align: center;
     margin-bottom: 14px;
@@ -485,6 +625,15 @@ body {
         top: auto;
         bottom: 12px;
         max-height: 45vh;
+    }
+
+    .overlay-panel-right {
+        top: 12px;
+        right: 12px;
+        bottom: auto;
+        left: auto;
+        width: min(280px, calc(100vw - 24px));
+        max-height: 38vh;
     }
 
     .speed-legend {

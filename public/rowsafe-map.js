@@ -339,6 +339,15 @@ function wireLeftCollapse() {
     });
 }
 
+function wireFleetDockResize() {
+    const dock = document.getElementById('rnzFleetDock');
+    if (!dock || dock.dataset.rnzResizeBound === '1') return;
+    dock.dataset.rnzResizeBound = '1';
+    dock.addEventListener('toggle', () => {
+        setTimeout(() => map && map.invalidateSize(), 80);
+    });
+}
+
 function buildGroupLookup(groupList) {
     const map = new Map();
     for (const g of Array.isArray(groupList) ? groupList : []) {
@@ -359,26 +368,6 @@ function groupLabelForDevice(device) {
     if (!Number.isFinite(id)) return '—';
     if (groupLookup.has(id)) return groupLookup.get(id);
     return `Group #${id}`;
-}
-
-function boundaryUiForDevice(device, parts) {
-    if (!parts || parts.length === 0) {
-        return { text: 'No boundary configured', klass: 'rnz-boundary-na' };
-    }
-    const pos = positions[device.id];
-    if (
-        !pos ||
-        typeof pos.latitude !== 'number' ||
-        typeof pos.longitude !== 'number' ||
-        Number.isNaN(pos.latitude) ||
-        Number.isNaN(pos.longitude)
-    ) {
-        return { text: 'No position', klass: 'rnz-boundary-unknown' };
-    }
-    const inside = isInsideBoundaryParts(pos.latitude, pos.longitude, parts);
-    return inside
-        ? { text: 'Inside RNZ boundary', klass: 'rnz-boundary-in' }
-        : { text: 'Outside RNZ boundary', klass: 'rnz-boundary-out' };
 }
 
 function mergeDevicesFromPositions(deviceList, positionsMap) {
@@ -598,7 +587,7 @@ async function updateData() {
         renderFenceAndLists(parts, stoppedState);
 
         clearSnapshotError();
-        renderFleetDevices(parts);
+        renderFleetDevices();
         updateMapMarkers();
         updateTimestamp();
 
@@ -611,13 +600,13 @@ async function updateData() {
     }
 }
 
-function renderFleetDevices(parts) {
+function renderFleetDevices() {
     const container = document.getElementById('rnzFleetDevicesList');
     if (!container) return;
 
     if (devices.length === 0) {
         container.innerHTML =
-            '<div class="error">No devices or positions for this account. Check Vercel environment variables (Traccar credentials).</div>';
+            '<div class="error rnz-fleet-dock-error">No devices or positions for this account. Check Vercel environment variables (Traccar credentials).</div>';
         return;
     }
 
@@ -632,7 +621,6 @@ function renderFleetDevices(parts) {
             position &&
             isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
         const rowCriticalClass = critical ? ' rnz-fleet-row--critical' : '';
-        const boundary = boundaryUiForDevice(device, parts);
         const groupName = escapeHtml(groupLabelForDevice(device));
         const hasLoc =
             position &&
@@ -651,7 +639,6 @@ function renderFleetDevices(parts) {
                     <span class="device-status ${statusClass}">${statusText}</span>
                 </div>
                 <div class="rnz-fleet-meta">
-                    <span class="rnz-fleet-chip ${boundary.klass}">${escapeHtml(boundary.text)}</span>
                     <span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>
                 </div>
             </div>
@@ -728,6 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
     wireLiveToggle();
     wireSidebarCollapse();
     wireLeftCollapse();
+    wireFleetDockResize();
     wireDeviceNameFlyTo();
     authenticate();
     startPolling();

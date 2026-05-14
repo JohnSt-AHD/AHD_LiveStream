@@ -16,10 +16,33 @@ const transparent = params.get('transparent') === '1';
 
 const card = document.getElementById('speedCard');
 const errEl = document.getElementById('speedError');
-const elDevice = document.getElementById('scDevice');
-const elKmh = document.getElementById('scKmh');
-const elMs = document.getElementById('scMs');
-const elMeta = document.getElementById('scMeta');
+const elSplit = document.getElementById('scSplit');
+
+/** Time for 500 m at constant speed (m/s), as M:SS.d — no unit suffix. */
+function formatSplit500FromMps(speedMps) {
+    if (!Number.isFinite(speedMps) || speedMps < 0.01) return '—';
+    let sec = 500 / speedMps;
+    if (sec > 7200) return '—';
+    sec = Math.round(sec * 10) / 10;
+
+    let minutes = Math.floor(sec / 60);
+    let sRem = Math.round((sec - minutes * 60) * 10) / 10;
+    if (sRem >= 59.95) {
+        minutes += 1;
+        sRem = 0;
+    }
+    const intS = Math.floor(sRem + 1e-9);
+    let tenth = Math.round((sRem - intS) * 10);
+    if (tenth === 10) {
+        const ns = intS + 1;
+        if (ns >= 60) {
+            minutes += 1;
+            return `${minutes}:00.0`;
+        }
+        return `${minutes}:${String(ns).padStart(2, '0')}.0`;
+    }
+    return `${minutes}:${String(intS).padStart(2, '0')}.${tenth}`;
+}
 
 function showError(msg) {
     errEl.textContent = msg;
@@ -58,56 +81,41 @@ function mergeDevicesFromPositions(deviceList, positionsMap) {
     return list;
 }
 
-function formatTime(dateString) {
-    const d = new Date(dateString);
-    if (Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
-
-function isRecent(fixTime) {
-    const t = new Date(fixTime);
-    if (Number.isNaN(t.getTime())) return false;
-    return Date.now() - t.getTime() < 5 * 60 * 1000;
-}
-
 async function tick() {
     if (!Number.isFinite(deviceId) || deviceId < 1) return;
     try {
         const res = await fetch(`${API_BASE}?action=snapshot`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-            elMeta.textContent = data.error || `Error ${res.status}`;
+            elSplit.textContent = '—';
+            elSplit.classList.remove('speed-warn');
+            errEl.textContent = data.error || `Error ${res.status}`;
+            errEl.hidden = false;
+            card.hidden = true;
             return;
         }
-        const rawDevices = Array.isArray(data.devices) ? data.devices : [];
+        errEl.hidden = true;
+        card.hidden = false;
+
         const positionsMap = {};
         (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
             if (pos && pos.deviceId != null) positionsMap[pos.deviceId] = pos;
         });
-        const list = mergeDevicesFromPositions(rawDevices, positionsMap);
-        const dev = list.find((d) => Number(d.id) === deviceId);
         const pos = positionsMap[deviceId];
 
-        const name = dev ? dev.name || `Device ${deviceId}` : `Device ${deviceId}`;
-        elDevice.textContent = name;
-
         if (!pos || typeof pos.speed !== 'number') {
-            elKmh.textContent = '—';
-            elKmh.classList.remove('speed-warn');
-            elMs.textContent = 'No live position for this device yet.';
-            elMeta.textContent = '';
+            elSplit.textContent = '—';
+            elSplit.classList.remove('speed-warn');
             return;
         }
 
-        const kmh = pos.speed * 3.6;
-        const mps = pos.speed;
-        elKmh.textContent = `${kmh.toFixed(1)}`;
-        elKmh.classList.toggle('speed-warn', pos.speed > 5);
-        elMs.textContent = `${mps.toFixed(2)} m/s`;
-        const online = isRecent(pos.fixTime || pos.deviceTime);
-        elMeta.textContent = `${online ? 'Live' : 'Stale'} · Last fix ${formatTime(pos.fixTime || pos.deviceTime)}`;
+        elSplit.textContent = formatSplit500FromMps(pos.speed);
+        elSplit.classList.toggle('speed-warn', pos.speed > 5);
     } catch (e) {
-        elMeta.textContent = e.message || 'Network error';
+        elSplit.textContent = '—';
+        errEl.textContent = e.message || 'Network error';
+        errEl.hidden = false;
+        card.hidden = true;
     }
 }
 
