@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RowSafe-style fleet map · Altitude HD</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="rowsafe-map.css">
+</head>
+<body class="rnz-page">
+    <a class="rnz-skip" href="#rnz-main">Skip to content</a>
+
+    <header class="rnz-header">
+        <div class="rnz-header-inner">
+            <a class="rnz-logo-mark" href="/">Altitude HD</a>
+            <div class="rnz-header-title">
+                <span class="rnz-kicker">Water safety awareness</span>
+                <h1>Live fleet map</h1>
+            </div>
+            <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
+        </div>
+    </header>
+
+    <main class="rnz-main" id="rnz-main">
+        <section class="rnz-hero" aria-label="Introduction">
+            <p class="rnz-intro">
+                <strong>NAU MAI, HAERE MAI</strong> — This page uses the same live Traccar data as the main
+                <a href="/">Altitude HD</a> map, presented in a layout inspired by the look and feel of
+                <a href="https://rowingnz.kiwi/">RowingHub</a> (Rowing New Zealand) for on-water situational awareness.
+            </p>
+            <p class="rnz-disclaimer">
+                This is not an official Rowing New Zealand or RowSafe product. For authoritative safety guidance, use RowSafe on RowingHub.
+            </p>
+        </section>
+
+        <div class="rnz-layout">
+            <div id="map" class="rnz-map" role="application" aria-label="Fleet map"></div>
+            <aside class="rnz-sidebar" aria-label="Device list">
+                <div class="rnz-panel-head">
+                    <label class="rnz-toggle">
+                        <input type="checkbox" id="liveUpdatesToggle" checked>
+                        <span>Live updates (every 10s)</span>
+                    </label>
+                </div>
+                <div class="rnz-devices" id="devicesContainer">
+                    <div class="rnz-loading">Loading device data…</div>
+                </div>
+                <div class="rnz-footer-inline">
+                    <span id="lastUpdate">Last updated: —</span>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="rnz-footer">
+        Official resources:
+        <a href="https://rowingnz.kiwi/rowsafe/">RowSafe — Rowing New Zealand</a>
+        ·
+        <a href="https://rowingnz.kiwi/">RowingHub</a>
+        ·
+        <a href="/">Main map</a>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="rowsafe-map.js"></script>
+</body>
+</html>

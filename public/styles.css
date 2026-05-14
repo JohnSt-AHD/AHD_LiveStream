@@ -202,6 +202,21 @@ body {
     display: inline-block;
 }
 
+.footer-alt {
+    margin-top: 8px;
+}
+
+.footer-alt a {
+    font-size: 11px;
+    color: #6ecfff;
+    text-decoration: none;
+}
+
+.footer-alt a:hover {
+    text-decoration: underline;
+    color: #9fddff;
+}
+
 .devices-container::-webkit-scrollbar {
     width: 6px;
 }
