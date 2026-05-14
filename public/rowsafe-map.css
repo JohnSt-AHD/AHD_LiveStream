@@ -336,6 +336,152 @@ body.rnz-page {
     flex-shrink: 0;
 }
 
+.rnz-panel-inner--live {
+    padding-top: 4px;
+}
+
+.rnz-snapshot-error[hidden] {
+    display: none !important;
+}
+
+.rnz-snapshot-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: #991b1b;
+    font-size: 0.82rem;
+    margin-bottom: 12px;
+    line-height: 1.45;
+}
+
+.rnz-panel-inner--fleet {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.rnz-fleet-hint {
+    font-size: 0.75rem;
+    color: var(--rnz-muted);
+    line-height: 1.45;
+    margin: 0 0 8px;
+    flex-shrink: 0;
+}
+
+.rnz-fleet-devices-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 2px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rnz-fleet-row {
+    background: var(--rnz-cream);
+    border: 1px solid var(--rnz-line);
+    border-left: 4px solid var(--rnz-teal);
+    border-radius: 6px;
+    padding: 10px 12px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.rnz-fleet-row:hover {
+    border-color: #94a3b8;
+}
+
+.rnz-fleet-row--critical {
+    background: #fef2f2;
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.15);
+}
+
+.rnz-fleet-row-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.rnz-fleet-name {
+    font-weight: 700;
+    color: var(--rnz-navy);
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.rnz-page button.rnz-fleet-name-btn {
+    display: inline;
+    width: auto;
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    text-align: left;
+}
+
+.rnz-page .rnz-fleet-row .device-status {
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.rnz-fleet-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--rnz-text);
+}
+
+.rnz-fleet-chip {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.rnz-boundary-in {
+    background: rgba(5, 150, 105, 0.15);
+    color: #047857;
+}
+
+.rnz-boundary-out {
+    background: rgba(194, 65, 12, 0.12);
+    color: #9a3412;
+}
+
+.rnz-boundary-na,
+.rnz-boundary-unknown {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+}
+
+.rnz-fleet-group strong {
+    font-weight: 700;
+    color: var(--rnz-navy);
+}
+
+.rnz-page .rnz-fleet-devices-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rnz-page .rnz-fleet-devices-scroll::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 3px;
+}
+
+.rnz-page .rnz-fleet-devices-scroll::-webkit-scrollbar-thumb {
+    background: rgba(13, 148, 136, 0.45);
+    border-radius: 3px;
+}
+
 .rnz-panel-inner--devices {
     flex: 1;
     min-height: 0;

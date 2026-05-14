@@ -143,15 +143,22 @@ export default async function handler(req, res) {
                 traccarGetJson(traccarUrl, cookie, '/api/positions'),
             ]);
             let geofencesRaw = [];
+            let groupsRaw = [];
             try {
                 geofencesRaw = await traccarGetJson(traccarUrl, cookie, '/api/geofences');
             } catch (e) {
                 console.error('Geofences optional fetch failed:', e);
             }
+            try {
+                groupsRaw = await traccarGetJson(traccarUrl, cookie, '/api/groups');
+            } catch (e) {
+                console.error('Groups optional fetch failed:', e);
+            }
             const devices = normalizeDevicesPayload(devicesRaw);
             const positions = normalizePositionsPayload(positionsRaw);
             const geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
-            res.status(200).json({ devices, positions, geofences });
+            const groups = Array.isArray(groupsRaw) ? groupsRaw : [];
+            res.status(200).json({ devices, positions, geofences, groups });
             return;
         }
 

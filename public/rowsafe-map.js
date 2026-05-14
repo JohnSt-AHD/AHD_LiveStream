@@ -14,6 +14,8 @@ let authToken = null;
 let devices = [];
 let positions = {};
 let geofences = [];
+let groups = [];
+let groupLookup = new Map();
 
 let map = null;
 const markersByDeviceId = new Map();
@@ -189,16 +191,6 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
     }
 }
 
-function summarizeFenceMode(mode, matchedLen, totalGeo) {
-    if (mode === 'name') {
-        return `Using ${matchedLen} geofence(s) whose names match Rowing NZ / RNZ / RowSafe (of ${totalGeo} total).`;
-    }
-    if (mode === 'all-shapes') {
-        return 'No name match — using all circle/polygon geofences on your account as the combined boundary.';
-    }
-    return 'No circle or polygon geofences returned — outside / stopped rules need polygon or circle areas in Traccar.';
-}
-
 function loadStoppedState() {
     try {
         return JSON.parse(localStorage.getItem(LS_STOPPED)) || {};
@@ -347,6 +339,48 @@ function wireLeftCollapse() {
     });
 }
 
+function buildGroupLookup(groupList) {
+    const map = new Map();
+    for (const g of Array.isArray(groupList) ? groupList : []) {
+        if (!g || g.id == null) continue;
+        const id = Number(g.id);
+        if (!Number.isFinite(id)) continue;
+        const name =
+            typeof g.name === 'string' && g.name.trim() ? g.name.trim() : `Group ${g.id}`;
+        map.set(id, name);
+    }
+    return map;
+}
+
+function groupLabelForDevice(device) {
+    const raw = device && (device.groupId ?? device.groupid);
+    if (raw == null || raw === '') return '—';
+    const id = Number(raw);
+    if (!Number.isFinite(id)) return '—';
+    if (groupLookup.has(id)) return groupLookup.get(id);
+    return `Group #${id}`;
+}
+
+function boundaryUiForDevice(device, parts) {
+    if (!parts || parts.length === 0) {
+        return { text: 'No boundary configured', klass: 'rnz-boundary-na' };
+    }
+    const pos = positions[device.id];
+    if (
+        !pos ||
+        typeof pos.latitude !== 'number' ||
+        typeof pos.longitude !== 'number' ||
+        Number.isNaN(pos.latitude) ||
+        Number.isNaN(pos.longitude)
+    ) {
+        return { text: 'No position', klass: 'rnz-boundary-unknown' };
+    }
+    const inside = isInsideBoundaryParts(pos.latitude, pos.longitude, parts);
+    return inside
+        ? { text: 'Inside RNZ boundary', klass: 'rnz-boundary-in' }
+        : { text: 'Outside RNZ boundary', klass: 'rnz-boundary-out' };
+}
+
 function mergeDevicesFromPositions(deviceList, positionsMap) {
     const list = Array.isArray(deviceList) ? deviceList.slice() : [];
     const seen = new Set(list.map((d) => d && d.id).filter((id) => id != null));
@@ -455,25 +489,10 @@ function updateMapMarkers() {
     }
 }
 
-function renderFenceAndLists(matched, mode, parts, stoppedState) {
-    const sumEl = document.getElementById('rnzFenceSummary');
-    const outEl = document.getElementById('rnzOutsideList');
+function renderFenceAndLists(parts, stoppedState) {
     const warnEl = document.getElementById('rnzWarningsList');
     const warnBox = document.getElementById('rnzWarningBox');
 
-    const names = matched.map((g) => `"${g.name || 'Unnamed'}"`).join(', ');
-
-    if (sumEl) {
-        drawGeofencesOnMap(geofences, matched);
-        const msg = summarizeFenceMode(mode, matched.length, geofences.length);
-        sumEl.innerHTML =
-            `<p class="rnz-fence-summary-text"><strong>Geofences on map:</strong> ${geofences.length}. ${escapeHtml(msg)}</p>` +
-            (matched.length
-                ? `<p class="rnz-fence-names">Boundary set: ${escapeHtml(names || '—')}</p>`
-                : '');
-    }
-
-    const outside = [];
     const warnings = [];
     const now = Date.now();
 
@@ -483,8 +502,6 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
             if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
             const inside = isInsideBoundaryParts(pos.latitude, pos.longitude, parts);
             if (!inside) {
-                const kmh = typeof pos.speed === 'number' ? (pos.speed * 3.6).toFixed(1) : '—';
-                outside.push({ device: d, pos, kmh });
                 if (isCriticalOutsideAlert(d, pos, parts, stoppedState)) {
                     const fixMs = pos.fixTime ? new Date(pos.fixTime).getTime() : 0;
                     const fixAgeMs = fixMs > 0 ? now - fixMs : null;
@@ -499,26 +516,6 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
                     warnings.push({ device: d, pos, detail });
                 }
             }
-        }
-    }
-
-    if (outEl) {
-        if (parts.length === 0) {
-            outEl.innerHTML = '<p class="rnz-list-empty">Define circle/polygon geofences in Traccar to enable outside detection.</p>';
-        } else if (outside.length === 0) {
-            outEl.innerHTML = '<p class="rnz-list-empty">All devices with a fix are inside the boundary set.</p>';
-        } else {
-            outEl.innerHTML =
-                '<ul class="rnz-alert-list">' +
-                outside
-                    .map(
-                        (o) =>
-                            `<li><strong>${escapeHtml(o.device.name)}</strong> — ${o.kmh} km/h · last ${escapeHtml(
-                                formatDateTime(o.pos.fixTime)
-                            )}</li>`
-                    )
-                    .join('') +
-                '</ul>';
         }
     }
 
@@ -585,6 +582,8 @@ async function updateData() {
         });
 
         geofences = Array.isArray(data.geofences) ? data.geofences : [];
+        groups = Array.isArray(data.groups) ? data.groups : [];
+        groupLookup = buildGroupLookup(groups);
 
         devices = mergeDevicesFromPositions(rawDevices, positions);
 
@@ -596,9 +595,10 @@ async function updateData() {
         lastStoppedState = stoppedState;
 
         drawGeofencesOnMap(geofences, matched);
-        renderFenceAndLists(matched, mode, parts, stoppedState);
+        renderFenceAndLists(parts, stoppedState);
 
-        renderDevices();
+        clearSnapshotError();
+        renderFleetDevices(parts);
         updateMapMarkers();
         updateTimestamp();
 
@@ -611,8 +611,9 @@ async function updateData() {
     }
 }
 
-function renderDevices() {
-    const container = document.getElementById('devicesContainer');
+function renderFleetDevices(parts) {
+    const container = document.getElementById('rnzFleetDevicesList');
+    if (!container) return;
 
     if (devices.length === 0) {
         container.innerHTML =
@@ -625,21 +626,14 @@ function renderDevices() {
     devices.forEach((device) => {
         const position = positions[device.id];
         const isOnline = position && isPositionRecent(position.fixTime);
-        const speedKmh = position ? (position.speed * 3.6).toFixed(1) : 'N/A';
-        const latitude = position ? position.latitude.toFixed(6) : 'N/A';
-        const longitude = position ? position.longitude.toFixed(6) : 'N/A';
-        const course = position ? position.course.toFixed(0) : 'N/A';
-        const altitude = position ? position.altitude.toFixed(1) : 'N/A';
-        const fixTime = position ? formatDateTime(position.fixTime) : 'N/A';
-        const address = position ? position.address || 'Unknown' : 'Unknown';
-
         const statusClass = isOnline ? 'online' : 'offline';
-        const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
-        const speedClass = position && position.speed > 5 ? 'speed-warning' : 'speed-normal';
+        const statusText = isOnline ? 'Online' : 'Offline';
         const critical =
             position &&
             isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
-        const cardCriticalClass = critical ? ' device-card--critical' : '';
+        const rowCriticalClass = critical ? ' rnz-fleet-row--critical' : '';
+        const boundary = boundaryUiForDevice(device, parts);
+        const groupName = escapeHtml(groupLabelForDevice(device));
         const hasLoc =
             position &&
             typeof position.latitude === 'number' &&
@@ -647,42 +641,18 @@ function renderDevices() {
             !Number.isNaN(position.latitude) &&
             !Number.isNaN(position.longitude);
         const nameHtml = hasLoc
-            ? `<button type="button" class="device-name device-name--fly" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(device.name)}</button>`
-            : `<div class="device-name">${escapeHtml(device.name)}</div>`;
+            ? `<button type="button" class="device-name device-name--fly rnz-fleet-name-btn" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(device.name)}</button>`
+            : `<span class="rnz-fleet-name">${escapeHtml(device.name)}</span>`;
 
         html += `
-            <div class="device-card${cardCriticalClass}">
-                ${nameHtml}
-                <div class="device-status ${statusClass}">${statusText}</div>
-                <div class="device-info">
-                    <div class="info-row">
-                        <span class="info-label">Speed:</span>
-                        <span class="info-value ${speedClass}">${speedKmh} km/h</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Latitude:</span>
-                        <span class="info-value">${latitude}°</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Longitude:</span>
-                        <span class="info-value">${longitude}°</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Course:</span>
-                        <span class="info-value">${course}°</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Altitude:</span>
-                        <span class="info-value">${altitude} m</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Last Update:</span>
-                        <span class="info-value">${fixTime}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Location:</span>
-                        <span class="info-value">${escapeHtml(address)}</span>
-                    </div>
+            <div class="rnz-fleet-row${rowCriticalClass}">
+                <div class="rnz-fleet-row-top">
+                    ${nameHtml}
+                    <span class="device-status ${statusClass}">${statusText}</span>
+                </div>
+                <div class="rnz-fleet-meta">
+                    <span class="rnz-fleet-chip ${boundary.klass}">${escapeHtml(boundary.text)}</span>
+                    <span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>
                 </div>
             </div>
         `;
@@ -711,10 +681,10 @@ function wireDeviceNameFlyTo() {
         }
     };
 
-    const dev = document.getElementById('devicesContainer');
-    if (dev && dev.dataset.rnzFlyBound !== '1') {
-        dev.dataset.rnzFlyBound = '1';
-        dev.addEventListener('click', handler);
+    const fleet = document.getElementById('rnzFleetDevicesList');
+    if (fleet && fleet.dataset.rnzFlyBound !== '1') {
+        fleet.dataset.rnzFlyBound = '1';
+        fleet.addEventListener('click', handler);
     }
 
     const warnList = document.getElementById('rnzWarningsList');
@@ -733,9 +703,24 @@ function updateTimestamp() {
     if (el) el.textContent = `Last updated: ${h}:${m}:${s}`;
 }
 
+function clearSnapshotError() {
+    const errEl = document.getElementById('rnzSnapshotError');
+    if (errEl) {
+        errEl.hidden = true;
+        errEl.textContent = '';
+    }
+}
+
 function showError(message) {
-    const container = document.getElementById('devicesContainer');
-    container.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+    const errEl = document.getElementById('rnzSnapshotError');
+    if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = message;
+    }
+    const fleet = document.getElementById('rnzFleetDevicesList');
+    if (fleet) {
+        fleet.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

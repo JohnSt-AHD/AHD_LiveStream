@@ -58,33 +58,27 @@
                 </div>
                 <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
                     <details class="rnz-panel-details" open>
-                        <summary class="rnz-panel-summary">Geofences &amp; boundary</summary>
-                        <div class="rnz-panel-inner">
-                            <div id="rnzFenceSummary" class="rnz-fence-summary"></div>
-                        </div>
-                    </details>
-
-                    <details class="rnz-panel-details" open>
-                        <summary class="rnz-panel-summary">Outside boundary now</summary>
-                        <div class="rnz-panel-inner">
-                            <div id="rnzOutsideList"></div>
-                        </div>
-                    </details>
-
-                    <details class="rnz-panel-details rnz-panel-stretch" open>
-                        <summary class="rnz-panel-summary">Live updates &amp; devices</summary>
-                        <div class="rnz-panel-inner rnz-panel-inner--devices">
+                        <summary class="rnz-panel-summary">Live updates</summary>
+                        <div class="rnz-panel-inner rnz-panel-inner--live">
+                            <div id="rnzSnapshotError" class="rnz-snapshot-error" hidden></div>
                             <div class="rnz-panel-head">
                                 <label class="rnz-toggle">
                                     <input type="checkbox" id="liveUpdatesToggle" checked>
                                     <span>Live updates (every 10s)</span>
                                 </label>
                             </div>
-                            <div class="devices-container" id="devicesContainer">
-                                <div class="loading">Loading device data…</div>
-                            </div>
                             <div class="rnz-footer-inline">
                                 <span id="lastUpdate">Last updated: —</span>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="rnz-panel-details rnz-panel-stretch" open>
+                        <summary class="rnz-panel-summary">Devices &amp; status</summary>
+                        <div class="rnz-panel-inner rnz-panel-inner--fleet">
+                            <p class="rnz-fleet-hint">Online = last fix within 5 minutes. Boundary uses the same Rowing NZ / RNZ / RowSafe geofence rules as the map.</p>
+                            <div class="rnz-fleet-devices-scroll" id="rnzFleetDevicesList">
+                                <div class="loading">Loading device data…</div>
                             </div>
                         </div>
                     </details>
