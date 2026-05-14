@@ -57,6 +57,13 @@
                     </button>
                 </div>
                 <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
+                    <div class="rnz-fullscreen-toolbar">
+                        <label class="rnz-toggle">
+                            <input type="checkbox" id="rnzMapFullscreenToggle">
+                            <span>Fullscreen map</span>
+                        </label>
+                        <span class="rnz-fullscreen-hint">Fills area below header; footer stays visible.</span>
+                    </div>
                     <details class="rnz-panel-details" open>
                         <summary class="rnz-panel-summary">Live updates</summary>
                         <div class="rnz-panel-inner rnz-panel-inner--live">
@@ -92,6 +99,7 @@
                 </div>
             </details>
         </section>
+        <button type="button" id="rnzMapFullscreenExitBtn" class="rnz-map-fullscreen-exit" hidden>Exit fullscreen</button>
     </main>
 
     <footer class="rnz-footer">

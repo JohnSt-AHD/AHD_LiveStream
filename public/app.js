@@ -911,9 +911,30 @@ function updateMapMarkers() {
     }
 }
 
+function wireMapFullscreenMain() {
+    const chk = document.getElementById('mapFullscreenToggle');
+    const exitBtn = document.getElementById('mapFullscreenExitBtn');
+    if (!chk || !exitBtn || chk.dataset.bound === '1') return;
+    chk.dataset.bound = '1';
+    const setFs = (on) => {
+        document.body.classList.toggle('map-fullscreen-main', on);
+        chk.checked = on;
+        exitBtn.hidden = !on;
+        scheduleMapResize();
+    };
+    chk.addEventListener('change', () => setFs(chk.checked));
+    exitBtn.addEventListener('click', () => setFs(false));
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('map-fullscreen-main')) {
+            setFs(false);
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initCustomMapPins();
+    wireMapFullscreenMain();
     wireLiveToggle();
     wireHistoryPanel();
     wireSpeedLauncher();

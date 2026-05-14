@@ -81,17 +81,19 @@
                 <div class="history-status" id="speedLauncherStatus"></div>
             </div>
 
-            <div class="devices-container" id="devicesContainer">
-                <div class="loading">Loading device data...</div>
-            </div>
-
             <div class="footer">
                 <span class="last-update" id="lastUpdate">Last updated: --:--:--</span>
                 <div class="footer-alt"><a href="rowsafe-map.html">Alternate map (RowingHub / RowSafe style)</a></div>
             </div>
         </div>
 
-            <aside class="overlay-panel-right" aria-label="Custom map markers">
+            <aside class="overlay-panel-right" aria-label="Map tools and devices">
+                <label class="map-fullscreen-toggle live-toggle">
+                    <input type="checkbox" id="mapFullscreenToggle">
+                    <span class="live-toggle-label">Fullscreen map</span>
+                    <span class="live-toggle-hint">over side panels</span>
+                </label>
+
                 <details class="custom-markers-details" id="customMarkersDetails">
                     <summary class="custom-markers-summary">Custom markers</summary>
                     <div class="custom-markers-body">
@@ -115,7 +117,16 @@
                         <div id="customMarkersList" class="custom-markers-list"></div>
                     </div>
                 </details>
+
+                <div class="right-panel-devices-wrap">
+                    <div class="right-panel-section-title">Devices</div>
+                    <div class="devices-container" id="devicesContainer">
+                        <div class="loading">Loading device data...</div>
+                    </div>
+                </div>
             </aside>
+
+            <button type="button" id="mapFullscreenExitBtn" class="map-fullscreen-exit" hidden>Exit fullscreen</button>
         </div>
 
         <div id="historyChartDock" class="history-chart-dock" hidden>

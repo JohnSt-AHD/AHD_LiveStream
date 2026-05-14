@@ -13,6 +13,8 @@
     --rnz-line: #cbd5e1;
     --rnz-safe: #059669;
     --rnz-warn: #c2410c;
+    --rnz-fs-header-h: 100px;
+    --rnz-fs-footer-h: 52px;
 }
 
 * {
@@ -971,4 +973,74 @@ body.rnz-page {
     font-weight: 700;
     color: var(--rnz-navy);
     margin-bottom: 6px;
+}
+
+.rnz-fullscreen-toolbar {
+    flex-shrink: 0;
+    margin: 0 0 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rnz-line);
+}
+
+.rnz-fullscreen-hint {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--rnz-muted);
+    margin-top: 6px;
+    line-height: 1.35;
+}
+
+.rnz-map-fullscreen-exit {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--rnz-fs-footer-h, 52px) + 12px);
+    transform: translateX(-50%);
+    z-index: 2200;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 6px;
+    border: 2px solid var(--rnz-teal);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--rnz-navy);
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
+}
+
+.rnz-map-fullscreen-exit:hover {
+    background: var(--rnz-cream);
+}
+
+body.rnz-map-fullscreen .rnz-left-column,
+body.rnz-map-fullscreen .rnz-sidebar,
+body.rnz-map-fullscreen .rnz-fleet-dock {
+    display: none !important;
+}
+
+body.rnz-map-fullscreen .rnz-dashboard {
+    display: block;
+    padding: 0;
+    min-height: 0;
+    border-top: none;
+}
+
+body.rnz-map-fullscreen .rnz-map-stage {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--rnz-fs-header-h, 100px);
+    bottom: var(--rnz-fs-footer-h, 52px);
+    width: 100vw !important;
+    max-width: none !important;
+    height: auto !important;
+    margin: 0;
+    z-index: 1500;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+}
+
+body.rnz-map-fullscreen #map.rnz-map {
+    border-radius: 0;
 }

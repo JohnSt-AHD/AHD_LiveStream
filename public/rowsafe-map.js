@@ -710,12 +710,52 @@ function showError(message) {
     }
 }
 
+function updateRnzFullscreenLayoutVars() {
+    const header = document.querySelector('.rnz-header');
+    const footer = document.querySelector('.rnz-footer');
+    const h = header ? Math.ceil(header.getBoundingClientRect().height) : 100;
+    const f = footer ? Math.ceil(footer.getBoundingClientRect().height) : 52;
+    document.documentElement.style.setProperty('--rnz-fs-header-h', `${h}px`);
+    document.documentElement.style.setProperty('--rnz-fs-footer-h', `${f}px`);
+}
+
+function setRnzMapFullscreen(on) {
+    document.body.classList.toggle('rnz-map-fullscreen', on);
+    const chk = document.getElementById('rnzMapFullscreenToggle');
+    const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
+    if (chk) chk.checked = on;
+    if (exitBtn) exitBtn.hidden = !on;
+    if (on) updateRnzFullscreenLayoutVars();
+    setTimeout(() => map && map.invalidateSize(), 80);
+}
+
+function wireRnzMapFullscreen() {
+    const chk = document.getElementById('rnzMapFullscreenToggle');
+    const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
+    if (!chk || !exitBtn || chk.dataset.bound === '1') return;
+    chk.dataset.bound = '1';
+    chk.addEventListener('change', () => setRnzMapFullscreen(chk.checked));
+    exitBtn.addEventListener('click', () => setRnzMapFullscreen(false));
+    window.addEventListener('resize', () => {
+        if (document.body.classList.contains('rnz-map-fullscreen')) {
+            updateRnzFullscreenLayoutVars();
+            setTimeout(() => map && map.invalidateSize(), 50);
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.body.classList.contains('rnz-map-fullscreen')) {
+            setRnzMapFullscreen(false);
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     wireLiveToggle();
     wireSidebarCollapse();
     wireLeftCollapse();
     wireFleetDockResize();
+    wireRnzMapFullscreen();
     wireDeviceNameFlyTo();
     authenticate();
     startPolling();
