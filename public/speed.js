@@ -18,6 +18,18 @@ const card = document.getElementById('speedCard');
 const errEl = document.getElementById('speedError');
 const elSplit = document.getElementById('scSplit');
 
+/** idle | playingIntro | pausedSpeed | looping — Space/O drive the intro and overlay. */
+let overlayPhase = 'idle';
+
+function updateCardVisibility() {
+    if (!card) return;
+    if (!errEl.hidden) {
+        card.hidden = true;
+        return;
+    }
+    card.hidden = overlayPhase !== 'pausedSpeed';
+}
+
 /** Time for 500 m at constant speed (m/s), as M:SS.d — no unit suffix. */
 function formatSplit500FromMps(speedMps) {
     if (!Number.isFinite(speedMps) || speedMps < 0.01) return '—';
@@ -47,7 +59,54 @@ function formatSplit500FromMps(speedMps) {
 function showError(msg) {
     errEl.textContent = msg;
     errEl.hidden = false;
-    card.hidden = true;
+    updateCardVisibility();
+}
+
+function initSpeedBackgroundVideo() {
+    const vid = document.getElementById('speedBgVideo');
+    if (!vid) return;
+    vid.muted = true;
+    vid.defaultMuted = true;
+    vid.loop = false;
+    vid.pause();
+    vid.currentTime = 0;
+
+    const canShowSpeedOverlay = () => Number.isFinite(deviceId) && deviceId >= 1;
+
+    vid.addEventListener('timeupdate', () => {
+        if (overlayPhase !== 'playingIntro') return;
+        if (vid.currentTime < 1.99) return;
+        vid.pause();
+        const dur = Number.isFinite(vid.duration) && vid.duration > 0 ? vid.duration : 2;
+        vid.currentTime = Math.max(0, Math.min(2, dur - 1 / 30));
+        if (canShowSpeedOverlay() && errEl.hidden) {
+            overlayPhase = 'pausedSpeed';
+        } else {
+            overlayPhase = 'idle';
+        }
+        updateCardVisibility();
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (overlayPhase === 'playingIntro') return;
+            e.preventDefault();
+            overlayPhase = 'playingIntro';
+            vid.loop = false;
+            vid.currentTime = 0;
+            updateCardVisibility();
+            vid.play().catch(() => {});
+            return;
+        }
+        if (e.code === 'KeyO') {
+            if (overlayPhase !== 'pausedSpeed') return;
+            e.preventDefault();
+            overlayPhase = 'looping';
+            vid.loop = true;
+            updateCardVisibility();
+            vid.play().catch(() => {});
+        }
+    });
 }
 
 if (!Number.isFinite(deviceId) || deviceId < 1) {
@@ -60,9 +119,11 @@ if (!Number.isFinite(deviceId) || deviceId < 1) {
     card.style.top = `${posTopPct}%`;
     card.style.width = `${widthPct}%`;
     card.style.maxWidth = '520px';
-    card.hidden = false;
     errEl.hidden = true;
+    updateCardVisibility();
 }
+
+initSpeedBackgroundVideo();
 
 function mergeDevicesFromPositions(deviceList, positionsMap) {
     const list = Array.isArray(deviceList) ? deviceList.slice() : [];
@@ -91,11 +152,10 @@ async function tick() {
             elSplit.classList.remove('speed-warn');
             errEl.textContent = data.error || `Error ${res.status}`;
             errEl.hidden = false;
-            card.hidden = true;
+            updateCardVisibility();
             return;
         }
         errEl.hidden = true;
-        card.hidden = false;
 
         const positionsMap = {};
         (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
@@ -106,16 +166,18 @@ async function tick() {
         if (!pos || typeof pos.speed !== 'number') {
             elSplit.textContent = '—';
             elSplit.classList.remove('speed-warn');
+            updateCardVisibility();
             return;
         }
 
         elSplit.textContent = formatSplit500FromMps(pos.speed);
         elSplit.classList.toggle('speed-warn', pos.speed > 5);
+        updateCardVisibility();
     } catch (e) {
         elSplit.textContent = '—';
         errEl.textContent = e.message || 'Network error';
         errEl.hidden = false;
-        card.hidden = true;
+        updateCardVisibility();
     }
 }
 

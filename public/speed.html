@@ -7,6 +7,21 @@
     <link rel="stylesheet" href="speed.css">
 </head>
 <body>
+    <!-- WebM VP9 + alpha first (Chrome / vMix Web Browser); ProRes .mov fallback (e.g. Safari). -->
+    <div class="speed-bg-video-wrap" aria-hidden="true">
+        <video
+            id="speedBgVideo"
+            class="speed-bg-video"
+            muted
+            playsinline
+            webkit-playsinline
+            preload="auto"
+            disablePictureInPicture
+        >
+            <source src="speed-race-background.webm" type="video/webm">
+            <source src="speed-race-background.mov" type="video/quicktime">
+        </video>
+    </div>
     <div id="speedError" class="speed-page-error" hidden></div>
     <div id="speedCard" class="speed-card" hidden>
         <div class="speed-card-value" id="scSplit">—</div>
