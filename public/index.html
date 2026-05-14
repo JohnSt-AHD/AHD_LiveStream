@@ -9,21 +9,22 @@
 </head>
 <body>
     <div class="app-root">
-        <div id="map" role="application" aria-label="Device map"></div>
-        <div id="speedLegend" class="speed-legend" hidden>
-            <div class="speed-legend-title">Speed (m/s)</div>
-            <div class="speed-legend-bar" aria-hidden="true"></div>
-            <div class="speed-legend-labels"><span>0</span><span>20</span></div>
-        </div>
-        <div class="overlay-panel">
-            <div class="header">
-                <h1>Altitude HD</h1>
-                <label class="live-toggle">
-                    <input type="checkbox" id="liveUpdatesToggle" checked>
-                    <span class="live-toggle-label">Live updates</span>
-                    <span class="live-toggle-hint">every 10s</span>
-                </label>
+        <div class="app-map-area">
+            <div id="map" role="application" aria-label="Device map"></div>
+            <div id="speedLegend" class="speed-legend" hidden>
+                <div class="speed-legend-title">Speed (m/s)</div>
+                <div class="speed-legend-bar" aria-hidden="true"></div>
+                <div class="speed-legend-labels"><span>0</span><span>20</span></div>
             </div>
+            <div class="overlay-panel">
+                <div class="header">
+                    <h1>Altitude HD</h1>
+                    <label class="live-toggle">
+                        <input type="checkbox" id="liveUpdatesToggle" checked>
+                        <span class="live-toggle-label">Live updates</span>
+                        <span class="live-toggle-hint">every 10s</span>
+                    </label>
+                </div>
 
             <div class="history-panel" id="historyPanel">
                 <div class="history-title">Route history</div>
@@ -45,12 +46,6 @@
                     <button type="button" class="history-btn" id="historyClearBtn">Clear route</button>
                 </div>
                 <div class="history-status" id="historyStatus"></div>
-                <div id="historyChartWrap" class="history-chart-wrap" hidden>
-                    <div class="history-chart-title">Speed vs time</div>
-                    <div class="history-chart-canvas-box">
-                        <canvas id="historySpeedChart" aria-label="Speed versus time chart"></canvas>
-                    </div>
-                </div>
             </div>
 
             <div class="speed-launcher-panel" id="speedLauncherPanel">
@@ -93,6 +88,16 @@
             <div class="footer">
                 <span class="last-update" id="lastUpdate">Last updated: --:--:--</span>
                 <div class="footer-alt"><a href="rowsafe-map.html">Alternate map (RowingHub / RowSafe style)</a></div>
+            </div>
+        </div>
+        </div>
+
+        <div id="historyChartDock" class="history-chart-dock" hidden>
+            <div class="history-chart-dock-inner">
+                <div class="history-chart-title">Speed vs time (km/h)</div>
+                <div class="history-chart-canvas-box">
+                    <canvas id="historySpeedChart" aria-label="Speed versus time chart"></canvas>
+                </div>
             </div>
         </div>
     </div>

@@ -190,6 +190,29 @@ function clearHistoryMap() {
     destroyHistoryChart();
 }
 
+function scheduleMapResize() {
+    if (!map || typeof map.invalidateSize !== 'function') return;
+    queueMicrotask(() => map.invalidateSize());
+    requestAnimationFrame(() => map.invalidateSize());
+    setTimeout(() => map.invalidateSize(), 400);
+}
+
+/** LayerGroup has no bringToFront in some Leaflet builds; fall back to per-layer. */
+function bringHistoryRouteAboveTiles() {
+    if (!historyLayer) return;
+    if (typeof historyLayer.bringToFront === 'function') {
+        historyLayer.bringToFront();
+        return;
+    }
+    if (typeof historyLayer.eachLayer === 'function') {
+        historyLayer.eachLayer((layer) => {
+            if (layer && typeof layer.bringToFront === 'function') {
+                layer.bringToFront();
+            }
+        });
+    }
+}
+
 function colorForDeviceId(deviceId) {
     const golden = 137.508;
     const hue = (Number(deviceId) * golden) % 360;
@@ -205,11 +228,12 @@ function destroyHistoryChart() {
         }
     }
     historySpeedChart = null;
-    const wrap = document.getElementById('historyChartWrap');
-    if (wrap) {
-        wrap.setAttribute('hidden', '');
-        wrap.classList.remove('history-chart-wrap--visible');
+    const dock = document.getElementById('historyChartDock');
+    if (dock) {
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
     }
+    scheduleMapResize();
 }
 
 const MAX_CHART_POINTS_PER_DEVICE = 450;
@@ -235,7 +259,7 @@ function chartPointFromPosition(p) {
 }
 
 function replaceHistorySpeedCanvas() {
-    const box = document.querySelector('#historyChartWrap .history-chart-canvas-box');
+    const box = document.querySelector('#historyChartDock .history-chart-canvas-box');
     if (!box) return null;
     const old = document.getElementById('historySpeedChart');
     if (old && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
@@ -252,16 +276,16 @@ function replaceHistorySpeedCanvas() {
 }
 
 function renderHistorySpeedChart(deviceRoutes) {
-    const wrap = document.getElementById('historyChartWrap');
-    if (!wrap) {
+    const dock = document.getElementById('historyChartDock');
+    if (!dock) {
         return false;
     }
 
     const chartCtor = typeof Chart !== 'undefined' ? Chart : typeof window !== 'undefined' ? window.Chart : undefined;
     if (typeof chartCtor !== 'function') {
         console.warn('Chart.js not loaded; speed chart skipped.');
-        wrap.setAttribute('hidden', '');
-        wrap.classList.remove('history-chart-wrap--visible');
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
         return false;
     }
 
@@ -269,8 +293,8 @@ function renderHistorySpeedChart(deviceRoutes) {
 
     const hasData = deviceRoutes.some((r) => r.points && r.points.length > 0);
     if (!hasData) {
-        wrap.setAttribute('hidden', '');
-        wrap.classList.remove('history-chart-wrap--visible');
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
         return false;
     }
 
@@ -300,21 +324,21 @@ function renderHistorySpeedChart(deviceRoutes) {
         .filter((ds) => ds.data.length > 0);
 
     if (datasets.length === 0) {
-        wrap.setAttribute('hidden', '');
-        wrap.classList.remove('history-chart-wrap--visible');
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
         return false;
     }
 
     const canvas = replaceHistorySpeedCanvas();
     if (!canvas || !canvas.getContext('2d')) {
-        wrap.setAttribute('hidden', '');
-        wrap.classList.remove('history-chart-wrap--visible');
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
         return false;
     }
 
-    wrap.removeAttribute('hidden');
-    wrap.classList.add('history-chart-wrap--visible');
-    void wrap.offsetHeight;
+    dock.removeAttribute('hidden');
+    dock.classList.add('history-chart-dock--visible');
+    void dock.offsetHeight;
 
     const chartOptions = {
         type: 'line',
@@ -385,11 +409,13 @@ function renderHistorySpeedChart(deviceRoutes) {
                 historySpeedChart.resize();
             }
         });
+        scheduleMapResize();
         return true;
     } catch (err) {
         console.error('Chart create failed:', err);
-        wrap.setAttribute('hidden', '');
-        wrap.classList.remove('history-chart-wrap--visible');
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+        scheduleMapResize();
         return false;
     }
 }
@@ -482,7 +508,7 @@ function renderHistoryRouteOnMap(deviceRoutes) {
         parts.push(seg);
     }
 
-    historyLayer.bringToFront();
+    bringHistoryRouteAboveTiles();
     const legend = document.getElementById('speedLegend');
     if (legend) legend.hidden = multi;
 
