@@ -14,6 +14,7 @@ let pollTimer = null;
 
 let historyLayer = null;
 let historyDefaultsApplied = false;
+let historySpeedChart = null;
 
 const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
@@ -120,7 +121,17 @@ function populateDeviceSelect(selectId, placeholder) {
 }
 
 function populateHistoryDeviceSelect() {
-    populateDeviceSelect('historyDevice', 'Choose device…');
+    const sel = document.getElementById('historyDevice');
+    if (!sel) return;
+    const prev = new Set(Array.from(sel.selectedOptions || []).map((o) => o.value));
+    sel.innerHTML = '';
+    devices.forEach((d) => {
+        const opt = document.createElement('option');
+        opt.value = String(d.id);
+        opt.textContent = d.name || `Device ${d.id}`;
+        if (prev.has(opt.value)) opt.selected = true;
+        sel.appendChild(opt);
+    });
 }
 
 function populateSpeedScreenDeviceSelect() {
@@ -176,6 +187,119 @@ function clearHistoryMap() {
     }
     const leg = document.getElementById('speedLegend');
     if (leg) leg.hidden = true;
+    destroyHistoryChart();
+}
+
+function colorForDeviceId(deviceId) {
+    const golden = 137.508;
+    const hue = (Number(deviceId) * golden) % 360;
+    return `hsl(${hue}, 72%, 52%)`;
+}
+
+function destroyHistoryChart() {
+    if (historySpeedChart) {
+        historySpeedChart.destroy();
+        historySpeedChart = null;
+    }
+    const wrap = document.getElementById('historyChartWrap');
+    if (wrap) wrap.hidden = true;
+}
+
+const MAX_CHART_POINTS_PER_DEVICE = 450;
+
+function renderHistorySpeedChart(deviceRoutes) {
+    const wrap = document.getElementById('historyChartWrap');
+    const canvas = document.getElementById('historySpeedChart');
+    if (!wrap || !canvas || typeof Chart === 'undefined') {
+        return;
+    }
+
+    destroyHistoryChart();
+
+    const hasData = deviceRoutes.some((r) => r.points && r.points.length > 0);
+    if (!hasData) {
+        wrap.hidden = true;
+        return;
+    }
+
+    wrap.hidden = false;
+
+    const datasets = deviceRoutes.map(({ id, name, points }) => {
+        const sorted = sortRoutePoints(points);
+        const dec = decimateRoutePoints(sorted, MAX_CHART_POINTS_PER_DEVICE);
+        const color = colorForDeviceId(id);
+        return {
+            label: name || `Device ${id}`,
+            data: dec.map((p) => ({
+                x: new Date(p.fixTime || p.deviceTime).getTime(),
+                y: (typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0) * 3.6,
+            })),
+            borderColor: color,
+            backgroundColor: color,
+            fill: false,
+            tension: 0.12,
+            pointRadius: 0,
+            pointHitRadius: 5,
+            borderWidth: 2,
+        };
+    });
+
+    historySpeedChart = new Chart(canvas, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            parsing: false,
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: 'Time', color: '#9ad8ff' },
+                    ticks: {
+                        color: '#aaa',
+                        maxTicksLimit: 8,
+                        callback(value) {
+                            const d = new Date(value);
+                            return Number.isNaN(d.getTime())
+                                ? ''
+                                : d.toLocaleString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                  });
+                        },
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                },
+                y: {
+                    title: { display: true, text: 'Speed (km/h)', color: '#9ad8ff' },
+                    ticks: { color: '#aaa' },
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                },
+            },
+            plugins: {
+                legend: {
+                    display: deviceRoutes.length > 1,
+                    labels: { color: '#e0e0e0', boxWidth: 12 },
+                },
+                tooltip: {
+                    callbacks: {
+                        title(items) {
+                            if (!items.length) return '';
+                            const x = items[0].parsed.x;
+                            const d = new Date(x);
+                            return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
+                        },
+                        label(item) {
+                            return `${item.dataset.label}: ${item.formattedValue} km/h`;
+                        },
+                    },
+                },
+            },
+        },
+    });
 }
 
 function formatDateTimeFull(dateString) {
@@ -186,86 +310,107 @@ function formatDateTimeFull(dateString) {
     return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'medium' });
 }
 
-function renderHistoryRouteOnMap(rawPoints) {
+function renderHistoryRouteOnMap(deviceRoutes) {
     if (!historyLayer || !map) return;
     historyLayer.clearLayers();
 
-    const sorted = sortRoutePoints(rawPoints);
-    if (sorted.length === 0) {
-        setHistoryStatus('No valid positions in that range.');
+    if (!Array.isArray(deviceRoutes) || deviceRoutes.length === 0) {
+        setHistoryStatus('No devices to draw.');
         const leg = document.getElementById('speedLegend');
         if (leg) leg.hidden = true;
+        destroyHistoryChart();
         return;
     }
 
-    const decimated = decimateRoutePoints(sorted, MAX_ROUTE_POINTS_DRAW);
-    const bounds = [];
+    const multi = deviceRoutes.length > 1;
+    const allBounds = [];
+    const parts = [];
 
-    for (let i = 0; i < decimated.length; i++) {
-        const p = decimated[i];
-        const latlng = [p.latitude, p.longitude];
-        bounds.push(latlng);
-        const spd = speedMpsForColor(p);
-        const color = speedToRainbowColor(spd);
-
-        if (i > 0) {
-            const prev = decimated[i - 1];
-            L.polyline(
-                [
-                    [prev.latitude, prev.longitude],
-                    latlng,
-                ],
-                {
-                    color,
-                    weight: 4,
-                    opacity: 0.88,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                }
-            ).addTo(historyLayer);
+    for (const { id, name, points } of deviceRoutes) {
+        const sorted = sortRoutePoints(points);
+        if (sorted.length === 0) {
+            parts.push(`${name || id}: 0 positions`);
+            continue;
         }
 
-        const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
-        const kmh = rawSpeed * 3.6;
-        const popup =
-            `<div class="map-popup-title">History point</div>` +
-            `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over 0–${SPEED_COLOR_MAX_MS} m/s</div>` +
-            `<div><strong>≈</strong> ${kmh.toFixed(1)} km/h (same factor as live panel)</div>` +
-            `<div><strong>Time:</strong> ${escapeHtml(formatDateTimeFull(p.fixTime || p.deviceTime))}</div>`;
+        const decimated = decimateRoutePoints(sorted, MAX_ROUTE_POINTS_DRAW);
+        const routeColor = colorForDeviceId(id);
 
-        L.circleMarker(latlng, {
-            radius: 5,
-            weight: 1,
-            color: '#1a1a1a',
-            fillColor: color,
-            fillOpacity: 0.95,
-        })
-            .bindPopup(popup, { maxWidth: 300 })
-            .addTo(historyLayer);
+        for (let i = 0; i < decimated.length; i++) {
+            const p = decimated[i];
+            const latlng = [p.latitude, p.longitude];
+            allBounds.push(latlng);
+            const spd = speedMpsForColor(p);
+            const segmentColor = multi ? routeColor : speedToRainbowColor(spd);
+
+            if (i > 0) {
+                const prev = decimated[i - 1];
+                L.polyline(
+                    [
+                        [prev.latitude, prev.longitude],
+                        latlng,
+                    ],
+                    {
+                        color: segmentColor,
+                        weight: 4,
+                        opacity: 0.88,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                    }
+                ).addTo(historyLayer);
+            }
+
+            const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+            const kmh = rawSpeed * 3.6;
+            const devLabel = multi ? `<div><strong>Device:</strong> ${escapeHtml(name || `Device ${id}`)}</div>` : '';
+            const popup =
+                `<div class="map-popup-title">History point</div>` +
+                devLabel +
+                `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over 0–${SPEED_COLOR_MAX_MS} m/s</div>` +
+                `<div><strong>≈</strong> ${kmh.toFixed(1)} km/h (same factor as live panel)</div>` +
+                `<div><strong>Time:</strong> ${escapeHtml(formatDateTimeFull(p.fixTime || p.deviceTime))}</div>`;
+
+            const markerFill = multi ? routeColor : speedToRainbowColor(spd);
+
+            L.circleMarker(latlng, {
+                radius: 5,
+                weight: 1,
+                color: '#1a1a1a',
+                fillColor: markerFill,
+                fillOpacity: 0.95,
+            })
+                .bindPopup(popup, { maxWidth: 300 })
+                .addTo(historyLayer);
+        }
+
+        let seg = `${name || id}: ${sorted.length} positions`;
+        if (sorted.length > decimated.length) {
+            seg += ` (map ${decimated.length})`;
+        }
+        parts.push(seg);
     }
 
     historyLayer.bringToFront();
     const legend = document.getElementById('speedLegend');
-    if (legend) legend.hidden = false;
+    if (legend) legend.hidden = multi;
 
-    if (bounds.length > 0) {
-        map.fitBounds(L.latLngBounds(bounds), { padding: [48, 48], maxZoom: 17 });
+    if (allBounds.length > 0) {
+        map.fitBounds(L.latLngBounds(allBounds), { padding: [48, 48], maxZoom: 17 });
     }
 
-    let msg = `${sorted.length} positions in range`;
-    if (sorted.length > decimated.length) {
-        msg += ` — showing ${decimated.length} for map performance`;
-    }
-    setHistoryStatus(msg + '.');
+    setHistoryStatus(parts.join(' · ') + '.');
 }
 
 async function loadHistoryRoute() {
-    const deviceId = document.getElementById('historyDevice')?.value;
+    const sel = document.getElementById('historyDevice');
+    const ids = Array.from(sel?.selectedOptions || [])
+        .map((o) => o.value)
+        .filter(Boolean);
     const fromLocal = document.getElementById('historyFrom')?.value;
     const toLocal = document.getElementById('historyTo')?.value;
 
-    if (!deviceId) {
-        setHistoryStatus('Choose a device first.');
+    if (ids.length === 0) {
+        setHistoryStatus('Select one or more devices (Ctrl/Cmd+click).');
         return;
     }
     if (!fromLocal || !toLocal) {
@@ -280,29 +425,60 @@ async function loadHistoryRoute() {
         return;
     }
 
-    setHistoryStatus('Loading route…');
+    setHistoryStatus('Loading routes…');
+    destroyHistoryChart();
+
     try {
-        const params = new URLSearchParams({
-            action: 'route',
-            deviceId,
-            from: fromIso,
-            to: toIso,
-        });
-        const res = await fetch(`${API_BASE}?${params.toString()}`);
-        const data = await res.json().catch(() => ({}));
+        const settled = await Promise.allSettled(
+            ids.map(async (deviceId) => {
+                const params = new URLSearchParams({
+                    action: 'route',
+                    deviceId: String(deviceId),
+                    from: fromIso,
+                    to: toIso,
+                });
+                const res = await fetch(`${API_BASE}?${params.toString()}`);
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const msg = data && data.error ? data.error : `Request failed (${res.status})`;
+                    throw new Error(msg);
+                }
+                if (!Array.isArray(data)) {
+                    throw new Error('Unexpected response from server.');
+                }
+                return data;
+            })
+        );
 
-        if (!res.ok) {
-            const msg = data && data.error ? data.error : `Request failed (${res.status})`;
-            setHistoryStatus(msg);
+        const deviceRoutes = [];
+        const errors = [];
+
+        for (let i = 0; i < settled.length; i++) {
+            const id = Number(ids[i]);
+            const name = devices.find((d) => d.id === id)?.name || `Device ${id}`;
+            const s = settled[i];
+            if (s.status === 'fulfilled') {
+                deviceRoutes.push({ id, name, points: s.value });
+            } else {
+                const reason = s.reason && s.reason.message ? s.reason.message : 'Failed';
+                errors.push(`${name}: ${reason}`);
+            }
+        }
+
+        if (deviceRoutes.length === 0) {
+            setHistoryStatus(errors.length ? errors.join(' · ') : 'No routes loaded.');
             return;
         }
 
-        if (!Array.isArray(data)) {
-            setHistoryStatus('Unexpected response from server.');
-            return;
-        }
+        renderHistoryRouteOnMap(deviceRoutes);
+        const routeSummary = document.getElementById('historyStatus')?.textContent || '';
+        renderHistorySpeedChart(deviceRoutes);
 
-        renderHistoryRouteOnMap(data);
+        let msg = routeSummary;
+        if (errors.length) {
+            msg = `Partial load — ${errors.join(' · ')}. ${routeSummary}`.trim();
+        }
+        setHistoryStatus(msg);
     } catch (error) {
         console.error('Route load error:', error);
         setHistoryStatus(error.message || 'Failed to load route.');

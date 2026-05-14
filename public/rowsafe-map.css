@@ -324,6 +324,207 @@ body.rnz-page {
     gap: 8px;
 }
 
+.rnz-sidebar-scroll > .rnz-panel-stretch {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.rnz-panel-stretch > .rnz-panel-summary {
+    flex-shrink: 0;
+}
+
+.rnz-panel-inner--devices {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.rnz-panel-inner--devices > .rnz-panel-head {
+    flex-shrink: 0;
+    padding: 0 0 10px;
+    border: none;
+}
+
+.rnz-page .devices-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px 2px;
+}
+
+.rnz-page .device-card {
+    background: var(--rnz-cream);
+    border: 1px solid var(--rnz-line);
+    border-left: 4px solid var(--rnz-teal);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.rnz-page .device-card:hover {
+    border-color: #94a3b8;
+}
+
+.rnz-page .device-card--critical {
+    background: #fef2f2;
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2);
+}
+
+.rnz-page .device-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--rnz-navy);
+    margin-bottom: 8px;
+}
+
+.rnz-page button.device-name--fly {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--rnz-navy);
+    margin-bottom: 8px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(26, 95, 138, 0.45);
+    text-underline-offset: 3px;
+}
+
+.rnz-page button.device-name--fly:hover {
+    color: var(--rnz-blue);
+    text-decoration-color: var(--rnz-blue);
+}
+
+.rnz-page .device-card--critical button.device-name--fly {
+    color: #991b1b;
+}
+
+.rnz-page .device-card--critical button.device-name--fly:hover {
+    color: #b91c1c;
+}
+
+.rnz-page button.device-name--fly-inline {
+    display: inline;
+    width: auto;
+    margin-bottom: 0;
+    font-size: inherit;
+    font-weight: 700;
+    vertical-align: baseline;
+}
+
+.rnz-page .device-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+.rnz-page .device-status.online {
+    background: rgba(5, 150, 105, 0.18);
+    color: #047857;
+}
+
+.rnz-page .device-status.offline {
+    background: rgba(220, 38, 38, 0.12);
+    color: #991b1b;
+}
+
+.rnz-page .device-info {
+    font-size: 12px;
+    color: var(--rnz-text);
+    line-height: 1.55;
+}
+
+.rnz-page .info-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.rnz-page .info-label {
+    color: var(--rnz-blue);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.rnz-page .info-value {
+    color: var(--rnz-text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    text-align: right;
+    word-break: break-word;
+}
+
+.rnz-page .speed-warning {
+    color: #c2410c;
+    font-weight: 700;
+}
+
+.rnz-page .speed-normal {
+    color: var(--rnz-text);
+}
+
+.rnz-page .loading {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--rnz-muted);
+    font-size: 0.9rem;
+}
+
+.rnz-page .error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #dc2626;
+    padding: 12px;
+    border-radius: 6px;
+    color: #991b1b;
+    margin-bottom: 12px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.rnz-page .devices-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rnz-page .devices-container::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.06);
+    border-radius: 3px;
+}
+
+.rnz-page .devices-container::-webkit-scrollbar-thumb {
+    background: rgba(13, 148, 136, 0.45);
+    border-radius: 3px;
+}
+
+.rnz-page .devices-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(13, 148, 136, 0.75);
+}
+
+.rnz-alert-list--critical .device-name--fly-inline {
+    color: #9a3412;
+}
+
+.rnz-alert-list--critical .device-name--fly-inline:hover {
+    color: #b45309;
+}
+
 .rnz-panel-details {
     border: 1px solid var(--rnz-line);
     border-radius: 6px;
@@ -515,144 +716,12 @@ body.rnz-page {
     accent-color: var(--rnz-teal);
 }
 
-.rnz-devices {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 14px;
-}
-
 .rnz-footer-inline {
     padding: 10px 14px;
     border-top: 1px solid var(--rnz-line);
     font-size: 0.78rem;
     color: var(--rnz-muted);
     flex-shrink: 0;
-}
-
-.rnz-device-card {
-    background: var(--rnz-cream);
-    border-radius: 6px;
-    border: 1px solid var(--rnz-line);
-    border-left: 4px solid var(--rnz-teal);
-    padding: 12px 14px;
-    margin-bottom: 10px;
-}
-
-.rnz-device-card:hover {
-    border-color: #94a3b8;
-}
-
-.rnz-device-card--critical {
-    background: #fef2f2;
-    border-color: #fecaca;
-    border-left-color: #dc2626;
-    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
-}
-
-.rnz-device-name--btn {
-    display: block;
-    width: 100%;
-    text-align: left;
-    font: inherit;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--rnz-navy);
-    margin-bottom: 6px;
-    padding: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-color: rgba(26, 95, 138, 0.45);
-    text-underline-offset: 3px;
-}
-
-.rnz-device-name--btn:hover {
-    color: var(--rnz-blue);
-    text-decoration-color: var(--rnz-blue);
-}
-
-.rnz-device-name--btn.rnz-device-name--btn-inline {
-    display: inline;
-    width: auto;
-    margin-bottom: 0;
-    font-size: inherit;
-    font-weight: 700;
-    vertical-align: baseline;
-}
-
-.rnz-alert-list--critical .rnz-device-name--btn-inline {
-    color: #9a3412;
-}
-
-.rnz-alert-list--critical .rnz-device-name--btn-inline:hover {
-    color: #b45309;
-}
-
-.rnz-device-card--critical .rnz-device-name--btn {
-    color: #991b1b;
-}
-
-.rnz-device-card--critical .rnz-device-name--btn:hover {
-    color: #b91c1c;
-}
-
-.rnz-device-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--rnz-navy);
-    margin-bottom: 6px;
-}
-
-.rnz-device-status {
-    display: inline-block;
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 3px 8px;
-    border-radius: 3px;
-    margin-bottom: 8px;
-}
-
-.rnz-device-status.online {
-    background: rgba(5, 150, 105, 0.15);
-    color: var(--rnz-safe);
-}
-
-.rnz-device-status.offline {
-    background: rgba(194, 65, 12, 0.12);
-    color: var(--rnz-warn);
-}
-
-.rnz-device-info {
-    font-size: 0.82rem;
-    line-height: 1.5;
-    color: var(--rnz-text);
-}
-
-.rnz-info-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 4px;
-}
-
-.rnz-info-label {
-    color: var(--rnz-blue);
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.rnz-info-value {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    word-break: break-word;
-}
-
-.rnz-speed-warn {
-    color: var(--rnz-warn);
-    font-weight: 700;
 }
 
 .rnz-loading {

@@ -333,6 +333,37 @@ body {
     min-height: 1.35em;
 }
 
+.history-multi-hint {
+    font-size: 10px;
+    color: #888;
+    margin: -4px 0 8px;
+    line-height: 1.35;
+}
+
+.history-field select[multiple] {
+    min-height: 7.5rem;
+    resize: vertical;
+}
+
+.history-chart-wrap {
+    margin-top: 10px;
+    flex-shrink: 0;
+}
+
+.history-chart-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #00bfff;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+
+.history-chart-canvas-box {
+    height: 200px;
+    position: relative;
+    width: 100%;
+}
+
 .speed-launcher-panel {
     flex-shrink: 0;
     margin-bottom: 12px;

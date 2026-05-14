@@ -541,7 +541,7 @@ function renderFenceAndLists(matched, mode, parts, stoppedState) {
                             !Number.isNaN(pos.latitude) &&
                             !Number.isNaN(pos.longitude);
                         const nameHtml = hasLoc
-                            ? `<button type="button" class="rnz-device-name rnz-device-name--btn rnz-device-name--btn-inline" data-device-id="${w.device.id}" data-lat="${pos.latitude}" data-lng="${pos.longitude}" title="Show on map">${escapeHtml(w.device.name)}</button>`
+                            ? `<button type="button" class="device-name--fly device-name--fly-inline" data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${w.device.id}" title="Show on map">${escapeHtml(w.device.name)}</button>`
                             : `<strong>${escapeHtml(w.device.name)}</strong>`;
                         return `<li>${nameHtml} — ${escapeHtml(w.detail)} (outside boundary).</li>`;
                     })
@@ -616,7 +616,7 @@ function renderDevices() {
 
     if (devices.length === 0) {
         container.innerHTML =
-            '<div class="rnz-error">No devices or positions for this account. Check Vercel environment variables (Traccar credentials).</div>';
+            '<div class="error">No devices or positions for this account. Check Vercel environment variables (Traccar credentials).</div>';
         return;
     }
 
@@ -634,12 +634,12 @@ function renderDevices() {
         const address = position ? position.address || 'Unknown' : 'Unknown';
 
         const statusClass = isOnline ? 'online' : 'offline';
-        const statusText = isOnline ? 'Recent fix' : 'Stale fix';
-        const speedClass = position && position.speed > 5 ? 'rnz-speed-warn' : '';
+        const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
+        const speedClass = position && position.speed > 5 ? 'speed-warning' : 'speed-normal';
         const critical =
             position &&
             isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
-        const cardMod = critical ? ' rnz-device-card--critical' : '';
+        const cardCriticalClass = critical ? ' device-card--critical' : '';
         const hasLoc =
             position &&
             typeof position.latitude === 'number' &&
@@ -647,41 +647,41 @@ function renderDevices() {
             !Number.isNaN(position.latitude) &&
             !Number.isNaN(position.longitude);
         const nameHtml = hasLoc
-            ? `<button type="button" class="rnz-device-name rnz-device-name--btn" data-device-id="${device.id}" data-lat="${position.latitude}" data-lng="${position.longitude}" title="Show on map">${escapeHtml(device.name)}</button>`
-            : `<div class="rnz-device-name">${escapeHtml(device.name)}</div>`;
+            ? `<button type="button" class="device-name device-name--fly" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(device.name)}</button>`
+            : `<div class="device-name">${escapeHtml(device.name)}</div>`;
 
         html += `
-            <div class="rnz-device-card${cardMod}">
+            <div class="device-card${cardCriticalClass}">
                 ${nameHtml}
-                <div class="rnz-device-status ${statusClass}">${statusText}</div>
-                <div class="rnz-device-info">
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Speed</span>
-                        <span class="rnz-info-value ${speedClass}">${speedKmh} km/h</span>
+                <div class="device-status ${statusClass}">${statusText}</div>
+                <div class="device-info">
+                    <div class="info-row">
+                        <span class="info-label">Speed:</span>
+                        <span class="info-value ${speedClass}">${speedKmh} km/h</span>
                     </div>
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Latitude</span>
-                        <span class="rnz-info-value">${latitude}°</span>
+                    <div class="info-row">
+                        <span class="info-label">Latitude:</span>
+                        <span class="info-value">${latitude}°</span>
                     </div>
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Longitude</span>
-                        <span class="rnz-info-value">${longitude}°</span>
+                    <div class="info-row">
+                        <span class="info-label">Longitude:</span>
+                        <span class="info-value">${longitude}°</span>
                     </div>
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Course</span>
-                        <span class="rnz-info-value">${course}°</span>
+                    <div class="info-row">
+                        <span class="info-label">Course:</span>
+                        <span class="info-value">${course}°</span>
                     </div>
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Altitude</span>
-                        <span class="rnz-info-value">${altitude} m</span>
+                    <div class="info-row">
+                        <span class="info-label">Altitude:</span>
+                        <span class="info-value">${altitude} m</span>
                     </div>
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Last update</span>
-                        <span class="rnz-info-value">${fixTime}</span>
+                    <div class="info-row">
+                        <span class="info-label">Last Update:</span>
+                        <span class="info-value">${fixTime}</span>
                     </div>
-                    <div class="rnz-info-row">
-                        <span class="rnz-info-label">Location</span>
-                        <span class="rnz-info-value">${escapeHtml(address)}</span>
+                    <div class="info-row">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value">${escapeHtml(address)}</span>
                     </div>
                 </div>
             </div>
@@ -693,10 +693,10 @@ function renderDevices() {
 
 function wireDeviceNameFlyTo() {
     const handler = (e) => {
-        const btn = e.target.closest('.rnz-device-name--btn');
+        const btn = e.target.closest('.device-name--fly');
         if (!btn || !map) return;
-        const lat = parseFloat(btn.dataset.lat);
-        const lng = parseFloat(btn.dataset.lng);
+        const lat = parseFloat(btn.dataset.flyLat);
+        const lng = parseFloat(btn.dataset.flyLng);
         const id = Number(btn.dataset.deviceId);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
         const targetZoom = Math.max(map.getZoom(), 15);
@@ -735,7 +735,7 @@ function updateTimestamp() {
 
 function showError(message) {
     const container = document.getElementById('devicesContainer');
-    container.innerHTML = `<div class="rnz-error">${escapeHtml(message)}</div>`;
+    container.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
