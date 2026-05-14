@@ -40,17 +40,15 @@ body.speed-transparent {
     font-size: clamp(2.5rem, 12vw, 4.5rem);
     font-weight: 800;
     line-height: 1;
-    color: #fff;
+    color: #3a3a3a;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
-    text-shadow:
-        0 0 3px rgba(0, 0, 0, 0.95),
-        0 2px 16px rgba(0, 0, 0, 0.85),
-        0 0 24px rgba(0, 0, 0, 0.55);
+    text-shadow: none;
+    -webkit-font-smoothing: antialiased;
 }
 
 .speed-card-value.speed-warn {
-    color: #ff8a80;
+    color: #5c2e24;
 }
 
 .speed-page-error {
