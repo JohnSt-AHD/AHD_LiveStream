@@ -68,6 +68,30 @@ body.rnz-page {
     flex-wrap: wrap;
 }
 
+.rnz-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: min(100%, 280px);
+}
+
+.rnz-logo-header {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.rnz-header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
 .rnz-logo-mark {
     font-weight: 700;
     font-size: 0.95rem;
@@ -85,11 +109,10 @@ body.rnz-page {
 }
 
 .rnz-header-title {
-    flex: 1;
-    min-width: 200px;
+    min-width: 0;
 }
 
-.rnz-kicker {
+.rnz-header-title h1 {
     display: block;
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -152,17 +175,38 @@ body.rnz-page {
 .rnz-layout {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr min(380px, 100%);
+    grid-template-columns: 1fr minmax(52px, min(400px, 42vw));
     grid-template-rows: minmax(280px, 1fr);
     gap: 0;
     min-height: 0;
     border-top: 1px solid var(--rnz-line);
+    transition: grid-template-columns 0.28s ease;
+}
+
+.rnz-layout.rnz-sidebar-collapsed {
+    grid-template-columns: 1fr 52px;
 }
 
 @media (max-width: 900px) {
     .rnz-layout {
         grid-template-columns: 1fr;
-        grid-template-rows: 45vh auto;
+        grid-template-rows: 42vh auto;
+    }
+
+    .rnz-layout.rnz-sidebar-collapsed {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(200px, 1fr) auto;
+    }
+
+    .rnz-layout.rnz-sidebar-collapsed .rnz-sidebar-scroll {
+        display: none;
+    }
+
+    .rnz-layout.rnz-sidebar-collapsed .rnz-sidebar {
+        flex-direction: row;
+        max-height: 56px;
+        width: 100% !important;
+        min-height: 0;
     }
 }
 
@@ -180,7 +224,123 @@ body.rnz-page {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
     box-shadow: -4px 0 24px rgba(15, 23, 42, 0.06);
+    transition: width 0.28s ease, border-color 0.2s ease;
+}
+
+.rnz-sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 10px 8px;
+    border-bottom: 1px solid var(--rnz-line);
+    flex-shrink: 0;
+}
+
+.rnz-logo-sidebar {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.rnz-collapse-btn {
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 8px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--rnz-line);
+    background: var(--rnz-cream);
+    color: var(--rnz-navy);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.rnz-collapse-btn:hover {
+    background: #e2e8f0;
+}
+
+.rnz-layout.rnz-sidebar-collapsed .rnz-sidebar-scroll {
+    display: none;
+}
+
+.rnz-layout.rnz-sidebar-collapsed .rnz-logo-sidebar {
+    display: none;
+}
+
+.rnz-layout.rnz-sidebar-collapsed .rnz-collapse-btn {
+    width: 100%;
+    padding: 10px 4px;
+}
+
+.rnz-sidebar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.rnz-block {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--rnz-line);
+}
+
+.rnz-block-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--rnz-blue);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.rnz-block--critical {
+    background: #fff7ed;
+    border-left: 4px solid #ea580c;
+}
+
+.rnz-block-hint {
+    font-size: 0.72rem;
+    color: var(--rnz-muted);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.rnz-fence-summary-text,
+.rnz-fence-names {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--rnz-text);
+}
+
+.rnz-fence-names {
+    margin-top: 6px;
+    color: var(--rnz-muted);
+}
+
+.rnz-alert-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.rnz-alert-list li {
+    margin-bottom: 6px;
+}
+
+.rnz-alert-list--critical {
+    color: #9a3412;
+}
+
+.rnz-list-empty {
+    font-size: 0.82rem;
+    color: var(--rnz-muted);
+    margin: 0;
 }
 
 @media (max-width: 900px) {

@@ -12,10 +12,15 @@
 
     <header class="rnz-header">
         <div class="rnz-header-inner">
-            <a class="rnz-logo-mark" href="/">Altitude HD</a>
-            <div class="rnz-header-title">
-                <span class="rnz-kicker">Water safety awareness</span>
-                <h1>Live fleet map</h1>
+            <div class="rnz-header-brand">
+                <img src="RNz.png" alt="Rowing New Zealand" class="rnz-logo-header" width="56" height="56" loading="lazy">
+                <div class="rnz-header-titles">
+                    <a class="rnz-logo-mark" href="/">Altitude HD</a>
+                    <div class="rnz-header-title">
+                        <span class="rnz-kicker">Water safety awareness</span>
+                        <h1>Live fleet map</h1>
+                    </div>
+                </div>
             </div>
             <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
         </div>
@@ -27,26 +32,51 @@
                 <strong>NAU MAI, HAERE MAI</strong> — This page uses the same live Traccar data as the main
                 <a href="/">Altitude HD</a> map, presented in a layout inspired by the look and feel of
                 <a href="https://rowingnz.kiwi/">RowingHub</a> (Rowing New Zealand) for on-water situational awareness.
+                Geofences are loaded from your Traccar server; names containing <em>rowing</em>, <em>RNZ</em>, <em>RowSafe</em>, or <em>New Zealand</em> define the primary boundary (otherwise all circles/polygons are combined).
             </p>
             <p class="rnz-disclaimer">
                 This is not an official Rowing New Zealand or RowSafe product. For authoritative safety guidance, use RowSafe on RowingHub.
             </p>
         </section>
 
-        <div class="rnz-layout">
+        <div class="rnz-layout" id="rnzLayout">
             <div id="map" class="rnz-map" role="application" aria-label="Fleet map"></div>
-            <aside class="rnz-sidebar" aria-label="Device list">
-                <div class="rnz-panel-head">
-                    <label class="rnz-toggle">
-                        <input type="checkbox" id="liveUpdatesToggle" checked>
-                        <span>Live updates (every 10s)</span>
-                    </label>
+            <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Panels">
+                <div class="rnz-sidebar-head">
+                    <img src="RNz.png" alt="" class="rnz-logo-sidebar" width="44" height="44" loading="lazy">
+                    <button type="button" class="rnz-collapse-btn" id="rnzCollapseSidebar" aria-expanded="true" aria-controls="rnzSidebarScroll">
+                        Hide panel
+                    </button>
                 </div>
-                <div class="rnz-devices" id="devicesContainer">
-                    <div class="rnz-loading">Loading device data…</div>
-                </div>
-                <div class="rnz-footer-inline">
-                    <span id="lastUpdate">Last updated: —</span>
+                <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
+                    <section class="rnz-block" aria-labelledby="rnz-boundary-heading">
+                        <h2 class="rnz-block-title" id="rnz-boundary-heading">Geofences &amp; boundary</h2>
+                        <div id="rnzFenceSummary" class="rnz-fence-summary"></div>
+                    </section>
+
+                    <section class="rnz-block rnz-block--critical" id="rnzWarningBox" hidden aria-labelledby="rnz-warn-heading">
+                        <h2 class="rnz-block-title" id="rnz-warn-heading">Warnings — stopped outside (30+ min)</h2>
+                        <p class="rnz-block-hint">Speed below 0.5&nbsp;m/s outside the boundary set, continuously for 30+ minutes (timer resets if the boat moves ~35&nbsp;m).</p>
+                        <div id="rnzWarningsList"></div>
+                    </section>
+
+                    <section class="rnz-block" aria-labelledby="rnz-outside-heading">
+                        <h2 class="rnz-block-title" id="rnz-outside-heading">Outside boundary now</h2>
+                        <div id="rnzOutsideList"></div>
+                    </section>
+
+                    <div class="rnz-panel-head">
+                        <label class="rnz-toggle">
+                            <input type="checkbox" id="liveUpdatesToggle" checked>
+                            <span>Live updates (every 10s)</span>
+                        </label>
+                    </div>
+                    <div class="rnz-devices" id="devicesContainer">
+                        <div class="rnz-loading">Loading device data…</div>
+                    </div>
+                    <div class="rnz-footer-inline">
+                        <span id="lastUpdate">Last updated: —</span>
+                    </div>
                 </div>
             </aside>
         </div>

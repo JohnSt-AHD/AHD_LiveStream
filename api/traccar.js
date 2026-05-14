@@ -142,9 +142,16 @@ export default async function handler(req, res) {
                 traccarGetJson(traccarUrl, cookie, '/api/devices'),
                 traccarGetJson(traccarUrl, cookie, '/api/positions'),
             ]);
+            let geofencesRaw = [];
+            try {
+                geofencesRaw = await traccarGetJson(traccarUrl, cookie, '/api/geofences');
+            } catch (e) {
+                console.error('Geofences optional fetch failed:', e);
+            }
             const devices = normalizeDevicesPayload(devicesRaw);
             const positions = normalizePositionsPayload(positionsRaw);
-            res.status(200).json({ devices, positions });
+            const geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
+            res.status(200).json({ devices, positions, geofences });
             return;
         }
 
