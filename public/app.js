@@ -159,7 +159,7 @@ function sortRoutePoints(points) {
                 !Number.isNaN(p.latitude) &&
                 !Number.isNaN(p.longitude)
         )
-        .sort((a, b) => new Date(a.fixTime || a.deviceTime) - new Date(b.fixTime || b.deviceTime));
+        .sort((a, b) => positionTimeMs(a) - positionTimeMs(b));
 }
 
 function decimateRoutePoints(points, max) {
@@ -197,33 +197,71 @@ function colorForDeviceId(deviceId) {
 }
 
 function destroyHistoryChart() {
-    if (historySpeedChart) {
-        historySpeedChart.destroy();
-        historySpeedChart = null;
+    const canvas = document.getElementById('historySpeedChart');
+    if (canvas && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+        const ch = Chart.getChart(canvas);
+        if (ch) {
+            ch.destroy();
+        }
     }
+    historySpeedChart = null;
     const wrap = document.getElementById('historyChartWrap');
-    if (wrap) wrap.hidden = true;
+    if (wrap) {
+        wrap.setAttribute('hidden', '');
+        wrap.classList.remove('history-chart-wrap--visible');
+    }
 }
 
 const MAX_CHART_POINTS_PER_DEVICE = 450;
 
+/** Milliseconds for chart / ordering (Traccar may use ISO strings or epoch seconds). */
+function positionTimeMs(p) {
+    if (!p || typeof p !== 'object') return NaN;
+    const raw = p.fixTime ?? p.deviceTime ?? p.serverTime;
+    if (raw == null || raw === '') return NaN;
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+        return raw < 1e12 ? Math.round(raw * 1000) : Math.round(raw);
+    }
+    const t = new Date(raw).getTime();
+    return Number.isFinite(t) ? t : NaN;
+}
+
 function chartPointFromPosition(p) {
-    const t = new Date(p.fixTime || p.deviceTime).getTime();
-    const y = (typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0) * 3.6;
-    if (!Number.isFinite(t) || Number.isNaN(y)) return null;
+    const t = positionTimeMs(p);
+    const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+    const y = rawSpeed * 3.6;
+    if (!Number.isFinite(t) || !Number.isFinite(y)) return null;
     return { x: t, y };
+}
+
+function replaceHistorySpeedCanvas() {
+    const box = document.querySelector('#historyChartWrap .history-chart-canvas-box');
+    if (!box) return null;
+    const old = document.getElementById('historySpeedChart');
+    if (old && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+        const ch = Chart.getChart(old);
+        if (ch) ch.destroy();
+    }
+    historySpeedChart = null;
+    box.replaceChildren();
+    const canvas = document.createElement('canvas');
+    canvas.id = 'historySpeedChart';
+    canvas.setAttribute('aria-label', 'Speed versus time chart');
+    box.appendChild(canvas);
+    return canvas;
 }
 
 function renderHistorySpeedChart(deviceRoutes) {
     const wrap = document.getElementById('historyChartWrap');
-    const canvas = document.getElementById('historySpeedChart');
-    if (!wrap || !canvas) {
+    if (!wrap) {
         return false;
     }
 
-    if (typeof Chart === 'undefined') {
+    const chartCtor = typeof Chart !== 'undefined' ? Chart : typeof window !== 'undefined' ? window.Chart : undefined;
+    if (typeof chartCtor !== 'function') {
         console.warn('Chart.js not loaded; speed chart skipped.');
-        wrap.hidden = true;
+        wrap.setAttribute('hidden', '');
+        wrap.classList.remove('history-chart-wrap--visible');
         return false;
     }
 
@@ -231,7 +269,8 @@ function renderHistorySpeedChart(deviceRoutes) {
 
     const hasData = deviceRoutes.some((r) => r.points && r.points.length > 0);
     if (!hasData) {
-        wrap.hidden = true;
+        wrap.setAttribute('hidden', '');
+        wrap.classList.remove('history-chart-wrap--visible');
         return false;
     }
 
@@ -245,6 +284,7 @@ function renderHistorySpeedChart(deviceRoutes) {
                 const pt = chartPointFromPosition(p);
                 if (pt) data.push(pt);
             }
+            data.sort((a, b) => a.x - b.x);
             return {
                 label: name || `Device ${id}`,
                 data,
@@ -260,11 +300,20 @@ function renderHistorySpeedChart(deviceRoutes) {
         .filter((ds) => ds.data.length > 0);
 
     if (datasets.length === 0) {
-        wrap.hidden = true;
+        wrap.setAttribute('hidden', '');
+        wrap.classList.remove('history-chart-wrap--visible');
         return false;
     }
 
-    wrap.hidden = false;
+    const canvas = replaceHistorySpeedCanvas();
+    if (!canvas || !canvas.getContext('2d')) {
+        wrap.setAttribute('hidden', '');
+        wrap.classList.remove('history-chart-wrap--visible');
+        return false;
+    }
+
+    wrap.removeAttribute('hidden');
+    wrap.classList.add('history-chart-wrap--visible');
     void wrap.offsetHeight;
 
     const chartOptions = {
@@ -273,7 +322,7 @@ function renderHistorySpeedChart(deviceRoutes) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
             parsing: false,
             scales: {
                 x: {
@@ -325,27 +374,22 @@ function renderHistorySpeedChart(deviceRoutes) {
     };
 
     try {
-        if (!canvas.getContext('2d')) {
-            wrap.hidden = true;
-            return false;
-        }
+        historySpeedChart = new chartCtor(canvas, chartOptions);
+        queueMicrotask(() => {
+            if (historySpeedChart) {
+                historySpeedChart.resize();
+            }
+        });
         requestAnimationFrame(() => {
-            try {
-                historySpeedChart = new Chart(canvas, chartOptions);
-                requestAnimationFrame(() => {
-                    if (historySpeedChart) {
-                        historySpeedChart.resize();
-                    }
-                });
-            } catch (err) {
-                console.error('Chart create failed:', err);
-                wrap.hidden = true;
+            if (historySpeedChart) {
+                historySpeedChart.resize();
             }
         });
         return true;
     } catch (err) {
-        console.error('Chart setup failed:', err);
-        wrap.hidden = true;
+        console.error('Chart create failed:', err);
+        wrap.setAttribute('hidden', '');
+        wrap.classList.remove('history-chart-wrap--visible');
         return false;
     }
 }

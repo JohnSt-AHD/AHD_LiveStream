@@ -353,6 +353,14 @@ body {
     flex-shrink: 0;
 }
 
+#historyChartWrap:not([hidden]) {
+    display: block;
+}
+
+.history-chart-wrap--visible {
+    min-height: 212px;
+}
+
 .history-chart-title {
     font-size: 12px;
     font-weight: bold;
