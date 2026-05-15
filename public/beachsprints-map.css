@@ -29,6 +29,14 @@
     min-height: 0;
 }
 
+.bsp-stack {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+}
+
 .bsp-root {
     flex: 1;
     display: flex;
@@ -427,6 +435,134 @@
     opacity: 0.5;
 }
 
+/* Route history + speed chart (same behaviour as main map) */
+.history-panel {
+    flex-shrink: 0;
+    margin-bottom: 4px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(45, 212, 191, 0.28);
+}
+
+.history-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--bsp-teal);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+.history-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.history-field span {
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+}
+
+.history-field select,
+.history-field input {
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(45, 212, 191, 0.4);
+    background: rgba(15, 23, 42, 0.55);
+    color: #f1f5f9;
+}
+
+.history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.history-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(251, 113, 133, 0.45);
+    background: rgba(251, 113, 133, 0.12);
+    color: #fecdd3;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.history-btn:hover {
+    background: rgba(251, 113, 133, 0.22);
+}
+
+.history-btn-primary {
+    background: rgba(45, 212, 191, 0.25);
+    border-color: var(--bsp-teal);
+    color: #fff;
+    font-weight: 600;
+}
+
+.history-status {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--bsp-foam);
+    line-height: 1.35;
+    min-height: 1.35em;
+}
+
+.history-multi-hint {
+    font-size: 10px;
+    color: #64748b;
+    margin: -4px 0 8px;
+    line-height: 1.35;
+}
+
+.history-field select[multiple] {
+    min-height: 7.5rem;
+    resize: vertical;
+}
+
+.history-chart-dock {
+    flex-shrink: 0;
+    width: 100%;
+    background: rgba(4, 26, 36, 0.97);
+    border-top: 3px solid rgba(251, 113, 133, 0.55);
+    box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.45);
+    z-index: 800;
+    padding: 10px 16px 12px;
+}
+
+.history-chart-dock-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#historyChartDock:not([hidden]) {
+    display: block;
+}
+
+.history-chart-dock--visible .history-chart-canvas-box {
+    min-height: 200px;
+}
+
+.history-chart-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bsp-coral);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+}
+
+.history-chart-canvas-box {
+    height: 200px;
+    position: relative;
+    width: 100%;
+}
+
 .bsp-map-fullscreen-exit {
     position: fixed;
     bottom: 22px;
@@ -458,7 +594,8 @@ body.bsp-map-fullscreen #map {
 }
 
 body.bsp-map-fullscreen .bsp-sidebar,
-body.bsp-map-fullscreen .bsp-footer {
+body.bsp-map-fullscreen .bsp-footer,
+body.bsp-map-fullscreen #historyChartDock:not([hidden]) {
     visibility: hidden;
     pointer-events: none;
 }
@@ -478,5 +615,13 @@ body.bsp-map-fullscreen .bsp-footer {
     .bsp-map-area {
         flex: 1;
         min-height: 200px;
+    }
+
+    .history-chart-dock {
+        padding: 8px 10px 10px;
+    }
+
+    .history-chart-canvas-box {
+        height: 160px;
     }
 }

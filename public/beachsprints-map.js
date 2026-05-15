@@ -13,8 +13,15 @@ let map = null;
 const markersByDeviceId = new Map();
 let mapInitialFitDone = false;
 let pollTimer = null;
+let historyLayer = null;
 let customPinsLayer = null;
+let historyDefaultsApplied = false;
+let historySpeedChart = null;
 let customMapPins = [];
+
+const SPEED_COLOR_MAX_MS = 20;
+const MAX_ROUTE_POINTS_DRAW = 800;
+const MAX_CHART_POINTS_PER_DEVICE = 450;
 
 function escapeHtml(value) {
     if (value == null) return '';
@@ -51,6 +58,7 @@ function initMap() {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
 
+    historyLayer = L.layerGroup().addTo(map);
     customPinsLayer = L.layerGroup().addTo(map);
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {
@@ -63,6 +71,504 @@ function scheduleMapResize() {
     queueMicrotask(() => map.invalidateSize());
     requestAnimationFrame(() => map.invalidateSize());
     setTimeout(() => map.invalidateSize(), 400);
+}
+
+function toLocalInputValue(d) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const h = pad(d.getHours());
+    const min = pad(d.getMinutes());
+    return `${y}-${m}-${day}T${h}:${min}`;
+}
+
+function initHistoryDateDefaultsIfNeeded() {
+    if (historyDefaultsApplied) return;
+    const fromEl = document.getElementById('historyFrom');
+    const toEl = document.getElementById('historyTo');
+    if (!fromEl || !toEl) return;
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    fromEl.value = toLocalInputValue(start);
+    toEl.value = toLocalInputValue(now);
+    historyDefaultsApplied = true;
+}
+
+function populateHistoryDeviceSelect() {
+    const sel = document.getElementById('historyDevice');
+    if (!sel) return;
+    const prev = new Set(Array.from(sel.selectedOptions || []).map((o) => o.value));
+    sel.innerHTML = '';
+    devices.forEach((d) => {
+        const opt = document.createElement('option');
+        opt.value = String(d.id);
+        opt.textContent = d.name || `Device ${d.id}`;
+        if (prev.has(opt.value)) opt.selected = true;
+        sel.appendChild(opt);
+    });
+}
+
+function speedMpsForColor(pos) {
+    const s = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
+    return Math.min(SPEED_COLOR_MAX_MS, Math.max(0, s));
+}
+
+function speedToRainbowColor(speedMps) {
+    const t = Math.min(1, Math.max(0, speedMps / SPEED_COLOR_MAX_MS));
+    const hue = t * 300;
+    return `hsl(${hue}, 88%, 52%)`;
+}
+
+function sortRoutePoints(points) {
+    return points
+        .filter(
+            (p) =>
+                p &&
+                typeof p.latitude === 'number' &&
+                typeof p.longitude === 'number' &&
+                !Number.isNaN(p.latitude) &&
+                !Number.isNaN(p.longitude)
+        )
+        .sort((a, b) => positionTimeMs(a) - positionTimeMs(b));
+}
+
+function decimateRoutePoints(points, max) {
+    if (points.length <= max) return points;
+    const step = Math.ceil(points.length / max);
+    const out = [];
+    for (let i = 0; i < points.length; i += step) {
+        out.push(points[i]);
+    }
+    const last = points[points.length - 1];
+    if (out[out.length - 1] !== last) {
+        out.push(last);
+    }
+    return out;
+}
+
+function setHistoryStatus(text) {
+    const el = document.getElementById('historyStatus');
+    if (el) el.textContent = text || '';
+}
+
+function clearHistoryMap() {
+    if (historyLayer) {
+        historyLayer.clearLayers();
+    }
+    destroyHistoryChart();
+}
+
+function bringHistoryRouteAboveTiles() {
+    if (!historyLayer) return;
+    if (typeof historyLayer.bringToFront === 'function') {
+        historyLayer.bringToFront();
+        return;
+    }
+    if (typeof historyLayer.eachLayer === 'function') {
+        historyLayer.eachLayer((layer) => {
+            if (layer && typeof layer.bringToFront === 'function') {
+                layer.bringToFront();
+            }
+        });
+    }
+}
+
+function colorForDeviceId(deviceId) {
+    const golden = 137.508;
+    const hue = (Number(deviceId) * golden) % 360;
+    return `hsl(${hue}, 72%, 52%)`;
+}
+
+function destroyHistoryChart() {
+    const canvas = document.getElementById('historySpeedChart');
+    if (canvas && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+        const ch = Chart.getChart(canvas);
+        if (ch) {
+            ch.destroy();
+        }
+    }
+    historySpeedChart = null;
+    const dock = document.getElementById('historyChartDock');
+    if (dock) {
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+    }
+    scheduleMapResize();
+}
+
+function positionTimeMs(p) {
+    if (!p || typeof p !== 'object') return NaN;
+    const raw = p.fixTime ?? p.deviceTime ?? p.serverTime;
+    if (raw == null || raw === '') return NaN;
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+        return raw < 1e12 ? Math.round(raw * 1000) : Math.round(raw);
+    }
+    const t = new Date(raw).getTime();
+    return Number.isFinite(t) ? t : NaN;
+}
+
+function chartPointFromPosition(p) {
+    const t = positionTimeMs(p);
+    const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+    const y = rawSpeed * 3.6;
+    if (!Number.isFinite(t) || !Number.isFinite(y)) return null;
+    return { x: t, y };
+}
+
+function replaceHistorySpeedCanvas() {
+    const box = document.querySelector('#historyChartDock .history-chart-canvas-box');
+    if (!box) return null;
+    const old = document.getElementById('historySpeedChart');
+    if (old && typeof Chart !== 'undefined' && typeof Chart.getChart === 'function') {
+        const ch = Chart.getChart(old);
+        if (ch) ch.destroy();
+    }
+    historySpeedChart = null;
+    box.replaceChildren();
+    const canvas = document.createElement('canvas');
+    canvas.id = 'historySpeedChart';
+    canvas.setAttribute('aria-label', 'Speed versus time chart');
+    box.appendChild(canvas);
+    return canvas;
+}
+
+function renderHistorySpeedChart(deviceRoutes) {
+    const dock = document.getElementById('historyChartDock');
+    if (!dock) {
+        return false;
+    }
+
+    const chartCtor = typeof Chart !== 'undefined' ? Chart : typeof window !== 'undefined' ? window.Chart : undefined;
+    if (typeof chartCtor !== 'function') {
+        console.warn('Chart.js not loaded; speed chart skipped.');
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+        return false;
+    }
+
+    destroyHistoryChart();
+
+    const hasData = deviceRoutes.some((r) => r.points && r.points.length > 0);
+    if (!hasData) {
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+        return false;
+    }
+
+    const datasets = deviceRoutes
+        .map(({ id, name, points }) => {
+            const sorted = sortRoutePoints(points);
+            const dec = decimateRoutePoints(sorted, MAX_CHART_POINTS_PER_DEVICE);
+            const color = colorForDeviceId(id);
+            const data = [];
+            for (const p of dec) {
+                const pt = chartPointFromPosition(p);
+                if (pt) data.push(pt);
+            }
+            data.sort((a, b) => a.x - b.x);
+            return {
+                label: name || `Device ${id}`,
+                data,
+                borderColor: color,
+                backgroundColor: color,
+                fill: false,
+                tension: 0.12,
+                pointRadius: data.length <= 2 ? 4 : 0,
+                pointHitRadius: 5,
+                borderWidth: 2,
+            };
+        })
+        .filter((ds) => ds.data.length > 0);
+
+    if (datasets.length === 0) {
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+        return false;
+    }
+
+    const canvas = replaceHistorySpeedCanvas();
+    if (!canvas || !canvas.getContext('2d')) {
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+        return false;
+    }
+
+    dock.removeAttribute('hidden');
+    dock.classList.add('history-chart-dock--visible');
+    void dock.offsetHeight;
+
+    const chartOptions = {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
+            parsing: false,
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: 'Time', color: '#9ad8ff' },
+                    ticks: {
+                        color: '#aaa',
+                        maxTicksLimit: 8,
+                        callback(value) {
+                            const d = new Date(value);
+                            return Number.isNaN(d.getTime())
+                                ? ''
+                                : d.toLocaleString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                  });
+                        },
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                },
+                y: {
+                    title: { display: true, text: 'Speed (km/h)', color: '#9ad8ff' },
+                    ticks: { color: '#aaa' },
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                },
+            },
+            plugins: {
+                legend: {
+                    display: datasets.length > 1,
+                    labels: { color: '#e0e0e0', boxWidth: 12 },
+                },
+                tooltip: {
+                    callbacks: {
+                        title(items) {
+                            if (!items.length) return '';
+                            const x = items[0].parsed.x;
+                            const d = new Date(x);
+                            return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
+                        },
+                        label(item) {
+                            return `${item.dataset.label}: ${item.formattedValue} km/h`;
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    try {
+        historySpeedChart = new chartCtor(canvas, chartOptions);
+        queueMicrotask(() => {
+            if (historySpeedChart) {
+                historySpeedChart.resize();
+            }
+        });
+        requestAnimationFrame(() => {
+            if (historySpeedChart) {
+                historySpeedChart.resize();
+            }
+        });
+        scheduleMapResize();
+        return true;
+    } catch (err) {
+        console.error('Chart create failed:', err);
+        dock.setAttribute('hidden', '');
+        dock.classList.remove('history-chart-dock--visible');
+        scheduleMapResize();
+        return false;
+    }
+}
+
+function formatDateTimeFull(dateString) {
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) {
+        return String(dateString);
+    }
+    return d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'medium' });
+}
+
+function renderHistoryRouteOnMap(deviceRoutes) {
+    if (!historyLayer || !map) return;
+    historyLayer.clearLayers();
+
+    if (!Array.isArray(deviceRoutes) || deviceRoutes.length === 0) {
+        setHistoryStatus('No devices to draw.');
+        destroyHistoryChart();
+        return;
+    }
+
+    const multi = deviceRoutes.length > 1;
+    const allBounds = [];
+    const parts = [];
+
+    for (const { id, name, points } of deviceRoutes) {
+        const sorted = sortRoutePoints(points);
+        if (sorted.length === 0) {
+            parts.push(`${name || id}: 0 positions`);
+            continue;
+        }
+
+        const decimated = decimateRoutePoints(sorted, MAX_ROUTE_POINTS_DRAW);
+        const routeColor = colorForDeviceId(id);
+
+        for (let i = 0; i < decimated.length; i++) {
+            const p = decimated[i];
+            const latlng = [p.latitude, p.longitude];
+            allBounds.push(latlng);
+            const spd = speedMpsForColor(p);
+            const segmentColor = multi ? routeColor : speedToRainbowColor(spd);
+
+            if (i > 0) {
+                const prev = decimated[i - 1];
+                L.polyline(
+                    [
+                        [prev.latitude, prev.longitude],
+                        latlng,
+                    ],
+                    {
+                        color: segmentColor,
+                        weight: 4,
+                        opacity: 0.88,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                    }
+                ).addTo(historyLayer);
+            }
+
+            const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+            const kmh = rawSpeed * 3.6;
+            const devLabel = multi ? `<div><strong>Device:</strong> ${escapeHtml(name || `Device ${id}`)}</div>` : '';
+            const popup =
+                `<div style="font-weight:700">History point</div>` +
+                devLabel +
+                `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over 0–${SPEED_COLOR_MAX_MS} m/s</div>` +
+                `<div><strong>≈</strong> ${kmh.toFixed(1)} km/h</div>` +
+                `<div><strong>Time:</strong> ${escapeHtml(formatDateTimeFull(p.fixTime || p.deviceTime))}</div>`;
+
+            const markerFill = multi ? routeColor : speedToRainbowColor(spd);
+
+            L.circleMarker(latlng, {
+                radius: 5,
+                weight: 1,
+                color: '#1a1a1a',
+                fillColor: markerFill,
+                fillOpacity: 0.95,
+            })
+                .bindPopup(popup, { maxWidth: 300 })
+                .addTo(historyLayer);
+        }
+
+        let seg = `${name || id}: ${sorted.length} positions`;
+        if (sorted.length > decimated.length) {
+            seg += ` (map ${decimated.length})`;
+        }
+        parts.push(seg);
+    }
+
+    bringHistoryRouteAboveTiles();
+
+    if (allBounds.length > 0) {
+        map.fitBounds(L.latLngBounds(allBounds), { padding: [48, 48], maxZoom: 17 });
+    }
+
+    setHistoryStatus(parts.join(' · ') + '.');
+}
+
+async function loadHistoryRoute() {
+    const sel = document.getElementById('historyDevice');
+    const ids = Array.from(sel?.selectedOptions || [])
+        .map((o) => o.value)
+        .filter(Boolean);
+    const fromLocal = document.getElementById('historyFrom')?.value;
+    const toLocal = document.getElementById('historyTo')?.value;
+
+    if (ids.length === 0) {
+        setHistoryStatus('Select one or more devices (Ctrl/Cmd+click).');
+        return;
+    }
+    if (!fromLocal || !toLocal) {
+        setHistoryStatus('Set both From and To times.');
+        return;
+    }
+
+    const fromIso = new Date(fromLocal).toISOString();
+    const toIso = new Date(toLocal).toISOString();
+    if (new Date(fromIso) >= new Date(toIso)) {
+        setHistoryStatus('"To" must be after "From".');
+        return;
+    }
+
+    setHistoryStatus('Loading routes…');
+    destroyHistoryChart();
+
+    try {
+        const settled = await Promise.allSettled(
+            ids.map(async (deviceId) => {
+                const params = new URLSearchParams({
+                    action: 'route',
+                    deviceId: String(deviceId),
+                    from: fromIso,
+                    to: toIso,
+                });
+                const res = await fetch(`${API_BASE}?${params.toString()}`);
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const msg = data && data.error ? data.error : `Request failed (${res.status})`;
+                    throw new Error(msg);
+                }
+                if (!Array.isArray(data)) {
+                    throw new Error('Unexpected response from server.');
+                }
+                return data;
+            })
+        );
+
+        const deviceRoutes = [];
+        const errors = [];
+
+        for (let i = 0; i < settled.length; i++) {
+            const id = Number(ids[i]);
+            const name = devices.find((d) => d.id === id)?.name || `Device ${id}`;
+            const s = settled[i];
+            if (s.status === 'fulfilled') {
+                deviceRoutes.push({ id, name, points: s.value });
+            } else {
+                const reason = s.reason && s.reason.message ? s.reason.message : 'Failed';
+                errors.push(`${name}: ${reason}`);
+            }
+        }
+
+        if (deviceRoutes.length === 0) {
+            setHistoryStatus(errors.length ? errors.join(' · ') : 'No routes loaded.');
+            return;
+        }
+
+        renderHistoryRouteOnMap(deviceRoutes);
+        const routeSummary = document.getElementById('historyStatus')?.textContent || '';
+        const chartShown = renderHistorySpeedChart(deviceRoutes);
+
+        let msg = routeSummary;
+        if (typeof Chart === 'undefined') {
+            msg = `${routeSummary} Chart.js did not load — check network or extensions; speed chart unavailable.`.trim();
+        } else if (!chartShown && deviceRoutes.some((r) => r.points && r.points.length > 0)) {
+            msg = `${routeSummary} Speed chart skipped (no valid time/speed points).`.trim();
+        }
+        if (errors.length) {
+            msg = `Partial load — ${errors.join(' · ')}. ${msg}`.trim();
+        }
+        setHistoryStatus(msg);
+    } catch (error) {
+        console.error('Route load error:', error);
+        setHistoryStatus(error.message || 'Failed to load route.');
+    }
+}
+
+function wireHistoryPanel() {
+    document.getElementById('historyLoadBtn')?.addEventListener('click', () => loadHistoryRoute());
+    document.getElementById('historyClearBtn')?.addEventListener('click', () => {
+        clearHistoryMap();
+        setHistoryStatus('Route cleared.');
+    });
 }
 
 function isLiveUpdatesEnabled() {
@@ -462,6 +968,9 @@ async function updateData() {
         });
         devices = mergeDevicesFromPositions(rawDevices, positions);
 
+        initHistoryDateDefaultsIfNeeded();
+        populateHistoryDeviceSelect();
+
         renderDevices();
         wireDeviceCardFlyTo();
         updateMapMarkers();
@@ -477,6 +986,8 @@ async function updateData() {
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initCustomMapPins();
+    initHistoryDateDefaultsIfNeeded();
+    wireHistoryPanel();
     wireMapFullscreen();
     wireLiveToggle();
     authenticate();

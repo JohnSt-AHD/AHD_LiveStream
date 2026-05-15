@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="beachsprints-map.css">
 </head>
 <body class="bsp-page">
-    <div class="bsp-root">
+    <div class="bsp-stack">
+        <div class="bsp-root">
         <div class="bsp-map-area">
             <div id="map" role="application" aria-label="Beach sprints fleet map"></div>
             <button type="button" id="bspMapFullscreenExitBtn" class="bsp-map-fullscreen-exit" hidden>Exit fullscreen</button>
@@ -32,6 +33,28 @@
                     <span>Live updates (every 10s)</span>
                 </label>
                 <p class="bsp-last-update" id="bspLastUpdate">Last updated: —</p>
+
+                <div class="history-panel" id="bspHistoryPanel">
+                    <div class="history-title">Route history</div>
+                    <label class="history-field">
+                        <span>Devices</span>
+                        <select id="historyDevice" multiple size="5" aria-label="Devices for history"></select>
+                    </label>
+                    <p class="history-multi-hint">Ctrl+click (Windows) or ⌘+click (Mac) to select multiple devices.</p>
+                    <label class="history-field">
+                        <span>From</span>
+                        <input type="datetime-local" id="historyFrom" step="60">
+                    </label>
+                    <label class="history-field">
+                        <span>To</span>
+                        <input type="datetime-local" id="historyTo" step="60">
+                    </label>
+                    <div class="history-actions">
+                        <button type="button" class="history-btn history-btn-primary" id="historyLoadBtn">Load on map</button>
+                        <button type="button" class="history-btn" id="historyClearBtn">Clear route</button>
+                    </div>
+                    <div class="history-status" id="historyStatus"></div>
+                </div>
 
                 <details class="bsp-details" id="bspCustomMarkersDetails" open>
                     <summary class="bsp-details-summary">Custom markers</summary>
@@ -68,6 +91,16 @@
         </aside>
     </div>
 
+    <div id="historyChartDock" class="history-chart-dock" hidden>
+        <div class="history-chart-dock-inner">
+            <div class="history-chart-title">Speed vs time (km/h)</div>
+            <div class="history-chart-canvas-box">
+                <canvas id="historySpeedChart" aria-label="Speed versus time chart"></canvas>
+            </div>
+        </div>
+    </div>
+    </div>
+
     <footer class="bsp-footer">
         <a href="https://www.beachsprintsnz.co.nz/" target="_blank" rel="noopener noreferrer">Beach Sprints NZ</a>
         <span class="bsp-footer-sep">·</span>
@@ -77,6 +110,7 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="vendor/chart.umd.js"></script>
     <script src="beachsprints-map.js"></script>
 </body>
 </html>
