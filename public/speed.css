@@ -41,12 +41,9 @@ body.speed-transparent {
     stroke-width: 0.12;
 }
 
-.speed-route-marker--start {
-    fill: #2dd4bf;
-}
-
+.speed-route-marker--start,
 .speed-route-marker--end {
-    fill: #c084fc;
+    fill: #9ca3af;
 }
 
 .speed-route-device-dot {
@@ -78,6 +75,8 @@ body.speed-transparent {
 
 .speed-card {
     position: fixed;
+    left: 85%;
+    top: 85%;
     z-index: 10;
     padding: 0;
     margin: 0;
@@ -85,10 +84,13 @@ body.speed-transparent {
     border: none;
     box-shadow: none;
     min-width: 0;
+    width: auto;
+    max-width: none;
+    transform: translate(-50%, -50%);
 }
 
 .speed-card-value {
-    font-size: clamp(2.5rem, 12vw, 4.5rem);
+    font-size: clamp(1.25rem, 6vw, 2.25rem);
     font-weight: 800;
     line-height: 1;
     color: #3a3a3a;

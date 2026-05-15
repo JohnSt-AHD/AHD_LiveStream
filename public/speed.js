@@ -8,9 +8,6 @@ function parseNum(v, min, max, fallback) {
 
 const params = new URLSearchParams(window.location.search);
 const deviceId = parseInt(params.get('deviceId'), 10);
-const posLeftPct = parseNum(params.get('x'), 0, 100, 72);
-const posTopPct = parseNum(params.get('y'), 0, 100, 10);
-const widthPct = parseNum(params.get('w'), 12, 96, 28);
 const pollMs = parseNum(params.get('interval'), 1000, 60000, 2500);
 const transparent = params.get('transparent') === '1';
 
@@ -234,10 +231,6 @@ if (!Number.isFinite(deviceId) || deviceId < 1) {
     if (transparent) {
         document.body.classList.add('speed-transparent');
     }
-    card.style.left = `${posLeftPct}%`;
-    card.style.top = `${posTopPct}%`;
-    card.style.width = `${widthPct}%`;
-    card.style.maxWidth = '520px';
     errEl.hidden = true;
     updateCardVisibility();
 }

@@ -918,15 +918,9 @@ function wireHistoryPanel() {
 function buildSpeedScreenUrl() {
     const id = document.getElementById('speedScreenDevice')?.value;
     if (!id) return null;
-    const x = document.getElementById('speedPosX')?.value ?? '72';
-    const y = document.getElementById('speedPosY')?.value ?? '10';
-    const w = document.getElementById('speedPosW')?.value ?? '28';
     const transparent = document.getElementById('speedTransparentBg')?.checked;
     const u = new URL('speed.html', window.location.href);
     u.searchParams.set('deviceId', id);
-    u.searchParams.set('x', String(x));
-    u.searchParams.set('y', String(y));
-    u.searchParams.set('w', String(w));
     if (transparent) {
         u.searchParams.set('transparent', '1');
     }
