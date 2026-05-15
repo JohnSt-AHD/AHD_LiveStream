@@ -950,18 +950,10 @@ function buildSpeedScreenUrl() {
     }
     const geo = getSpeedRouteGeoFromSelections();
     if (geo) {
-        const d1x = document.getElementById('speedDotStartX')?.value ?? '12';
-        const d1y = document.getElementById('speedDotStartY')?.value ?? '50';
-        const d2x = document.getElementById('speedDotEndX')?.value ?? '88';
-        const d2y = document.getElementById('speedDotEndY')?.value ?? '50';
         u.searchParams.set('rsLat', String(geo.sLat));
         u.searchParams.set('rsLng', String(geo.sLng));
         u.searchParams.set('reLat', String(geo.eLat));
         u.searchParams.set('reLng', String(geo.eLng));
-        u.searchParams.set('d1x', String(d1x));
-        u.searchParams.set('d1y', String(d1y));
-        u.searchParams.set('d2x', String(d2x));
-        u.searchParams.set('d2y', String(d2y));
     }
     return u.toString();
 }

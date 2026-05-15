@@ -50,14 +50,14 @@
 
             <div class="speed-launcher-panel" id="speedLauncherPanel">
                 <div class="speed-launcher-title">Speed screen (separate page)</div>
-                <p class="speed-launcher-lead">Same project, second URL. Split time is fixed at 87% from the top and left on the speed page.</p>
+                <p class="speed-launcher-lead">Same project, second URL. Split time is fixed at 89% from the top and 91% from the left on the speed page.</p>
                 <label class="history-field">
                     <span>Device</span>
                     <select id="speedScreenDevice" aria-label="Device for speed page"></select>
                 </label>
                 <div class="speed-route-dot-section">
                     <div class="speed-route-dot-title">Route dot (map → overlay)</div>
-                    <p class="speed-route-dot-lead">Pick two <strong>custom markers</strong> as start and finish on the map, then set where that line appears on the speed page (0–100% of the viewport). The orange dot tracks the device along the straight segment.</p>
+                    <p class="speed-route-dot-lead">Pick <strong>start</strong> and <strong>finish</strong> custom markers on the map. The route line on the speed page is fixed along the bottom (80%, 95% → 95%, 95%). The orange dot tracks the device along the course segment.</p>
                     <label class="history-field">
                         <span>Start marker</span>
                         <select id="speedRouteStartPin" aria-label="Start marker for route dot"></select>
@@ -66,24 +66,6 @@
                         <span>Finish marker</span>
                         <select id="speedRouteEndPin" aria-label="Finish marker for route dot"></select>
                     </label>
-                    <div class="speed-coords-grid speed-route-dot-grid">
-                        <label class="history-field">
-                            <span>Dot line start X (%)</span>
-                            <input type="number" id="speedDotStartX" min="0" max="100" value="12" step="1">
-                        </label>
-                        <label class="history-field">
-                            <span>Dot line start Y (%)</span>
-                            <input type="number" id="speedDotStartY" min="0" max="100" value="50" step="1">
-                        </label>
-                        <label class="history-field">
-                            <span>Dot line end X (%)</span>
-                            <input type="number" id="speedDotEndX" min="0" max="100" value="88" step="1">
-                        </label>
-                        <label class="history-field">
-                            <span>Dot line end Y (%)</span>
-                            <input type="number" id="speedDotEndY" min="0" max="100" value="50" step="1">
-                        </label>
-                    </div>
                 </div>
                 <label class="live-toggle speed-transparent-toggle">
                     <input type="checkbox" id="speedTransparentBg">

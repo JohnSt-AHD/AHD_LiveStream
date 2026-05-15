@@ -17,32 +17,33 @@ function parseFloatClamped(v, min, max) {
     return Math.min(max, Math.max(min, n));
 }
 
-/** Map start/finish (lat/lng) + overlay line in viewport % (0–100). Set from main page speed panel. */
+/** Fixed overlay line on speed page (% viewport). Map start/finish lat/lng from URL. */
+const ROUTE_LINE_START_X = 80;
+const ROUTE_LINE_START_Y = 95;
+const ROUTE_LINE_END_X = 95;
+const ROUTE_LINE_END_Y = 95;
+
 const routeCfg = (() => {
-    if (
-        !params.has('rsLat') ||
-        !params.has('rsLng') ||
-        !params.has('reLat') ||
-        !params.has('reLng') ||
-        !params.has('d1x') ||
-        !params.has('d1y') ||
-        !params.has('d2x') ||
-        !params.has('d2y')
-    ) {
+    if (!params.has('rsLat') || !params.has('rsLng') || !params.has('reLat') || !params.has('reLng')) {
         return null;
     }
     const rsLat = parseFloatClamped(params.get('rsLat'), -90, 90);
     const rsLng = parseFloatClamped(params.get('rsLng'), -180, 180);
     const reLat = parseFloatClamped(params.get('reLat'), -90, 90);
     const reLng = parseFloatClamped(params.get('reLng'), -180, 180);
-    const d1x = parseNum(params.get('d1x'), 0, 100, NaN);
-    const d1y = parseNum(params.get('d1y'), 0, 100, NaN);
-    const d2x = parseNum(params.get('d2x'), 0, 100, NaN);
-    const d2y = parseNum(params.get('d2y'), 0, 100, NaN);
-    if (![rsLat, rsLng, reLat, reLng, d1x, d1y, d2x, d2y].every(Number.isFinite)) {
+    if (![rsLat, rsLng, reLat, reLng].every(Number.isFinite)) {
         return null;
     }
-    return { rsLat, rsLng, reLat, reLng, d1x, d1y, d2x, d2y };
+    return {
+        rsLat,
+        rsLng,
+        reLat,
+        reLng,
+        d1x: ROUTE_LINE_START_X,
+        d1y: ROUTE_LINE_START_Y,
+        d2x: ROUTE_LINE_END_X,
+        d2y: ROUTE_LINE_END_Y,
+    };
 })();
 
 const routeLayer = document.getElementById('speedRouteLayer');
