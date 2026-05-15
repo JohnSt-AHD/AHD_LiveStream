@@ -45,6 +45,89 @@
     width: 100%;
 }
 
+.bsp-buoys-panel {
+    width: min(280px, 28vw);
+    flex-shrink: 0;
+    background: var(--bsp-panel);
+    border-right: 3px solid var(--bsp-border);
+    box-shadow: 8px 0 28px rgba(0, 0, 0, 0.35);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.bsp-buoys-panel-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px 12px 16px;
+}
+
+.bsp-buoys-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--bsp-sand);
+    margin-bottom: 6px;
+}
+
+.bsp-buoys-lead {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #b8d4e8;
+    margin-bottom: 12px;
+}
+
+.bsp-buoys-drag-toggle {
+    margin-bottom: 10px;
+}
+
+.bsp-buoys-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.bsp-buoy-card {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    background: rgba(8, 47, 66, 0.55);
+}
+
+.bsp-buoy-card-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ff7a18;
+    margin-bottom: 8px;
+}
+
+.bsp-buoy-field {
+    margin-bottom: 6px;
+}
+
+.bsp-buoy-field:last-child {
+    margin-bottom: 0;
+}
+
+.bsp-buoy-map-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.bsp-buoy-map-icon::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ff7a18;
+    border: 2px solid #c45a0a;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
 .bsp-map-area {
     position: relative;
     flex: 1;
@@ -636,6 +719,7 @@ body.bsp-map-fullscreen #map {
 }
 
 body.bsp-map-fullscreen .bsp-sidebar,
+body.bsp-map-fullscreen .bsp-buoys-panel,
 body.bsp-map-fullscreen .bsp-footer,
 body.bsp-map-fullscreen #historyChartDock:not([hidden]) {
     visibility: hidden;
@@ -645,6 +729,14 @@ body.bsp-map-fullscreen #historyChartDock:not([hidden]) {
 @media (max-width: 720px) {
     .bsp-root {
         flex-direction: column;
+    }
+
+    .bsp-buoys-panel {
+        width: 100%;
+        max-height: 38vh;
+        border-right: none;
+        border-bottom: 3px solid var(--bsp-border);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
     }
 
     .bsp-sidebar {

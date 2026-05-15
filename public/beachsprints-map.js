@@ -6,6 +6,16 @@ const API_BASE = '/api/traccar';
 const REFRESH_INTERVAL = 10000;
 
 const LS_BEACH_PINS = 'altitudeHdBeachSprintsMapPins_v1';
+const LS_BEACH_BUOYS = 'altitudeHdBeachSprintsBuoys_v1';
+
+const DEFAULT_BEACH_BUOYS = [
+    { id: 'buoy_L1', label: 'L1', lat: -36.5922, lng: 174.7027 },
+    { id: 'buoy_L2', label: 'L2', lat: -36.592, lng: 174.7035 },
+    { id: 'buoy_L3', label: 'L3', lat: -36.5918, lng: 174.7045 },
+    { id: 'buoy_R1', label: 'R1', lat: -36.5919, lng: 174.7026 },
+    { id: 'buoy_R2', label: 'R2', lat: -36.5917, lng: 174.7035 },
+    { id: 'buoy_R3', label: 'R3', lat: -36.5914, lng: 174.7043 },
+];
 
 let devices = [];
 let positions = {};
@@ -18,6 +28,9 @@ let customPinsLayer = null;
 let historyDefaultsApplied = false;
 let historySpeedChart = null;
 let customMapPins = [];
+let courseBuoys = [];
+let buoysLayer = null;
+const buoyMarkersById = new Map();
 
 const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
@@ -51,7 +64,7 @@ function mergeDevicesFromPositions(deviceList, positionsMap) {
 }
 
 function initMap() {
-    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([20, 0], 2);
+    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-36.5918, 174.7035], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -59,6 +72,7 @@ function initMap() {
     }).addTo(map);
 
     historyLayer = L.layerGroup().addTo(map);
+    buoysLayer = L.layerGroup().addTo(map);
     customPinsLayer = L.layerGroup().addTo(map);
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {
@@ -761,6 +775,206 @@ function wireCustomMarkersPanel() {
     }
 }
 
+function isBuoysDragEnabled() {
+    const el = document.getElementById('bspBuoysDragToggle');
+    return el ? el.checked : false;
+}
+
+function setBuoysStatus(text) {
+    const el = document.getElementById('bspBuoysStatus');
+    if (el) el.textContent = text || '';
+}
+
+function loadCourseBuoys() {
+    try {
+        const raw = localStorage.getItem(LS_BEACH_BUOYS);
+        if (!raw) {
+            courseBuoys = [];
+            seedDefaultCourseBuoysIfEmpty();
+            return;
+        }
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr) || arr.length === 0) {
+            courseBuoys = [];
+            seedDefaultCourseBuoysIfEmpty();
+            return;
+        }
+        const parsed = arr
+            .filter(
+                (b) =>
+                    b &&
+                    typeof b.id === 'string' &&
+                    typeof b.label === 'string' &&
+                    Number.isFinite(b.lat) &&
+                    Number.isFinite(b.lng)
+            )
+            .map((b) => ({
+                id: String(b.id),
+                label: String(b.label).slice(0, 8),
+                lat: Number(b.lat),
+                lng: Number(b.lng),
+            }))
+            .filter((b) => b.lat >= -90 && b.lat <= 90 && b.lng >= -180 && b.lng <= 180);
+        const byId = new Map(parsed.map((b) => [b.id, b]));
+        courseBuoys = DEFAULT_BEACH_BUOYS.map((def) => byId.get(def.id) || { ...def });
+    } catch {
+        courseBuoys = [];
+        seedDefaultCourseBuoysIfEmpty();
+    }
+}
+
+function seedDefaultCourseBuoysIfEmpty() {
+    if (courseBuoys.length > 0) return;
+    courseBuoys = DEFAULT_BEACH_BUOYS.map((b) => ({ ...b }));
+    saveCourseBuoys();
+}
+
+function saveCourseBuoys() {
+    try {
+        localStorage.setItem(LS_BEACH_BUOYS, JSON.stringify(courseBuoys));
+    } catch (e) {
+        console.warn('Could not save beach sprints buoys', e);
+    }
+}
+
+function buoyCircleIcon() {
+    return L.divIcon({
+        className: 'bsp-buoy-map-icon',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+    });
+}
+
+function syncBuoysToMap() {
+    if (!buoysLayer || !map) return;
+    buoysLayer.clearLayers();
+    buoyMarkersById.clear();
+    const dragOn = isBuoysDragEnabled();
+
+    courseBuoys.forEach((b) => {
+        const marker = L.marker([b.lat, b.lng], {
+            draggable: dragOn,
+            icon: buoyCircleIcon(),
+            zIndexOffset: 650,
+        }).addTo(buoysLayer);
+
+        marker.bindPopup(
+            '<div style="font-weight:700">' +
+                escapeHtml(b.label) +
+                '</div>' +
+                '<div><strong>Lat:</strong> ' +
+                b.lat.toFixed(6) +
+                '</div>' +
+                '<div><strong>Lon:</strong> ' +
+                b.lng.toFixed(6) +
+                '</div>',
+            { maxWidth: 240 }
+        );
+
+        marker.on('dragend', () => {
+            if (!isBuoysDragEnabled()) return;
+            const ll = marker.getLatLng();
+            b.lat = ll.lat;
+            b.lng = ll.lng;
+            saveCourseBuoys();
+            renderBuoysList();
+        });
+
+        buoyMarkersById.set(b.id, marker);
+    });
+}
+
+function applyBuoyCoordsFromInputs(buoyId) {
+    const latEl = document.querySelector(`[data-buoy-lat="${buoyId}"]`);
+    const lngEl = document.querySelector(`[data-buoy-lng="${buoyId}"]`);
+    const buoy = courseBuoys.find((b) => b.id === buoyId);
+    if (!buoy || !latEl || !lngEl) return false;
+
+    const lat = parseFloat(latEl.value);
+    const lng = parseFloat(lngEl.value);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+        setBuoysStatus(`${buoy.label}: enter a valid latitude (−90 to 90).`);
+        latEl.value = String(buoy.lat);
+        return false;
+    }
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+        setBuoysStatus(`${buoy.label}: enter a valid longitude (−180 to 180).`);
+        lngEl.value = String(buoy.lng);
+        return false;
+    }
+
+    buoy.lat = lat;
+    buoy.lng = lng;
+    saveCourseBuoys();
+    const marker = buoyMarkersById.get(buoyId);
+    if (marker) marker.setLatLng([lat, lng]);
+    setBuoysStatus('');
+    return true;
+}
+
+function renderBuoysList() {
+    const el = document.getElementById('bspBuoysList');
+    if (!el) return;
+
+    el.innerHTML = courseBuoys
+        .map(
+            (b) =>
+                `<article class="bsp-buoy-card" data-buoy-id="${escapeHtml(b.id)}">` +
+                `<h3 class="bsp-buoy-card-label">${escapeHtml(b.label)}</h3>` +
+                `<label class="bsp-field bsp-buoy-field">` +
+                `<span class="bsp-field-label">Latitude (°)</span>` +
+                `<input type="number" step="any" data-buoy-lat="${escapeHtml(b.id)}" value="${b.lat}">` +
+                `</label>` +
+                `<label class="bsp-field bsp-buoy-field">` +
+                `<span class="bsp-field-label">Longitude (°)</span>` +
+                `<input type="number" step="any" data-buoy-lng="${escapeHtml(b.id)}" value="${b.lng}">` +
+                `</label>` +
+                `</article>`
+        )
+        .join('');
+}
+
+function wireBuoysPanel() {
+    const dragToggle = document.getElementById('bspBuoysDragToggle');
+    if (dragToggle && dragToggle.dataset.bound !== '1') {
+        dragToggle.dataset.bound = '1';
+        dragToggle.addEventListener('change', () => {
+            syncBuoysToMap();
+            setBuoysStatus(dragToggle.checked ? 'Drag buoys on the map.' : '');
+        });
+    }
+
+    const listEl = document.getElementById('bspBuoysList');
+    if (listEl && listEl.dataset.bound !== '1') {
+        listEl.dataset.bound = '1';
+        listEl.addEventListener('change', (e) => {
+            const input = e.target.closest('[data-buoy-lat], [data-buoy-lng]');
+            if (!input) return;
+            const card = input.closest('[data-buoy-id]');
+            const buoyId = card?.getAttribute('data-buoy-id');
+            if (!buoyId) return;
+            applyBuoyCoordsFromInputs(buoyId);
+        });
+        listEl.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            const input = e.target.closest('[data-buoy-lat], [data-buoy-lng]');
+            if (!input) return;
+            const card = input.closest('[data-buoy-id]');
+            const buoyId = card?.getAttribute('data-buoy-id');
+            if (!buoyId) return;
+            e.preventDefault();
+            applyBuoyCoordsFromInputs(buoyId);
+        });
+    }
+}
+
+function initCourseBuoys() {
+    loadCourseBuoys();
+    syncBuoysToMap();
+    renderBuoysList();
+    wireBuoysPanel();
+}
+
 function initCustomMapPins() {
     loadCustomMapPins();
     syncCustomPinsToMap();
@@ -990,6 +1204,7 @@ async function updateData() {
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
+    initCourseBuoys();
     initCustomMapPins();
     initHistoryDateDefaultsIfNeeded();
     wireHistoryPanel();

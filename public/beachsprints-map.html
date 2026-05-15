@@ -10,6 +10,18 @@
 <body class="bsp-page">
     <div class="bsp-stack">
         <div class="bsp-root">
+        <aside class="bsp-buoys-panel" aria-label="Course buoys">
+            <div class="bsp-buoys-panel-scroll">
+                <h2 class="bsp-buoys-title">Course buoys</h2>
+                <p class="bsp-buoys-lead">Six course markers (L1–L3, R1–R3). Edit coordinates below or drag on the map when enabled.</p>
+                <label class="bsp-toggle bsp-toggle--block bsp-buoys-drag-toggle">
+                    <input type="checkbox" id="bspBuoysDragToggle">
+                    <span>Allow drag on map</span>
+                </label>
+                <div class="bsp-status" id="bspBuoysStatus"></div>
+                <div id="bspBuoysList" class="bsp-buoys-list"></div>
+            </div>
+        </aside>
         <div class="bsp-map-area">
             <div id="map" role="application" aria-label="Beach sprints fleet map"></div>
             <button type="button" id="bspMapMobileExpandBtn" class="bsp-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
