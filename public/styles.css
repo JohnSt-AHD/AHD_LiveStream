@@ -643,6 +643,30 @@ body.map-fullscreen-main #historyChartDock:not([hidden]) {
     gap: 8px;
 }
 
+.speed-route-dot-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 191, 255, 0.22);
+}
+
+.speed-route-dot-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #7fd4ff;
+    margin-bottom: 4px;
+}
+
+.speed-route-dot-lead {
+    font-size: 10px;
+    color: #9a9a9a;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.speed-route-dot-grid {
+    margin-top: 4px;
+}
+
 .speed-transparent-toggle {
     margin-top: 6px;
     margin-bottom: 2px;

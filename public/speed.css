@@ -16,6 +16,45 @@ body.speed-transparent {
     background-color: transparent;
 }
 
+.speed-route-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.speed-route-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.speed-route-line {
+    stroke: rgba(255, 255, 255, 0.45);
+    stroke-width: 0.35;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.speed-route-marker {
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 0.12;
+}
+
+.speed-route-marker--start {
+    fill: #2dd4bf;
+}
+
+.speed-route-marker--end {
+    fill: #c084fc;
+}
+
+.speed-route-device-dot {
+    fill: #ff7a18;
+    stroke: rgba(0, 0, 0, 0.35);
+    stroke-width: 0.12;
+}
+
 .speed-bg-video-wrap {
     position: fixed;
     inset: 0;

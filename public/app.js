@@ -154,6 +154,35 @@ function populateSpeedScreenDeviceSelect() {
     populateDeviceSelect('speedScreenDevice', 'Choose device…');
 }
 
+function populateSpeedRoutePinSelects() {
+    const ids = ['speedRouteStartPin', 'speedRouteEndPin'];
+    for (const selectId of ids) {
+        const sel = document.getElementById(selectId);
+        if (!sel) continue;
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">(none)</option>';
+        customMapPins.forEach((p) => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.lat.toFixed(4)}, ${p.lng.toFixed(4)})`;
+            sel.appendChild(opt);
+        });
+        if (prev && [...sel.options].some((o) => o.value === prev)) {
+            sel.value = prev;
+        }
+    }
+}
+
+function getSpeedRouteGeoFromSelections() {
+    const startId = document.getElementById('speedRouteStartPin')?.value;
+    const endId = document.getElementById('speedRouteEndPin')?.value;
+    if (!startId || !endId) return null;
+    const s = customMapPins.find((p) => p.id === startId);
+    const e = customMapPins.find((p) => p.id === endId);
+    if (!s || !e) return null;
+    return { sLat: s.lat, sLng: s.lng, eLat: e.lat, eLng: e.lng };
+}
+
 function speedMpsForColor(pos) {
     const s = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
     return Math.min(SPEED_COLOR_MAX_MS, Math.max(0, s));
@@ -407,6 +436,7 @@ function addCustomMapPinFromForm() {
     saveCustomMapPins();
     syncCustomPinsToMap();
     renderCustomMarkersList();
+    populateSpeedRoutePinSelects();
     if (latInput) latInput.value = '';
     if (lngInput) lngInput.value = '';
     setCustomMarkersStatus('Marker added.');
@@ -434,6 +464,7 @@ function wireCustomMarkersPanel() {
             saveCustomMapPins();
             syncCustomPinsToMap();
             renderCustomMarkersList();
+            populateSpeedRoutePinSelects();
             setCustomMarkersStatus('Marker removed.');
         });
     }
@@ -462,6 +493,7 @@ function initCustomMapPins() {
     syncCustomPinsToMap();
     renderCustomMarkersList();
     wireCustomMarkersPanel();
+    populateSpeedRoutePinSelects();
 }
 
 /** LayerGroup has no bringToFront in some Leaflet builds; fall back to per-layer. */
@@ -897,6 +929,21 @@ function buildSpeedScreenUrl() {
     u.searchParams.set('w', String(w));
     if (transparent) {
         u.searchParams.set('transparent', '1');
+    }
+    const geo = getSpeedRouteGeoFromSelections();
+    if (geo) {
+        const d1x = document.getElementById('speedDotStartX')?.value ?? '12';
+        const d1y = document.getElementById('speedDotStartY')?.value ?? '50';
+        const d2x = document.getElementById('speedDotEndX')?.value ?? '88';
+        const d2y = document.getElementById('speedDotEndY')?.value ?? '50';
+        u.searchParams.set('rsLat', String(geo.sLat));
+        u.searchParams.set('rsLng', String(geo.sLng));
+        u.searchParams.set('reLat', String(geo.eLat));
+        u.searchParams.set('reLng', String(geo.eLng));
+        u.searchParams.set('d1x', String(d1x));
+        u.searchParams.set('d1y', String(d1y));
+        u.searchParams.set('d2x', String(d2x));
+        u.searchParams.set('d2y', String(d2y));
     }
     return u.toString();
 }

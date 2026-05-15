@@ -69,6 +69,36 @@
                     <span>Panel width (%)</span>
                     <input type="number" id="speedPosW" min="12" max="96" value="28" step="1">
                 </label>
+                <div class="speed-route-dot-section">
+                    <div class="speed-route-dot-title">Route dot (map → overlay)</div>
+                    <p class="speed-route-dot-lead">Pick two <strong>custom markers</strong> as start and finish on the map, then set where that line appears on the speed page (0–100% of the viewport). The orange dot tracks the device along the straight segment.</p>
+                    <label class="history-field">
+                        <span>Start marker</span>
+                        <select id="speedRouteStartPin" aria-label="Start marker for route dot"></select>
+                    </label>
+                    <label class="history-field">
+                        <span>Finish marker</span>
+                        <select id="speedRouteEndPin" aria-label="Finish marker for route dot"></select>
+                    </label>
+                    <div class="speed-coords-grid speed-route-dot-grid">
+                        <label class="history-field">
+                            <span>Dot line start X (%)</span>
+                            <input type="number" id="speedDotStartX" min="0" max="100" value="12" step="1">
+                        </label>
+                        <label class="history-field">
+                            <span>Dot line start Y (%)</span>
+                            <input type="number" id="speedDotStartY" min="0" max="100" value="50" step="1">
+                        </label>
+                        <label class="history-field">
+                            <span>Dot line end X (%)</span>
+                            <input type="number" id="speedDotEndX" min="0" max="100" value="88" step="1">
+                        </label>
+                        <label class="history-field">
+                            <span>Dot line end Y (%)</span>
+                            <input type="number" id="speedDotEndY" min="0" max="100" value="50" step="1">
+                        </label>
+                    </div>
+                </div>
                 <label class="live-toggle speed-transparent-toggle">
                     <input type="checkbox" id="speedTransparentBg">
                     <span class="live-toggle-label">Transparent page background</span>

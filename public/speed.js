@@ -14,11 +14,98 @@ const widthPct = parseNum(params.get('w'), 12, 96, 28);
 const pollMs = parseNum(params.get('interval'), 1000, 60000, 2500);
 const transparent = params.get('transparent') === '1';
 
+function parseFloatClamped(v, min, max) {
+    const n = parseFloat(v);
+    if (!Number.isFinite(n)) return NaN;
+    return Math.min(max, Math.max(min, n));
+}
+
+/** Map start/finish (lat/lng) + overlay line in viewport % (0–100). Set from main page speed panel. */
+const routeCfg = (() => {
+    if (
+        !params.has('rsLat') ||
+        !params.has('rsLng') ||
+        !params.has('reLat') ||
+        !params.has('reLng') ||
+        !params.has('d1x') ||
+        !params.has('d1y') ||
+        !params.has('d2x') ||
+        !params.has('d2y')
+    ) {
+        return null;
+    }
+    const rsLat = parseFloatClamped(params.get('rsLat'), -90, 90);
+    const rsLng = parseFloatClamped(params.get('rsLng'), -180, 180);
+    const reLat = parseFloatClamped(params.get('reLat'), -90, 90);
+    const reLng = parseFloatClamped(params.get('reLng'), -180, 180);
+    const d1x = parseNum(params.get('d1x'), 0, 100, NaN);
+    const d1y = parseNum(params.get('d1y'), 0, 100, NaN);
+    const d2x = parseNum(params.get('d2x'), 0, 100, NaN);
+    const d2y = parseNum(params.get('d2y'), 0, 100, NaN);
+    if (![rsLat, rsLng, reLat, reLng, d1x, d1y, d2x, d2y].every(Number.isFinite)) {
+        return null;
+    }
+    return { rsLat, rsLng, reLat, reLng, d1x, d1y, d2x, d2y };
+})();
+
+const routeLayer = document.getElementById('speedRouteLayer');
+const routeLine = document.getElementById('speedRouteLine');
+const routeMarkerStart = document.getElementById('speedRouteMarkerStart');
+const routeMarkerEnd = document.getElementById('speedRouteMarkerEnd');
+const routeDeviceDot = document.getElementById('speedRouteDeviceDot');
+
+/** Progress 0–1 along start→finish from device position (projection onto segment, meters plane). */
+function segmentProgressT(dLat, dLng, sLat, sLng, eLat, eLng) {
+    const R = 6371000;
+    const cosS = Math.cos((sLat * Math.PI) / 180);
+    const mPerDegLat = (R * Math.PI) / 180;
+    const mPerDegLng = (R * Math.PI) / 180;
+    const dx = (dLng - sLng) * mPerDegLng * cosS;
+    const dy = (dLat - sLat) * mPerDegLat;
+    const vx = (eLng - sLng) * mPerDegLng * cosS;
+    const vy = (eLat - sLat) * mPerDegLat;
+    const vv = vx * vx + vy * vy;
+    if (vv < 4) return 0;
+    const t = (dx * vx + dy * vy) / vv;
+    return Math.max(0, Math.min(1, t));
+}
+
+function layoutSpeedRouteOverlay() {
+    if (!routeCfg || !routeLine || !routeMarkerStart || !routeMarkerEnd || !routeDeviceDot || !routeLayer) {
+        return;
+    }
+    const { d1x, d1y, d2x, d2y } = routeCfg;
+    routeLine.setAttribute('x1', String(d1x));
+    routeLine.setAttribute('y1', String(d1y));
+    routeLine.setAttribute('x2', String(d2x));
+    routeLine.setAttribute('y2', String(d2y));
+    routeMarkerStart.setAttribute('cx', String(d1x));
+    routeMarkerStart.setAttribute('cy', String(d1y));
+    routeMarkerEnd.setAttribute('cx', String(d2x));
+    routeMarkerEnd.setAttribute('cy', String(d2y));
+    routeDeviceDot.setAttribute('cx', String(d1x));
+    routeDeviceDot.setAttribute('cy', String(d1y));
+    routeLayer.hidden = false;
+}
+
+function updateSpeedRouteDot(lat, lng) {
+    if (!routeCfg || !routeDeviceDot) return;
+    const t = segmentProgressT(lat, lng, routeCfg.rsLat, routeCfg.rsLng, routeCfg.reLat, routeCfg.reLng);
+    const cx = routeCfg.d1x + t * (routeCfg.d2x - routeCfg.d1x);
+    const cy = routeCfg.d1y + t * (routeCfg.d2y - routeCfg.d1y);
+    routeDeviceDot.setAttribute('cx', String(cx));
+    routeDeviceDot.setAttribute('cy', String(cy));
+}
+
+if (routeCfg) {
+    layoutSpeedRouteOverlay();
+}
+
 const card = document.getElementById('speedCard');
 const errEl = document.getElementById('speedError');
 const elSplit = document.getElementById('scSplit');
 
-/** idle | playingIntro | pausedSpeed | looping — Space/O drive the intro and overlay. */
+/** idle | playingIntro | pausedSpeed | rewinding — Space starts intro; O rewinds to start then idle. */
 let overlayPhase = 'idle';
 
 function updateCardVisibility() {
@@ -71,6 +158,38 @@ function initSpeedBackgroundVideo() {
     vid.pause();
     vid.currentTime = 0;
 
+    let rewindRaf = null;
+
+    function stopRewind() {
+        if (rewindRaf != null) {
+            cancelAnimationFrame(rewindRaf);
+            rewindRaf = null;
+        }
+    }
+
+    function startRewind() {
+        stopRewind();
+        vid.pause();
+        let last = performance.now();
+        function step(now) {
+            rewindRaf = null;
+            if (overlayPhase !== 'rewinding') return;
+            const dt = Math.min(0.25, (now - last) / 1000);
+            last = now;
+            const t = vid.currentTime - dt;
+            if (t <= 0.001) {
+                vid.currentTime = 0;
+                vid.pause();
+                overlayPhase = 'idle';
+                updateCardVisibility();
+                return;
+            }
+            vid.currentTime = t;
+            rewindRaf = requestAnimationFrame(step);
+        }
+        rewindRaf = requestAnimationFrame(step);
+    }
+
     const canShowSpeedOverlay = () => Number.isFinite(deviceId) && deviceId >= 1;
 
     vid.addEventListener('timeupdate', () => {
@@ -89,8 +208,9 @@ function initSpeedBackgroundVideo() {
 
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space') {
-            if (overlayPhase === 'playingIntro') return;
+            if (overlayPhase === 'playingIntro' || overlayPhase === 'rewinding') return;
             e.preventDefault();
+            stopRewind();
             overlayPhase = 'playingIntro';
             vid.loop = false;
             vid.currentTime = 0;
@@ -101,10 +221,9 @@ function initSpeedBackgroundVideo() {
         if (e.code === 'KeyO') {
             if (overlayPhase !== 'pausedSpeed') return;
             e.preventDefault();
-            overlayPhase = 'looping';
-            vid.loop = true;
+            overlayPhase = 'rewinding';
             updateCardVisibility();
-            vid.play().catch(() => {});
+            startRewind();
         }
     });
 }
@@ -162,6 +281,17 @@ async function tick() {
             if (pos && pos.deviceId != null) positionsMap[pos.deviceId] = pos;
         });
         const pos = positionsMap[deviceId];
+
+        if (
+            routeCfg &&
+            pos &&
+            typeof pos.latitude === 'number' &&
+            typeof pos.longitude === 'number' &&
+            !Number.isNaN(pos.latitude) &&
+            !Number.isNaN(pos.longitude)
+        ) {
+            updateSpeedRouteDot(pos.latitude, pos.longitude);
+        }
 
         if (!pos || typeof pos.speed !== 'number') {
             elSplit.textContent = '—';
