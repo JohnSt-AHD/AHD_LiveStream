@@ -34,6 +34,25 @@
                         <div id="bspTimingSections" class="bsp-timing-sections"></div>
                     </div>
                 </details>
+
+                <details class="bsp-details bsp-compare-details" id="bspCompareDetails">
+                    <summary class="bsp-details-summary">Head-to-head analysis</summary>
+                    <div class="bsp-details-body">
+                        <p class="bsp-compare-lead">Compare two coastal sprint runs: launch above 2 m/s, slalom gates, turn at the top buoy, finish when speed drops below 2 m/s on the beach.</p>
+                        <p class="bsp-compare-source" id="bspCompareSource">Using live GPS trail</p>
+                        <div class="bsp-compare-pickers">
+                            <label class="bsp-field">
+                                <span class="bsp-field-label">Boat A</span>
+                                <select id="bspCompareA" aria-label="Boat A"></select>
+                            </label>
+                            <label class="bsp-field">
+                                <span class="bsp-field-label">Boat B</span>
+                                <select id="bspCompareB" aria-label="Boat B"></select>
+                            </label>
+                        </div>
+                        <div id="bspCompareDashboard" class="bsp-compare-dashboard"></div>
+                    </div>
+                </details>
             </div>
         </aside>
         <div class="bsp-map-area">
@@ -139,5 +158,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="vendor/chart.umd.js"></script>
     <script src="beachsprints-map.js"></script>
+    <script src="beachsprints-race-compare.js"></script>
 </body>
 </html>

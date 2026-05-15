@@ -960,6 +960,9 @@ function recomputeRaceTiming() {
         });
     });
     renderTimingPanel(mode);
+    if (typeof renderRaceCompareDashboard === 'function') {
+        renderRaceCompareDashboard();
+    }
 }
 
 function isTimingLinesVisible() {
@@ -1182,6 +1185,9 @@ function initRaceTiming() {
     wireTimingPanel();
     syncTimingLinesToMap();
     recomputeRaceTiming();
+    if (typeof initRaceCompare === 'function') {
+        initRaceCompare();
+    }
 }
 
 function onBuoysOrTimingGeometryChanged() {
