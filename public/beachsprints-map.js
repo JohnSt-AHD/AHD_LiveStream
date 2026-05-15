@@ -787,6 +787,9 @@ const TIMING_LINES = [
     { id: 'line3', label: 'R3 – L3', buoyA: 'R3', buoyB: 'L3', hasTurn: true },
 ];
 
+/** Each timing line is drawn and detected 50 m beyond the buoy pair on both sides. */
+const TIMING_LINE_EXTENSION_M = 50;
+
 let timingLinesLayer = null;
 const liveTrailsByDeviceId = new Map();
 let lastHistoryRoutes = null;
@@ -801,6 +804,40 @@ function getTimingLineEndpoints(lineDef) {
     const b = getBuoyByLabel(lineDef.buoyB);
     if (!a || !b) return null;
     return { a: { lat: a.lat, lng: a.lng }, b: { lat: b.lat, lng: b.lng } };
+}
+
+function localMetersToLatLng(x, y, refLat, refLng) {
+    const cos = Math.cos((refLat * Math.PI) / 180);
+    return {
+        lat: refLat + y / 110540,
+        lng: refLng + x / (111320 * cos),
+    };
+}
+
+function extendTimingLineEndpoints(ep, extensionM = TIMING_LINE_EXTENSION_M) {
+    if (!ep || extensionM <= 0) return ep;
+    const refLat = (ep.a.lat + ep.b.lat) / 2;
+    const refLng = (ep.a.lng + ep.b.lng) / 2;
+    const am = latLngToLocalMeters(ep.a.lat, ep.a.lng, refLat, refLng);
+    const bm = latLngToLocalMeters(ep.b.lat, ep.b.lng, refLat, refLng);
+    const dx = bm.x - am.x;
+    const dy = bm.y - am.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return ep;
+    const ux = dx / len;
+    const uy = dy / len;
+    const startM = { x: am.x - ux * extensionM, y: am.y - uy * extensionM };
+    const endM = { x: bm.x + ux * extensionM, y: bm.y + uy * extensionM };
+    return {
+        a: localMetersToLatLng(startM.x, startM.y, refLat, refLng),
+        b: localMetersToLatLng(endM.x, endM.y, refLat, refLng),
+    };
+}
+
+function getExtendedTimingLineEndpoints(lineDef) {
+    const ep = getTimingLineEndpoints(lineDef);
+    if (!ep) return null;
+    return extendTimingLineEndpoints(ep);
 }
 
 function latLngToLocalMeters(lat, lng, refLat, refLng) {
@@ -867,7 +904,7 @@ function findLineCrossings(sortedPoints, lineA, lineB) {
 function analyzeDeviceTiming(points) {
     const sorted = sortRoutePoints(points);
     const lines = TIMING_LINES.map((def) => {
-        const ep = getTimingLineEndpoints(def);
+        const ep = getExtendedTimingLineEndpoints(def);
         const crossings = ep ? findLineCrossings(sorted, ep.a, ep.b) : [];
         return { def, crossings };
     });
@@ -936,7 +973,7 @@ function syncTimingLinesToMap() {
     if (!isTimingLinesVisible()) return;
 
     TIMING_LINES.forEach((def) => {
-        const ep = getTimingLineEndpoints(def);
+        const ep = getExtendedTimingLineEndpoints(def);
         if (!ep) return;
         L.polyline(
             [
