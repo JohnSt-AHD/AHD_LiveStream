@@ -11,7 +11,6 @@
     <div class="app-root">
         <div class="app-map-area">
             <div id="map" role="application" aria-label="Device map"></div>
-            <button type="button" id="mapMobileExpandBtn" class="map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
             <div id="speedLegend" class="speed-legend" hidden>
                 <div class="speed-legend-title">Speed (m/s)</div>
                 <div class="speed-legend-bar" aria-hidden="true"></div>
@@ -119,7 +118,8 @@
         </div>
 
             <aside class="overlay-panel-right" aria-label="Map tools and devices">
-                <label class="map-fullscreen-toggle live-toggle">
+                <button type="button" id="mapMobileExpandBtn" class="map-mobile-expand-btn" aria-label="Expand map to full screen">Expand map</button>
+                <label class="map-fullscreen-toggle live-toggle map-fullscreen-toggle--desktop">
                     <input type="checkbox" id="mapFullscreenToggle">
                     <span class="live-toggle-label">Fullscreen map</span>
                     <span class="live-toggle-hint">over side panels</span>

@@ -38,37 +38,42 @@ body {
     background: #0a1628;
 }
 
-/* Phone / narrow: tap target on the map (checkbox stays in side panel) */
+/* Phone / narrow: full-width "Expand map" at top of right panel (see index.html) */
 .map-mobile-expand-btn {
     display: none;
 }
 
 @media (max-width: 768px) {
+    .map-fullscreen-toggle--desktop {
+        display: none !important;
+    }
+
     .map-mobile-expand-btn {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: center;
-        position: absolute;
-        z-index: 1050;
-        top: max(10px, env(safe-area-inset-top, 0px));
-        left: max(10px, env(safe-area-inset-left, 0px));
-        min-height: 44px;
-        padding: 0 14px;
-        font-size: 13px;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 48px;
+        margin: 0 0 12px;
+        padding: 0 16px;
+        font-size: 15px;
         font-weight: 700;
         font-family: inherit;
+        letter-spacing: 0.03em;
         border-radius: 8px;
-        border: 2px solid #00bfff;
-        background: rgba(0, 0, 0, 0.82);
-        color: #e0f7ff;
+        border: 2px solid #00e5ff;
+        background: linear-gradient(180deg, rgba(0, 191, 255, 0.5) 0%, rgba(0, 100, 150, 0.45) 100%);
+        color: #fff;
         cursor: pointer;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 4px 18px rgba(0, 191, 255, 0.35);
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
+        flex-shrink: 0;
     }
 
     .map-mobile-expand-btn:active {
-        background: rgba(0, 191, 255, 0.28);
+        filter: brightness(1.12);
     }
 
     body.map-fullscreen-main .map-mobile-expand-btn {
