@@ -73,6 +73,7 @@ function initMap() {
 
     historyLayer = L.layerGroup().addTo(map);
     buoysLayer = L.layerGroup().addTo(map);
+    timingLinesLayer = L.layerGroup().addTo(map);
     customPinsLayer = L.layerGroup().addTo(map);
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {
@@ -172,6 +173,8 @@ function clearHistoryMap() {
         historyLayer.clearLayers();
     }
     destroyHistoryChart();
+    lastHistoryRoutes = null;
+    recomputeRaceTiming();
 }
 
 function bringHistoryRouteAboveTiles() {
@@ -486,6 +489,8 @@ function renderHistoryRouteOnMap(deviceRoutes) {
     }
 
     setHistoryStatus(parts.join(' · ') + '.');
+    lastHistoryRoutes = deviceRoutes;
+    recomputeRaceTiming();
 }
 
 async function loadHistoryRoute() {
@@ -775,6 +780,378 @@ function wireCustomMarkersPanel() {
     }
 }
 
+
+const TIMING_LINES = [
+    { id: 'line1', label: 'L1 – R1', buoyA: 'L1', buoyB: 'R1', hasTurn: false },
+    { id: 'line2', label: 'L2 – R2', buoyA: 'L2', buoyB: 'R2', hasTurn: false },
+    { id: 'line3', label: 'R3 – L3', buoyA: 'R3', buoyB: 'L3', hasTurn: true },
+];
+
+let timingLinesLayer = null;
+const liveTrailsByDeviceId = new Map();
+let lastHistoryRoutes = null;
+let timingStatsByDeviceId = new Map();
+
+function getBuoyByLabel(label) {
+    return courseBuoys.find((b) => b.label === label) || null;
+}
+
+function getTimingLineEndpoints(lineDef) {
+    const a = getBuoyByLabel(lineDef.buoyA);
+    const b = getBuoyByLabel(lineDef.buoyB);
+    if (!a || !b) return null;
+    return { a: { lat: a.lat, lng: a.lng }, b: { lat: b.lat, lng: b.lng } };
+}
+
+function latLngToLocalMeters(lat, lng, refLat, refLng) {
+    const cos = Math.cos((refLat * Math.PI) / 180);
+    return {
+        x: (lng - refLng) * 111320 * cos,
+        y: (lat - refLat) * 110540,
+    };
+}
+
+function segmentIntersectsLine(p0, p1, lineA, lineB) {
+    const refLat = (lineA.lat + lineB.lat + p0.lat + p1.lat) / 4;
+    const refLng = (lineA.lng + lineB.lng + p0.lng + p1.lng) / 4;
+    const s0 = latLngToLocalMeters(p0.lat, p0.lng, refLat, refLng);
+    const s1 = latLngToLocalMeters(p1.lat, p1.lng, refLat, refLng);
+    const l0 = latLngToLocalMeters(lineA.lat, lineA.lng, refLat, refLng);
+    const l1 = latLngToLocalMeters(lineB.lat, lineB.lng, refLat, refLng);
+
+    const x1 = s0.x;
+    const y1 = s0.y;
+    const x2 = s1.x;
+    const y2 = s1.y;
+    const x3 = l0.x;
+    const y3 = l0.y;
+    const x4 = l1.x;
+    const y4 = l1.y;
+
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (Math.abs(denom) < 1e-9) return null;
+
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+    return t;
+}
+
+function findLineCrossings(sortedPoints, lineA, lineB) {
+    const crossings = [];
+    if (!sortedPoints || sortedPoints.length < 2) return crossings;
+
+    for (let i = 1; i < sortedPoints.length; i++) {
+        const p0 = sortedPoints[i - 1];
+        const p1 = sortedPoints[i];
+        const t0 = positionTimeMs(p0);
+        const t1 = positionTimeMs(p1);
+        if (!Number.isFinite(t0) || !Number.isFinite(t1)) continue;
+
+        const frac = segmentIntersectsLine(
+            { lat: p0.latitude, lng: p0.longitude },
+            { lat: p1.latitude, lng: p1.longitude },
+            lineA,
+            lineB
+        );
+        if (frac == null) continue;
+
+        const timeMs = t0 + frac * (t1 - t0);
+        const prev = crossings[crossings.length - 1];
+        if (prev && Math.abs(prev.timeMs - timeMs) < 400) continue;
+        crossings.push({ timeMs, index: crossings.length + 1 });
+    }
+    return crossings;
+}
+
+function analyzeDeviceTiming(points) {
+    const sorted = sortRoutePoints(points);
+    const lines = TIMING_LINES.map((def) => {
+        const ep = getTimingLineEndpoints(def);
+        const crossings = ep ? findLineCrossings(sorted, ep.a, ep.b) : [];
+        return { def, crossings };
+    });
+
+    const line1 = lines[0].crossings[0] || null;
+    const line2 = lines[1].crossings[0] || null;
+    const line3First = lines[2].crossings[0] || null;
+    const line3Second = lines[2].crossings[1] || null;
+    const raceStartMs = line1 ? line1.timeMs : null;
+
+    return {
+        lines,
+        line1,
+        line2,
+        line3First,
+        line3Second,
+        turnTimeMs:
+            line3First && line3Second ? line3Second.timeMs - line3First.timeMs : null,
+        split12Ms: line1 && line2 ? line2.timeMs - line1.timeMs : null,
+        split23Ms: line2 && line3First ? line3First.timeMs - line2.timeMs : null,
+        raceStartMs,
+    };
+}
+
+function getTimingDataSources() {
+    if (lastHistoryRoutes && lastHistoryRoutes.length > 0) {
+        return {
+            mode: 'history',
+            sources: lastHistoryRoutes.map((r) => ({
+                deviceId: r.id,
+                name: r.name || `Device ${r.id}`,
+                points: r.points,
+            })),
+        };
+    }
+    const sources = [];
+    liveTrailsByDeviceId.forEach((points, deviceId) => {
+        if (!points || points.length < 2) return;
+        const name = devices.find((d) => d.id === deviceId)?.name || `Device ${deviceId}`;
+        sources.push({ deviceId, name, points });
+    });
+    return { mode: 'live', sources };
+}
+
+function recomputeRaceTiming() {
+    timingStatsByDeviceId.clear();
+    const { mode, sources } = getTimingDataSources();
+    sources.forEach(({ deviceId, name, points }) => {
+        timingStatsByDeviceId.set(deviceId, {
+            deviceId,
+            name,
+            ...analyzeDeviceTiming(points),
+        });
+    });
+    renderTimingPanel(mode);
+}
+
+function isTimingLinesVisible() {
+    const el = document.getElementById('bspTimingLinesToggle');
+    return el ? el.checked : true;
+}
+
+function syncTimingLinesToMap() {
+    if (!timingLinesLayer) return;
+    timingLinesLayer.clearLayers();
+    if (!isTimingLinesVisible()) return;
+
+    TIMING_LINES.forEach((def) => {
+        const ep = getTimingLineEndpoints(def);
+        if (!ep) return;
+        L.polyline(
+            [
+                [ep.a.lat, ep.a.lng],
+                [ep.b.lat, ep.b.lng],
+            ],
+            {
+                color: '#fbbf24',
+                weight: 3,
+                opacity: 0.92,
+                dashArray: '10, 8',
+                lineCap: 'round',
+            }
+        )
+            .bindTooltip(def.label, { permanent: false, direction: 'center' })
+            .addTo(timingLinesLayer);
+    });
+}
+
+function formatCrossTimeMs(timeMs) {
+    if (!Number.isFinite(timeMs)) return '—';
+    const d = new Date(timeMs);
+    if (Number.isNaN(d.getTime())) return '—';
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    const ds = String(Math.floor((timeMs % 1000) / 100));
+    return `${h}:${m}:${s}.${ds}`;
+}
+
+function formatElapsedMs(ms, baseMs) {
+    if (!Number.isFinite(ms) || !Number.isFinite(baseMs)) return '—';
+    const delta = (ms - baseMs) / 1000;
+    if (delta < 0) return '—';
+    if (delta < 60) return `+${delta.toFixed(2)}s`;
+    const m = Math.floor(delta / 60);
+    const s = delta % 60;
+    return `+${m}:${s.toFixed(1).padStart(4, '0')}`;
+}
+
+function formatDurationMs(ms) {
+    if (!Number.isFinite(ms) || ms < 0) return '—';
+    const s = ms / 1000;
+    if (s < 60) return `${s.toFixed(2)}s`;
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${m}:${rem.toFixed(1).padStart(4, '0')}`;
+}
+
+function renderTimingDeviceRows(statsList, lineDef, lineIndex) {
+    if (!statsList.length) {
+        return '<p class="bsp-timing-empty">No crossings detected yet.</p>';
+    }
+
+    const colCount = 3 + (lineIndex > 0 ? 1 : 0) + (lineDef.hasTurn ? 2 : 0);
+
+    const rows = statsList
+        .map((stats) => {
+            const cross = stats.lines[lineIndex]?.crossings[0] || null;
+            const cross2 =
+                lineDef.hasTurn && stats.lines[lineIndex]?.crossings[1]
+                    ? stats.lines[lineIndex].crossings[1]
+                    : null;
+            if (!cross) {
+                return (
+                    `<tr class="bsp-timing-row">` +
+                    `<td>${escapeHtml(stats.name)}</td>` +
+                    `<td colspan="${colCount - 1}" class="bsp-timing-muted">—</td>` +
+                    `</tr>`
+                );
+            }
+            const base = stats.raceStartMs;
+            let extra = '';
+            if (lineDef.hasTurn && cross2) {
+                extra = `<td>${formatCrossTimeMs(cross2.timeMs)}</td>` +
+                    `<td>${formatDurationMs(stats.turnTimeMs)}</td>`;
+            } else if (lineDef.hasTurn) {
+                extra = `<td class="bsp-timing-muted">—</td><td class="bsp-timing-muted">—</td>`;
+            }
+            let splitCell = '';
+            if (lineIndex === 1 && stats.split12Ms != null) {
+                splitCell = `<td>${formatDurationMs(stats.split12Ms)}</td>`;
+            } else if (lineIndex === 2 && stats.split23Ms != null) {
+                splitCell = `<td>${formatDurationMs(stats.split23Ms)}</td>`;
+            } else if (lineIndex > 0) {
+                splitCell = `<td class="bsp-timing-muted">—</td>`;
+            }
+            return (
+                `<tr class="bsp-timing-row">` +
+                `<td>${escapeHtml(stats.name)}</td>` +
+                `<td>${formatCrossTimeMs(cross.timeMs)}</td>` +
+                `<td>${formatElapsedMs(cross.timeMs, base)}</td>` +
+                splitCell +
+                extra +
+                `</tr>`
+            );
+        })
+        .join('');
+
+    let header =
+        `<tr><th>Device</th><th>Cross</th><th>From L1–R1</th>`;
+    if (lineIndex === 1) header += `<th>Split</th>`;
+    else if (lineIndex === 2) header += `<th>Split</th>`;
+    if (lineDef.hasTurn) header += `<th>2nd cross</th><th>Turn</th>`;
+    header += `</tr>`;
+
+    return `<table class="bsp-timing-table"><thead>${header}</thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderTimingPanel(mode) {
+    const sectionsEl = document.getElementById('bspTimingSections');
+    const sourceEl = document.getElementById('bspTimingSource');
+    if (!sectionsEl) return;
+
+    const statsList = Array.from(timingStatsByDeviceId.values()).sort((a, b) =>
+        String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' })
+    );
+
+    if (sourceEl) {
+        sourceEl.textContent =
+            mode === 'history'
+                ? 'Source: loaded route history'
+                : 'Source: live GPS trail (10s updates)';
+    }
+
+    sectionsEl.innerHTML = TIMING_LINES.map((def, i) => {
+        const summaryExtra = def.hasTurn ? ' · turn on 2nd cross' : '';
+        return (
+            `<details class="bsp-timing-section" open>` +
+            `<summary class="bsp-timing-section-summary">${escapeHtml(def.label)}${summaryExtra}</summary>` +
+            `<div class="bsp-timing-section-body">` +
+            renderTimingDeviceRows(statsList, def, i) +
+            `</div></details>`
+        );
+    }).join('');
+}
+
+function appendLiveTrailPoint(deviceId, position) {
+    if (
+        !position ||
+        typeof position.latitude !== 'number' ||
+        typeof position.longitude !== 'number' ||
+        Number.isNaN(position.latitude) ||
+        Number.isNaN(position.longitude)
+    ) {
+        return;
+    }
+    const t = positionTimeMs(position);
+    if (!Number.isFinite(t)) return;
+
+    let trail = liveTrailsByDeviceId.get(deviceId);
+    if (!trail) trail = [];
+
+    const last = trail[trail.length - 1];
+    if (last) {
+        const lastT = positionTimeMs(last);
+        const sameTime = lastT === t;
+        const samePos =
+            Math.abs(last.latitude - position.latitude) < 1e-7 &&
+            Math.abs(last.longitude - position.longitude) < 1e-7;
+        if (sameTime && samePos) return;
+    }
+
+    trail.push({
+        latitude: position.latitude,
+        longitude: position.longitude,
+        speed: position.speed,
+        fixTime: position.fixTime,
+        deviceTime: position.deviceTime,
+        serverTime: position.serverTime,
+    });
+    if (trail.length > 8000) trail.splice(0, trail.length - 8000);
+    liveTrailsByDeviceId.set(deviceId, trail);
+}
+
+function clearLiveTrails() {
+    liveTrailsByDeviceId.clear();
+}
+
+function wireTimingPanel() {
+    const linesToggle = document.getElementById('bspTimingLinesToggle');
+    if (linesToggle && linesToggle.dataset.bound !== '1') {
+        linesToggle.dataset.bound = '1';
+        linesToggle.addEventListener('change', () => syncTimingLinesToMap());
+    }
+
+    const resetBtn = document.getElementById('bspTimingResetLiveBtn');
+    if (resetBtn && resetBtn.dataset.bound !== '1') {
+        resetBtn.dataset.bound = '1';
+        resetBtn.addEventListener('click', () => {
+            clearLiveTrails();
+            if (!lastHistoryRoutes || lastHistoryRoutes.length === 0) {
+                recomputeRaceTiming();
+            }
+        });
+    }
+
+    const details = document.getElementById('bspTimingDetails');
+    if (details && details.dataset.resizeBound !== '1') {
+        details.dataset.resizeBound = '1';
+        details.addEventListener('toggle', () => scheduleMapResize());
+    }
+}
+
+function initRaceTiming() {
+    wireTimingPanel();
+    syncTimingLinesToMap();
+    recomputeRaceTiming();
+}
+
+function onBuoysOrTimingGeometryChanged() {
+    syncTimingLinesToMap();
+    recomputeRaceTiming();
+}
+
 function isBuoysDragEnabled() {
     const el = document.getElementById('bspBuoysDragToggle');
     return el ? el.checked : false;
@@ -878,6 +1255,7 @@ function syncBuoysToMap() {
             b.lng = ll.lng;
             saveCourseBuoys();
             renderBuoysList();
+            onBuoysOrTimingGeometryChanged();
         });
 
         buoyMarkersById.set(b.id, marker);
@@ -909,6 +1287,7 @@ function applyBuoyCoordsFromInputs(buoyId) {
     const marker = buoyMarkersById.get(buoyId);
     if (marker) marker.setLatLng([lat, lng]);
     setBuoysStatus('');
+    onBuoysOrTimingGeometryChanged();
     return true;
 }
 
@@ -1193,6 +1572,13 @@ async function updateData() {
         renderDevices();
         wireDeviceCardFlyTo();
         updateMapMarkers();
+        devices.forEach((d) => {
+            const pos = positions[d.id];
+            if (pos) appendLiveTrailPoint(d.id, pos);
+        });
+        if (!lastHistoryRoutes || lastHistoryRoutes.length === 0) {
+            recomputeRaceTiming();
+        }
         updateTimestamp();
 
         if (map) requestAnimationFrame(() => map.invalidateSize());
@@ -1205,6 +1591,7 @@ async function updateData() {
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initCourseBuoys();
+    initRaceTiming();
     initCustomMapPins();
     initHistoryDateDefaultsIfNeeded();
     wireHistoryPanel();

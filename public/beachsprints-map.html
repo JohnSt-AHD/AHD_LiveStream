@@ -20,6 +20,20 @@
                 </label>
                 <div class="bsp-status" id="bspBuoysStatus"></div>
                 <div id="bspBuoysList" class="bsp-buoys-list"></div>
+
+                <details class="bsp-details bsp-timing-details" id="bspTimingDetails">
+                    <summary class="bsp-details-summary">Race timing</summary>
+                    <div class="bsp-details-body">
+                        <p class="bsp-timing-lead">Crossing times at each timing line from the live GPS trail or loaded route history.</p>
+                        <label class="bsp-toggle bsp-toggle--block">
+                            <input type="checkbox" id="bspTimingLinesToggle" checked>
+                            <span>Show timing lines on map</span>
+                        </label>
+                        <p class="bsp-timing-source" id="bspTimingSource">Source: live GPS trail</p>
+                        <button type="button" class="bsp-btn bsp-btn--small" id="bspTimingResetLiveBtn">Reset live trail</button>
+                        <div id="bspTimingSections" class="bsp-timing-sections"></div>
+                    </div>
+                </details>
             </div>
         </aside>
         <div class="bsp-map-area">

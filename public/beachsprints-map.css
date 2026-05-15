@@ -128,6 +128,93 @@
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
+.bsp-timing-details {
+    margin-top: 14px;
+}
+
+.bsp-timing-lead {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #b8d4e8;
+    margin-bottom: 10px;
+}
+
+.bsp-timing-source {
+    font-size: 11px;
+    color: var(--bsp-teal);
+    margin: 8px 0 6px;
+}
+
+.bsp-btn--small {
+    padding: 6px 10px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.bsp-timing-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bsp-timing-section {
+    border: 1px solid rgba(45, 212, 191, 0.3);
+    border-radius: 8px;
+    background: rgba(8, 47, 66, 0.45);
+    overflow: hidden;
+}
+
+.bsp-timing-section-summary {
+    cursor: pointer;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fde68a;
+    list-style: none;
+}
+
+.bsp-timing-section-summary::-webkit-details-marker {
+    display: none;
+}
+
+.bsp-timing-section-body {
+    padding: 0 8px 10px;
+    overflow-x: auto;
+}
+
+.bsp-timing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.bsp-timing-table th,
+.bsp-timing-table td {
+    padding: 4px 6px;
+    text-align: left;
+    border-bottom: 1px solid rgba(45, 212, 191, 0.2);
+}
+
+.bsp-timing-table th {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.bsp-timing-row td:first-child {
+    font-weight: 600;
+    color: #e8f4fc;
+}
+
+.bsp-timing-muted {
+    color: #64748b;
+}
+
+.bsp-timing-empty {
+    font-size: 12px;
+    color: #64748b;
+    padding: 4px 2px;
+}
+
 .bsp-map-area {
     position: relative;
     flex: 1;
