@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beach Sprints NZ · live fleet map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="beachsprints-map.css">
+</head>
+<body class="bsp-page">
+    <div class="bsp-root">
+        <div class="bsp-map-area">
+            <div id="map" role="application" aria-label="Beach sprints fleet map"></div>
+            <button type="button" id="bspMapFullscreenExitBtn" class="bsp-map-fullscreen-exit" hidden>Exit fullscreen</button>
+        </div>
+        <aside class="bsp-sidebar" aria-label="Markers and devices">
+            <div class="bsp-sidebar-scroll">
+                <header class="bsp-brand">
+                    <p class="bsp-brand-kicker">Coastal rowing</p>
+                    <h1 class="bsp-brand-title">Beach Sprints NZ</h1>
+                    <p class="bsp-brand-note">Inspired by <a href="https://www.beachsprintsnz.co.nz/" target="_blank" rel="noopener noreferrer">beachsprintsnz.co.nz</a> — same live Traccar data as the main map.</p>
+                </header>
+
+                <label class="bsp-toggle bsp-toggle--block">
+                    <input type="checkbox" id="bspMapFullscreenToggle">
+                    <span>Fullscreen map</span>
+                </label>
+                <p class="bsp-micro-hint">Map fills the window; this panel is hidden until you exit.</p>
+
+                <label class="bsp-toggle bsp-toggle--block">
+                    <input type="checkbox" id="liveUpdatesToggle" checked>
+                    <span>Live updates (every 10s)</span>
+                </label>
+                <p class="bsp-last-update" id="bspLastUpdate">Last updated: —</p>
+
+                <details class="bsp-details" id="bspCustomMarkersDetails" open>
+                    <summary class="bsp-details-summary">Custom markers</summary>
+                    <div class="bsp-details-body">
+                        <p class="bsp-lead">Add pins one at a time. Stored in this browser for <strong>this map page only</strong> (not Traccar).</p>
+                        <label class="bsp-field">
+                            <span class="bsp-field-label">Name</span>
+                            <input type="text" id="bspCustomMarkerName" maxlength="120" placeholder="e.g. Sprint start" autocomplete="off">
+                        </label>
+                        <label class="bsp-field">
+                            <span class="bsp-field-label">Latitude (°)</span>
+                            <input type="number" id="bspCustomMarkerLat" step="any" placeholder="-36.8485" autocomplete="off">
+                        </label>
+                        <label class="bsp-field">
+                            <span class="bsp-field-label">Longitude (°)</span>
+                            <input type="number" id="bspCustomMarkerLng" step="any" placeholder="174.7633" autocomplete="off">
+                        </label>
+                        <div class="bsp-actions">
+                            <button type="button" class="bsp-btn bsp-btn--primary" id="bspCustomMarkerAddBtn">Add marker</button>
+                        </div>
+                        <div class="bsp-status" id="bspCustomMarkersStatus"></div>
+                        <div id="bspCustomMarkersList" class="bsp-markers-list"></div>
+                    </div>
+                </details>
+
+                <div class="bsp-devices-section">
+                    <h2 class="bsp-devices-title">Devices</h2>
+                    <p class="bsp-micro-hint">Online = last GPS fix within 5 minutes.</p>
+                    <div class="bsp-devices-container" id="bspDevicesContainer">
+                        <div class="bsp-loading">Loading device data…</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer class="bsp-footer">
+        <a href="https://www.beachsprintsnz.co.nz/" target="_blank" rel="noopener noreferrer">Beach Sprints NZ</a>
+        <span class="bsp-footer-sep">·</span>
+        <a href="/">Main map</a>
+        <span class="bsp-footer-sep">·</span>
+        <a href="rowsafe-map.html">RowSafe map</a>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="beachsprints-map.js"></script>
+</body>
+</html>
