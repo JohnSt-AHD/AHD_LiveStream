@@ -18,9 +18,9 @@ function parseFloatClamped(v, min, max) {
 }
 
 /** Fixed overlay line on speed page (% viewport). Map start/finish lat/lng from URL. */
-const ROUTE_LINE_START_X = 82;
+const ROUTE_LINE_START_X = 81.5;
 const ROUTE_LINE_START_Y = 96;
-const ROUTE_LINE_END_X = 97;
+const ROUTE_LINE_END_X = 96.5;
 const ROUTE_LINE_END_Y = 96;
 
 const routeCfg = (() => {
