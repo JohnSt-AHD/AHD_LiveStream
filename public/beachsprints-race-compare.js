@@ -398,6 +398,25 @@ function renderRaceCompareDashboard() {
         `</table>`;
 }
 
+function openCompareWorkspace() {
+    const ws = document.getElementById('bspCompareWorkspace');
+    if (!ws) return;
+    ws.hidden = false;
+    ws.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('bsp-compare-workspace-open');
+    renderRaceCompareDashboard();
+    scheduleMapResize();
+}
+
+function closeCompareWorkspace() {
+    const ws = document.getElementById('bspCompareWorkspace');
+    if (!ws) return;
+    ws.hidden = true;
+    ws.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('bsp-compare-workspace-open');
+    scheduleMapResize();
+}
+
 function wireRaceComparePanel() {
     const selA = document.getElementById('bspCompareA');
     const selB = document.getElementById('bspCompareB');
@@ -410,10 +429,35 @@ function wireRaceComparePanel() {
         selB.dataset.bound = '1';
         selB.addEventListener('change', onChange);
     }
+
+    const openBtn = document.getElementById('bspCompareOpenWorkspace');
+    if (openBtn && openBtn.dataset.bound !== '1') {
+        openBtn.dataset.bound = '1';
+        openBtn.addEventListener('click', () => openCompareWorkspace());
+    }
+
+    const closeBtn = document.getElementById('bspCompareWorkspaceClose');
+    if (closeBtn && closeBtn.dataset.bound !== '1') {
+        closeBtn.dataset.bound = '1';
+        closeBtn.addEventListener('click', () => closeCompareWorkspace());
+    }
+
     const details = document.getElementById('bspCompareDetails');
     if (details && details.dataset.resizeBound !== '1') {
         details.dataset.resizeBound = '1';
-        details.addEventListener('toggle', () => scheduleMapResize());
+        details.addEventListener('toggle', () => {
+            if (details.open) openCompareWorkspace();
+            scheduleMapResize();
+        });
+    }
+
+    if (!document.body.dataset.compareEscBound) {
+        document.body.dataset.compareEscBound = '1';
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const ws = document.getElementById('bspCompareWorkspace');
+            if (ws && !ws.hidden) closeCompareWorkspace();
+        });
     }
 }
 

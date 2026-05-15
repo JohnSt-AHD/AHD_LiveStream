@@ -38,19 +38,8 @@
                 <details class="bsp-details bsp-compare-details" id="bspCompareDetails">
                     <summary class="bsp-details-summary">Head-to-head analysis</summary>
                     <div class="bsp-details-body">
-                        <p class="bsp-compare-lead">Compare two coastal sprint runs: launch above 2 m/s, slalom gates, turn at the top buoy, finish when speed drops below 2 m/s on the beach.</p>
-                        <p class="bsp-compare-source" id="bspCompareSource">Using live GPS trail</p>
-                        <div class="bsp-compare-pickers">
-                            <label class="bsp-field">
-                                <span class="bsp-field-label">Boat A</span>
-                                <select id="bspCompareA" aria-label="Boat A"></select>
-                            </label>
-                            <label class="bsp-field">
-                                <span class="bsp-field-label">Boat B</span>
-                                <select id="bspCompareB" aria-label="Boat B"></select>
-                            </label>
-                        </div>
-                        <div id="bspCompareDashboard" class="bsp-compare-dashboard"></div>
+                        <p class="bsp-compare-lead">Compare two boats across the full coastal sprint course.</p>
+                        <button type="button" class="bsp-btn bsp-btn--primary bsp-compare-open-btn" id="bspCompareOpenWorkspace">Open half-screen view</button>
                     </div>
                 </details>
             </div>
@@ -145,6 +134,32 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <div id="bspCompareWorkspace" class="bsp-compare-workspace" hidden aria-hidden="true">
+        <div class="bsp-compare-workspace-inner">
+            <header class="bsp-compare-workspace-header">
+                <div>
+                    <h2 class="bsp-compare-workspace-title">Head-to-head analysis</h2>
+                    <p class="bsp-compare-workspace-sub">Coastal sprint · 2 m/s start &amp; finish · live or historical GPS</p>
+                </div>
+                <button type="button" class="bsp-compare-workspace-close" id="bspCompareWorkspaceClose" aria-label="Close analysis panel">Close</button>
+            </header>
+            <div class="bsp-compare-workspace-scroll">
+                <p class="bsp-compare-source" id="bspCompareSource">Using live GPS trail</p>
+                <div class="bsp-compare-pickers bsp-compare-pickers--wide">
+                    <label class="bsp-field">
+                        <span class="bsp-field-label">Boat A</span>
+                        <select id="bspCompareA" aria-label="Boat A"></select>
+                    </label>
+                    <label class="bsp-field">
+                        <span class="bsp-field-label">Boat B</span>
+                        <select id="bspCompareB" aria-label="Boat B"></select>
+                    </label>
+                </div>
+                <div id="bspCompareDashboard" class="bsp-compare-dashboard"></div>
+            </div>
+        </div>
     </div>
 
     <footer class="bsp-footer">
