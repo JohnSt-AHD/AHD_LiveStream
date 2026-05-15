@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>RowSafe-style fleet map · Altitude HD</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="rowsafe-map.css">
@@ -47,6 +47,7 @@
 
             <div class="rnz-map-stage" aria-label="Map area">
                 <div id="map" class="rnz-map" role="application"></div>
+                <button type="button" id="rnzMapMobileExpandBtn" class="rnz-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
             </div>
 
             <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">

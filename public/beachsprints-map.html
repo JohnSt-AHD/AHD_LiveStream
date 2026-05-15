@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Beach Sprints NZ · live fleet map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="beachsprints-map.css">
@@ -12,6 +12,7 @@
         <div class="bsp-root">
         <div class="bsp-map-area">
             <div id="map" role="application" aria-label="Beach sprints fleet map"></div>
+            <button type="button" id="bspMapMobileExpandBtn" class="bsp-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
             <button type="button" id="bspMapFullscreenExitBtn" class="bsp-map-fullscreen-exit" hidden>Exit fullscreen</button>
         </div>
         <aside class="bsp-sidebar" aria-label="Markers and devices">

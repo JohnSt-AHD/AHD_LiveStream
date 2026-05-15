@@ -1058,6 +1058,7 @@ function updateMapMarkers() {
 function wireMapFullscreenMain() {
     const chk = document.getElementById('mapFullscreenToggle');
     const exitBtn = document.getElementById('mapFullscreenExitBtn');
+    const mobileExpand = document.getElementById('mapMobileExpandBtn');
     if (!chk || !exitBtn || chk.dataset.bound === '1') return;
     chk.dataset.bound = '1';
     const setFs = (on) => {
@@ -1068,6 +1069,10 @@ function wireMapFullscreenMain() {
     };
     chk.addEventListener('change', () => setFs(chk.checked));
     exitBtn.addEventListener('click', () => setFs(false));
+    if (mobileExpand && mobileExpand.dataset.bound !== '1') {
+        mobileExpand.dataset.bound = '1';
+        mobileExpand.addEventListener('click', () => setFs(true));
+    }
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && document.body.classList.contains('map-fullscreen-main')) {
             setFs(false);

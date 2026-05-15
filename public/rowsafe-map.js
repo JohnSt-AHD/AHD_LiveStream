@@ -905,10 +905,15 @@ function setRnzMapFullscreen(on) {
 function wireRnzMapFullscreen() {
     const chk = document.getElementById('rnzMapFullscreenToggle');
     const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
+    const mobileExpand = document.getElementById('rnzMapMobileExpandBtn');
     if (!chk || !exitBtn || chk.dataset.bound === '1') return;
     chk.dataset.bound = '1';
     chk.addEventListener('change', () => setRnzMapFullscreen(chk.checked));
     exitBtn.addEventListener('click', () => setRnzMapFullscreen(false));
+    if (mobileExpand && mobileExpand.dataset.bound !== '1') {
+        mobileExpand.dataset.bound = '1';
+        mobileExpand.addEventListener('click', () => setRnzMapFullscreen(true));
+    }
     window.addEventListener('resize', () => {
         if (document.body.classList.contains('rnz-map-fullscreen')) {
             updateRnzFullscreenLayoutVars();
