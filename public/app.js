@@ -20,6 +20,12 @@ let historySpeedChart = null;
 const LS_CUSTOM_MAP_PINS = 'altitudeHdMainMapCustomPins_v1';
 let customMapPins = [];
 
+/** Default course markers (main map); seeded when no pins saved yet; draggable on map. */
+const DEFAULT_MAIN_MAP_PINS = [
+    { id: 'pin_default_start', name: 'start', lat: -37.943356, lng: 175.556788 },
+    { id: 'pin_default_finish', name: 'finish', lat: -37.929223, lng: 175.542716 },
+];
+
 const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
 
@@ -333,11 +339,13 @@ function loadCustomMapPins() {
         const raw = localStorage.getItem(LS_CUSTOM_MAP_PINS);
         if (!raw) {
             customMapPins = [];
+            seedDefaultMainMapPinsIfEmpty();
             return;
         }
         const arr = JSON.parse(raw);
         if (!Array.isArray(arr)) {
             customMapPins = [];
+            seedDefaultMainMapPinsIfEmpty();
             return;
         }
         customMapPins = arr
@@ -356,9 +364,17 @@ function loadCustomMapPins() {
                 lng: Number(p.lng),
             }))
             .filter((p) => p.lat >= -90 && p.lat <= 90 && p.lng >= -180 && p.lng <= 180);
+        seedDefaultMainMapPinsIfEmpty();
     } catch {
         customMapPins = [];
+        seedDefaultMainMapPinsIfEmpty();
     }
+}
+
+function seedDefaultMainMapPinsIfEmpty() {
+    if (customMapPins.length > 0) return;
+    customMapPins = DEFAULT_MAIN_MAP_PINS.map((p) => ({ ...p }));
+    saveCustomMapPins();
 }
 
 function saveCustomMapPins() {
@@ -378,13 +394,21 @@ function syncCustomPinsToMap() {
     if (!customPinsLayer || !map) return;
     customPinsLayer.clearLayers();
     customMapPins.forEach((p) => {
-        const marker = L.marker([p.lat, p.lng]).addTo(customPinsLayer);
+        const marker = L.marker([p.lat, p.lng], { draggable: true }).addTo(customPinsLayer);
         marker.bindPopup(
             `<div class="map-popup-title">${escapeHtml(p.name)}</div>` +
                 `<div><strong>Lat:</strong> ${p.lat.toFixed(6)}</div>` +
                 `<div><strong>Lon:</strong> ${p.lng.toFixed(6)}</div>`,
             { maxWidth: 260 }
         );
+        marker.on('dragend', () => {
+            const ll = marker.getLatLng();
+            p.lat = ll.lat;
+            p.lng = ll.lng;
+            saveCustomMapPins();
+            renderCustomMarkersList();
+            populateSpeedRoutePinSelects();
+        });
     });
 }
 
