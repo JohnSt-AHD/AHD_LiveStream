@@ -9,6 +9,8 @@
     --ahd-text: #e8f4fc;
     --ahd-muted: #94a3b8;
     --ahd-safety: #4ade80;
+    --rnz-navy: #0a2342;
+    --rnz-teal: #0d9488;
 }
 
 * {
@@ -19,20 +21,108 @@
 
 .hub-page {
     font-family: 'Segoe UI', system-ui, sans-serif;
-    background: var(--ahd-bg);
+    background-color: var(--ahd-bg);
     background-image:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 191, 255, 0.15), transparent),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0, 100, 150, 0.12), transparent);
+        linear-gradient(180deg, rgba(10, 22, 40, 0.92) 0%, rgba(10, 22, 40, 0.88) 100%),
+        url('assets/rnz/rnz-waves-black-wide.jpg');
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
     color: var(--ahd-text);
     min-height: 100vh;
     min-height: 100dvh;
+    position: relative;
+}
+
+.hub-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('assets/rnz/rnz-ngaru-dark.png') repeat;
+    background-size: 280px;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hub-topbar,
+.hub-wrap {
+    position: relative;
+    z-index: 1;
+}
+
+.hub-topbar {
+    background-color: #000;
+    background-image:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.9) 100%),
+        url('assets/rnz/rnz-waves-black-wide.jpg');
+    background-size: cover;
+    background-position: center 30%;
+    border-bottom: 1px solid rgba(13, 148, 136, 0.35);
+    padding: clamp(18px, 2.5vw, 28px) clamp(16px, 4vw, 48px);
+    position: relative;
+    overflow: hidden;
+}
+
+.hub-topbar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('assets/rnz/rnz-ngaru-dark.png') repeat;
+    background-size: 220px;
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.hub-topbar-inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.hub-topbar-brands {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(20px, 4vw, 48px);
+}
+
+.hub-topbar .hub-logo {
+    display: block;
+    width: min(300px, 42vw);
+    height: auto;
+    margin: 0;
+    object-fit: contain;
+}
+
+.hub-rnz-logo {
+    display: block;
+    width: min(180px, 32vw);
+    height: auto;
+    object-fit: contain;
+}
+
+.hub-topbar .hub-tagline {
+    font-size: 14px;
+    color: var(--ahd-muted);
+    letter-spacing: 0.02em;
+    margin: 0;
+    max-width: 36rem;
+    line-height: 1.45;
 }
 
 .hub-wrap {
     width: 100%;
     max-width: 1600px;
     margin: 0 auto;
-    padding: clamp(20px, 3vw, 40px) clamp(16px, 4vw, 48px) 40px;
+    padding: clamp(20px, 3vw, 32px) clamp(16px, 4vw, 48px) 40px;
 }
 
 .hub-dashboard {
@@ -61,6 +151,23 @@
     margin-bottom: 8px;
 }
 
+@media (min-width: 1200px) {
+    .hub-nav-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.hub-panel--vmix .hub-section-title {
+    color: #f472b6;
+}
+
+.hub-vmix-lead {
+    font-size: 13px;
+    color: var(--ahd-muted);
+    line-height: 1.45;
+    margin-bottom: 12px;
+}
+
 @media (max-width: 1024px) {
     .hub-dashboard {
         grid-template-columns: 1fr;
@@ -73,24 +180,6 @@
     }
 }
 
-.hub-brand {
-    text-align: center;
-    margin-bottom: clamp(32px, 6vw, 48px);
-}
-
-.hub-logo {
-    display: block;
-    width: min(320px, 85vw);
-    height: auto;
-    margin: 0 auto 20px;
-    object-fit: contain;
-}
-
-.hub-tagline {
-    font-size: 15px;
-    color: var(--ahd-muted);
-    letter-spacing: 0.02em;
-}
 
 .hub-section {
     margin-bottom: 28px;
@@ -112,8 +201,55 @@
 }
 
 .hub-section--safety .hub-section-title,
+.hub-panel--safety {
+    background:
+        linear-gradient(145deg, rgba(10, 35, 66, 0.95) 0%, rgba(12, 28, 52, 0.92) 100%),
+        url('assets/rnz/rnz-ngaru-dark.png');
+    background-size: auto, 240px;
+    border-color: rgba(13, 148, 136, 0.45);
+}
+
 .hub-panel--safety .hub-section-title {
     color: var(--ahd-safety);
+}
+
+.hub-rnz-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+.hub-rnz-strip-mark {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+.hub-rnz-strip-text {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.hub-link-card--rnz {
+    border-color: rgba(13, 148, 136, 0.4);
+}
+
+.hub-link-icon--rnz {
+    background: rgba(13, 148, 136, 0.15) !important;
+    padding: 8px;
+}
+
+.hub-link-icon--rnz img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
 }
 
 .hub-links {

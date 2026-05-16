@@ -1,0 +1,409 @@
+/* vMix web overlay — fixed 1920×1080, transparent page background */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: transparent;
+}
+
+body.vmix-overlay {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+    background: transparent !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+.vmix-stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* —— Header bar —— */
+.vmix-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 40px;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.88) 0%,
+        rgba(0, 0, 0, 0.55) 75%,
+        transparent 100%
+    );
+}
+
+.vmix-brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+.vmix-logos {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.vmix-logo {
+    display: block;
+    height: 56px;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
+}
+
+.vmix-title-block {
+    min-width: 0;
+}
+
+.vmix-title {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    color: var(--vmix-accent, #00e5ff);
+}
+
+.vmix-subtitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.vmix-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.vmix-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: rgba(220, 38, 38, 0.9);
+    border: 1px solid rgba(255, 120, 120, 0.5);
+}
+
+.vmix-live-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    animation: vmix-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes vmix-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+.vmix-clock {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.vmix-day-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    text-align: right;
+    max-width: 320px;
+}
+
+/* —— Lower third —— */
+.vmix-lower {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 48px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px 28px;
+    align-items: end;
+}
+
+.vmix-race-card {
+    padding: 20px 24px;
+    border-radius: 12px;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.82) 0%,
+        rgba(0, 0, 0, 0.72) 100%
+    );
+    border-left: 5px solid var(--vmix-accent, #00e5ff);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    min-width: 0;
+}
+
+.vmix-race-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px 20px;
+    margin-bottom: 8px;
+}
+
+.vmix-race-num {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--vmix-accent, #00e5ff);
+}
+
+.vmix-race-time {
+    font-size: 32px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.vmix-event-name {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 6px;
+}
+
+.vmix-event-meta {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: capitalize;
+}
+
+.vmix-status {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(74, 222, 128, 0.25);
+    color: #4ade80;
+}
+
+.vmix-lanes {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.vmix-lanes-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 8px;
+}
+
+.vmix-lane-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+}
+
+.vmix-lane {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.vmix-lane-n {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--vmix-accent, #00e5ff);
+}
+
+.vmix-results-panel {
+    padding: 16px 20px;
+    border-radius: 12px;
+    min-width: 280px;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.vmix-results-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 10px;
+}
+
+.vmix-result-line {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr auto;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 4px 0;
+}
+
+.vmix-result-pos {
+    font-weight: 900;
+    color: #fbbf24;
+}
+
+.vmix-result-time {
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.vmix-results-panel--empty {
+    opacity: 0.5;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* —— Next race strip —— */
+.vmix-next {
+    position: absolute;
+    right: 40px;
+    top: 120px;
+    max-width: 420px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-right: 4px solid var(--vmix-accent2, var(--vmix-accent, #00e5ff));
+}
+
+.vmix-next-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 6px;
+}
+
+.vmix-next-race {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--vmix-accent, #00e5ff);
+}
+
+.vmix-next-event {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 4px;
+}
+
+.vmix-next-time {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.vmix-error {
+    position: absolute;
+    left: 40px;
+    bottom: 200px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(127, 29, 29, 0.85);
+    font-size: 14px;
+    max-width: 600px;
+}
+
+/* —— Themes —— */
+.vmix-theme-kri {
+    --vmix-accent: #d4af37;
+    --vmix-accent2: #b91c1c;
+}
+
+.vmix-theme-rnz-milford {
+    --vmix-accent: #4ade80;
+    --vmix-accent2: #38bdf8;
+}
+
+.vmix-theme-rnz-milford .vmix-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, transparent 35%, transparent 70%, rgba(0, 0, 0, 0.2) 100%),
+        url('assets/rnz/rnz-ngaru-dark.png');
+    background-size: auto, 320px;
+    opacity: 0.08;
+    pointer-events: none;
+}
+
+.vmix-theme-rnz-milford .vmix-header {
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.92) 0%,
+        rgba(10, 35, 66, 0.75) 100%
+    );
+}
+
+.vmix-theme-rnz-milford .vmix-logo {
+    height: 64px;
+    max-width: 240px;
+}
+
+.vmix-theme-beachsprints-milford {
+    --vmix-accent: #ff7a18;
+    --vmix-accent2: #00e5ff;
+}
+
+.vmix-theme-kri .vmix-title {
+    color: #f5e6b8;
+}
+
+.vmix-theme-beachsprints-milford .vmix-race-card {
+    border-left-color: #ff7a18;
+}

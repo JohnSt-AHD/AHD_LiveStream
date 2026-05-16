@@ -7,18 +7,29 @@
     <link rel="stylesheet" href="hub.css">
 </head>
 <body class="hub-page">
-    <div class="hub-wrap">
-        <header class="hub-brand">
-            <img
-                src="altitude-hd-logo.png"
-                alt="Altitude HD"
-                class="hub-logo"
-                width="320"
-                height="120"
-            >
+    <header class="hub-topbar">
+        <div class="hub-topbar-inner">
+            <div class="hub-topbar-brands">
+                <img
+                    src="altitude-hd-logo.png"
+                    alt="Altitude HD"
+                    class="hub-logo"
+                    width="320"
+                    height="120"
+                >
+                <img
+                    src="assets/rnz/rnz-logo-white.png"
+                    alt="Rowing New Zealand"
+                    class="hub-rnz-logo"
+                    width="200"
+                    height="80"
+                >
+            </div>
             <p class="hub-tagline">Live fleet maps &amp; safety tools for broadcast and operations</p>
-        </header>
+        </div>
+    </header>
 
+    <div class="hub-wrap">
         <div class="hub-dashboard">
             <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
                 <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data (MADS 2026)</h2>
@@ -95,12 +106,57 @@
                 </ul>
             </section>
 
+            <section class="hub-panel hub-panel--vmix" aria-labelledby="hub-vmix-title">
+                <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
+                <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Uses daysheet URLs from above.</p>
+                <ul class="hub-links">
+                    <li>
+                        <a class="hub-link-card" href="vmix-kri.html">
+                            <span class="hub-link-icon" aria-hidden="true">🎬</span>
+                            <span class="hub-link-text">
+                                <h3>KRI</h3>
+                                <p>Regatta lower-third — current race, lanes, top 3 results.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--rnz" href="vmix-rnz-milford.html">
+                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
+                                <img src="assets/rnz/rnz-logomark-white.png" alt="" width="28" height="28">
+                            </span>
+                            <span class="hub-link-text">
+                                <h3>RNZ — Milford</h3>
+                                <p>Rowing NZ / Milford branded overlay for live broadcast.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card" href="vmix-beachsprints-milford.html">
+                            <span class="hub-link-icon" aria-hidden="true">🎬</span>
+                            <span class="hub-link-text">
+                                <h3>Beach Sprints — Milford</h3>
+                                <p>Beach sprints course overlay with live schedule graphics.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+
             <section class="hub-panel hub-panel--safety" aria-labelledby="hub-safety-title">
+                <div class="hub-rnz-strip">
+                    <img src="assets/rnz/rnz-logomark-white.png" alt="" class="hub-rnz-strip-mark" width="48" height="48" aria-hidden="true">
+                    <span class="hub-rnz-strip-text">Rowing New Zealand</span>
+                </div>
                 <h2 id="hub-safety-title" class="hub-section-title">Safety system</h2>
                 <ul class="hub-links">
                     <li>
-                        <a class="hub-link-card" href="rowsafe-map.html">
-                            <span class="hub-link-icon" aria-hidden="true">🛡</span>
+                        <a class="hub-link-card hub-link-card--rnz" href="rowsafe-map.html">
+                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
+                                <img src="assets/rnz/rnz-logomark-dual.png" alt="" width="28" height="28">
+                            </span>
                             <span class="hub-link-text">
                                 <h3>RowSafe map (RNZ)</h3>
                                 <p>Rowing New Zealand safety overlay — RowSafe / RowingHub style fleet view.</p>
