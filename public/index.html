@@ -19,6 +19,53 @@
             <p class="hub-tagline">Live fleet maps &amp; safety tools for broadcast and operations</p>
         </header>
 
+        <section class="hub-section hub-section--data" aria-labelledby="hub-csv-title">
+            <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data (MADS 2026)</h2>
+            <p class="hub-csv-lead">Public feed URLs for events, daysheet, results, and competitors. A ✓ appears when the link responds with CSV data.</p>
+            <ul id="hubCsvList" class="hub-csv-list"></ul>
+            <div class="hub-csv-actions">
+                <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
+            </div>
+        </section>
+
+        <section class="hub-section hub-section--schedule" id="hubScheduleSection" aria-labelledby="hub-schedule-title">
+            <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
+            <p class="hub-schedule-lead">Current race plus two before and two after, from the daysheet start times.</p>
+
+            <div class="hub-clock-panel">
+                <fieldset class="hub-clock-fieldset">
+                    <legend class="hub-clock-legend">Clock</legend>
+                    <label class="hub-clock-radio">
+                        <input type="radio" name="hubClockMode" id="hubClockModeLive" value="live" checked>
+                        Live date &amp; time
+                    </label>
+                    <label class="hub-clock-radio">
+                        <input type="radio" name="hubClockMode" id="hubClockModeFixed" value="fixed">
+                        Fixed date &amp; time
+                    </label>
+                    <div class="hub-clock-fixed">
+                        <input type="date" id="hubClockFixedDate" class="hub-clock-input" aria-label="Fixed date">
+                        <input type="time" id="hubClockFixedTime" class="hub-clock-input" aria-label="Fixed time" step="60">
+                    </div>
+                </fieldset>
+                <label class="hub-clock-offset">
+                    Delay offset (minutes)
+                    <input type="number" id="hubClockOffset" class="hub-clock-input hub-clock-input--num" value="0" step="1" aria-label="Regatta delay offset in minutes">
+                </label>
+                <label class="hub-clock-refresh">
+                    <input type="checkbox" id="hubAutoRefresh">
+                    Auto-refresh daysheet &amp; results every 1 min
+                </label>
+            </div>
+
+            <p class="hub-clock-display" id="hubClockDisplay" aria-live="polite"></p>
+
+            <ul class="hub-race-board" id="hubRaceBoard" aria-label="Race schedule window"></ul>
+
+            <p class="hub-schedule-status" id="hubScheduleStatus"></p>
+            <button type="button" class="hub-btn" id="hubScheduleReload">Reload schedule</button>
+        </section>
+
         <section class="hub-section" aria-labelledby="hub-live-title">
             <h2 id="hub-live-title" class="hub-section-title">Live stream</h2>
             <ul class="hub-links">
@@ -65,5 +112,7 @@
             Altitude HD · Traccar overlay
         </footer>
     </div>
+    <script src="hub-csv.js"></script>
+    <script src="hub-regatta.js"></script>
 </body>
 </html>

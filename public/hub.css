@@ -159,3 +159,336 @@
     font-size: 12px;
     color: var(--ahd-muted);
 }
+
+.hub-section--data .hub-section-title {
+    color: #fbbf24;
+}
+
+.hub-csv-lead {
+    font-size: 13px;
+    color: var(--ahd-muted);
+    line-height: 1.45;
+    margin-bottom: 14px;
+}
+
+.hub-csv-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hub-csv-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+@media (max-width: 480px) {
+    .hub-csv-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+}
+
+.hub-csv-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ahd-text);
+}
+
+.hub-csv-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.hub-csv-status {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    background: rgba(100, 116, 139, 0.25);
+    color: var(--ahd-muted);
+}
+
+.hub-csv-status--ok {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.hub-csv-status--fail {
+    background: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+.hub-csv-status--pending {
+    background: rgba(0, 229, 255, 0.12);
+    color: var(--ahd-accent);
+}
+
+.hub-csv-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    border-radius: 8px;
+    border: 1px solid var(--ahd-border);
+    background: rgba(6, 24, 36, 0.9);
+    color: var(--ahd-text);
+}
+
+.hub-csv-input:focus {
+    outline: none;
+    border-color: var(--ahd-accent);
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.2);
+}
+
+.hub-csv-actions {
+    margin-top: 12px;
+}
+
+.hub-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    border: 1px solid var(--ahd-border);
+    background: rgba(0, 191, 255, 0.15);
+    color: var(--ahd-accent);
+    cursor: pointer;
+}
+
+.hub-btn:hover {
+    background: rgba(0, 191, 255, 0.28);
+}
+
+.hub-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.hub-section--schedule .hub-section-title {
+    color: #a78bfa;
+}
+
+.hub-schedule-lead {
+    font-size: 13px;
+    color: var(--ahd-muted);
+    line-height: 1.45;
+    margin-bottom: 14px;
+}
+
+.hub-clock-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--ahd-border);
+    background: rgba(6, 24, 36, 0.65);
+    margin-bottom: 14px;
+}
+
+.hub-clock-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.hub-clock-legend {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ahd-muted);
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.hub-clock-radio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.hub-clock-fixed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hub-clock-offset,
+.hub-clock-refresh {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ahd-text);
+}
+
+.hub-clock-input {
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    border-radius: 8px;
+    border: 1px solid var(--ahd-border);
+    background: rgba(6, 24, 36, 0.9);
+    color: var(--ahd-text);
+}
+
+.hub-clock-input:disabled {
+    opacity: 0.45;
+}
+
+.hub-clock-input--num {
+    width: 5.5rem;
+}
+
+.hub-clock-display {
+    font-size: 13px;
+    color: var(--ahd-accent);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.hub-race-board {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.hub-race-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 10px;
+    align-items: start;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--ahd-border);
+    background: var(--ahd-bg-card);
+}
+
+.hub-race-row--highlight {
+    border-color: #a78bfa;
+    background: rgba(167, 139, 250, 0.12);
+    box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.25);
+}
+
+.hub-race-row--current .hub-race-tag {
+    color: #c4b5fd;
+    font-weight: 800;
+}
+
+.hub-race-row--prev1,
+.hub-race-row--prev2 {
+    opacity: 0.85;
+}
+
+.hub-race-row--next1,
+.hub-race-row--next2 {
+    opacity: 0.92;
+}
+
+.hub-race-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ahd-muted);
+    padding-top: 2px;
+}
+
+.hub-race-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+    min-width: 0;
+}
+
+.hub-race-time {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ahd-accent);
+    min-width: 3.2rem;
+}
+
+.hub-race-main {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.hub-race-main strong {
+    font-weight: 700;
+}
+
+.hub-race-event {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.hub-race-meta {
+    display: block;
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin-top: 2px;
+    text-transform: capitalize;
+}
+
+.hub-race-result {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.hub-race-empty {
+    color: var(--ahd-muted);
+    font-size: 14px;
+}
+
+.hub-schedule-status {
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+#hubScheduleReload {
+    margin-top: 4px;
+}
+
+@media (max-width: 480px) {
+    .hub-race-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+}

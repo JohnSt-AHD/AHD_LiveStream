@@ -4,6 +4,12 @@
   "functions": {
     "api/traccar.js": {
       "maxDuration": 60
+    },
+    "api/check-csv.js": {
+      "maxDuration": 20
+    },
+    "api/fetch-csv.js": {
+      "maxDuration": 20
     }
   }
 }
