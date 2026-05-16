@@ -169,6 +169,21 @@ function parseDaysheetCsv(text) {
     return races;
 }
 
+function parseResultPlacings(cols) {
+    const placings = [];
+    for (let i = 6; i + 2 < cols.length; i += 3) {
+        const place = parseInt(cols[i], 10);
+        const competitor = cols[i + 1].trim();
+        const time = cols[i + 2].trim();
+        if (!Number.isFinite(place) || place < 1 || place > 3 || !competitor) {
+            continue;
+        }
+        placings.push({ place, competitor, time });
+    }
+    placings.sort((a, b) => a.place - b.place);
+    return placings;
+}
+
 function parseResultsCsv(text) {
     const map = new Map();
     for (const line of text.split(/\r?\n/)) {
@@ -183,6 +198,7 @@ function parseResultsCsv(text) {
             eventNum: cols[1].trim(),
             round: cols[2].trim(),
             division: cols[3].trim(),
+            placings: parseResultPlacings(cols),
         });
     }
     return map;
@@ -306,6 +322,36 @@ const boardState = {
     loading: false,
 };
 
+function renderPlacingsList(placings) {
+    const ol = document.createElement('ol');
+    ol.className = 'hub-race-placings';
+    ol.setAttribute('aria-label', 'Top three results');
+
+    for (const p of placings) {
+        const item = document.createElement('li');
+        item.className = 'hub-race-placing';
+
+        const place = document.createElement('span');
+        place.className = 'hub-race-placing-pos';
+        place.textContent = String(p.place);
+
+        const crew = document.createElement('span');
+        crew.className = 'hub-race-placing-crew';
+        crew.textContent = p.competitor;
+
+        const time = document.createElement('span');
+        time.className = 'hub-race-placing-time';
+        time.textContent = p.time || '—';
+
+        item.appendChild(place);
+        item.appendChild(crew);
+        item.appendChild(time);
+        ol.appendChild(item);
+    }
+
+    return ol;
+}
+
 function renderRaceRow(slot, resultForRace) {
     const li = document.createElement('li');
     li.className = `hub-race-row hub-race-row--${slot.role}`;
@@ -317,16 +363,19 @@ function renderRaceRow(slot, resultForRace) {
     tag.className = 'hub-race-tag';
     tag.textContent = ROLE_LABELS[slot.role] || slot.role;
 
-    const body = document.createElement('div');
-    body.className = 'hub-race-body';
+    const content = document.createElement('div');
+    content.className = 'hub-race-content';
 
     if (!slot.race) {
         const empty = document.createElement('span');
         empty.className = 'hub-race-empty';
         empty.textContent = '—';
-        body.appendChild(empty);
+        content.appendChild(empty);
     } else {
         const r = slot.race;
+        const body = document.createElement('div');
+        body.className = 'hub-race-body';
+
         const time = document.createElement('span');
         time.className = 'hub-race-time';
         time.textContent = formatRaceTime(r.startAt);
@@ -364,19 +413,17 @@ function renderRaceRow(slot, resultForRace) {
             badge.title = 'Result status';
             body.appendChild(badge);
         }
+
+        content.appendChild(body);
+
+        if (resultForRace && resultForRace.placings?.length) {
+            content.appendChild(renderPlacingsList(resultForRace.placings));
+        }
     }
 
     li.appendChild(tag);
-    li.appendChild(body);
+    li.appendChild(content);
     return li;
-}
-
-function escapeHtml(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
 }
 
 function updateClockDisplay(effectiveNow) {
