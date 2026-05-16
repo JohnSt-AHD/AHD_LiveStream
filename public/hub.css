@@ -52,11 +52,11 @@
 }
 
 .hub-topbar {
-    background-color: #061829;
-    background-image: url('assets/rnz/rnz-ngaru-dark.png');
-    background-repeat: repeat;
-    background-size: 320px auto;
-    background-position: center top;
+    background-color: #000;
+    background-image: url('assets/rnz/rnz-waves-black-wide.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
     border-bottom: 1px solid rgba(13, 148, 136, 0.35);
     padding: clamp(18px, 2.5vw, 28px) clamp(16px, 4vw, 48px);
     position: relative;
@@ -69,8 +69,8 @@
     inset: 0;
     background: linear-gradient(
         180deg,
-        rgba(6, 24, 41, 0.35) 0%,
-        rgba(6, 24, 41, 0.55) 100%
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.65) 100%
     );
     pointer-events: none;
 }
