@@ -161,12 +161,31 @@ function parseDaysheetCsv(text) {
             eventName: cols[3].trim(),
             round: cols[4].trim(),
             division: cols[5] ? cols[5].trim() : '',
+            lanes: parseLanes(cols),
             dayLabel,
         });
     }
 
     races.sort((a, b) => a.startAt - b.startAt);
     return races;
+}
+
+function parseLanes(cols) {
+    const lanes = [];
+    for (let lane = 1; lane <= 9; lane++) {
+        const idx = 5 + lane;
+        if (idx >= cols.length) break;
+        lanes.push({
+            lane,
+            crew: (cols[idx] || '').trim() || null,
+        });
+    }
+    let lastUsed = 0;
+    for (const l of lanes) {
+        if (l.crew) lastUsed = l.lane;
+    }
+    if (!lastUsed) return [];
+    return lanes.filter((l) => l.lane <= lastUsed);
 }
 
 function parseResultPlacings(cols) {
@@ -352,6 +371,35 @@ function renderPlacingsList(placings) {
     return ol;
 }
 
+function renderLaneDraw(lanes) {
+    const wrap = document.createElement('div');
+    wrap.className = 'hub-lane-draw';
+    wrap.setAttribute('aria-label', 'Lane draw');
+
+    const grid = document.createElement('div');
+    grid.className = 'hub-lane-grid';
+
+    for (const { lane, crew } of lanes) {
+        const chip = document.createElement('span');
+        chip.className = crew ? 'hub-lane' : 'hub-lane hub-lane--empty';
+
+        const num = document.createElement('span');
+        num.className = 'hub-lane-n';
+        num.textContent = String(lane);
+        chip.appendChild(num);
+
+        const name = document.createElement('span');
+        name.className = 'hub-lane-crew';
+        name.textContent = crew || '—';
+        chip.appendChild(name);
+
+        grid.appendChild(chip);
+    }
+
+    wrap.appendChild(grid);
+    return wrap;
+}
+
 function renderRaceRow(slot, resultForRace) {
     const li = document.createElement('li');
     li.className = `hub-race-row hub-race-row--${slot.role}`;
@@ -416,8 +464,19 @@ function renderRaceRow(slot, resultForRace) {
 
         content.appendChild(body);
 
-        if (resultForRace && resultForRace.placings?.length) {
-            content.appendChild(renderPlacingsList(resultForRace.placings));
+        const hasLanes = r.lanes && r.lanes.length > 0;
+        const hasPlacings =
+            resultForRace && resultForRace.placings?.length > 0;
+        if (hasLanes || hasPlacings) {
+            const extras = document.createElement('div');
+            extras.className = 'hub-race-extras';
+            if (hasLanes) extras.appendChild(renderLaneDraw(r.lanes));
+            if (hasPlacings) {
+                extras.appendChild(
+                    renderPlacingsList(resultForRace.placings),
+                );
+            }
+            content.appendChild(extras);
         }
     }
 
