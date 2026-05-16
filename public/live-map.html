@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Altitude HD · Live fleet map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-root">
+        <div class="app-map-area">
+            <div id="map" role="application" aria-label="Device map"></div>
+            <div id="speedLegend" class="speed-legend" hidden>
+                <div class="speed-legend-title">Speed (m/s)</div>
+                <div class="speed-legend-bar" aria-hidden="true"></div>
+                <div class="speed-legend-labels"><span>0</span><span>20</span></div>
+            </div>
+            <div class="overlay-panel">
+                <div class="header">
+                    <h1>Altitude HD</h1>
+                    <label class="live-toggle">
+                        <input type="checkbox" id="liveUpdatesToggle" checked>
+                        <span class="live-toggle-label">Live updates</span>
+                        <span class="live-toggle-hint">every 10s</span>
+                    </label>
+                </div>
+
+            <div class="history-panel" id="historyPanel">
+                <div class="history-title">Route history</div>
+                <label class="history-field">
+                    <span>Devices</span>
+                    <select id="historyDevice" multiple size="5" aria-label="Devices for history"></select>
+                </label>
+                <p class="history-multi-hint">Ctrl+click (Windows) or ⌘+click (Mac) to select multiple devices.</p>
+                <label class="history-field">
+                    <span>From</span>
+                    <input type="datetime-local" id="historyFrom" step="60">
+                </label>
+                <label class="history-field">
+                    <span>To</span>
+                    <input type="datetime-local" id="historyTo" step="60">
+                </label>
+                <div class="history-actions">
+                    <button type="button" class="history-btn history-btn-primary" id="historyLoadBtn">Load on map</button>
+                    <button type="button" class="history-btn" id="historyClearBtn">Clear route</button>
+                </div>
+                <div class="history-status" id="historyStatus"></div>
+            </div>
+
+            <div class="speed-launcher-panel" id="speedLauncherPanel">
+                <div class="speed-launcher-title">Speed screen (separate page)</div>
+                <p class="speed-launcher-lead">Same project, second URL. Split time is fixed at 88% from the top and 91.5% from the left on the speed page.</p>
+                <label class="history-field">
+                    <span>Device</span>
+                    <select id="speedScreenDevice" aria-label="Device for speed page"></select>
+                </label>
+                <div class="speed-route-dot-section">
+                    <div class="speed-route-dot-title">Route dot (map → overlay)</div>
+                    <p class="speed-route-dot-lead">Pick <strong>start</strong> and <strong>finish</strong> custom markers on the map. The route line on the speed page is fixed along the bottom (81.5%, 96% → 96.5%, 96%). The orange dot tracks the device along the course segment.</p>
+                    <label class="history-field">
+                        <span>Start marker</span>
+                        <select id="speedRouteStartPin" aria-label="Start marker for route dot"></select>
+                    </label>
+                    <label class="history-field">
+                        <span>Finish marker</span>
+                        <select id="speedRouteEndPin" aria-label="Finish marker for route dot"></select>
+                    </label>
+                </div>
+                <label class="live-toggle speed-transparent-toggle">
+                    <input type="checkbox" id="speedTransparentBg">
+                    <span class="live-toggle-label">Transparent page background</span>
+                    <span class="live-toggle-hint">for overlays / OBS</span>
+                </label>
+                <div class="history-actions">
+                    <button type="button" class="history-btn history-btn-primary" id="openSpeedScreenBtn">Open speed page</button>
+                    <button type="button" class="history-btn" id="copySpeedLinkBtn">Copy link</button>
+                </div>
+                <div class="history-status" id="speedLauncherStatus"></div>
+            </div>
+
+            <div class="footer">
+                <span class="last-update" id="lastUpdate">Last updated: --:--:--</span>
+                <div class="footer-alt"><a href="/">Altitude HD home</a> · <a href="beachsprints-map.html">Beach Sprints map</a> · <a href="rowsafe-map.html">RowSafe map</a></div>
+            </div>
+        </div>
+
+            <aside class="overlay-panel-right" aria-label="Map tools and devices">
+                <button type="button" id="mapMobileExpandBtn" class="map-mobile-expand-btn" aria-label="Expand map to full screen">Expand map</button>
+                <label class="map-fullscreen-toggle live-toggle map-fullscreen-toggle--desktop">
+                    <input type="checkbox" id="mapFullscreenToggle">
+                    <span class="live-toggle-label">Fullscreen map</span>
+                    <span class="live-toggle-hint">over side panels</span>
+                </label>
+
+                <details class="custom-markers-details" id="customMarkersDetails">
+                    <summary class="custom-markers-summary">Custom markers</summary>
+                    <div class="custom-markers-body">
+                        <p class="custom-markers-lead">Pins appear on this map only (stored in this browser, not Traccar). Default <strong>start</strong> and <strong>finish</strong> markers are added on first visit; drag them on the map or edit coordinates below.</p>
+                        <label class="history-field">
+                            <span>Name</span>
+                            <input type="text" id="customMarkerName" maxlength="120" placeholder="e.g. Start line" autocomplete="off">
+                        </label>
+                        <label class="history-field">
+                            <span>Latitude (°)</span>
+                            <input type="number" id="customMarkerLat" step="any" placeholder="-36.8485" autocomplete="off">
+                        </label>
+                        <label class="history-field">
+                            <span>Longitude (°)</span>
+                            <input type="number" id="customMarkerLng" step="any" placeholder="174.7633" autocomplete="off">
+                        </label>
+                        <div class="history-actions">
+                            <button type="button" class="history-btn history-btn-primary" id="customMarkerAddBtn">Add marker</button>
+                        </div>
+                        <div class="history-status" id="customMarkersStatus"></div>
+                        <div id="customMarkersList" class="custom-markers-list"></div>
+                    </div>
+                </details>
+
+                <div class="right-panel-devices-wrap">
+                    <div class="right-panel-section-title">Devices</div>
+                    <div class="devices-container" id="devicesContainer">
+                        <div class="loading">Loading device data...</div>
+                    </div>
+                </div>
+            </aside>
+
+            <button type="button" id="mapFullscreenExitBtn" class="map-fullscreen-exit" hidden>Exit fullscreen</button>
+        </div>
+
+        <div id="historyChartDock" class="history-chart-dock" hidden>
+            <div class="history-chart-dock-inner">
+                <div class="history-chart-title">Speed vs time (km/h)</div>
+                <div class="history-chart-canvas-box">
+                    <canvas id="historySpeedChart" aria-label="Speed versus time chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="vendor/chart.umd.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
