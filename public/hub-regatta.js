@@ -225,7 +225,7 @@ function parseResultsCsv(text) {
 
 function loadClockSettings() {
     const defaults = {
-        mode: 'live',
+        mode: 'fixed',
         fixedDate: '2026-03-23',
         fixedTime: '09:00',
         offsetMinutes: 0,
