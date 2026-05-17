@@ -12,9 +12,9 @@ const VG_GRAPHIC_ALIASES = {
     lower: 'lower',
     r: 'results',
     results: 'results',
-    g: 'map',
-    map: 'map',
-    gps: 'map',
+    g: 'speed',
+    map: 'speed',
+    gps: 'speed',
 };
 
 const VG_HOLD_MS = 3000;
@@ -41,7 +41,7 @@ const VG_THEMES = {
     },
     'rnz-milford': {
         label: 'RNZ Milford',
-        mapUrl: 'live-map.html?vmix=1',
+        speedEmbed: true,
         backgrounds: {
             title: 'assets/vmix/milford/title.webm',
             lower: 'assets/vmix/milford/lower.webm',
@@ -309,6 +309,7 @@ function vgClubInfo(clubId, lookup) {
 
 const VG_LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
 const VG_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
+const VG_LS_SPEED = 'altitudeHdSpeedVmix_v1';
 
 function vgGetRaceParam() {
     const urlRace = new URLSearchParams(location.search).get('race');
@@ -382,12 +383,38 @@ function vgThemeConfig() {
     return VG_THEMES[vgResolveTheme()] || VG_THEMES.kri;
 }
 
-function vgIsMapGraphic(graphic) {
-    return graphic === 'map';
+function vgIsSpeedGraphic(graphic) {
+    return graphic === 'speed';
 }
 
-function vgMapEnabled() {
-    return !!vgThemeConfig().mapUrl;
+function vgSpeedEnabled() {
+    return !!vgThemeConfig().speedEmbed;
+}
+
+function vgBuildSpeedEmbedUrl() {
+    const u = new URL('speed.html', location.href);
+    u.searchParams.set('vmix', '1');
+    u.searchParams.set('transparent', '1');
+    try {
+        const s = JSON.parse(localStorage.getItem(VG_LS_SPEED) || '{}');
+        if (s.deviceId) u.searchParams.set('deviceId', String(s.deviceId));
+        if (s.rsLat != null) u.searchParams.set('rsLat', String(s.rsLat));
+        if (s.rsLng != null) u.searchParams.set('rsLng', String(s.rsLng));
+        if (s.reLat != null) u.searchParams.set('reLat', String(s.reLat));
+        if (s.reLng != null) u.searchParams.set('reLng', String(s.reLng));
+    } catch {
+        /* ignore */
+    }
+    return `speed.html?${u.searchParams.toString()}`;
+}
+
+function vgGetSpeedFrame() {
+    return document.getElementById('vgMapFrame');
+}
+
+function vgPostToSpeedFrame(phase) {
+    const frame = vgGetSpeedFrame();
+    frame?.contentWindow?.postMessage({ type: 'altitudehd:vg', phase }, '*');
 }
 
 function vgIsVideoAsset(src) {
@@ -533,21 +560,43 @@ function vgEnsureMapFrame() {
         wrap.id = 'vgMapWrap';
         wrap.className = 'vg-map-wrap';
         wrap.innerHTML =
-            '<iframe class="vg-map-frame" id="vgMapFrame" title="Altitude HD fleet map"></iframe>';
+            '<iframe class="vg-map-frame" id="vgMapFrame" title="Altitude HD speed overlay"></iframe>';
         stage.insertBefore(wrap, vgGetBgEl()?.nextSibling || null);
     }
     return wrap;
 }
 
-function vgLoadMapFrame() {
+function vgLoadSpeedFrame() {
     const wrap = vgEnsureMapFrame();
-    const frame = document.getElementById('vgMapFrame');
-    const mapUrl = vgThemeConfig().mapUrl;
-    if (!wrap || !frame || !mapUrl) return;
-    if (frame.dataset.loaded !== '1') {
-        frame.src = mapUrl;
-        frame.dataset.loaded = '1';
+    const frame = vgGetSpeedFrame();
+    const embedUrl = vgBuildSpeedEmbedUrl();
+    if (!wrap || !frame) return;
+    if (frame.dataset.srcUrl !== embedUrl) {
+        frame.dataset.srcUrl = embedUrl;
+        frame.dataset.loaded = '0';
+        frame.src = embedUrl;
     }
+}
+
+function vgStartSpeedIntro() {
+    vgShowTextLayer(false);
+    vgShowBackground(false);
+    vgLoadSpeedFrame();
+    vgShowMap(true, false);
+
+    const frame = vgGetSpeedFrame();
+    const sendIntro = () => vgPostToSpeedFrame('intro');
+    if (frame) {
+        if (frame.dataset.loaded === '1') {
+            sendIntro();
+        } else {
+            frame.addEventListener('load', () => {
+                frame.dataset.loaded = '1';
+                sendIntro();
+            }, { once: true });
+        }
+    }
+    vgPlayback.introTimer = setTimeout(() => vgEnterHold(), 4500);
 }
 
 function vgShowMap(visible, outro) {
@@ -609,7 +658,7 @@ function vgEnterHold() {
         video.playbackRate = 1;
     }
     vgSetStageState('hold');
-    if (vgIsMapGraphic(vgPlayback.graphic)) {
+    if (vgIsSpeedGraphic(vgPlayback.graphic)) {
         vgShowTextLayer(false);
         vgShowMap(true, false);
     } else {
@@ -680,10 +729,11 @@ function vgStartOutroPlayback(isVideo, video) {
         vgResetToIdle();
     };
 
-    if (vgIsMapGraphic(graphic)) {
+    if (vgIsSpeedGraphic(graphic)) {
         vgShowBackground(false);
-        vgShowMap(true, true);
-        vgPlayback.outroTimer = setTimeout(done, VG_OUTRO_MS);
+        vgShowMap(true, false);
+        vgPostToSpeedFrame('outro');
+        vgPlayback.outroTimer = setTimeout(done, 6000);
         return;
     }
 
@@ -700,6 +750,7 @@ function vgStartOutroPlayback(isVideo, video) {
 }
 
 function vgResetToIdle() {
+    vgPostToSpeedFrame('clear');
     vgClearPlaybackTimers();
     vgPlayback.graphic = null;
     vgSetStageState('idle');
@@ -712,18 +763,14 @@ function vgResetToIdle() {
 
 function vgTriggerIn(graphic) {
     if (vgPlayback.state !== 'idle') return;
-    if (vgIsMapGraphic(graphic) && !vgMapEnabled()) return;
+    if (vgIsSpeedGraphic(graphic) && !vgSpeedEnabled()) return;
 
     vgPlayback.graphic = graphic;
     vgSetStageState('intro');
     vgHideMap();
 
-    if (vgIsMapGraphic(graphic)) {
-        vgShowTextLayer(false);
-        vgShowBackground(false);
-        vgLoadMapFrame();
-        vgShowMap(true, false);
-        vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
+    if (vgIsSpeedGraphic(graphic)) {
+        vgStartSpeedIntro();
         return;
     }
 
@@ -736,7 +783,7 @@ function vgTriggerOut() {
     if (vgPlayback.state !== 'hold') return;
     vgSetStageState('outro');
     const graphic = vgPlayback.graphic;
-    if (vgIsMapGraphic(graphic)) {
+    if (vgIsSpeedGraphic(graphic)) {
         vgStartOutroPlayback(false, null);
         return;
     }
@@ -756,7 +803,7 @@ function vgPrepareContent(graphic, raceParam) {
     const layer = vgGetLayerEl();
     const err = document.getElementById('vgError');
     if (!layer) return;
-    if (vgIsMapGraphic(graphic)) return;
+    if (vgIsSpeedGraphic(graphic)) return;
 
     const race = vgFindRace(raceParam);
 
@@ -1007,6 +1054,19 @@ async function vgInit() {
     document.addEventListener('altitudehd:liverace', () => vgRefreshHoldContent());
     document.addEventListener('altitudehd:vmixtrigger', (e) => {
         vgHandleRemoteTrigger(JSON.stringify(e.detail || {}));
+    });
+
+    window.addEventListener('message', (e) => {
+        if (e.data?.type !== 'altitudehd:vg') return;
+        if (!vgIsSpeedGraphic(vgPlayback.graphic)) return;
+        if (e.data.phase === 'hold' && vgPlayback.state === 'intro') {
+            vgClearPlaybackTimers();
+            vgEnterHold();
+        }
+        if (e.data.phase === 'idle' && vgPlayback.state === 'outro') {
+            vgClearPlaybackTimers();
+            vgResetToIdle();
+        }
     });
 
     setInterval(async () => {

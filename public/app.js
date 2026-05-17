@@ -939,6 +939,21 @@ function wireHistoryPanel() {
     });
 }
 
+function persistSpeedVmixSettings(deviceId, geo) {
+    try {
+        const payload = { deviceId: String(deviceId) };
+        if (geo) {
+            payload.rsLat = geo.sLat;
+            payload.rsLng = geo.sLng;
+            payload.reLat = geo.eLat;
+            payload.reLng = geo.eLng;
+        }
+        localStorage.setItem('altitudeHdSpeedVmix_v1', JSON.stringify(payload));
+    } catch {
+        /* ignore */
+    }
+}
+
 function buildSpeedScreenUrl() {
     const id = document.getElementById('speedScreenDevice')?.value;
     if (!id) return null;
@@ -955,6 +970,7 @@ function buildSpeedScreenUrl() {
         u.searchParams.set('reLat', String(geo.eLat));
         u.searchParams.set('reLng', String(geo.eLng));
     }
+    persistSpeedVmixSettings(id, geo);
     return u.toString();
 }
 

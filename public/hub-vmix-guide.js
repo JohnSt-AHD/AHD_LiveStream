@@ -13,7 +13,7 @@ const VMIX_TRIGGERS = [
     { key: 'd', graphic: 'Draw', desc: 'Play in — background 3s, then lane draw text' },
     { key: 'r', graphic: 'Results', desc: 'Play in — background 3s, then results text' },
     { key: 'o', graphic: 'Out', desc: 'Hide text, reverse background, reset to idle' },
-    { key: 'g', graphic: 'Fleet map', desc: 'Milford only — Traccar live map (3s in, o out)' },
+    { key: 'g', graphic: 'Speed / race', desc: 'Milford only — TimeTracker video + live speed dot (configure device on hub map first)' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
 ];
 
@@ -107,7 +107,7 @@ function hubRenderVmixGuide() {
         const mapNote = document.createElement('p');
         mapNote.className = 'hub-vmix-map-note';
         mapNote.innerHTML =
-            '<strong>Fleet map:</strong> press <code>g</code> on <a href="vmix-rnz-milford.html">vmix-rnz-milford.html</a> (same overlay as graphics).';
+            '<strong>Speed overlay (<code>g</code>):</strong> on the <a href="live-map.html">fleet map</a>, set device + start/finish markers, open Speed page once — then use <code>g</code> on <a href="vmix-rnz-milford.html">Milford vMix</a>.';
         examples.appendChild(mapNote);
     }
 }

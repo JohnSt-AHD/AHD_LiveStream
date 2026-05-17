@@ -9,7 +9,8 @@ function parseNum(v, min, max, fallback) {
 const params = new URLSearchParams(window.location.search);
 const deviceId = parseInt(params.get('deviceId'), 10);
 const pollMs = parseNum(params.get('interval'), 1000, 60000, 2500);
-const transparent = params.get('transparent') === '1';
+const vmixHost = params.get('vmix') === '1';
+const transparent = vmixHost || params.get('transparent') === '1';
 
 function parseFloatClamped(v, min, max) {
     const n = parseFloat(v);
@@ -106,6 +107,11 @@ const elSplit = document.getElementById('scSplit');
 /** idle | playingIntro | pausedSpeed | rewinding — Space starts intro; O rewinds to start then idle. */
 let overlayPhase = 'idle';
 
+function notifyVmixHost(phase) {
+    if (!vmixHost || window.parent === window) return;
+    window.parent.postMessage({ type: 'altitudehd:vg', phase }, '*');
+}
+
 function updateCardVisibility() {
     if (!card) return;
     if (!errEl.hidden) {
@@ -180,6 +186,7 @@ function initSpeedBackgroundVideo() {
                 vid.pause();
                 overlayPhase = 'idle';
                 updateCardVisibility();
+                notifyVmixHost('idle');
                 return;
             }
             vid.currentTime = t;
@@ -190,6 +197,16 @@ function initSpeedBackgroundVideo() {
 
     const canShowSpeedOverlay = () => Number.isFinite(deviceId) && deviceId >= 1;
 
+    function playIntro() {
+        if (overlayPhase === 'playingIntro' || overlayPhase === 'rewinding') return;
+        stopRewind();
+        overlayPhase = 'playingIntro';
+        vid.loop = false;
+        vid.currentTime = 0;
+        updateCardVisibility();
+        vid.play().catch(() => {});
+    }
+
     vid.addEventListener('timeupdate', () => {
         if (overlayPhase !== 'playingIntro') return;
         if (vid.currentTime < 1.99) return;
@@ -198,40 +215,63 @@ function initSpeedBackgroundVideo() {
         vid.currentTime = Math.max(0, Math.min(2, dur - 1 / 30));
         if (canShowSpeedOverlay() && errEl.hidden) {
             overlayPhase = 'pausedSpeed';
+            notifyVmixHost('hold');
         } else {
             overlayPhase = 'idle';
         }
         updateCardVisibility();
     });
 
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-            if (overlayPhase === 'playingIntro' || overlayPhase === 'rewinding') return;
-            e.preventDefault();
-            stopRewind();
-            overlayPhase = 'playingIntro';
-            vid.loop = false;
-            vid.currentTime = 0;
-            updateCardVisibility();
-            vid.play().catch(() => {});
-            return;
-        }
-        if (e.code === 'KeyO') {
-            if (overlayPhase !== 'pausedSpeed') return;
-            e.preventDefault();
-            overlayPhase = 'rewinding';
-            updateCardVisibility();
-            startRewind();
-        }
-    });
+    if (vmixHost) {
+        window.addEventListener('message', (e) => {
+            if (e.data?.type !== 'altitudehd:vg') return;
+            const phase = e.data.phase;
+            if (phase === 'intro') playIntro();
+            else if (phase === 'outro' && overlayPhase === 'pausedSpeed') {
+                overlayPhase = 'rewinding';
+                updateCardVisibility();
+                startRewind();
+            } else if (phase === 'clear') {
+                stopRewind();
+                overlayPhase = 'idle';
+                vid.pause();
+                vid.currentTime = 0;
+                updateCardVisibility();
+            }
+        });
+    } else {
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                playIntro();
+                return;
+            }
+            if (e.code === 'KeyO') {
+                if (overlayPhase !== 'pausedSpeed') return;
+                e.preventDefault();
+                overlayPhase = 'rewinding';
+                updateCardVisibility();
+                startRewind();
+            }
+        });
+    }
+}
+
+if (transparent) {
+    document.body.classList.add('speed-transparent');
 }
 
 if (!Number.isFinite(deviceId) || deviceId < 1) {
-    showError('Missing or invalid deviceId. Open this page from the main map (Speed screen) or add ?deviceId=123 to the URL.');
-} else {
-    if (transparent) {
-        document.body.classList.add('speed-transparent');
+    if (vmixHost) {
+        errEl.textContent =
+            'Set device on hub map (Speed screen → Open speed page once) or add ?deviceId= to the URL.';
+        errEl.hidden = false;
+    } else {
+        showError(
+            'Missing or invalid deviceId. Open this page from the main map (Speed screen) or add ?deviceId=123 to the URL.',
+        );
     }
+} else {
     errEl.hidden = true;
     updateCardVisibility();
 }
