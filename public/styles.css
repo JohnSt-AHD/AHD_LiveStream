@@ -206,6 +206,35 @@ body.map-fullscreen-main #historyChartDock:not([hidden]) {
     pointer-events: none;
 }
 
+/* vMix embed — map only, transparent page */
+body.live-map-vmix {
+    background: transparent !important;
+}
+
+body.live-map-vmix .overlay-panel,
+body.live-map-vmix .overlay-panel-right,
+body.live-map-vmix .footer,
+body.live-map-vmix .history-panel,
+body.live-map-vmix .speed-launcher-panel,
+body.live-map-vmix .map-fullscreen-toggle,
+body.live-map-vmix .map-mobile-expand-btn,
+body.live-map-vmix .map-fullscreen-exit,
+body.live-map-vmix #historyChartDock {
+    display: none !important;
+}
+
+body.live-map-vmix #map {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 1920px !important;
+    height: 1080px !important;
+    z-index: 1 !important;
+}
+
+body.live-map-vmix .speed-legend {
+    z-index: 2;
+}
+
 .custom-markers-details {
     margin: 0;
     flex-shrink: 0;

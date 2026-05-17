@@ -1090,10 +1090,22 @@ function wireMapFullscreenMain() {
     });
 }
 
+function applyLiveMapVmixEmbed() {
+    if (new URLSearchParams(location.search).get('vmix') !== '1') return;
+    document.body.classList.add('live-map-vmix');
+    const chk = document.getElementById('mapFullscreenToggle');
+    if (chk) {
+        document.body.classList.add('map-fullscreen-main');
+        chk.checked = true;
+    }
+    scheduleMapResize();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     initCustomMapPins();
     wireMapFullscreenMain();
+    applyLiveMapVmixEmbed();
     wireLiveToggle();
     wireHistoryPanel();
     wireSpeedLauncher();

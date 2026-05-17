@@ -411,6 +411,11 @@
     color: #fde68a;
 }
 
+.hub-vmix-trigger-key--clear {
+    border-color: rgba(248, 113, 113, 0.4);
+    color: #fecaca;
+}
+
 .hub-vmix-trigger-hint {
     font-size: 11px;
     color: var(--ahd-muted);

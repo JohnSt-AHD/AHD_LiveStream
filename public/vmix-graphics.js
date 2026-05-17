@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results.
- * Keys: d/l/r/t = play in (background 3s, then text) · o = out (hide text, reverse bg).
+ * Keys: d/l/r/t = play in · g = fleet map (Milford) · o = out · c = clear all.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -12,6 +12,9 @@ const VG_GRAPHIC_ALIASES = {
     lower: 'lower',
     r: 'results',
     results: 'results',
+    g: 'map',
+    map: 'map',
+    gps: 'map',
 };
 
 const VG_HOLD_MS = 3000;
@@ -38,6 +41,7 @@ const VG_THEMES = {
     },
     'rnz-milford': {
         label: 'RNZ Milford',
+        mapUrl: 'live-map.html?vmix=1',
         backgrounds: {
             title: 'assets/vmix/milford/title.webm',
             lower: 'assets/vmix/milford/lower.webm',
@@ -374,6 +378,18 @@ function vgResolveTheme() {
     return document.body.dataset.vmixTheme || 'kri';
 }
 
+function vgThemeConfig() {
+    return VG_THEMES[vgResolveTheme()] || VG_THEMES.kri;
+}
+
+function vgIsMapGraphic(graphic) {
+    return graphic === 'map';
+}
+
+function vgMapEnabled() {
+    return !!vgThemeConfig().mapUrl;
+}
+
 function vgIsVideoAsset(src) {
     return /\.(mp4|webm|mov)(\?|$)/i.test(src || '');
 }
@@ -501,6 +517,51 @@ function vgResetBackground() {
         bg.style.backgroundImage = '';
         bg.classList.remove('vg-bg--visible', 'vg-bg--outro', 'vg-bg--plain');
     }
+    vgHideMap();
+}
+
+function vgGetMapWrap() {
+    return document.getElementById('vgMapWrap');
+}
+
+function vgEnsureMapFrame() {
+    let wrap = vgGetMapWrap();
+    if (!wrap) {
+        const stage = document.querySelector('.vg-stage');
+        if (!stage) return null;
+        wrap = document.createElement('div');
+        wrap.id = 'vgMapWrap';
+        wrap.className = 'vg-map-wrap';
+        wrap.innerHTML =
+            '<iframe class="vg-map-frame" id="vgMapFrame" title="Altitude HD fleet map"></iframe>';
+        stage.insertBefore(wrap, vgGetBgEl()?.nextSibling || null);
+    }
+    return wrap;
+}
+
+function vgLoadMapFrame() {
+    const wrap = vgEnsureMapFrame();
+    const frame = document.getElementById('vgMapFrame');
+    const mapUrl = vgThemeConfig().mapUrl;
+    if (!wrap || !frame || !mapUrl) return;
+    if (frame.dataset.loaded !== '1') {
+        frame.src = mapUrl;
+        frame.dataset.loaded = '1';
+    }
+}
+
+function vgShowMap(visible, outro) {
+    const wrap = vgEnsureMapFrame();
+    if (!wrap) return;
+    wrap.classList.toggle('vg-map-wrap--visible', visible);
+    wrap.classList.toggle('vg-map-wrap--outro', !!outro && visible);
+}
+
+function vgHideMap() {
+    const wrap = vgGetMapWrap();
+    if (wrap) {
+        wrap.classList.remove('vg-map-wrap--visible', 'vg-map-wrap--outro');
+    }
 }
 
 function vgHoldDelayMs(video) {
@@ -548,18 +609,19 @@ function vgEnterHold() {
         video.playbackRate = 1;
     }
     vgSetStageState('hold');
-    vgShowTextLayer(true);
+    if (vgIsMapGraphic(vgPlayback.graphic)) {
+        vgShowTextLayer(false);
+        vgShowMap(true, false);
+    } else {
+        vgShowTextLayer(true);
+    }
 }
 
 function vgPlayVideoReverse(video, onDone) {
-    video.loop = false;
-    video.pause();
-    video.currentTime = Math.min(
-        video.duration || VG_HOLD_MS / 1000,
-        video.currentTime || VG_HOLD_MS / 1000,
-    );
-
-    const finish = () => {
+    let finished = false;
+    const done = () => {
+        if (finished) return;
+        finished = true;
         if (vgPlayback.outroTimer) {
             clearTimeout(vgPlayback.outroTimer);
             vgPlayback.outroTimer = null;
@@ -571,54 +633,63 @@ function vgPlayVideoReverse(video, onDone) {
         video.pause();
         video.playbackRate = 1;
         video.currentTime = 0;
-        if (vgPlayback.onVideoTime) {
-            video.removeEventListener('timeupdate', vgPlayback.onVideoTime);
-            vgPlayback.onVideoTime = null;
-        }
         onDone();
     };
 
-    const rewindStep = () => {
-        if (video.currentTime <= 0.05) {
-            finish();
-            return;
-        }
-        video.currentTime = Math.max(0, video.currentTime - 1 / 30);
-        vgPlayback.rewindRaf = requestAnimationFrame(rewindStep);
-    };
+    video.loop = false;
+    video.pause();
+    video.playbackRate = 1;
 
-    video.playbackRate = -1;
-    const rev = video.play();
-    if (rev && typeof rev.then === 'function') {
-        rev
-            .then(() => {
-                vgPlayback.onVideoTime = () => {
-                    if (video.currentTime <= 0.05) finish();
-                };
-                video.addEventListener('timeupdate', vgPlayback.onVideoTime);
-            })
-            .catch(() => {
-                video.pause();
-                video.playbackRate = 1;
-                rewindStep();
-            });
-    } else {
-        rewindStep();
+    const startTime = Math.max(
+        0,
+        Math.min(
+            video.currentTime || 0,
+            Number.isFinite(video.duration) ? video.duration : VG_HOLD_MS / 1000,
+        ),
+    );
+
+    if (startTime <= 0.02) {
+        video.currentTime = 0;
+        done();
+        return;
     }
 
-    vgPlayback.outroTimer = setTimeout(finish, VG_OUTRO_MS + 500);
+    const rewindMs = Math.max(VG_OUTRO_MS, startTime * 1000);
+    const t0 = performance.now();
+
+    const tick = (now) => {
+        const progress = Math.min(1, (now - t0) / rewindMs);
+        video.currentTime = Math.max(0, startTime * (1 - progress));
+        if (progress < 1) {
+            vgPlayback.rewindRaf = requestAnimationFrame(tick);
+        } else {
+            video.currentTime = 0;
+            done();
+        }
+    };
+
+    vgPlayback.rewindRaf = requestAnimationFrame(tick);
+    vgPlayback.outroTimer = setTimeout(done, rewindMs + 400);
 }
 
 function vgStartOutroPlayback(isVideo, video) {
     vgShowTextLayer(false);
-    vgShowBackground(true);
-    const bg = vgGetBgEl();
-    if (bg) bg.classList.add('vg-bg--outro');
-
+    const graphic = vgPlayback.graphic;
     const done = () => {
         vgClearPlaybackTimers();
         vgResetToIdle();
     };
+
+    if (vgIsMapGraphic(graphic)) {
+        vgShowBackground(false);
+        vgShowMap(true, true);
+        vgPlayback.outroTimer = setTimeout(done, VG_OUTRO_MS);
+        return;
+    }
+
+    vgShowBackground(true);
+    const bg = vgGetBgEl();
+    if (bg) bg.classList.add('vg-bg--outro');
 
     if (isVideo && video) {
         vgPlayVideoReverse(video, done);
@@ -641,11 +712,22 @@ function vgResetToIdle() {
 
 function vgTriggerIn(graphic) {
     if (vgPlayback.state !== 'idle') return;
+    if (vgIsMapGraphic(graphic) && !vgMapEnabled()) return;
 
     vgPlayback.graphic = graphic;
     vgSetStageState('intro');
-    vgPrepareContent(graphic, vgGetRaceParam());
+    vgHideMap();
 
+    if (vgIsMapGraphic(graphic)) {
+        vgShowTextLayer(false);
+        vgShowBackground(false);
+        vgLoadMapFrame();
+        vgShowMap(true, false);
+        vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
+        return;
+    }
+
+    vgPrepareContent(graphic, vgGetRaceParam());
     const { isVideo, video } = vgLoadBackgroundAsset(graphic);
     vgStartIntroPlayback(isVideo, video);
 }
@@ -653,14 +735,28 @@ function vgTriggerIn(graphic) {
 function vgTriggerOut() {
     if (vgPlayback.state !== 'hold') return;
     vgSetStageState('outro');
+    const graphic = vgPlayback.graphic;
+    if (vgIsMapGraphic(graphic)) {
+        vgStartOutroPlayback(false, null);
+        return;
+    }
     const video = vgGetBgVideo();
-    vgStartOutroPlayback(!!video && vgIsVideoAsset(vgGetBackgroundSrc(vgPlayback.graphic)), video);
+    vgStartOutroPlayback(
+        !!video && vgIsVideoAsset(vgGetBackgroundSrc(graphic)),
+        video,
+    );
+}
+
+function vgTriggerClear() {
+    vgClearPlaybackTimers();
+    vgResetToIdle();
 }
 
 function vgPrepareContent(graphic, raceParam) {
     const layer = vgGetLayerEl();
     const err = document.getElementById('vgError');
     if (!layer) return;
+    if (vgIsMapGraphic(graphic)) return;
 
     const race = vgFindRace(raceParam);
 
@@ -815,6 +911,10 @@ function vgHandleRemoteTrigger(raw) {
             vgTriggerOut();
             return;
         }
+        if (msg.action === 'clear' || msg.action === 'c') {
+            vgTriggerClear();
+            return;
+        }
         if (msg.action === 'in' && msg.graphic) {
             const g = VG_GRAPHIC_ALIASES[msg.graphic] || msg.graphic;
             vgTriggerIn(g);
@@ -832,6 +932,11 @@ function vgBindKeyboard() {
         if (key === 'o') {
             e.preventDefault();
             vgTriggerOut();
+            return;
+        }
+        if (key === 'c') {
+            e.preventDefault();
+            vgTriggerClear();
             return;
         }
         const graphic = VG_GRAPHIC_ALIASES[key];
@@ -852,6 +957,10 @@ function vgBindRemoteTriggers() {
     const action = (params.get('action') || params.get('a') || '').toLowerCase();
     if (action === 'out' || action === 'o') {
         vgTriggerOut();
+        return;
+    }
+    if (action === 'clear' || action === 'c') {
+        vgTriggerClear();
         return;
     }
     const g = params.get('g') || params.get('graphic');
@@ -913,6 +1022,7 @@ async function vgInit() {
 window.VmixGraphics = {
     triggerIn: vgTriggerIn,
     triggerOut: vgTriggerOut,
+    triggerClear: vgTriggerClear,
     getState: () => vgPlayback.state,
 };
 

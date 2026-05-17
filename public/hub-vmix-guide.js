@@ -13,6 +13,8 @@ const VMIX_TRIGGERS = [
     { key: 'd', graphic: 'Draw', desc: 'Play in — background 3s, then lane draw text' },
     { key: 'r', graphic: 'Results', desc: 'Play in — background 3s, then results text' },
     { key: 'o', graphic: 'Out', desc: 'Hide text, reverse background, reset to idle' },
+    { key: 'g', graphic: 'Fleet map', desc: 'Milford only — Traccar live map (3s in, o out)' },
+    { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
 ];
 
 const VMIX_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
@@ -66,8 +68,8 @@ function hubRenderVmixGuide() {
             for (const t of VMIX_TRIGGERS) {
                 const tr = document.createElement('tr');
                 const code =
-                    t.key === 'o'
-                        ? '<code>o</code>'
+                    t.key === 'o' || t.key === 'c' || t.key === 'g'
+                        ? `<code>${t.key}</code>`
                         : `<code>${t.key}</code> / <code>g=${t.key}</code>`;
                 tr.innerHTML = `<td>${code}</td><td>${t.graphic}</td><td>${t.desc}</td>`;
                 tbody.appendChild(tr);
@@ -105,7 +107,7 @@ function hubRenderVmixGuide() {
         const mapNote = document.createElement('p');
         mapNote.className = 'hub-vmix-map-note';
         mapNote.innerHTML =
-            '<strong>Milford fleet map (Traccar):</strong> use <a href="live-map.html">live-map.html</a> in a separate vMix input — not the <code>g=</code> trigger (reserved for title).';
+            '<strong>Fleet map:</strong> press <code>g</code> on <a href="vmix-rnz-milford.html">vmix-rnz-milford.html</a> (same overlay as graphics).';
         examples.appendChild(mapNote);
     }
 }
@@ -129,6 +131,7 @@ function hubBindVmixTriggerButtons() {
             const action = btn.dataset.vmixTrigger;
             const graphic = btn.dataset.vmixGraphic || null;
             if (action === 'out') hubSendVmixTrigger('out');
+            else if (action === 'clear') hubSendVmixTrigger('clear');
             else if (graphic) hubSendVmixTrigger('in', graphic);
         });
     });
