@@ -846,18 +846,19 @@ function vgRenderTitle(layer, race) {
 function vgRenderLower(layer, race) {
     layer.className = 'vg-layer vg-layer--lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+    const meta = [race.round, race.progression].filter(Boolean).join(' · ');
+    if (meta) layer.appendChild(vgEl('p', 'vg-lower-meta', meta));
     layer.appendChild(
         vgEl('p', 'vg-lower-race', `Race ${race.race} · ${vgFormatTime(race.startAt)}`),
     );
     layer.appendChild(vgEl('h2', 'vg-lower-event', fullName));
-    const meta = [race.round, race.progression].filter(Boolean).join(' · ');
-    if (meta) layer.appendChild(vgEl('p', 'vg-lower-meta', meta));
 }
 
-function vgBuildLaneRow(entry, lookup) {
-    const li = vgEl('li', 'vg-lane');
+function vgBuildLaneRow(entry, lookup, mode) {
+    const li = vgEl('li', `vg-lane${mode === 'draw' ? ' vg-lane--draw' : ''}`);
     const club = vgParseClubCode(entry.code);
     const info = vgClubInfo(club.id, lookup);
+    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
     if (info.logoUrl) {
         const img = document.createElement('img');
         img.className = 'vg-lane-logo';
@@ -867,7 +868,6 @@ function vgBuildLaneRow(entry, lookup) {
     } else {
         li.appendChild(vgEl('span', 'vg-lane-logo vg-lane-logo--empty', '—'));
     }
-    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
     const crew = vgEl('div', 'vg-lane-crew');
     crew.appendChild(vgEl('span', 'vg-lane-club', info.name));
     if (entry.names) {
@@ -884,7 +884,6 @@ function vgRenderDraw(layer, race) {
     layer.className = 'vg-layer vg-layer--draw';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const head = vgEl('div', 'vg-draw-head');
-    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
     head.appendChild(
         vgEl(
             'p',
@@ -892,6 +891,7 @@ function vgRenderDraw(layer, race) {
             `Race ${race.race} · ${race.round}${race.division ? ` · Div ${race.division}` : ''}`,
         ),
     );
+    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
     layer.appendChild(head);
 
     const list = vgEl('ul', 'vg-draw-lanes');
@@ -904,6 +904,7 @@ function vgRenderDraw(layer, race) {
                     code: lane.code,
                 },
                 vgState.lookup,
+                'draw',
             ),
         );
     }
@@ -914,10 +915,10 @@ function vgRenderResults(layer, race) {
     layer.className = 'vg-layer vg-layer--results';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const head = vgEl('div', 'vg-draw-head');
-    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
     head.appendChild(
         vgEl('p', 'vg-draw-meta', `Race ${race.race} · ${race.round} · Results`),
     );
+    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
     layer.appendChild(head);
 
     const result = vgState.results.get(race.raceNum);

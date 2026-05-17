@@ -1217,29 +1217,64 @@ body.bsp-map-fullscreen #historyChartDock:not([hidden]) {
     pointer-events: none;
 }
 
+.bsp-mobile-topbar {
+    display: none;
+}
+
 @media (max-width: 720px) {
+    .bsp-page {
+        overflow: auto;
+    }
+
+    .bsp-stack {
+        overflow: visible;
+    }
+
+    .bsp-mobile-topbar {
+        display: block;
+        flex-shrink: 0;
+        padding: 12px 16px 10px;
+        background: var(--bsp-panel);
+        border-bottom: 3px solid var(--bsp-border);
+        z-index: 1100;
+    }
+
+    .bsp-mobile-topbar .bsp-brand-title {
+        font-size: 1.25rem;
+    }
+
+    .bsp-sidebar .bsp-brand {
+        display: none;
+    }
+
     .bsp-root {
         flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .bsp-map-area {
+        order: 0;
+        flex: 1;
+        min-height: min(52vh, 420px);
+        width: 100%;
     }
 
     .bsp-buoys-panel {
+        order: 1;
         width: 100%;
-        max-height: 38vh;
+        max-height: 32vh;
         border-right: none;
         border-bottom: 3px solid var(--bsp-border);
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
     }
 
     .bsp-sidebar {
+        order: 2;
         width: 100%;
-        max-height: 44vh;
+        max-height: 40vh;
         border-left: none;
         border-top: 3px solid var(--bsp-border);
-    }
-
-    .bsp-map-area {
-        flex: 1;
-        min-height: 200px;
     }
 
     .history-chart-dock {
