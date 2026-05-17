@@ -290,6 +290,25 @@ function vgClubInfo(clubId, lookup) {
     return { name: c.name, logoUrl };
 }
 
+const VG_LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
+
+function vgGetRaceParam() {
+    const urlRace = new URLSearchParams(location.search).get('race');
+    if (urlRace != null && String(urlRace).trim() !== '') {
+        return String(urlRace).trim();
+    }
+    if (window.AltitudeHdLiveRace?.getLiveRace) {
+        return window.AltitudeHdLiveRace.getLiveRace();
+    }
+    try {
+        const stored = localStorage.getItem(VG_LS_LIVE_RACE);
+        if (stored != null && String(stored).trim()) return String(stored).trim();
+    } catch {
+        /* ignore */
+    }
+    return null;
+}
+
 function vgFindRace(raceParam) {
     if (!vgState.races.length) return null;
     const p = String(raceParam || '').trim();
@@ -555,13 +574,16 @@ async function vgReload() {
     vgState.results = vgParseResults(resultsText);
 }
 
+function vgRefreshGraphic() {
+    vgRender(vgResolveGraphic(), vgGetRaceParam());
+}
+
 async function vgInit() {
     const graphic = vgResolveGraphic();
-    const raceParam = new URLSearchParams(location.search).get('race');
 
     try {
         await vgReload();
-        vgRender(graphic, raceParam);
+        vgRender(graphic, vgGetRaceParam());
     } catch (e) {
         const err = document.getElementById('vgError');
         if (err) {
@@ -571,11 +593,15 @@ async function vgInit() {
         }
     }
 
+    window.addEventListener('storage', (e) => {
+        if (e.key === VG_LS_LIVE_RACE) vgRefreshGraphic();
+    });
+    document.addEventListener('altitudehd:liverace', () => vgRefreshGraphic());
+
     setInterval(async () => {
         try {
             await vgReload();
-            const race = new URLSearchParams(location.search).get('race');
-            vgRender(vgResolveGraphic(), race);
+            vgRefreshGraphic();
         } catch {
             /* ignore refresh errors */
         }

@@ -161,9 +161,32 @@
                 <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
                 <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code above — overlays read the same code via <code>?regatta=</code> or this page’s saved value.</p>
 
+                <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
+                    <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
+                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
+                    <div class="hub-live-race-controls">
+                        <button type="button" class="hub-live-race-step" id="hubLiveRaceMinus" aria-label="Previous race">−</button>
+                        <label class="hub-live-race-field">
+                            <span class="hub-live-race-label">Race</span>
+                            <input
+                                type="text"
+                                id="hubLiveRaceInput"
+                                class="hub-live-race-input"
+                                inputmode="text"
+                                autocomplete="off"
+                                spellcheck="false"
+                                placeholder="12"
+                            >
+                        </label>
+                        <button type="button" class="hub-live-race-step" id="hubLiveRacePlus" aria-label="Next race">+</button>
+                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceSync" disabled>Use current race</button>
+                    </div>
+                    <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
+                </div>
+
                 <div class="hub-vmix-guide" aria-labelledby="hub-vmix-guide-title">
                     <h3 id="hub-vmix-guide-title" class="hub-vmix-guide-title">URL triggers</h3>
-                    <p class="hub-vmix-guide-lead">Add query parameters to any overlay page. Use <code>race=</code> for the race number (e.g. <code>12</code> or <code>12 (A)</code>).</p>
+                    <p class="hub-vmix-guide-lead">Use <code>?g=</code> for graphic type. Race comes from the selector above unless you override with <code>?race=</code> in the URL.</p>
                     <table class="hub-vmix-table" id="hubVmixTriggerTable">
                         <thead>
                             <tr>
@@ -179,7 +202,7 @@
 
                 <ul class="hub-links hub-links--vmix">
                     <li>
-                        <a class="hub-link-card" href="vmix-kri.html?g=l&amp;race=12">
+                        <a class="hub-link-card hub-link-card--vmix" data-vmix-page="vmix-kri.html" data-vmix-graphic="l" href="vmix-kri.html?g=l">
                             <span class="hub-link-icon" aria-hidden="true">🎬</span>
                             <span class="hub-link-text">
                                 <h3>KRI</h3>
@@ -189,7 +212,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="hub-link-card hub-link-card--rnz" href="vmix-rnz-milford.html?g=l&amp;race=12">
+                        <a class="hub-link-card hub-link-card--rnz hub-link-card--vmix" data-vmix-page="vmix-rnz-milford.html" data-vmix-graphic="l" href="vmix-rnz-milford.html?g=l">
                             <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
                                 <img src="assets/rnz/rnz-logomark-white.png" alt="" width="28" height="28">
                             </span>
@@ -201,7 +224,7 @@
                         </a>
                     </li>
                     <li>
-                        <a class="hub-link-card" href="vmix-beachsprints-milford.html?g=l&amp;race=12">
+                        <a class="hub-link-card hub-link-card--vmix" data-vmix-page="vmix-beachsprints-milford.html" data-vmix-graphic="l" href="vmix-beachsprints-milford.html?g=l">
                             <span class="hub-link-icon" aria-hidden="true">🎬</span>
                             <span class="hub-link-text">
                                 <h3>Beach Sprints — Milford</h3>
@@ -241,6 +264,7 @@
         </footer>
     </div>
     <script src="hub-csv.js"></script>
+    <script src="hub-live-race.js"></script>
     <script src="hub-calendar.js"></script>
     <script src="hub-regatta.js"></script>
     <script src="hub-vmix-guide.js"></script>

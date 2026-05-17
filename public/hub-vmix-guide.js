@@ -19,6 +19,14 @@ function hubVmixBaseUrl(page) {
     return `${location.origin}${path}${page}`;
 }
 
+function hubGetLiveRace() {
+    return (
+        window.AltitudeHdLiveRace?.getLiveRace?.() ||
+        document.getElementById('hubLiveRaceInput')?.value ||
+        '12'
+    );
+}
+
 function hubVmixUrl(page, graphic, race) {
     const code =
         window.AltitudeHdHub?.getRegattaCode?.() ||
@@ -26,7 +34,7 @@ function hubVmixUrl(page, graphic, race) {
         'mads2026';
     const u = new URL(hubVmixBaseUrl(page));
     u.searchParams.set('g', graphic);
-    u.searchParams.set('race', race || '12');
+    u.searchParams.set('race', race || hubGetLiveRace());
     u.searchParams.set('regatta', code);
     return u.href;
 }
@@ -50,7 +58,7 @@ function hubRenderVmixGuide() {
 
     if (examples) {
         examples.replaceChildren();
-        const race = '12';
+        const race = hubGetLiveRace();
         for (const [theme, page] of Object.entries(VMIX_PAGES)) {
             const block = document.createElement('div');
             block.className = 'hub-vmix-theme-block';
@@ -82,9 +90,23 @@ function hubRenderVmixGuide() {
     }
 }
 
+function hubUpdateVmixLinkCards() {
+    const race = hubGetLiveRace();
+    document.querySelectorAll('.hub-link-card--vmix').forEach((card) => {
+        const graphic = card.dataset.vmixGraphic || 'l';
+        const page = card.dataset.vmixPage;
+        if (page) card.href = hubVmixUrl(page, graphic, race);
+    });
+}
+
 function initHubVmixGuide() {
     hubRenderVmixGuide();
+    hubUpdateVmixLinkCards();
     document.addEventListener('altitudehd:urls', hubRenderVmixGuide);
+    document.addEventListener('altitudehd:liverace', () => {
+        hubRenderVmixGuide();
+        hubUpdateVmixLinkCards();
+    });
     const codeInput = document.getElementById('hubRegattaCode');
     if (codeInput) {
         codeInput.addEventListener('input', hubRenderVmixGuide);

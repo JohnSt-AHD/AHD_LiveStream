@@ -256,6 +256,104 @@
     margin-bottom: 12px;
 }
 
+.hub-live-race {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(244, 114, 182, 0.08);
+    border: 1px solid rgba(244, 114, 182, 0.25);
+}
+
+.hub-live-race-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #f9a8d4;
+    margin: 0 0 6px;
+}
+
+.hub-live-race-lead {
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin: 0 0 12px;
+    line-height: 1.45;
+}
+
+.hub-live-race-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.hub-live-race-step {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.hub-live-race-step:hover {
+    background: rgba(244, 114, 182, 0.25);
+    border-color: rgba(244, 114, 182, 0.5);
+}
+
+.hub-live-race-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 100px;
+}
+
+.hub-live-race-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ahd-muted);
+}
+
+.hub-live-race-input {
+    width: 120px;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.hub-live-race-input:focus {
+    outline: none;
+    border-color: #f472b6;
+    box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.35);
+}
+
+.hub-live-race-meta {
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin: 10px 0 0;
+    line-height: 1.4;
+    min-height: 1.4em;
+}
+
+.hub-btn--compact {
+    height: 44px;
+    padding: 0 12px;
+    font-size: 12px;
+}
+
 .hub-vmix-guide {
     margin-bottom: 16px;
     padding: 14px 16px;

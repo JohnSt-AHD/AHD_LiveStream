@@ -504,7 +504,14 @@ function updateClockDisplay(effectiveNow) {
 function renderBoard() {
     const list = document.getElementById('hubRaceBoard');
     const status = document.getElementById('hubScheduleStatus');
-    if (!list) return;
+    if (!list) {
+        document.dispatchEvent(
+            new CustomEvent('altitudehd:schedule', {
+                detail: { dayRaces: [], currentRace: null },
+            }),
+        );
+        return;
+    }
 
     const effectiveNow = getEffectiveNow(boardState.settings);
     updateClockDisplay(effectiveNow);
@@ -539,6 +546,16 @@ function renderBoard() {
             status.textContent = `${day} · ${dayRaces.length} races · ${cur}`;
         }
     }
+
+    document.dispatchEvent(
+        new CustomEvent('altitudehd:schedule', {
+            detail: {
+                dayRaces,
+                currentRace:
+                    currentIndex >= 0 ? dayRaces[currentIndex] : null,
+            },
+        }),
+    );
 }
 
 async function reloadData() {
