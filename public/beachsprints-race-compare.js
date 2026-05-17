@@ -302,7 +302,7 @@ function renderRaceCompareDashboard() {
         sourceEl.textContent =
             mode === 'history'
                 ? 'Using loaded route history'
-                : 'Using live GPS trail (updates every 10s)';
+                : `Using live GPS trail (updates ${window.AltitudeHdMapRefresh?.formatShort() ?? 'every 10s'})`;
     }
 
     if (!idA || !idB) {
@@ -464,4 +464,7 @@ function wireRaceComparePanel() {
 function initRaceCompare() {
     wireRaceComparePanel();
     renderRaceCompareDashboard();
+    window.addEventListener('altitudehd:map-refresh-rate', () => {
+        if (document.getElementById('bspCompareSource')) renderRaceCompareDashboard();
+    });
 }

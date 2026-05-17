@@ -2,7 +2,9 @@
  * Hub one-line stats bar — RowSafe warnings, on-water boats, distance today, regatta calendar.
  */
 const HUB_STATS_API = '/api/traccar';
-const HUB_STATS_REFRESH_MS = 30000;
+function hubStatsRefreshMs() {
+    return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
+}
 const HUB_STATS_DISTANCE_REFRESH_MS = 5 * 60 * 1000;
 const HUB_STATS_ROUTE_MAX_POINTS = 400;
 
@@ -263,8 +265,12 @@ async function hubStatsRefresh() {
 
 function hubStatsStartPolling() {
     if (hubStatsPollTimer) clearInterval(hubStatsPollTimer);
-    hubStatsPollTimer = setInterval(hubStatsRefresh, HUB_STATS_REFRESH_MS);
+    hubStatsPollTimer = setInterval(hubStatsRefresh, hubStatsRefreshMs());
 }
+
+window.addEventListener('altitudehd:map-refresh-rate', () => {
+    hubStatsStartPolling();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubStatsBar')) return;

@@ -2,7 +2,9 @@
  * Hub landing page — dark fleet map preview (Karāpiro / Rowing NZ default view).
  */
 const HUB_MAP_API = '/api/traccar';
-const HUB_MAP_REFRESH_MS = 15000;
+function hubFleetRefreshMs() {
+    return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
+}
 const HUB_TRACE_MAX_POINTS = 500;
 
 /** Lake Karāpiro / Rowing NZ — ~10 km map span at zoom 12. */
@@ -399,7 +401,7 @@ async function hubFleetRefresh() {
 
 function hubFleetStartPolling() {
     if (hubFleetPollTimer) clearInterval(hubFleetPollTimer);
-    hubFleetPollTimer = setInterval(hubFleetRefresh, HUB_MAP_REFRESH_MS);
+    hubFleetPollTimer = setInterval(hubFleetRefresh, hubFleetRefreshMs());
 }
 
 function hubFleetWireTracesToggle() {
@@ -416,6 +418,10 @@ function hubFleetWireTracesToggle() {
         }
     });
 }
+
+window.addEventListener('altitudehd:map-refresh-rate', () => {
+    hubFleetStartPolling();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubFleetMap')) return;

@@ -1,7 +1,9 @@
 // API Configuration
 const API_BASE = '/api/traccar';
 
-const REFRESH_INTERVAL = 10000;
+function mapRefreshMs() {
+    return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
+}
 
 let authToken = null;
 let devices = [];
@@ -78,7 +80,7 @@ function startPolling() {
         pollTimer = null;
     }
     if (!isLiveUpdatesEnabled()) return;
-    pollTimer = setInterval(updateData, REFRESH_INTERVAL);
+    pollTimer = setInterval(updateData, mapRefreshMs());
 }
 
 function stopPolling() {
@@ -1172,6 +1174,9 @@ document.addEventListener('DOMContentLoaded', () => {
     wireSpeedLauncher();
     wireSpeedColorScaleControls();
     window.addEventListener('altitudehd:speed-color-range', onSpeedColorScaleChanged);
+    window.addEventListener('altitudehd:map-refresh-rate', () => {
+        if (isLiveUpdatesEnabled()) startPolling();
+    });
     initHistoryDateDefaultsIfNeeded();
     authenticate();
     startPolling();

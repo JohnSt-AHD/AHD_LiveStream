@@ -3,7 +3,9 @@
  * RNZ boundary: geofences whose name matches Rowing NZ / RNZ / RowSafe (or all polygon/circle if none).
  */
 const API_BASE = '/api/traccar';
-const REFRESH_INTERVAL = 10000;
+function mapRefreshMs() {
+    return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
+}
 
 const STOP_SPEED_MPS = 0.5;
 const STOP_MIN_MS = 30 * 60 * 1000;
@@ -303,7 +305,7 @@ function startPolling() {
         pollTimer = null;
     }
     if (!isLiveUpdatesEnabled()) return;
-    pollTimer = setInterval(updateData, REFRESH_INTERVAL);
+    pollTimer = setInterval(updateData, mapRefreshMs());
 }
 
 function stopPolling() {
@@ -896,6 +898,10 @@ function wireRnzMapFullscreen() {
 
 window.addEventListener('altitudehd:speed-color-range', () => {
     redrawLiveTrail();
+});
+
+window.addEventListener('altitudehd:map-refresh-rate', () => {
+    if (isLiveUpdatesEnabled()) startPolling();
 });
 
 document.addEventListener('DOMContentLoaded', () => {

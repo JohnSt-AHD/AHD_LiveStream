@@ -6,6 +6,7 @@
     <title>Altitude HD</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="hub.css">
+    <link rel="stylesheet" href="hub-map-refresh.css">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -298,10 +299,20 @@
             </section>
         </div>
 
+        <section class="hub-settings-bar" aria-labelledby="hub-settings-title">
+            <h2 id="hub-settings-title" class="hub-settings-title">Settings</h2>
+            <div class="hub-settings-row">
+                <label class="hub-settings-label" for="hubMapRefreshSelect">Map refresh rate</label>
+                <select id="hubMapRefreshSelect" class="hub-settings-select" aria-describedby="hubMapRefreshNote"></select>
+            </div>
+            <p id="hubMapRefreshNote" class="hub-settings-note"></p>
+        </section>
+
         <footer class="hub-footer">
             Altitude HD · Traccar overlay
         </footer>
     </div>
+    <script src="map-refresh-rate.js"></script>
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
@@ -312,5 +323,6 @@
     <script src="hub-vmix-guide.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="hub-fleet-map.js"></script>
+    <script src="hub-map-refresh.js"></script>
 </body>
 </html>

@@ -1,0 +1,47 @@
+.hub-settings-bar {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 16px clamp(16px, 4vw, 48px) 24px;
+    border-top: 1px solid var(--ahd-border);
+    background: rgba(6, 20, 38, 0.92);
+}
+
+.hub-settings-title {
+    margin: 0 0 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ahd-accent);
+}
+
+.hub-settings-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.hub-settings-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ahd-text);
+}
+
+.hub-settings-select {
+    min-width: 140px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--ahd-border);
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--ahd-text);
+    font: inherit;
+    font-size: 14px;
+}
+
+.hub-settings-note {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--ahd-muted);
+    line-height: 1.45;
+}
