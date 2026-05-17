@@ -22,10 +22,29 @@ const VMIX_THEMES = {
     },
 };
 
-const DEFAULT_CSV = {
-    daysheet: 'https://l.rowit.nz/altitude/mads2026/daysheet.csv',
-    results: 'https://l.rowit.nz/altitude/mads2026/results.csv',
-};
+function loadRegattaCodeForOverlay() {
+    if (window.AltitudeHdHub?.loadRegattaCode) {
+        return window.AltitudeHdHub.loadRegattaCode();
+    }
+    try {
+        const raw = localStorage.getItem('altitudeHdRegattaCode_v1');
+        if (raw) return raw.trim().toLowerCase();
+    } catch {
+        /* ignore */
+    }
+    return 'mads2026';
+}
+
+function defaultCsvUrls() {
+    if (window.AltitudeHdHub?.urlsFromRegattaCode) {
+        return window.AltitudeHdHub.urlsFromRegattaCode(loadRegattaCodeForOverlay());
+    }
+    const code = loadRegattaCodeForOverlay();
+    return {
+        daysheet: `https://l.rowit.nz/altitude/${code}/daysheet.csv`,
+        results: `https://l.rowit.nz/altitude/${code}/results.csv`,
+    };
+}
 
 const MONTHS = {
     january: 0,
@@ -224,12 +243,17 @@ function formatRaceTime(d) {
 
 function getConfig() {
     const p = new URLSearchParams(location.search);
-    let csv = { ...DEFAULT_CSV };
-    try {
-        const raw = localStorage.getItem('altitudeHdCsvUrls_v1');
-        if (raw) csv = { ...csv, ...JSON.parse(raw) };
-    } catch {
-        /* ignore */
+    let csv = { ...defaultCsvUrls() };
+    if (p.get('regatta')) {
+        const code = String(p.get('regatta')).trim().toLowerCase();
+        if (window.AltitudeHdHub?.urlsFromRegattaCode) {
+            csv = { ...window.AltitudeHdHub.urlsFromRegattaCode(code) };
+        } else {
+            csv = {
+                daysheet: `https://l.rowit.nz/altitude/${code}/daysheet.csv`,
+                results: `https://l.rowit.nz/altitude/${code}/results.csv`,
+            };
+        }
     }
     if (p.get('daysheet')) csv.daysheet = p.get('daysheet');
     if (p.get('results')) csv.results = p.get('results');

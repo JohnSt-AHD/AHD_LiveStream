@@ -1,48 +1,100 @@
 /**
- * RowIT CSV URL fields on Altitude HD hub — validate via /api/check-csv, persist in localStorage.
+ * RowIT CSV feeds — regatta code builds l.rowit.nz/altitude/{code}/ URLs.
  */
+const LS_REGATTA_CODE = 'altitudeHdRegattaCode_v1';
 const LS_CSV_URLS = 'altitudeHdCsvUrls_v1';
+const ROWIT_ALTITUDE_BASE = 'https://l.rowit.nz/altitude';
+const DEFAULT_REGATTA_CODE = 'mads2026';
 
 const CSV_FIELDS = [
-    {
-        id: 'events',
-        label: 'Events',
-        default: 'https://l.rowit.nz/altitude/mads2026/events.csv',
-    },
-    {
-        id: 'daysheet',
-        label: 'Daysheet',
-        default: 'https://l.rowit.nz/altitude/mads2026/daysheet.csv',
-    },
-    {
-        id: 'results',
-        label: 'Results',
-        default: 'https://l.rowit.nz/altitude/mads2026/results.csv',
-    },
-    {
-        id: 'competitors',
-        label: 'Competitors',
-        default: 'https://l.rowit.nz/altitude/mads2026/competitors.csv',
-    },
+    { id: 'events', label: 'Events' },
+    { id: 'daysheet', label: 'Daysheet' },
+    { id: 'results', label: 'Results' },
+    { id: 'competitors', label: 'Competitors' },
 ];
 
-function loadSavedUrls() {
-    try {
-        const raw = localStorage.getItem(LS_CSV_URLS);
-        if (!raw) return {};
-        const o = JSON.parse(raw);
-        return o && typeof o === 'object' ? o : {};
-    } catch {
-        return {};
-    }
+function normalizeRegattaCode(raw) {
+    return String(raw || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '');
 }
 
-function saveUrls(values) {
+function extractCodeFromUrl(url) {
+    const m = String(url || '').match(/\/altitude\/([a-z0-9_-]+)\//i);
+    return m ? normalizeRegattaCode(m[1]) : '';
+}
+
+function buildCsvUrl(code, fileId) {
+    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    return `${ROWIT_ALTITUDE_BASE}/${c}/${fileId}.csv`;
+}
+
+function urlsFromRegattaCode(code) {
+    const values = {};
+    CSV_FIELDS.forEach((f) => {
+        values[f.id] = buildCsvUrl(code, f.id);
+    });
+    return values;
+}
+
+function loadRegattaCode() {
     try {
-        localStorage.setItem(LS_CSV_URLS, JSON.stringify(values));
+        const raw = localStorage.getItem(LS_REGATTA_CODE);
+        if (raw) {
+            const c = normalizeRegattaCode(raw);
+            if (c) return c;
+        }
     } catch {
         /* ignore */
     }
+    try {
+        const saved = JSON.parse(localStorage.getItem(LS_CSV_URLS) || '{}');
+        if (saved && typeof saved === 'object') {
+            for (const f of CSV_FIELDS) {
+                const fromUrl = extractCodeFromUrl(saved[f.id]);
+                if (fromUrl) return fromUrl;
+            }
+        }
+    } catch {
+        /* ignore */
+    }
+    return DEFAULT_REGATTA_CODE;
+}
+
+function saveRegattaCode(code) {
+    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    try {
+        localStorage.setItem(LS_REGATTA_CODE, c);
+        localStorage.setItem(LS_CSV_URLS, JSON.stringify(urlsFromRegattaCode(c)));
+    } catch {
+        /* ignore */
+    }
+    return c;
+}
+
+function getRegattaCode() {
+    const input = document.getElementById('hubRegattaCode');
+    if (input) {
+        const v = normalizeRegattaCode(input.value);
+        if (v) return v;
+    }
+    return loadRegattaCode();
+}
+
+function collectValues() {
+    return urlsFromRegattaCode(getRegattaCode());
+}
+
+function getCsvUrl(id) {
+    return collectValues()[id] || buildCsvUrl(DEFAULT_REGATTA_CODE, id);
+}
+
+function updateCsvTitle(code) {
+    const title = document.getElementById('hub-csv-title');
+    if (!title) return;
+    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    title.textContent = `RowIT CSV data (${c.toUpperCase()})`;
 }
 
 function setStatus(row, state, message) {
@@ -95,10 +147,10 @@ async function checkCsvUrl(url) {
 }
 
 async function checkRow(row) {
-    const input = row.querySelector('input[type="url"]');
-    if (!input) return;
+    const url = row.dataset.csvUrl;
+    if (!url) return;
     setStatus(row, 'pending', 'Checking…');
-    const result = await checkCsvUrl(input.value);
+    const result = await checkCsvUrl(url);
     if (result.ok) {
         setStatus(row, 'ok', `OK (${result.bytes ?? 'CSV'} bytes)`);
     } else {
@@ -111,20 +163,28 @@ async function checkRow(row) {
     return result;
 }
 
-function collectValues() {
-    const values = {};
-    CSV_FIELDS.forEach((f) => {
-        const input = document.getElementById(`hubCsv_${f.id}`);
-        if (input) values[f.id] = input.value.trim();
-    });
-    return values;
-}
+function refreshCsvRows(code) {
+    const c = saveRegattaCode(code);
+    const urls = urlsFromRegattaCode(c);
+    updateCsvTitle(c);
 
-function getCsvUrl(id) {
-    const values = collectValues();
-    if (values[id]) return values[id];
-    const field = CSV_FIELDS.find((f) => f.id === id);
-    return field ? field.default : '';
+    const preview = document.getElementById('hubCsvBasePreview');
+    if (preview) {
+        preview.textContent = `${ROWIT_ALTITUDE_BASE}/${c}/`;
+    }
+
+    const list = document.getElementById('hubCsvList');
+    if (!list) return;
+
+    list.querySelectorAll('.hub-csv-row').forEach((row) => {
+        const id = row.dataset.csvId;
+        const urlEl = row.querySelector('.hub-csv-url');
+        const url = urls[id];
+        if (url) {
+            row.dataset.csvUrl = url;
+            if (urlEl) urlEl.textContent = url.replace(`${ROWIT_ALTITUDE_BASE}/${c}/`, '');
+        }
+    });
 }
 
 function notifyUrlsChanged() {
@@ -135,58 +195,87 @@ function notifyUrlsChanged() {
 
 window.AltitudeHdHub = {
     CSV_FIELDS,
+    DEFAULT_REGATTA_CODE,
+    ROWIT_ALTITUDE_BASE,
+    normalizeRegattaCode,
+    buildCsvUrl,
+    urlsFromRegattaCode,
+    getRegattaCode,
     getCsvUrls: collectValues,
     getCsvUrl,
-    loadSavedUrls,
+    loadRegattaCode,
 };
 
 function initHubCsv() {
     const list = document.getElementById('hubCsvList');
+    const codeInput = document.getElementById('hubRegattaCode');
     if (!list || list.dataset.bound === '1') return;
     list.dataset.bound = '1';
 
-    const saved = loadSavedUrls();
+    const code = loadRegattaCode();
+    if (codeInput) {
+        codeInput.value = code;
+    }
+
+    const urls = urlsFromRegattaCode(code);
+    updateCsvTitle(code);
 
     CSV_FIELDS.forEach((f) => {
         const li = document.createElement('li');
         li.className = 'hub-csv-row';
         li.dataset.csvId = f.id;
-        const value = saved[f.id] || f.default;
-        li.innerHTML =
-            `<label class="hub-csv-label" for="hubCsv_${f.id}">${f.label}</label>` +
-            `<div class="hub-csv-input-wrap">` +
-            `<span class="hub-csv-status hub-csv-status--pending" aria-hidden="true">…</span>` +
-            `<input type="url" id="hubCsv_${f.id}" class="hub-csv-input" ` +
-            `value="${value.replace(/"/g, '&quot;')}" ` +
-            `placeholder="${f.default.replace(/"/g, '&quot;')}" ` +
-            `autocomplete="off" spellcheck="false">` +
-            `</div>`;
+        li.dataset.csvUrl = urls[f.id];
+
+        const label = document.createElement('label');
+        label.className = 'hub-csv-label';
+        label.textContent = f.label;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'hub-csv-input-wrap';
+
+        const status = document.createElement('span');
+        status.className = 'hub-csv-status hub-csv-status--pending';
+        status.setAttribute('aria-hidden', 'true');
+        status.textContent = '…';
+
+        const urlText = document.createElement('span');
+        urlText.className = 'hub-csv-url';
+        urlText.title = urls[f.id];
+        urlText.textContent = `${f.id}.csv`;
+
+        wrap.appendChild(status);
+        wrap.appendChild(urlText);
+        li.appendChild(label);
+        li.appendChild(wrap);
         list.appendChild(li);
     });
 
-    list.querySelectorAll('.hub-csv-row').forEach((row) => {
-        const input = row.querySelector('input');
-        input.addEventListener('change', () => {
-            saveUrls(collectValues());
-            notifyUrlsChanged();
-            checkRow(row);
-        });
-        input.addEventListener('blur', () => checkRow(row));
-    });
+    const applyCode = () => {
+        const c = saveRegattaCode(codeInput ? codeInput.value : code);
+        if (codeInput) codeInput.value = c;
+        refreshCsvRows(c);
+        notifyUrlsChanged();
+        list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+    };
+
+    if (codeInput) {
+        codeInput.addEventListener('change', applyCode);
+        codeInput.addEventListener('blur', applyCode);
+    }
 
     const checkAll = document.getElementById('hubCsvCheckAll');
     if (checkAll) {
         checkAll.addEventListener('click', async () => {
+            applyCode();
             checkAll.disabled = true;
             for (const row of list.querySelectorAll('.hub-csv-row')) {
                 await checkRow(row);
             }
-            saveUrls(collectValues());
-            notifyUrlsChanged();
             checkAll.disabled = false;
         });
     }
 
+    refreshCsvRows(code);
     list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
     notifyUrlsChanged();
 }

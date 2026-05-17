@@ -31,14 +31,65 @@
 
     <div class="hub-wrap">
         <div class="hub-dashboard">
+            <div class="hub-dashboard-sidebar">
             <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
-                <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data (MADS 2026)</h2>
-                <p class="hub-csv-lead">Public feed URLs for events, daysheet, results, and competitors. A ✓ appears when the link responds with CSV data.</p>
+                <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
+                <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. A ✓ means the CSV responded.</p>
+                <label class="hub-regatta-code-field">
+                    <span class="hub-regatta-code-label">Regatta code</span>
+                    <input
+                        type="text"
+                        id="hubRegattaCode"
+                        class="hub-regatta-code-input"
+                        value="mads2026"
+                        placeholder="mads2026"
+                        spellcheck="false"
+                        autocomplete="off"
+                        autocapitalize="off"
+                    >
+                </label>
+                <p class="hub-csv-base-preview" id="hubCsvBasePreview">https://l.rowit.nz/altitude/mads2026/</p>
                 <ul id="hubCsvList" class="hub-csv-list"></ul>
                 <div class="hub-csv-actions">
                     <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
                 </div>
             </section>
+
+            <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
+                <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
+                <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
+                <ol class="hub-calendar-list" id="hubCalendarList">
+                    <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20">
+                        <span class="hub-calendar-dates">19–20 Sep 2026</span>
+                        <span class="hub-calendar-name">New Zealand Master Rowing</span>
+                    </li>
+                    <li class="hub-calendar-item" data-start="2026-11-14" data-end="2026-11-15">
+                        <span class="hub-calendar-dates">14–15 Nov 2026</span>
+                        <span class="hub-calendar-name">KRI Memorial Rowing Regatta</span>
+                    </li>
+                    <li class="hub-calendar-item" data-start="2026-11-28" data-end="2026-11-29">
+                        <span class="hub-calendar-dates">28–29 Nov 2026</span>
+                        <span class="hub-calendar-name">KRI Club Regatta</span>
+                    </li>
+                    <li class="hub-calendar-item" data-start="2026-12-11" data-end="2026-12-13">
+                        <span class="hub-calendar-dates">11–13 Dec 2026</span>
+                        <span class="hub-calendar-name">KRI Christmas Regatta</span>
+                    </li>
+                    <li class="hub-calendar-item" data-start="2027-01-29" data-end="2027-01-31">
+                        <span class="hub-calendar-dates">29–31 Jan 2027</span>
+                        <span class="hub-calendar-name">North Island Rowing Champs</span>
+                    </li>
+                    <li class="hub-calendar-item" data-start="2027-02-26" data-end="2027-02-28">
+                        <span class="hub-calendar-dates">26–28 Feb 2027</span>
+                        <span class="hub-calendar-name">North Island Secondary School Rowing Regatta</span>
+                    </li>
+                    <li class="hub-calendar-item" data-start="2027-03-15" data-end="2027-03-20">
+                        <span class="hub-calendar-dates">15–20 Mar 2027</span>
+                        <span class="hub-calendar-name">Maadi Cup</span>
+                    </li>
+                </ol>
+            </section>
+            </div>
 
             <section class="hub-panel hub-panel--schedule" id="hubScheduleSection" aria-labelledby="hub-schedule-title">
                 <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
@@ -173,6 +224,7 @@
         </footer>
     </div>
     <script src="hub-csv.js"></script>
+    <script src="hub-calendar.js"></script>
     <script src="hub-regatta.js"></script>
 </body>
 </html>

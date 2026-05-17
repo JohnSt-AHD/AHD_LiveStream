@@ -325,9 +325,10 @@ function getCsvUrl(id) {
     if (window.AltitudeHdHub && typeof window.AltitudeHdHub.getCsvUrl === 'function') {
         return window.AltitudeHdHub.getCsvUrl(id);
     }
+    const code = 'mads2026';
     const defaults = {
-        daysheet: 'https://l.rowit.nz/altitude/mads2026/daysheet.csv',
-        results: 'https://l.rowit.nz/altitude/mads2026/results.csv',
+        daysheet: `https://l.rowit.nz/altitude/${code}/daysheet.csv`,
+        results: `https://l.rowit.nz/altitude/${code}/results.csv`,
     };
     return defaults[id] || '';
 }
