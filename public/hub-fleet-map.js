@@ -367,35 +367,80 @@ function hubFleetUpdateMarkers(devices, positions) {
     return { total: devices.length, online, plotted: seen.size };
 }
 
+function hubFleetIsSnapshotConsumerOnly() {
+    return !!document.getElementById('hubStatsBar');
+}
+
+function hubFleetSnapshotFetch() {
+    const bus = window.AltitudeHdTraccarSnapshot;
+    if (bus) return bus.fetchSnapshot();
+    return fetch(`${HUB_MAP_API}?action=snapshot`)
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            return {
+                ok: res.ok,
+                status: res.status,
+                data,
+                error: res.ok ? null : data.error || `Request failed (${res.status})`,
+            };
+        })
+        .catch((err) => ({
+            ok: false,
+            status: 0,
+            data: {},
+            error: err.message || 'Network error',
+        }));
+}
+
+function hubFleetApplySnapshot(data) {
+    const positions = {};
+    const posList = Array.isArray(data.positions) ? data.positions : [];
+    posList.forEach((pos) => {
+        if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
+    });
+
+    const devices = hubFleetMergeDevices(data.devices, positions);
+    hubFleetLastDevices = devices;
+    const stats = hubFleetUpdateMarkers(devices, positions);
+    const now = new Date();
+    const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    hubFleetSetStatus(
+        `${stats.plotted} on map · ${stats.online} online · ${stats.total} devices · updated ${time}`,
+    );
+    if (hubFleetTracesEnabled() && hubFleetTraceStatusNote) {
+        hubFleetRestoreBaseStatus();
+        hubFleetAppendStatus(hubFleetTraceStatusNote);
+    }
+}
+
 async function hubFleetRefresh() {
+    if (hubFleetIsSnapshotConsumerOnly()) return;
+
     try {
-        const res = await fetch(`${HUB_MAP_API}?action=snapshot`);
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            throw new Error(data.error || `Request failed (${res.status})`);
+        const result = await hubFleetSnapshotFetch();
+        if (!result.ok) {
+            throw new Error(result.error);
         }
-
-        const positions = {};
-        const posList = Array.isArray(data.positions) ? data.positions : [];
-        posList.forEach((pos) => {
-            if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
-        });
-
-        const devices = hubFleetMergeDevices(data.devices, positions);
-        hubFleetLastDevices = devices;
-        const stats = hubFleetUpdateMarkers(devices, positions);
-        const now = new Date();
-        const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        hubFleetSetStatus(
-            `${stats.plotted} on map · ${stats.online} online · ${stats.total} devices · updated ${time}`,
-        );
-        if (hubFleetTracesEnabled() && hubFleetTraceStatusNote) {
-            hubFleetRestoreBaseStatus();
-            hubFleetAppendStatus(hubFleetTraceStatusNote);
-        }
+        hubFleetApplySnapshot(result.data);
     } catch (err) {
         console.error('Hub fleet map:', err);
         hubFleetSetStatus(err.message || 'Could not load device positions.');
+    }
+}
+
+function hubFleetOnTraccarSnapshot(e) {
+    if (!document.getElementById('hubFleetMap')) return;
+    const detail = e.detail;
+    if (!detail) return;
+    if (detail.ok) {
+        try {
+            hubFleetApplySnapshot(detail.data);
+        } catch (err) {
+            console.error('Hub fleet map:', err);
+            hubFleetSetStatus(err.message || 'Could not load device positions.');
+        }
+    } else {
+        hubFleetSetStatus(detail.error || 'Could not load device positions.');
     }
 }
 
@@ -420,13 +465,19 @@ function hubFleetWireTracesToggle() {
 }
 
 window.addEventListener('altitudehd:map-refresh-rate', () => {
-    hubFleetStartPolling();
+    if (!hubFleetIsSnapshotConsumerOnly()) hubFleetStartPolling();
 });
+
+if (document.getElementById('hubStatsBar')) {
+    window.addEventListener('altitudehd:traccar-snapshot', hubFleetOnTraccarSnapshot);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubFleetMap')) return;
     hubFleetInitMap();
     hubFleetWireTracesToggle();
-    hubFleetRefresh();
-    hubFleetStartPolling();
+    if (!hubFleetIsSnapshotConsumerOnly()) {
+        hubFleetRefresh();
+        hubFleetStartPolling();
+    }
 });

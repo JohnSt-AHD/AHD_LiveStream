@@ -1578,28 +1578,35 @@ function showError(message) {
     }
 }
 
-async function authenticate() {
-    try {
-        const response = await fetch(`${API_BASE}?action=auth`);
-        const session = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            throw new Error(session.error || `Authentication failed: ${response.status}`);
-        }
-        await updateData();
-    } catch (error) {
-        console.error('Beach sprints map auth error:', error);
-        showError(error.message || 'Failed to authenticate with Traccar server');
-    }
+function beachSprintsSnapshotFetch() {
+    const bus = window.AltitudeHdTraccarSnapshot;
+    if (bus) return bus.fetchSnapshot();
+    return fetch(`${API_BASE}?action=snapshot`)
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            return {
+                ok: response.ok,
+                status: response.status,
+                data,
+                error: response.ok ? null : data.error || `Request failed: ${response.status}`,
+            };
+        })
+        .catch((err) => ({
+            ok: false,
+            status: 0,
+            data: {},
+            error: err.message || 'Network error',
+        }));
 }
 
 async function updateData() {
     try {
-        const response = await fetch(`${API_BASE}?action=snapshot`);
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            showError(data.error || `Request failed: ${response.status}`);
+        const result = await beachSprintsSnapshotFetch();
+        if (!result.ok) {
+            showError(result.error || `Request failed: ${result.status}`);
             return;
         }
+        const data = result.data;
 
         const rawDevices = Array.isArray(data.devices) ? data.devices : [];
         positions = {};
@@ -1649,6 +1656,6 @@ document.addEventListener('DOMContentLoaded', () => {
     wireHistoryPanel();
     wireMapFullscreen();
     wireLiveToggle();
-    authenticate();
+    updateData();
     startPolling();
 });

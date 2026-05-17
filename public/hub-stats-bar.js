@@ -211,55 +211,99 @@ async function hubStatsRefreshDistance(force) {
     return hubStatsLastDistanceM;
 }
 
-async function hubStatsRefresh() {
+function hubStatsIsSnapshotConsumerOnly() {
+    return document.body?.classList.contains('rnz-page');
+}
+
+function hubStatsSnapshotFetch() {
+    const bus = window.AltitudeHdTraccarSnapshot;
+    if (bus) return bus.fetchSnapshot();
+    return fetch(`${HUB_STATS_API}?action=snapshot`)
+        .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            return {
+                ok: res.ok,
+                status: res.status,
+                data,
+                error: res.ok ? null : data.error || `Request failed (${res.status})`,
+            };
+        })
+        .catch((err) => ({
+            ok: false,
+            status: 0,
+            data: {},
+            error: err.message || 'Network error',
+        }));
+}
+
+function hubStatsOnSnapshotError(err) {
+    console.error('Hub stats bar:', err);
+    hubStatsSetItem('hubStatWarnings', 'Warnings: —');
+    hubStatsSetItem('hubStatOnWater', 'On water: —');
+    hubStatsSetItem('hubStatDistance', 'Distance today: —');
+    hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
+}
+
+async function hubStatsApplySnapshot(data) {
     const core = window.RnzSafetyCore;
     if (!core) return;
 
+    const positions = {};
+    (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
+        if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
+    });
+
+    const devices = core.mergeDevicesFromPositions(data.devices, positions);
+    hubStatsLastDevices = devices;
+
+    const metrics = core.computeSafetyMetrics(devices, positions, data.geofences);
+    if (window.HubWarningAlerts?.onSafetyRefresh) {
+        window.HubWarningAlerts.onSafetyRefresh(metrics);
+    }
+
+    const warnText = metrics.boundaryReady
+        ? `${metrics.warnings} warning${metrics.warnings === 1 ? '' : 's'}`
+        : 'Warnings: —';
+    hubStatsSetItem('hubStatWarnings', warnText, {
+        alert: metrics.boundaryReady && metrics.warnings > 0,
+    });
+
+    const onWaterText = metrics.boundaryReady
+        ? `${metrics.onWater} on water`
+        : 'On water: —';
+    hubStatsSetItem('hubStatOnWater', onWaterText);
+
+    hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
+
+    const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
+    hubStatsDistanceEverLoaded = true;
+    if (distanceM != null) {
+        hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
+    }
+}
+
+async function hubStatsRefresh() {
+    if (hubStatsIsSnapshotConsumerOnly()) return;
+
     try {
-        const res = await fetch(`${HUB_STATS_API}?action=snapshot`);
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-            throw new Error(data.error || `Request failed (${res.status})`);
+        const result = await hubStatsSnapshotFetch();
+        if (!result.ok) {
+            throw new Error(result.error);
         }
-
-        const positions = {};
-        (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
-            if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
-        });
-
-        const devices = core.mergeDevicesFromPositions(data.devices, positions);
-        hubStatsLastDevices = devices;
-
-        const metrics = core.computeSafetyMetrics(devices, positions, data.geofences);
-        if (window.HubWarningAlerts?.onSafetyRefresh) {
-            window.HubWarningAlerts.onSafetyRefresh(metrics);
-        }
-
-        const warnText = metrics.boundaryReady
-            ? `${metrics.warnings} warning${metrics.warnings === 1 ? '' : 's'}`
-            : 'Warnings: —';
-        hubStatsSetItem('hubStatWarnings', warnText, {
-            alert: metrics.boundaryReady && metrics.warnings > 0,
-        });
-
-        const onWaterText = metrics.boundaryReady
-            ? `${metrics.onWater} on water`
-            : 'On water: —';
-        hubStatsSetItem('hubStatOnWater', onWaterText);
-
-        hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
-
-        const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
-        hubStatsDistanceEverLoaded = true;
-        if (distanceM != null) {
-            hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
-        }
+        await hubStatsApplySnapshot(result.data);
     } catch (err) {
-        console.error('Hub stats bar:', err);
-        hubStatsSetItem('hubStatWarnings', 'Warnings: —');
-        hubStatsSetItem('hubStatOnWater', 'On water: —');
-        hubStatsSetItem('hubStatDistance', 'Distance today: —');
-        hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
+        hubStatsOnSnapshotError(err);
+    }
+}
+
+function hubStatsOnTraccarSnapshot(e) {
+    if (!document.getElementById('hubStatsBar')) return;
+    const detail = e.detail;
+    if (!detail) return;
+    if (detail.ok) {
+        hubStatsApplySnapshot(detail.data).catch(hubStatsOnSnapshotError);
+    } else {
+        hubStatsOnSnapshotError(new Error(detail.error || 'Snapshot failed'));
     }
 }
 
@@ -269,12 +313,18 @@ function hubStatsStartPolling() {
 }
 
 window.addEventListener('altitudehd:map-refresh-rate', () => {
-    hubStatsStartPolling();
+    if (!hubStatsIsSnapshotConsumerOnly()) hubStatsStartPolling();
 });
+
+if (document.body?.classList.contains('rnz-page')) {
+    window.addEventListener('altitudehd:traccar-snapshot', hubStatsOnTraccarSnapshot);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubStatsBar')) return;
     hubStatsWireBarLinks();
-    hubStatsRefresh();
-    hubStatsStartPolling();
+    if (!hubStatsIsSnapshotConsumerOnly()) {
+        hubStatsRefresh();
+        hubStatsStartPolling();
+    }
 });

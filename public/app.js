@@ -5,7 +5,6 @@ function mapRefreshMs() {
     return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
 }
 
-let authToken = null;
 let devices = [];
 let positions = {};
 
@@ -1178,27 +1177,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLiveUpdatesEnabled()) startPolling();
     });
     initHistoryDateDefaultsIfNeeded();
-    authenticate();
+    updateData();
     startPolling();
 });
 
-async function authenticate() {
-    try {
-        const response = await fetch(`${API_BASE}?action=auth`);
-        const session = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(session.error || `Authentication failed: ${response.status}`);
-        }
-
-        authToken = session.token || true;
-
-        console.log('Authentication successful');
-        updateData();
-    } catch (error) {
-        console.error('Authentication error:', error);
-        showError('Failed to authenticate with Traccar server');
-    }
+function liveMapSnapshotFetch() {
+    const bus = window.AltitudeHdTraccarSnapshot;
+    if (bus) return bus.fetchSnapshot();
+    return fetch(`${API_BASE}?action=snapshot`)
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            return {
+                ok: response.ok,
+                status: response.status,
+                data,
+                error: response.ok ? null : data.error || `Request failed: ${response.status}`,
+            };
+        })
+        .catch((err) => ({
+            ok: false,
+            status: 0,
+            data: {},
+            error: err.message || 'Network error',
+        }));
 }
 
 /**
@@ -1228,13 +1229,12 @@ function mergeDevicesFromPositions(deviceList, positionsMap) {
 
 async function updateData() {
     try {
-        const response = await fetch(`${API_BASE}?action=snapshot`);
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-            showError(data.error || `Request failed: ${response.status}`);
+        const result = await liveMapSnapshotFetch();
+        if (!result.ok) {
+            showError(result.error || `Request failed: ${result.status}`);
             return;
         }
+        const data = result.data;
 
         const rawDevices = Array.isArray(data.devices) ? data.devices : [];
         positions = {};
