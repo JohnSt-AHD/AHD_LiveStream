@@ -65,7 +65,10 @@ export default async function handler(req, res) {
         return;
     }
 
-    const action = req.query.action || 'status';
+    let action = req.query.action || 'status';
+    if (action === 'status' && req.headers['x-vercel-cron'] === '1') {
+        action = 'cron';
+    }
 
     try {
         if (action === 'status') {
