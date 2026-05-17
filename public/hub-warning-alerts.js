@@ -245,9 +245,7 @@ function hubAlertOpenPanel() {
     const panel = document.getElementById('hubWarningAlertsPanel');
     if (!panel) return;
     panel.open = true;
-    panel.classList.add('hub-warning-alerts-panel--highlight');
-    window.setTimeout(() => panel.classList.remove('hub-warning-alerts-panel--highlight'), 2200);
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     hubAlertRefreshPanel();
 }
 
@@ -291,12 +289,9 @@ function hubAlertWireUi() {
         }
     });
 
-    document.getElementById('rnzEmailAlertsMenuBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        hubAlertOpenPanel();
+    panel.addEventListener('toggle', () => {
+        if (panel.open) hubAlertRefreshPanel();
     });
-
-    hubAlertRefreshPanel();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

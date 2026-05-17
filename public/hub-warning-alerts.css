@@ -14,13 +14,57 @@
     box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 0.65);
 }
 
-.hub-warning-alerts-panel--rnz {
-    --ahd-text: #e2e8f0;
-    --ahd-muted: #94a3b8;
-    --ahd-border: rgba(148, 163, 184, 0.25);
-    --ahd-accent: #2dd4bf;
-    background: #0b1a2e;
-    border-bottom: 1px solid var(--ahd-border);
+.hub-warning-alerts-panel--rnz.rnz-email-dock-details {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.rnz-email-dock-inner.hub-warning-alerts-body {
+    --ahd-text: #0f172a;
+    --ahd-muted: #64748b;
+    --ahd-border: #e2e8f0;
+    --ahd-accent: #0d9488;
+    max-width: none;
+    padding: 12px 14px 14px;
+}
+
+.rnz-email-dock-inner .hub-warning-alerts-input,
+.rnz-email-dock-inner .hub-warning-alerts-textarea {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.rnz-email-dock-inner .hub-warning-email-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.rnz-email-dock-inner .hub-warning-alerts-preview {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #334155;
+}
+
+.rnz-email-dock-inner .hub-warning-alerts-btn {
+    border-color: rgba(13, 148, 136, 0.45);
+    background: rgba(13, 148, 136, 0.12);
+    color: #0f766e;
+}
+
+.rnz-email-dock-inner .hub-warning-alerts-btn:hover {
+    background: rgba(13, 148, 136, 0.22);
+}
+
+.rnz-email-dock-inner .hub-warning-alert-status {
+    color: #15803d;
+}
+
+.rnz-email-dock-inner .hub-warning-alert-status--error {
+    color: #b91c1c;
 }
 
 .hub-warning-alerts-summary {

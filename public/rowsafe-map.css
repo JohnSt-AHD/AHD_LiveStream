@@ -524,11 +524,82 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
     line-height: 1.45;
 }
 
-.rnz-fleet-dock {
+.rnz-fleet-dock,
+.rnz-email-dock {
     flex-shrink: 0;
     padding: 0 20px 20px;
     display: flex;
     justify-content: center;
+}
+
+.rnz-email-dock {
+    padding-top: 0;
+    padding-bottom: 12px;
+}
+
+.rnz-email-dock-details {
+    width: 100%;
+    max-width: 1392px;
+    border: 1px solid var(--rnz-line);
+    border-radius: 8px;
+    background: var(--rnz-white);
+    box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+
+.rnz-email-dock-summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 12px 14px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--rnz-navy);
+    background: var(--rnz-cream);
+    border-bottom: 1px solid var(--rnz-line);
+    position: relative;
+    padding-right: 32px;
+}
+
+.rnz-email-dock-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rnz-email-dock-summary::after {
+    content: '▾';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+}
+
+.rnz-email-dock-details[open] > .rnz-email-dock-summary::after {
+    transform: translateY(-50%) rotate(-180deg);
+}
+
+.rnz-email-dock-details[open] > .rnz-email-dock-summary {
+    border-bottom: 1px solid var(--rnz-line);
+}
+
+.rnz-email-dock-summary-label {
+    flex-shrink: 0;
+}
+
+.rnz-email-dock-summary-hint {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--rnz-muted);
 }
 
 .rnz-fleet-dock-details {
@@ -1157,7 +1228,8 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
 
 body.rnz-map-fullscreen .rnz-left-column,
 body.rnz-map-fullscreen .rnz-sidebar,
-body.rnz-map-fullscreen .rnz-fleet-dock {
+body.rnz-map-fullscreen .rnz-fleet-dock,
+body.rnz-map-fullscreen .rnz-email-dock {
     display: none !important;
 }
 
