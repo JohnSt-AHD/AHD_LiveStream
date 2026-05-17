@@ -55,6 +55,21 @@
                     <span>Device</span>
                     <select id="speedScreenDevice" aria-label="Device for speed page"></select>
                 </label>
+                <div class="speed-color-scale-section">
+                    <div class="speed-color-scale-title">Speed colour scale (all maps)</div>
+                    <p class="speed-color-scale-lead">Rainbow dots on live trails and single-device history routes. Saved in this browser for every map page.</p>
+                    <div class="speed-color-scale-grid">
+                        <label class="history-field">
+                            <span>Min (m/s)</span>
+                            <input type="number" id="speedColorMinMps" min="0" max="50" step="0.5" value="0" aria-label="Minimum speed for colour scale in metres per second">
+                        </label>
+                        <label class="history-field">
+                            <span>Max (m/s)</span>
+                            <input type="number" id="speedColorMaxMps" min="0.5" max="80" step="0.5" value="20" aria-label="Maximum speed for colour scale in metres per second">
+                        </label>
+                    </div>
+                </div>
+
                 <div class="speed-route-dot-section">
                     <div class="speed-route-dot-title">Route dot (map → overlay)</div>
                     <p class="speed-route-dot-lead">Pick <strong>start</strong> and <strong>finish</strong> custom markers on the map. The route line on the speed page is fixed along the bottom (81.5%, 96% → 96.5%, 96%). The orange dot tracks the device along the course segment.</p>
@@ -140,6 +155,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="vendor/chart.umd.js"></script>
+    <script src="speed-color-scale.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

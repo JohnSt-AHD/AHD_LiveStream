@@ -722,6 +722,32 @@ body.live-map-vmix .speed-legend {
     gap: 8px;
 }
 
+.speed-color-scale-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 191, 255, 0.22);
+}
+
+.speed-color-scale-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #7fd4ff;
+    margin-bottom: 4px;
+}
+
+.speed-color-scale-lead {
+    font-size: 10px;
+    color: #9a9a9a;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.speed-color-scale-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
 .speed-route-dot-section {
     margin-top: 10px;
     padding-top: 10px;

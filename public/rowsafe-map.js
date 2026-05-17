@@ -14,8 +14,6 @@ const LS_STOPPED = 'rnzRowsafeStoppedOutside';
 const LIVE_TRAIL_TTL_MS = 2 * 60 * 1000;
 const LIVE_TRAIL_DEDUPE_MOVE_M = 4;
 const LIVE_TRAIL_DEDUPE_MS = 8000;
-const LIVE_TRAIL_SPEED_COLOR_MAX_MS = 20;
-
 let liveTrailLayer = null;
 const deviceLiveTrails = new Map();
 
@@ -427,14 +425,11 @@ function isMovingRecently(pos, maxFixAgeMinutes, minSpeedMps) {
 }
 
 function speedMpsForTrailColor(speed) {
-    const s = typeof speed === 'number' && !Number.isNaN(speed) ? speed : 0;
-    return Math.min(LIVE_TRAIL_SPEED_COLOR_MAX_MS, Math.max(0, s));
+    return window.AltitudeHdSpeedColor.speedMpsForColor(speed);
 }
 
 function trailSpeedToColor(speedMps) {
-    const t = Math.min(1, Math.max(0, speedMps / LIVE_TRAIL_SPEED_COLOR_MAX_MS));
-    const hue = t * 300;
-    return `hsl(${hue}, 88%, 52%)`;
+    return window.AltitudeHdSpeedColor.speedToRainbowColor(speedMps);
 }
 
 function recordLiveTrailSamples() {
@@ -926,6 +921,10 @@ function wireRnzMapFullscreen() {
         }
     });
 }
+
+window.addEventListener('altitudehd:speed-color-range', () => {
+    redrawLiveTrail();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();

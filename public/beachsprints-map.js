@@ -32,7 +32,6 @@ let courseBuoys = [];
 let buoysLayer = null;
 const buoyMarkersById = new Map();
 
-const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
 const MAX_CHART_POINTS_PER_DEVICE = 450;
 
@@ -127,13 +126,11 @@ function populateHistoryDeviceSelect() {
 
 function speedMpsForColor(pos) {
     const s = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
-    return Math.min(SPEED_COLOR_MAX_MS, Math.max(0, s));
+    return window.AltitudeHdSpeedColor.speedMpsForColor(s);
 }
 
 function speedToRainbowColor(speedMps) {
-    const t = Math.min(1, Math.max(0, speedMps / SPEED_COLOR_MAX_MS));
-    const hue = t * 300;
-    return `hsl(${hue}, 88%, 52%)`;
+    return window.AltitudeHdSpeedColor.speedToRainbowColor(speedMps);
 }
 
 function sortRoutePoints(points) {
@@ -458,7 +455,7 @@ function renderHistoryRouteOnMap(deviceRoutes) {
             const popup =
                 `<div style="font-weight:700">History point</div>` +
                 devLabel +
-                `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over 0–${SPEED_COLOR_MAX_MS} m/s</div>` +
+                `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over ${window.AltitudeHdSpeedColor.getRange().minMps}–${window.AltitudeHdSpeedColor.getRange().maxMps} m/s</div>` +
                 `<div><strong>≈</strong> ${kmh.toFixed(1)} km/h</div>` +
                 `<div><strong>Time:</strong> ${escapeHtml(formatDateTimeFull(p.fixTime || p.deviceTime))}</div>`;
 
@@ -1630,6 +1627,12 @@ async function updateData() {
         showError(error.message || 'Failed to load device data');
     }
 }
+
+window.addEventListener('altitudehd:speed-color-range', () => {
+    if (lastHistoryRoutes?.length) {
+        renderHistoryRouteOnMap(lastHistoryRoutes);
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();

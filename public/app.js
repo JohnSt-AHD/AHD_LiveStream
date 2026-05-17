@@ -26,8 +26,8 @@ const DEFAULT_MAIN_MAP_PINS = [
     { id: 'pin_default_finish', name: 'finish', lat: -37.929223, lng: 175.542716 },
 ];
 
-const SPEED_COLOR_MAX_MS = 20;
 const MAX_ROUTE_POINTS_DRAW = 800;
+let lastHistoryDeviceRoutes = null;
 
 /** Recent GPS trace: keep samples ~2 min; colour by speed (same scale as history). */
 const LIVE_TRAIL_TTL_MS = 2 * 60 * 1000;
@@ -191,13 +191,11 @@ function getSpeedRouteGeoFromSelections() {
 
 function speedMpsForColor(pos) {
     const s = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
-    return Math.min(SPEED_COLOR_MAX_MS, Math.max(0, s));
+    return window.AltitudeHdSpeedColor.speedMpsForColor(s);
 }
 
 function speedToRainbowColor(speedMps) {
-    const t = Math.min(1, Math.max(0, speedMps / SPEED_COLOR_MAX_MS));
-    const hue = t * 300;
-    return `hsl(${hue}, 88%, 52%)`;
+    return window.AltitudeHdSpeedColor.speedToRainbowColor(speedMps);
 }
 
 function haversineMeters(lat1, lon1, lat2, lon2) {
@@ -322,6 +320,7 @@ function clearHistoryMap() {
     if (historyLayer) {
         historyLayer.clearLayers();
     }
+    lastHistoryDeviceRoutes = null;
     const leg = document.getElementById('speedLegend');
     if (leg) leg.hidden = true;
     destroyHistoryChart();
@@ -807,7 +806,7 @@ function renderHistoryRouteOnMap(deviceRoutes) {
             const popup =
                 `<div class="map-popup-title">History point</div>` +
                 devLabel +
-                `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over 0–${SPEED_COLOR_MAX_MS} m/s</div>` +
+                `<div><strong>Speed (colour scale):</strong> ${spd.toFixed(2)} m/s over ${window.AltitudeHdSpeedColor.getRange().minMps}–${window.AltitudeHdSpeedColor.getRange().maxMps} m/s</div>` +
                 `<div><strong>≈</strong> ${kmh.toFixed(1)} km/h (same factor as live panel)</div>` +
                 `<div><strong>Time:</strong> ${escapeHtml(formatDateTimeFull(p.fixTime || p.deviceTime))}</div>`;
 
@@ -833,7 +832,10 @@ function renderHistoryRouteOnMap(deviceRoutes) {
 
     bringHistoryRouteAboveTiles();
     const legend = document.getElementById('speedLegend');
-    if (legend) legend.hidden = multi;
+    if (legend) {
+        legend.hidden = multi;
+        if (!multi) window.AltitudeHdSpeedColor.updateSpeedLegend(legend);
+    }
 
     if (allBounds.length > 0) {
         map.fitBounds(L.latLngBounds(allBounds), { padding: [48, 48], maxZoom: 17 });
@@ -911,6 +913,7 @@ async function loadHistoryRoute() {
             return;
         }
 
+        lastHistoryDeviceRoutes = deviceRoutes;
         renderHistoryRouteOnMap(deviceRoutes);
         const routeSummary = document.getElementById('historyStatus')?.textContent || '';
         const chartShown = renderHistorySpeedChart(deviceRoutes);
@@ -937,6 +940,48 @@ function wireHistoryPanel() {
         clearHistoryMap();
         setHistoryStatus('Route cleared.');
     });
+}
+
+function applySpeedColorScaleFromInputs() {
+    const minEl = document.getElementById('speedColorMinMps');
+    const maxEl = document.getElementById('speedColorMaxMps');
+    if (!minEl || !maxEl || !window.AltitudeHdSpeedColor) return;
+    const ok = window.AltitudeHdSpeedColor.setRange(minEl.value, maxEl.value);
+    if (!ok) {
+        const cur = window.AltitudeHdSpeedColor.getRange();
+        minEl.value = String(cur.minMps);
+        maxEl.value = String(cur.maxMps);
+    }
+}
+
+function wireSpeedColorScaleControls() {
+    const minEl = document.getElementById('speedColorMinMps');
+    const maxEl = document.getElementById('speedColorMaxMps');
+    if (!minEl || !maxEl || !window.AltitudeHdSpeedColor) return;
+
+    const cur = window.AltitudeHdSpeedColor.getRange();
+    minEl.value = String(cur.minMps);
+    maxEl.value = String(cur.maxMps);
+    window.AltitudeHdSpeedColor.updateSpeedLegend(document.getElementById('speedLegend'));
+
+    const onInput = () => applySpeedColorScaleFromInputs();
+    minEl.addEventListener('change', onInput);
+    maxEl.addEventListener('change', onInput);
+}
+
+function onSpeedColorScaleChanged() {
+    const cur = window.AltitudeHdSpeedColor?.getRange();
+    const minEl = document.getElementById('speedColorMinMps');
+    const maxEl = document.getElementById('speedColorMaxMps');
+    if (cur && minEl && maxEl) {
+        minEl.value = String(cur.minMps);
+        maxEl.value = String(cur.maxMps);
+    }
+    window.AltitudeHdSpeedColor?.updateSpeedLegend(document.getElementById('speedLegend'));
+    redrawLiveTrail();
+    if (lastHistoryDeviceRoutes?.length) {
+        renderHistoryRouteOnMap(lastHistoryDeviceRoutes);
+    }
 }
 
 function persistSpeedVmixSettings(deviceId, geo) {
@@ -1125,6 +1170,8 @@ document.addEventListener('DOMContentLoaded', () => {
     wireLiveToggle();
     wireHistoryPanel();
     wireSpeedLauncher();
+    wireSpeedColorScaleControls();
+    window.addEventListener('altitudehd:speed-color-range', onSpeedColorScaleChanged);
     initHistoryDateDefaultsIfNeeded();
     authenticate();
     startPolling();
