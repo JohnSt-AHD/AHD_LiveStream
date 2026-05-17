@@ -1,0 +1,115 @@
+.hub-warning-alerts-panel {
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 clamp(16px, 4vw, 48px) 12px;
+    color: var(--ahd-text, #e2e8f0);
+    font-size: 13px;
+    background: rgba(6, 20, 38, 0.94);
+    border-bottom: 1px solid var(--ahd-border, rgba(148, 163, 184, 0.25));
+}
+
+.hub-warning-alerts-panel--highlight {
+    box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 0.65);
+}
+
+.hub-warning-alerts-panel--rnz {
+    --ahd-text: #e2e8f0;
+    --ahd-muted: #94a3b8;
+    --ahd-border: rgba(148, 163, 184, 0.25);
+    --ahd-accent: #2dd4bf;
+    background: #0b1a2e;
+    border-bottom: 1px solid var(--ahd-border);
+}
+
+.hub-warning-alerts-summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--ahd-accent, #38bdf8);
+    list-style: none;
+    padding: 8px 0;
+}
+
+.hub-warning-alerts-summary::-webkit-details-marker {
+    display: none;
+}
+
+.hub-warning-alerts-body {
+    padding: 0 0 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 720px;
+}
+
+.hub-warning-alerts-lead {
+    margin: 0;
+    color: var(--ahd-muted, #94a3b8);
+    line-height: 1.45;
+}
+
+.hub-warning-alerts-lead code {
+    font-size: 12px;
+}
+
+.hub-warning-alerts-meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--ahd-muted, #94a3b8);
+}
+
+.hub-warning-alerts-toggle {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.hub-warning-alerts-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 420px;
+}
+
+.hub-warning-alerts-input {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--ahd-border, rgba(148, 163, 184, 0.35));
+    background: rgba(15, 23, 42, 0.6);
+    color: inherit;
+    font: inherit;
+}
+
+.hub-warning-alerts-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hub-warning-alerts-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background: rgba(13, 148, 136, 0.2);
+    color: #ccfbf1;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hub-warning-alerts-btn:hover {
+    background: rgba(13, 148, 136, 0.35);
+}
+
+.hub-warning-alert-status {
+    margin: 0;
+    min-height: 1.2em;
+    font-size: 12px;
+    color: #86efac;
+}
+
+.hub-warning-alert-status--error {
+    color: #fca5a5;
+}

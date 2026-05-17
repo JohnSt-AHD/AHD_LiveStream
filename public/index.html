@@ -6,6 +6,7 @@
     <title>Altitude HD</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="hub.css">
+    <link rel="stylesheet" href="hub-warning-alerts.css">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -39,6 +40,31 @@
         <span class="hub-stats-sep" aria-hidden="true">·</span>
         <span class="hub-stats-item hub-stats-item--event" id="hubStatEvent">—</span>
     </div>
+
+    <details class="hub-warning-alerts-panel" id="hubWarningAlertsPanel">
+        <summary class="hub-warning-alerts-summary">Warning email alerts</summary>
+        <div class="hub-warning-alerts-body">
+            <p class="hub-warning-alerts-lead">
+                Emails use <a href="https://resend.com" target="_blank" rel="noopener noreferrer">Resend</a>.
+                Recipients are set in Vercel as <code>WARNING_NOTIFY_EMAILS</code> (comma-separated).
+                When enabled below, a new warning on this page triggers an email.
+            </p>
+            <p class="hub-warning-alerts-meta" id="hubWarningAlertMeta">Checking configuration…</p>
+            <label class="hub-warning-alerts-toggle">
+                <input type="checkbox" id="hubWarningEmailToggle">
+                <span>Email when a <strong>new</strong> warning appears (while this page is open)</span>
+            </label>
+            <label class="hub-warning-alerts-field">
+                <span>Alert secret</span>
+                <input type="password" id="hubWarningAlertSecret" class="hub-warning-alerts-input" autocomplete="off" placeholder="WARNING_ALERT_SECRET from Vercel">
+            </label>
+            <div class="hub-warning-alerts-actions">
+                <button type="button" class="hub-btn hub-btn--compact" id="hubWarningAlertSaveSecret">Save secret</button>
+                <button type="button" class="hub-btn hub-btn--compact" id="hubWarningAlertTestBtn">Send test email</button>
+            </div>
+            <p class="hub-warning-alert-status" id="hubWarningAlertStatus" aria-live="polite"></p>
+        </div>
+    </details>
 
     <div class="hub-wrap">
         <div class="hub-dashboard">
@@ -305,6 +331,7 @@
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
+    <script src="hub-warning-alerts.js"></script>
     <script src="hub-csv.js"></script>
     <script src="hub-live-race.js"></script>
     <script src="hub-calendar.js"></script>

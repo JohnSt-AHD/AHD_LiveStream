@@ -196,16 +196,39 @@
         return pos.speed >= minSpeedMps;
     }
 
-    function countWarnings(devices, positions, parts, stoppedState) {
-        let n = 0;
-        if (!parts.length) return 0;
+    function warningDetailForDevice(device, pos, stoppedState) {
+        const fixMs = pos.fixTime ? new Date(pos.fixTime).getTime() : 0;
+        const fixAgeMs = fixMs > 0 ? Date.now() - fixMs : null;
+        const slow = typeof pos.speed === 'number' && pos.speed < STOP_SPEED_MPS;
+        const st = stoppedState[device.id];
+        if (fixAgeMs != null && fixAgeMs < STOP_MIN_MS && slow && st) {
+            return `Stationary outside ~${Math.floor((Date.now() - st.t) / 60000)} min`;
+        }
+        if (fixAgeMs != null && fixAgeMs >= STOP_MIN_MS) {
+            return `Last fix ${Math.floor(fixAgeMs / 60000)} min ago`;
+        }
+        return 'No fix for 30+ min';
+    }
+
+    function listWarningDetails(devices, positions, parts, stoppedState) {
+        const list = [];
+        if (!parts.length) return list;
         for (const d of devices) {
             const pos = positions[d.id];
             if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
             if (isInsideBoundaryParts(pos.latitude, pos.longitude, parts)) continue;
-            if (isCriticalOutsideAlert(d, pos, parts, stoppedState)) n += 1;
+            if (!isCriticalOutsideAlert(d, pos, parts, stoppedState)) continue;
+            list.push({
+                deviceId: d.id,
+                deviceName: d.name || `Device ${d.id}`,
+                detail: warningDetailForDevice(d, pos, stoppedState),
+            });
         }
-        return n;
+        return list;
+    }
+
+    function countWarnings(devices, positions, parts, stoppedState) {
+        return listWarningDetails(devices, positions, parts, stoppedState).length;
     }
 
     function countOnWater(devices, positions, parts) {
@@ -243,16 +266,19 @@
         const { geofences: matched } = getMatchedGeofences(geofences);
         const parts = boundaryPartsFromGeofences(matched);
         const stoppedState = updateStoppedTracking(devices, positions, parts);
+        const warningDetails = listWarningDetails(devices, positions, parts, stoppedState);
         return {
             boundaryReady: parts.length > 0,
-            warnings: countWarnings(devices, positions, parts, stoppedState),
+            warnings: warningDetails.length,
             onWater: countOnWater(devices, positions, parts),
+            warningDetails,
         };
     }
 
     global.RnzSafetyCore = {
         haversineM,
         computeSafetyMetrics,
+        listWarningDetails,
         mergeDevicesFromPositions,
         boundaryPartsFromGeofences,
         getMatchedGeofences,

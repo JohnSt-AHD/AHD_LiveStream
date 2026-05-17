@@ -1,6 +1,12 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "public",
+  "crons": [
+    {
+      "path": "/api/warning-alerts?action=cron",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "functions": {
     "api/traccar.js": {
       "maxDuration": 60
@@ -10,6 +16,9 @@
     },
     "api/fetch-csv.js": {
       "maxDuration": 20
+    },
+    "api/warning-alerts.js": {
+      "maxDuration": 60
     }
   }
 }

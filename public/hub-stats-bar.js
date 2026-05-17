@@ -229,6 +229,9 @@ async function hubStatsRefresh() {
         hubStatsLastDevices = devices;
 
         const metrics = core.computeSafetyMetrics(devices, positions, data.geofences);
+        if (window.HubWarningAlerts?.onSafetyRefresh) {
+            window.HubWarningAlerts.onSafetyRefresh(metrics);
+        }
 
         const warnText = metrics.boundaryReady
             ? `${metrics.warnings} warning${metrics.warnings === 1 ? '' : 's'}`

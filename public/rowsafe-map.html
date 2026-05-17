@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>RowSafe-style fleet map · Altitude HD</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="hub-warning-alerts.css">
     <link rel="stylesheet" href="rowsafe-map.css">
 </head>
 <body class="rnz-page">
@@ -22,6 +23,9 @@
                     </div>
                 </div>
             </div>
+            <nav class="rnz-header-nav" aria-label="Page menu">
+                <a class="rnz-header-menu-btn" href="#hubWarningAlertsPanel" id="rnzEmailAlertsMenuBtn">Email alerts</a>
+            </nav>
             <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
         </div>
     </header>
@@ -36,14 +40,32 @@
         <a class="hub-stats-item hub-stats-item--event" id="hubStatEvent" href="index.html#hub-calendar-title">—</a>
     </div>
 
+    <details class="hub-warning-alerts-panel hub-warning-alerts-panel--rnz" id="hubWarningAlertsPanel">
+        <summary class="hub-warning-alerts-summary">Warning email alerts</summary>
+        <div class="hub-warning-alerts-body">
+            <p class="hub-warning-alerts-lead">
+                Recipients: Vercel env <code>WARNING_NOTIFY_EMAILS</code>. Enable below to email on <strong>new</strong> warnings while this page is open.
+            </p>
+            <p class="hub-warning-alerts-meta" id="hubWarningAlertMeta">Checking configuration…</p>
+            <label class="hub-warning-alerts-toggle">
+                <input type="checkbox" id="hubWarningEmailToggle">
+                <span>Email when a <strong>new</strong> warning appears</span>
+            </label>
+            <label class="hub-warning-alerts-field">
+                <span>Alert secret</span>
+                <input type="password" id="hubWarningAlertSecret" class="hub-warning-alerts-input" autocomplete="off" placeholder="WARNING_ALERT_SECRET">
+            </label>
+            <div class="hub-warning-alerts-actions">
+                <button type="button" class="hub-warning-alerts-btn" id="hubWarningAlertSaveSecret">Save secret</button>
+                <button type="button" class="hub-warning-alerts-btn" id="hubWarningAlertTestBtn">Send test email</button>
+            </div>
+            <p class="hub-warning-alert-status" id="hubWarningAlertStatus" aria-live="polite"></p>
+        </div>
+    </details>
+
     <main class="rnz-main" id="rnz-main">
         <div class="rnz-dashboard" id="rnzLayout">
             <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Warnings">
-                <div class="rnz-column-toolbar">
-                    <button type="button" class="rnz-column-toggle" id="rnzCollapseLeft" aria-expanded="true" aria-controls="rnzLeftScroll">
-                        Hide warnings
-                    </button>
-                </div>
                 <div class="rnz-left-scroll" id="rnzLeftScroll">
                     <details class="rnz-panel-details rnz-panel-details--warnings" id="rnzWarningBox" hidden>
                         <summary class="rnz-panel-summary">Warnings — outside boundary 30+ min</summary>
@@ -63,18 +85,8 @@
             <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
                 <div class="rnz-sidebar-head">
                     <img src="RNz.png" alt="" class="rnz-logo-sidebar" width="44" height="44" loading="lazy">
-                    <button type="button" class="rnz-collapse-btn" id="rnzCollapseSidebar" aria-expanded="true" aria-controls="rnzSidebarScroll">
-                        Hide panel
-                    </button>
                 </div>
                 <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
-                    <div class="rnz-fullscreen-toolbar">
-                        <label class="rnz-toggle">
-                            <input type="checkbox" id="rnzMapFullscreenToggle">
-                            <span>Fullscreen map</span>
-                        </label>
-                        <span class="rnz-fullscreen-hint">Fills area below header; footer stays visible.</span>
-                    </div>
                     <details class="rnz-panel-details" open>
                         <summary class="rnz-panel-summary">Live updates</summary>
                         <div class="rnz-panel-inner rnz-panel-inner--live">
@@ -141,6 +153,7 @@
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
+    <script src="hub-warning-alerts.js"></script>
     <script src="rowsafe-map.js"></script>
 </body>
 </html>

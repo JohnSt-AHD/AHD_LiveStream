@@ -328,30 +328,6 @@ function wireLiveToggle() {
     });
 }
 
-function wireSidebarCollapse() {
-    const btn = document.getElementById('rnzCollapseSidebar');
-    const layout = document.getElementById('rnzLayout');
-    if (!btn || !layout) return;
-    btn.addEventListener('click', () => {
-        const collapsed = layout.classList.toggle('rnz-sidebar-collapsed');
-        btn.setAttribute('aria-expanded', String(!collapsed));
-        btn.textContent = collapsed ? 'Show panel' : 'Hide panel';
-        setTimeout(() => map && map.invalidateSize(), 320);
-    });
-}
-
-function wireLeftCollapse() {
-    const btn = document.getElementById('rnzCollapseLeft');
-    const layout = document.getElementById('rnzLayout');
-    if (!btn || !layout) return;
-    btn.addEventListener('click', () => {
-        const collapsed = layout.classList.toggle('rnz-left-collapsed');
-        btn.setAttribute('aria-expanded', String(!collapsed));
-        btn.textContent = collapsed ? 'Show warnings' : 'Hide warnings';
-        setTimeout(() => map && map.invalidateSize(), 320);
-    });
-}
-
 function wireFleetDockResize() {
     const dock = document.getElementById('rnzFleetDock');
     if (!dock || dock.dataset.rnzResizeBound === '1') return;
@@ -889,25 +865,21 @@ function updateRnzFullscreenLayoutVars() {
 
 function setRnzMapFullscreen(on) {
     document.body.classList.toggle('rnz-map-fullscreen', on);
-    const chk = document.getElementById('rnzMapFullscreenToggle');
     const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
-    if (chk) chk.checked = on;
     if (exitBtn) exitBtn.hidden = !on;
     if (on) updateRnzFullscreenLayoutVars();
     setTimeout(() => map && map.invalidateSize(), 80);
 }
 
 function wireRnzMapFullscreen() {
-    const chk = document.getElementById('rnzMapFullscreenToggle');
     const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
-    const mobileExpand = document.getElementById('rnzMapMobileExpandBtn');
-    if (!chk || !exitBtn || chk.dataset.bound === '1') return;
-    chk.dataset.bound = '1';
-    chk.addEventListener('change', () => setRnzMapFullscreen(chk.checked));
+    const mapExpand = document.getElementById('rnzMapMobileExpandBtn');
+    if (!exitBtn || exitBtn.dataset.bound === '1') return;
+    exitBtn.dataset.bound = '1';
     exitBtn.addEventListener('click', () => setRnzMapFullscreen(false));
-    if (mobileExpand && mobileExpand.dataset.bound !== '1') {
-        mobileExpand.dataset.bound = '1';
-        mobileExpand.addEventListener('click', () => setRnzMapFullscreen(true));
+    if (mapExpand && mapExpand.dataset.bound !== '1') {
+        mapExpand.dataset.bound = '1';
+        mapExpand.addEventListener('click', () => setRnzMapFullscreen(true));
     }
     window.addEventListener('resize', () => {
         if (document.body.classList.contains('rnz-map-fullscreen')) {
@@ -929,8 +901,6 @@ window.addEventListener('altitudehd:speed-color-range', () => {
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     wireLiveToggle();
-    wireSidebarCollapse();
-    wireLeftCollapse();
     wireFleetDockResize();
     wireRnzMapFullscreen();
     wireDeviceNameFlyTo();
