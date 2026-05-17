@@ -26,10 +26,10 @@ const VG_THEMES = {
     'rnz-milford': {
         label: 'RNZ Milford',
         backgrounds: {
-            title: 'assets/vmix/milford/title.mp4',
-            lower: 'assets/vmix/milford/lower.mp4',
-            draw: 'assets/vmix/milford/draw.mp4',
-            results: 'assets/vmix/milford/results.mp4',
+            title: 'assets/vmix/milford/title.webm',
+            lower: 'assets/vmix/milford/lower.webm',
+            draw: 'assets/vmix/milford/draw.webm',
+            results: 'assets/vmix/milford/results.webm',
         },
     },
     'beachsprints-milford': {
