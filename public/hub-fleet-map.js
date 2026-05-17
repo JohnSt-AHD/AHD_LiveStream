@@ -122,6 +122,22 @@ function hubFleetColorForDevice(deviceId) {
     return `hsl(${hue}, 72%, 52%)`;
 }
 
+/** LayerGroup has no bringToFront in Leaflet; raise each marker instead. */
+function hubFleetBringMarkersToFront() {
+    if (!hubFleetMarkersLayer) return;
+    if (typeof hubFleetMarkersLayer.bringToFront === 'function') {
+        hubFleetMarkersLayer.bringToFront();
+        return;
+    }
+    if (typeof hubFleetMarkersLayer.eachLayer === 'function') {
+        hubFleetMarkersLayer.eachLayer((layer) => {
+            if (layer && typeof layer.bringToFront === 'function') {
+                layer.bringToFront();
+            }
+        });
+    }
+}
+
 function hubFleetTodayRangeIso() {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -191,9 +207,7 @@ function hubFleetRenderTraces(deviceRoutes) {
         points += routePoints.length;
     }
 
-    if (hubFleetMarkersLayer) {
-        hubFleetMarkersLayer.bringToFront();
-    }
+    hubFleetBringMarkersToFront();
 
     return { drawn, points };
 }
@@ -346,9 +360,7 @@ function hubFleetUpdateMarkers(devices, positions) {
         }
     }
 
-    if (hubFleetMarkersLayer) {
-        hubFleetMarkersLayer.bringToFront();
-    }
+    hubFleetBringMarkersToFront();
 
     return { total: devices.length, online, plotted: seen.size };
 }
