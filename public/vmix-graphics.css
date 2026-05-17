@@ -30,6 +30,16 @@ body {
     background-repeat: no-repeat;
     background-position: 0 0;
     pointer-events: none;
+    overflow: hidden;
+}
+
+.vg-bg-video {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    object-fit: fill;
+    pointer-events: none;
 }
 
 .vg-bg--plain {

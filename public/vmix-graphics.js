@@ -25,7 +25,12 @@ const VG_THEMES = {
     },
     'rnz-milford': {
         label: 'RNZ Milford',
-        backgrounds: {},
+        backgrounds: {
+            title: 'assets/vmix/milford/title.mp4',
+            lower: 'assets/vmix/milford/lower.mp4',
+            draw: 'assets/vmix/milford/draw.mp4',
+            results: 'assets/vmix/milford/results.mp4',
+        },
     },
     'beachsprints-milford': {
         label: 'Beach Sprints Milford',
@@ -342,11 +347,45 @@ function vgResolveTheme() {
     return document.body.dataset.vmixTheme || 'kri';
 }
 
+function vgIsVideoAsset(src) {
+    return /\.(mp4|webm|mov)(\?|$)/i.test(src || '');
+}
+
 function vgSetBackground(graphic) {
     const bg = document.getElementById('vgBg');
     if (!bg) return;
     const theme = VG_THEMES[vgResolveTheme()] || VG_THEMES.kri;
     const src = theme.backgrounds[graphic];
+    let video = bg.querySelector('video.vg-bg-video');
+
+    if (src && vgIsVideoAsset(src)) {
+        if (!video) {
+            video = document.createElement('video');
+            video.className = 'vg-bg-video';
+            video.loop = true;
+            video.muted = true;
+            video.playsInline = true;
+            video.autoplay = true;
+            video.setAttribute('aria-hidden', 'true');
+            bg.appendChild(video);
+        }
+        bg.style.backgroundImage = '';
+        if (video.dataset.src !== src) {
+            video.dataset.src = src;
+            video.src = src;
+            video.load();
+        }
+        video.play().catch(() => {});
+        bg.classList.remove('vg-bg--plain');
+        return;
+    }
+
+    if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.remove();
+    }
+
     if (src) {
         bg.style.backgroundImage = `url('${src}')`;
         bg.classList.remove('vg-bg--plain');

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "exit 0",
     "export-lookup": "python scripts/export-ahd-lookup.py",
+    "convert-milford": "python scripts/convert-milford-videos.py",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
