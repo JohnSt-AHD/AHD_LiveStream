@@ -902,7 +902,6 @@ function vgRenderDraw(layer, race) {
                 {
                     lane: lane.lane,
                     code: lane.code,
-                    names: vgCompetitorNames(race, lane),
                 },
                 vgState.lookup,
             ),
