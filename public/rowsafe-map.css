@@ -983,6 +983,24 @@ body.rnz-page > * {
         border-right: none;
         border-top: 4px solid var(--rnz-teal);
     }
+
+    .rnz-column-toolbar {
+        display: none;
+    }
+
+    .rnz-left-column {
+        height: auto;
+        max-height: none;
+    }
+
+    .rnz-left-column:has(#rnzWarningBox[hidden]) {
+        display: none;
+    }
+
+    .rnz-left-scroll {
+        flex: 0 1 auto;
+        overflow-y: visible;
+    }
 }
 
 .rnz-block {
