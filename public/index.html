@@ -161,6 +161,9 @@
                 <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
                 <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code above — overlays read the same code via <code>?regatta=</code> or this page’s saved value.</p>
 
+                <details class="hub-vmix-explainer">
+                    <summary class="hub-vmix-explainer-summary">Live stream graphics guide</summary>
+                    <div class="hub-vmix-explainer-body">
                 <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
                     <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
                     <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
@@ -184,8 +187,7 @@
                     <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
                 </div>
 
-                <div class="hub-vmix-guide" aria-labelledby="hub-vmix-guide-title">
-                    <h3 id="hub-vmix-guide-title" class="hub-vmix-guide-title">URL triggers</h3>
+                <div class="hub-vmix-guide">
                     <p class="hub-vmix-guide-lead">In vMix, focus the Milford browser input: <code>d</code>/<code>l</code>/<code>r</code>/<code>t</code> play in (3s then text), <code>g</code> speed dot + TimeTracker video, <code>o</code> out (reverse), <code>c</code> clear. Configure speed device on the fleet map first.</p>
                     <div class="hub-vmix-trigger-row" id="hubVmixTriggerButtons" role="group" aria-label="Send trigger to open vMix overlays">
                         <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="t" title="Title in">T</button>
@@ -196,7 +198,7 @@
                         <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--out" data-vmix-trigger="out" title="Out">O</button>
                         <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--clear" data-vmix-trigger="clear" title="Clear all">C</button>
                     </div>
-                    <p class="hub-vmix-trigger-hint">Buttons send triggers to open Milford overlay tabs on this site. Use <strong>vmix-rnz-milford.html</strong> for graphics and fleet map.</p>
+                    <p class="hub-vmix-trigger-hint">Buttons send triggers to open Milford overlay tabs on this site. Use <strong>vmix-rnz-milford.html</strong> for regatta graphics and speed overlay.</p>
                     <table class="hub-vmix-table" id="hubVmixTriggerTable">
                         <thead>
                             <tr>
@@ -208,7 +210,9 @@
                         <tbody></tbody>
                     </table>
                     <div class="hub-vmix-examples" id="hubVmixExamples"></div>
-                </div>
+                        </div>
+                    </div>
+                </details>
 
                 <ul class="hub-links hub-links--vmix">
                     <li>
