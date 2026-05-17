@@ -43,22 +43,49 @@
     <details class="hub-warning-alerts-panel hub-warning-alerts-panel--rnz" id="hubWarningAlertsPanel">
         <summary class="hub-warning-alerts-summary">Warning email alerts</summary>
         <div class="hub-warning-alerts-body">
-            <p class="hub-warning-alerts-lead">
-                Recipients: Vercel env <code>WARNING_NOTIFY_EMAILS</code>. Enable below to email on <strong>new</strong> warnings while this page is open.
-            </p>
             <p class="hub-warning-alerts-meta" id="hubWarningAlertMeta">Checking configuration…</p>
-            <label class="hub-warning-alerts-toggle">
-                <input type="checkbox" id="hubWarningEmailToggle">
-                <span>Email when a <strong>new</strong> warning appears</span>
-            </label>
-            <label class="hub-warning-alerts-field">
-                <span>Alert secret</span>
-                <input type="password" id="hubWarningAlertSecret" class="hub-warning-alerts-input" autocomplete="off" placeholder="WARNING_ALERT_SECRET">
-            </label>
-            <div class="hub-warning-alerts-actions">
-                <button type="button" class="hub-warning-alerts-btn" id="hubWarningAlertSaveSecret">Save secret</button>
-                <button type="button" class="hub-warning-alerts-btn" id="hubWarningAlertTestBtn">Send test email</button>
-            </div>
+
+            <section class="hub-warning-alerts-section" aria-labelledby="hubWarningRecipientsTitle">
+                <h3 class="hub-warning-alerts-heading" id="hubWarningRecipientsTitle">Recipients</h3>
+                <p class="hub-warning-alerts-hint">Warning emails are sent to these addresses.</p>
+                <ul class="hub-warning-email-list" id="hubWarningEmailList" aria-live="polite"></ul>
+                <p class="hub-warning-email-empty" id="hubWarningEmailListEmpty" hidden>No recipients yet.</p>
+                <div class="hub-warning-alerts-add-row">
+                    <input type="email" id="hubWarningNewEmail" class="hub-warning-alerts-input" placeholder="name@example.com" autocomplete="email">
+                    <button type="button" class="hub-warning-alerts-btn" id="hubWarningAddEmailBtn">Add email</button>
+                </div>
+                <p class="hub-warning-alerts-note" id="hubWarningEmailStorageNote"></p>
+            </section>
+
+            <section class="hub-warning-alerts-section" aria-labelledby="hubWarningMessageTitle">
+                <h3 class="hub-warning-alerts-heading" id="hubWarningMessageTitle">Email message</h3>
+                <label class="hub-warning-alerts-field">
+                    <span class="hub-warning-alerts-label">Opening text (shown above the warning list)</span>
+                    <textarea id="hubWarningAlertMessage" class="hub-warning-alerts-textarea" rows="3"></textarea>
+                </label>
+                <button type="button" class="hub-warning-alerts-btn" id="hubWarningSaveMessageBtn">Save message</button>
+                <div class="hub-warning-alerts-preview-wrap">
+                    <span class="hub-warning-alerts-label">Preview</span>
+                    <pre class="hub-warning-alerts-preview" id="hubWarningEmailPreview"></pre>
+                </div>
+            </section>
+
+            <section class="hub-warning-alerts-section" aria-labelledby="hubWarningNotifyTitle">
+                <h3 class="hub-warning-alerts-heading" id="hubWarningNotifyTitle">Live alerts</h3>
+                <label class="hub-warning-alerts-toggle">
+                    <input type="checkbox" id="hubWarningEmailToggle">
+                    <span>Email when a <strong>new</strong> warning appears (while this page is open)</span>
+                </label>
+                <label class="hub-warning-alerts-field">
+                    <span>Alert secret (required to add/remove emails and save message)</span>
+                    <input type="password" id="hubWarningAlertSecret" class="hub-warning-alerts-input" autocomplete="off" placeholder="WARNING_ALERT_SECRET">
+                </label>
+                <div class="hub-warning-alerts-actions">
+                    <button type="button" class="hub-warning-alerts-btn" id="hubWarningAlertSaveSecret">Save secret</button>
+                    <button type="button" class="hub-warning-alerts-btn" id="hubWarningAlertTestBtn">Send test email</button>
+                </div>
+            </section>
+
             <p class="hub-warning-alert-status" id="hubWarningAlertStatus" aria-live="polite"></p>
         </div>
     </details>

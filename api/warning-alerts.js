@@ -12,7 +12,15 @@ import {
     saveStoppedState,
     warningIdsFromList,
 } from './lib/kv-state.mjs';
-import { mailConfigStatus, sendWarningEmails } from './lib/mail.mjs';
+import {
+    addNotifyEmail,
+    buildWarningEmailPreviewText,
+    mailConfigStatus,
+    removeNotifyEmail,
+    saveAlertMessage,
+    sendWarningEmails,
+} from './lib/mail.mjs';
+import { isValidEmail } from './lib/kv-state.mjs';
 
 function setCors(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -72,10 +80,80 @@ export default async function handler(req, res) {
 
     try {
         if (action === 'status') {
-            const status = mailConfigStatus();
+            const status = await mailConfigStatus();
+            const sample = [
+                {
+                    deviceId: 0,
+                    deviceName: 'Example boat',
+                    detail: 'Last fix 45 min ago',
+                },
+            ];
             res.status(200).json({
                 ...status,
                 kv: await kvAvailable(),
+                preview: buildWarningEmailPreviewText({
+                    warnings: sample,
+                    isTest: false,
+                    intro: status.message,
+                }),
+            });
+            return;
+        }
+
+        if (action === 'add-email') {
+            if (!isAuthorized(req)) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            const body = await readJsonBody(req);
+            const email = String(body.email || '').trim();
+            if (!isValidEmail(email)) {
+                res.status(400).json({ error: 'Enter a valid email address.' });
+                return;
+            }
+            const emails = await addNotifyEmail(email);
+            res.status(200).json({ ok: true, emails });
+            return;
+        }
+
+        if (action === 'remove-email') {
+            if (!isAuthorized(req)) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            const body = await readJsonBody(req);
+            const email = String(body.email || '').trim();
+            if (!email) {
+                res.status(400).json({ error: 'Email is required.' });
+                return;
+            }
+            const emails = await removeNotifyEmail(email);
+            res.status(200).json({ ok: true, emails });
+            return;
+        }
+
+        if (action === 'set-message') {
+            if (!isAuthorized(req)) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            const body = await readJsonBody(req);
+            const message = await saveAlertMessage(body.message);
+            const sample = [
+                {
+                    deviceId: 0,
+                    deviceName: 'Example boat',
+                    detail: 'Last fix 45 min ago',
+                },
+            ];
+            res.status(200).json({
+                ok: true,
+                message,
+                preview: buildWarningEmailPreviewText({
+                    warnings: sample,
+                    isTest: false,
+                    intro: message,
+                }),
             });
             return;
         }
@@ -132,7 +210,7 @@ export default async function handler(req, res) {
             const previousIds = await loadLastWarningIds();
             const newWarnings = filterNewWarnings(evaluation.warnings, previousIds);
             let emailed = null;
-            if (newWarnings.length > 0 && mailConfigStatus().ready) {
+            if (newWarnings.length > 0 && (await mailConfigStatus()).ready) {
                 emailed = await sendNewWarningEmails(newWarnings);
             }
             await saveLastWarningIds(currentIds);
@@ -145,7 +223,9 @@ export default async function handler(req, res) {
             return;
         }
 
-        res.status(400).json({ error: 'Invalid action. Use status, test, notify, or cron' });
+        res.status(400).json({
+            error: 'Invalid action. Use status, test, notify, cron, add-email, remove-email, or set-message',
+        });
     } catch (error) {
         console.error('warning-alerts:', error);
         res.status(error.statusCode || 500).json({ error: error.message || 'Warning alerts failed' });

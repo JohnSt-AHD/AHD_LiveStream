@@ -1,8 +1,10 @@
 /**
- * RowSafe warning email alerts — client notify on new warnings + test UI.
+ * RowSafe warning email alerts — RowSafe page only.
  */
 const HUB_ALERT_LS_SECRET = 'warningAlertSecret_v1';
 const HUB_ALERT_LS_LAST_IDS = 'warningAlertLastIds_v1';
+
+let hubAlertConfig = null;
 
 function hubAlertGetSecret() {
     try {
@@ -51,13 +53,14 @@ async function hubAlertFetchConfig() {
     const res = await fetch('/api/warning-alerts?action=status');
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `Status failed (${res.status})`);
+    hubAlertConfig = data;
     return data;
 }
 
 async function hubAlertPost(action, body = {}) {
     const secret = hubAlertGetSecret();
     if (!secret) {
-        throw new Error('Enter the alert secret (same as WARNING_ALERT_SECRET in Vercel).');
+        throw new Error('Enter and save the alert secret first.');
     }
     const res = await fetch(`/api/warning-alerts?action=${encodeURIComponent(action)}`, {
         method: 'POST',
@@ -72,25 +75,138 @@ async function hubAlertPost(action, body = {}) {
     return data;
 }
 
-async function hubAlertRefreshConfigUi() {
+function hubAlertRenderEmailList(emails) {
+    const list = document.getElementById('hubWarningEmailList');
+    const empty = document.getElementById('hubWarningEmailListEmpty');
+    if (!list) return;
+
+    list.innerHTML = '';
+    const items = Array.isArray(emails) ? emails : [];
+
+    if (empty) empty.hidden = items.length > 0;
+
+    for (const email of items) {
+        const li = document.createElement('li');
+        li.className = 'hub-warning-email-item';
+
+        const addr = document.createElement('span');
+        addr.className = 'hub-warning-email-address';
+        addr.textContent = email;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'hub-warning-email-remove';
+        removeBtn.textContent = 'Remove';
+        removeBtn.dataset.email = email;
+        removeBtn.addEventListener('click', () => hubAlertRemoveEmail(email));
+
+        li.appendChild(addr);
+        li.appendChild(removeBtn);
+        list.appendChild(li);
+    }
+}
+
+function hubAlertUpdatePreview(cfg) {
+    const preview = document.getElementById('hubWarningEmailPreview');
+    const messageInput = document.getElementById('hubWarningAlertMessage');
+    if (messageInput && cfg?.message != null) {
+        messageInput.value = cfg.message;
+    }
+    if (preview) {
+        preview.textContent = cfg?.preview || '';
+    }
+}
+
+function hubAlertUpdateMeta(cfg) {
     const meta = document.getElementById('hubWarningAlertMeta');
+    const note = document.getElementById('hubWarningEmailStorageNote');
     if (!meta) return;
+
+    const parts = [];
+    if (cfg.ready) {
+        parts.push(`Ready to send · ${cfg.recipients} recipient${cfg.recipients === 1 ? '' : 's'}`);
+    } else {
+        if (!cfg.resend) parts.push('Set RESEND_API_KEY in Vercel');
+        if (!cfg.from) parts.push('Set WARNING_NOTIFY_FROM in Vercel');
+        if (!cfg.recipients) parts.push('Add at least one recipient');
+        if (!cfg.secret) parts.push('Set WARNING_ALERT_SECRET in Vercel');
+    }
+
+    meta.textContent = parts.join(' · ');
+
+    if (note) {
+        if (cfg.editable) {
+            note.textContent = 'Recipient list is saved in Vercel KV.';
+        } else if (cfg.source === 'env') {
+            note.textContent =
+                'Showing addresses from WARNING_NOTIFY_EMAILS in Vercel. Add Vercel KV to this project to add or remove emails here.';
+        } else {
+            note.textContent = '';
+        }
+    }
+
+    const addBtn = document.getElementById('hubWarningAddEmailBtn');
+    const saveMsgBtn = document.getElementById('hubWarningSaveMessageBtn');
+    const canEdit = Boolean(cfg.editable && hubAlertGetSecret());
+    if (addBtn) addBtn.disabled = !canEdit;
+    if (saveMsgBtn) saveMsgBtn.disabled = !canEdit;
+}
+
+async function hubAlertRefreshPanel() {
     try {
         const cfg = await hubAlertFetchConfig();
-        const parts = [];
-        if (cfg.ready) {
-            parts.push(`Email ready · ${cfg.recipients} recipient${cfg.recipients === 1 ? '' : 's'}`);
-        } else {
-            if (!cfg.resend) parts.push('Set RESEND_API_KEY');
-            if (!cfg.from) parts.push('Set WARNING_NOTIFY_FROM');
-            if (!cfg.recipients) parts.push('Set WARNING_NOTIFY_EMAILS');
-            if (!cfg.secret) parts.push('Set WARNING_ALERT_SECRET');
-        }
-        if (cfg.kv) parts.push('Server cron storage on');
-        else parts.push('Browser alerts active (add Vercel KV for 24/7 cron)');
-        meta.textContent = parts.join(' · ');
+        hubAlertRenderEmailList(cfg.emails);
+        hubAlertUpdatePreview(cfg);
+        hubAlertUpdateMeta(cfg);
     } catch (err) {
-        meta.textContent = err.message || 'Could not load alert config';
+        hubAlertSetStatus(err.message || 'Could not load alert settings', true);
+    }
+}
+
+async function hubAlertAddEmail() {
+    const input = document.getElementById('hubWarningNewEmail');
+    const email = input?.value.trim() || '';
+    if (!email) {
+        hubAlertSetStatus('Enter an email address.', true);
+        return;
+    }
+    hubAlertSetStatus('Adding email…');
+    try {
+        const data = await hubAlertPost('add-email', { email });
+        if (input) input.value = '';
+        hubAlertRenderEmailList(data.emails);
+        await hubAlertRefreshPanel();
+        hubAlertSetStatus(`Added ${email}.`);
+    } catch (err) {
+        hubAlertSetStatus(err.message || 'Could not add email', true);
+    }
+}
+
+async function hubAlertRemoveEmail(email) {
+    hubAlertSetStatus('Removing email…');
+    try {
+        const data = await hubAlertPost('remove-email', { email });
+        hubAlertRenderEmailList(data.emails);
+        await hubAlertRefreshPanel();
+        hubAlertSetStatus(`Removed ${email}.`);
+    } catch (err) {
+        hubAlertSetStatus(err.message || 'Could not remove email', true);
+    }
+}
+
+async function hubAlertSaveMessage() {
+    const message = document.getElementById('hubWarningAlertMessage')?.value.trim() || '';
+    if (!message) {
+        hubAlertSetStatus('Message cannot be empty.', true);
+        return;
+    }
+    hubAlertSetStatus('Saving message…');
+    try {
+        const data = await hubAlertPost('set-message', { message });
+        hubAlertUpdatePreview(data);
+        hubAlertSetStatus('Message saved.');
+    } catch (err) {
+        hubAlertSetStatus(err.message || 'Could not save message', true);
     }
 }
 
@@ -132,9 +248,7 @@ function hubAlertOpenPanel() {
     panel.classList.add('hub-warning-alerts-panel--highlight');
     window.setTimeout(() => panel.classList.remove('hub-warning-alerts-panel--highlight'), 2200);
     panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    hubAlertRefreshConfigUi();
-    const secretInput = document.getElementById('hubWarningAlertSecret');
-    secretInput?.focus({ preventScroll: true });
+    hubAlertRefreshPanel();
 }
 
 function hubAlertWireUi() {
@@ -148,12 +262,24 @@ function hubAlertWireUi() {
 
     secretInput?.addEventListener('change', () => {
         hubAlertSetSecret(secretInput.value.trim());
+        hubAlertUpdateMeta(hubAlertConfig || {});
     });
 
     document.getElementById('hubWarningAlertSaveSecret')?.addEventListener('click', () => {
         hubAlertSetSecret(secretInput?.value.trim() || '');
-        hubAlertSetStatus('Secret saved in this browser only.');
+        hubAlertSetStatus('Secret saved in this browser.');
+        hubAlertRefreshPanel();
     });
+
+    document.getElementById('hubWarningAddEmailBtn')?.addEventListener('click', hubAlertAddEmail);
+    document.getElementById('hubWarningNewEmail')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            hubAlertAddEmail();
+        }
+    });
+
+    document.getElementById('hubWarningSaveMessageBtn')?.addEventListener('click', hubAlertSaveMessage);
 
     document.getElementById('hubWarningAlertTestBtn')?.addEventListener('click', async () => {
         hubAlertSetStatus('Sending test email…');
@@ -165,12 +291,12 @@ function hubAlertWireUi() {
         }
     });
 
-    hubAlertRefreshConfigUi();
-
     document.getElementById('rnzEmailAlertsMenuBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         hubAlertOpenPanel();
     });
+
+    hubAlertRefreshPanel();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -180,6 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.HubWarningAlerts = {
     onSafetyRefresh: hubAlertOnSafetyRefresh,
-    refreshConfigUi: hubAlertRefreshConfigUi,
+    refreshConfigUi: hubAlertRefreshPanel,
     openPanel: hubAlertOpenPanel,
 };
