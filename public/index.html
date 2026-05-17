@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Altitude HD</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="hub.css">
 </head>
 <body class="hub-page">
@@ -127,6 +128,20 @@
 
                 <p class="hub-schedule-status" id="hubScheduleStatus"></p>
                 <button type="button" class="hub-btn" id="hubScheduleReload">Reload schedule</button>
+            </section>
+
+            <section class="hub-panel hub-panel--fleet-map" aria-labelledby="hub-fleet-map-title">
+                <h2 id="hub-fleet-map-title" class="hub-section-title">Fleet overview</h2>
+                <p class="hub-fleet-map-lead">
+                    Live Traccar devices · default view Karāpiro (Rowing NZ).
+                    <a href="live-map.html">Open full fleet map</a>
+                </p>
+                <label class="hub-fleet-map-toggle">
+                    <input type="checkbox" id="hubFleetTracesToggle" aria-describedby="hubFleetMapStatus">
+                    <span>Show today&apos;s GPS traces (all devices)</span>
+                </label>
+                <div id="hubFleetMap" class="hub-fleet-map" role="application" aria-label="Fleet map at Karāpiro"></div>
+                <p class="hub-fleet-map-status" id="hubFleetMapStatus" aria-live="polite">Loading devices…</p>
             </section>
         </div>
 
@@ -282,5 +297,7 @@
     <script src="hub-calendar.js"></script>
     <script src="hub-regatta.js"></script>
     <script src="hub-vmix-guide.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="hub-fleet-map.js"></script>
 </body>
 </html>
