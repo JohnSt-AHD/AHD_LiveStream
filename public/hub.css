@@ -256,6 +256,98 @@
     margin-bottom: 12px;
 }
 
+.hub-vmix-guide {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hub-vmix-guide-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #f9a8d4;
+    margin: 0 0 8px;
+}
+
+.hub-vmix-guide-lead {
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin: 0 0 10px;
+    line-height: 1.45;
+}
+
+.hub-vmix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
+
+.hub-vmix-table th,
+.hub-vmix-table td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    vertical-align: top;
+}
+
+.hub-vmix-table th {
+    color: var(--ahd-muted);
+    font-weight: 600;
+}
+
+.hub-vmix-table code {
+    font-size: 11px;
+    color: #fda4af;
+}
+
+.hub-vmix-theme-block {
+    margin-top: 10px;
+}
+
+.hub-vmix-theme-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ahd-muted);
+    margin: 0 0 4px;
+}
+
+.hub-vmix-url-list {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+
+.hub-vmix-url-list a {
+    font-size: 12px;
+    color: #93c5fd;
+    text-decoration: none;
+}
+
+.hub-vmix-url-list a:hover {
+    text-decoration: underline;
+}
+
+.hub-vmix-map-note {
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin: 8px 0 0;
+    line-height: 1.45;
+}
+
+.hub-links--vmix {
+    margin-top: 4px;
+}
+
 @media (max-width: 1024px) {
     .hub-dashboard {
         grid-template-columns: 1fr;

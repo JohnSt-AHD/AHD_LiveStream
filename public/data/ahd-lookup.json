@@ -1,0 +1,2841 @@
+{
+  "clubs": {
+    "acgp": {
+      "id": "acgp",
+      "name": "ACG Parnell",
+      "type": "",
+      "logo": ""
+    },
+    "acgt": {
+      "id": "acgt",
+      "name": "ACG Tauranga",
+      "type": "s",
+      "logo": "ACG Tauranga - acgt.png"
+    },
+    "acgx": {
+      "id": "acgx",
+      "name": "Churchie",
+      "type": "s",
+      "logo": "Churchie - acgx.png"
+    },
+    "acul": {
+      "id": "acul",
+      "name": "Athlete Cell USA",
+      "type": "c",
+      "logo": "Athlete Cell USA - acul.png"
+    },
+    "adlc": {
+      "id": "adlc",
+      "name": "Adelaide Rowing Club",
+      "type": "c",
+      "logo": "Adelaide Rowing Club - adlc.png"
+    },
+    "agsb": {
+      "id": "agsb",
+      "name": "Auckland Grammar School",
+      "type": "s",
+      "logo": "Auckland Grammar School - agsb.png"
+    },
+    "akgc": {
+      "id": "akgc",
+      "name": "Auckland Grammar Rowing Club",
+      "type": "c",
+      "logo": "Auckland Grammar Rowing Club - akgc.png"
+    },
+    "aklc": {
+      "id": "aklc",
+      "name": "Auckland Rowing Club",
+      "type": "c",
+      "logo": "Auckland Rowing Club - aklc.png"
+    },
+    "aklu": {
+      "id": "aklu",
+      "name": "Auckland University",
+      "type": "t",
+      "logo": "Auckland University - aklu.png"
+    },
+    "alfr": {
+      "id": "alfr",
+      "name": "Alfriston College",
+      "type": "s",
+      "logo": "Alfriston College - alfr.png"
+    },
+    "aote": {
+      "id": "aote",
+      "name": "Aotea College",
+      "type": "s",
+      "logo": "Aotea College - aote.png"
+    },
+    "apar": {
+      "id": "apar",
+      "name": "Aparima College",
+      "type": "s",
+      "logo": "Aparima College - apar.png"
+    },
+    "aqui": {
+      "id": "aqui",
+      "name": "Aquinas College",
+      "type": "s",
+      "logo": "Aquinas College - aqui.png"
+    },
+    "argc": {
+      "id": "argc",
+      "name": "Argonaut Rowing Club",
+      "type": "c",
+      "logo": "Argonaut Rowing Club - argc.png"
+    },
+    "armc": {
+      "id": "armc",
+      "name": "Arapawa Maori Rowing Club",
+      "type": "c",
+      "logo": "Arapawa Maori Rowing Club - armc.png"
+    },
+    "arvc": {
+      "id": "arvc",
+      "name": "Alster Rowing Club",
+      "type": "c",
+      "logo": "Alster Rowing Club - arvc.png"
+    },
+    "ashb": {
+      "id": "ashb",
+      "name": "Ashburton College",
+      "type": "s",
+      "logo": "Ashburton College - ashb.png"
+    },
+    "ashc": {
+      "id": "ashc",
+      "name": "Ashburton Rowing Club",
+      "type": "c",
+      "logo": "Ashburton Rowing Club - ashc.png"
+    },
+    "ashs": {
+      "id": "ashs",
+      "name": "Albany Senior High School",
+      "type": "s",
+      "logo": "Albany Senior High School - ashs.png"
+    },
+    "aubc": {
+      "id": "aubc",
+      "name": "Auckland University Boat Club",
+      "type": "c",
+      "logo": "Auckland University Boat Club - aubc.png"
+    },
+    "autu": {
+      "id": "autu",
+      "name": "Auckland University of Technology",
+      "type": "t",
+      "logo": "Auckland University of Technology - autu.png"
+    },
+    "avdc": {
+      "id": "avdc",
+      "name": "Avondale College",
+      "type": "s",
+      "logo": "Avondale College - avdc.png"
+    },
+    "avn*": {
+      "id": "avn*",
+      "name": "Avon Rowing Club",
+      "type": "",
+      "logo": "Avon Rowing Club - avn*.png"
+    },
+    "avnc": {
+      "id": "avnc",
+      "name": "Avon Rowing Club",
+      "type": "c",
+      "logo": "Avon Rowing Club - avnc.png"
+    },
+    "avsg": {
+      "id": "avsg",
+      "name": "Avonside Girls High School",
+      "type": "s",
+      "logo": "Avonside Girls High School - avsg.png"
+    },
+    "awgc": {
+      "id": "awgc",
+      "name": "Aramoho Whanganui Rowing Club",
+      "type": "c",
+      "logo": "Aramoho Whanganui Rowing Club - awgc.png"
+    },
+    "awrc": {
+      "id": "awrc",
+      "name": "Awarua Boating Club",
+      "type": "c",
+      "logo": "Awarua Boating Club - awrc.png"
+    },
+    "bara": {
+      "id": "bara",
+      "name": "Baradene College",
+      "type": "s",
+      "logo": "Baradene College - bara.png"
+    },
+    "barx": {
+      "id": "barx",
+      "name": "Barbarians Rowing Club",
+      "type": "c",
+      "logo": "Barbarians Rowing Club - barx.png"
+    },
+    "bayf": {
+      "id": "bayf",
+      "name": "Bayfield High School",
+      "type": "s",
+      "logo": "Bayfield High School - bayf.png"
+    },
+    "bbrc": {
+      "id": "bbrc",
+      "name": "Burton Beach Rowing Club",
+      "type": "c",
+      "logo": "Burton Beach Rowing Club - bbrc.png"
+    },
+    "bccx": {
+      "id": "bccx",
+      "name": "Ballarat Clarendon College",
+      "type": "s",
+      "logo": "Ballarat Clarendon College - bccx.png"
+    },
+    "bciu": {
+      "id": "bciu",
+      "name": "Building and Construction ITO",
+      "type": "t",
+      "logo": "Building and Construction ITO - bciu.png"
+    },
+    "bgbx": {
+      "id": "bgbx",
+      "name": "Brisbane Grammar School",
+      "type": "s",
+      "logo": "Brisbane Grammar School - bgbx.png"
+    },
+    "bgmx": {
+      "id": "bgmx",
+      "name": "Brighton Grammar",
+      "type": "s",
+      "logo": "Brighton Grammar - bgmx.png"
+    },
+    "bgpc": {
+      "id": "bgpc",
+      "name": "Brisbane and GPS Rowing Club",
+      "type": "c",
+      "logo": "Brisbane and GPS Rowing Club - bgpc.png"
+    },
+    "birk": {
+      "id": "birk",
+      "name": "Birkenhead College",
+      "type": "s",
+      "logo": "Birkenhead College - birk.png"
+    },
+    "blec": {
+      "id": "blec",
+      "name": "Blenheim Rowing Club",
+      "type": "c",
+      "logo": "Blenheim Rowing Club - blec.png"
+    },
+    "bmtc": {
+      "id": "bmtc",
+      "name": "Black Mountain Rowing Club",
+      "type": "c",
+      "logo": "Black Mountain Rowing Club - bmtc.png"
+    },
+    "bnkc": {
+      "id": "bnkc",
+      "name": "Banks Rowing Club",
+      "type": "c",
+      "logo": "Banks Rowing Club - bnkc.png"
+    },
+    "bpcc": {
+      "id": "bpcc",
+      "name": "Bay of Plenty Coast Rowing Club",
+      "type": "c",
+      "logo": "Bay of Plenty Coast Rowing Club - bpcc.png"
+    },
+    "brea": {
+      "id": "brea",
+      "name": "Bream Bay College",
+      "type": "s",
+      "logo": "Bream Bay College - brea.png"
+    },
+    "bruc": {
+      "id": "bruc",
+      "name": "Brugge KRB",
+      "type": "c",
+      "logo": "Brugge KRB - bruc.png"
+    },
+    "bthc": {
+      "id": "bthc",
+      "name": "Bethlehem College",
+      "type": "s",
+      "logo": "Bethlehem College - bthc.png"
+    },
+    "bull": {
+      "id": "bull",
+      "name": "Buller High School",
+      "type": "s",
+      "logo": "Buller High School - bull.png"
+    },
+    "bunc": {
+      "id": "bunc",
+      "name": "Bundaberg Rowing Club",
+      "type": "c",
+      "logo": "Bundaberg Rowing Club - bunc.png"
+    },
+    "burn": {
+      "id": "burn",
+      "name": "Burnside High School",
+      "type": "s",
+      "logo": "Burnside High School - burn.png"
+    },
+    "bvrc": {
+      "id": "bvrc",
+      "name": "Belvoir Rowing Club",
+      "type": "c",
+      "logo": "Belvoir Rowing Club - bvrc.png"
+    },
+    "camb": {
+      "id": "camb",
+      "name": "Cambridge High School",
+      "type": "s",
+      "logo": "Cambridge High School - camb.png"
+    },
+    "camc": {
+      "id": "camc",
+      "name": "Cambridge Rowing Club",
+      "type": "c",
+      "logo": "Cambridge Rowing Club - camc.png"
+    },
+    "camp": {
+      "id": "camp",
+      "name": "Campion College",
+      "type": "s",
+      "logo": "Campion College - camp.png"
+    },
+    "camu": {
+      "id": "camu",
+      "name": "Cambridge University",
+      "type": "t",
+      "logo": "Cambridge University - camu.png"
+    },
+    "canu": {
+      "id": "canu",
+      "name": "Canterbury University",
+      "type": "t",
+      "logo": "Canterbury University - canu.png"
+    },
+    "carm": {
+      "id": "carm",
+      "name": "Carmel College",
+      "type": "s",
+      "logo": "Carmel College - carm.png"
+    },
+    "cash": {
+      "id": "cash",
+      "name": "Cashmere High School",
+      "type": "s",
+      "logo": "Cashmere High School - cash.png"
+    },
+    "cbcc": {
+      "id": "cbcc",
+      "name": "Cambridge Boat Club (USA)",
+      "type": "c",
+      "logo": "Cambridge Boat Club (USA) - cbcc.png"
+    },
+    "cbhs": {
+      "id": "cbhs",
+      "name": "Christchurch Boys High School",
+      "type": "s",
+      "logo": "Christchurch Boys High School - cbhs.png"
+    },
+    "ccgx": {
+      "id": "ccgx",
+      "name": "Christ Church Grammar School",
+      "type": "s",
+      "logo": "Christ Church Grammar School - ccgx.png"
+    },
+    "cfbc": {
+      "id": "cfbc",
+      "name": "Craftsbury Sculling Center",
+      "type": "c",
+      "logo": "Craftsbury Sculling Center - cfbc.png"
+    },
+    "cggx": {
+      "id": "cggx",
+      "name": "Canberra Girls Grammar School",
+      "type": "s",
+      "logo": "Canberra Girls Grammar School - cggx.png"
+    },
+    "cghs": {
+      "id": "cghs",
+      "name": "Christchurch Girls High School",
+      "type": "s",
+      "logo": "Christchurch Girls High School - cghs.png"
+    },
+    "chbc": {
+      "id": "chbc",
+      "name": "Central Hawkes Bay College",
+      "type": "s",
+      "logo": "Central Hawkes Bay College - chbc.png"
+    },
+    "chcc": {
+      "id": "chcc",
+      "name": "Christ's College Rowing Club",
+      "type": "c",
+      "logo": "Christ's College Rowing Club - chcc.png"
+    },
+    "chco": {
+      "id": "chco",
+      "name": "Christs College",
+      "type": "s",
+      "logo": "Christs College - chco.png"
+    },
+    "chil": {
+      "id": "chil",
+      "name": "Chilton St James School",
+      "type": "s",
+      "logo": "Chilton St James School - chil.png"
+    },
+    "chrs": {
+      "id": "chrs",
+      "name": "Christian Renewal School",
+      "type": "s",
+      "logo": "Christian Renewal School - chrs.png"
+    },
+    "clic": {
+      "id": "clic",
+      "name": "Clifton Rowing Club",
+      "type": "c",
+      "logo": "Clifton Rowing Club - clic.png"
+    },
+    "cmlc": {
+      "id": "cmlc",
+      "name": "Commercial Rowing Club",
+      "type": "c",
+      "logo": "Commercial Rowing Club - cmlc.png"
+    },
+    "cnbc": {
+      "id": "cnbc",
+      "name": "Canberra Rowing Club",
+      "type": "c",
+      "logo": "Canberra Rowing Club - cnbc.png"
+    },
+    "colc": {
+      "id": "colc",
+      "name": "Columba College Rowing Club",
+      "type": "c",
+      "logo": "Columba College Rowing Club - colc.png"
+    },
+    "colu": {
+      "id": "colu",
+      "name": "Columba College",
+      "type": "s",
+      "logo": "Columba College - colu.png"
+    },
+    "comc": {
+      "id": "comc",
+      "name": "Counties-Manukau Rowing Club",
+      "type": "c",
+      "logo": "Counties-Manukau Rowing Club - comc.png"
+    },
+    "comp": {
+      "id": "comp",
+      "name": "Composite School Crew(s)",
+      "type": "x",
+      "logo": "Composite School Crew(s) - comp.png"
+    },
+    "corc": {
+      "id": "corc",
+      "name": "Corio Bay Rowing Club",
+      "type": "c",
+      "logo": "Corio Bay Rowing Club - corc.png"
+    },
+    "crai": {
+      "id": "crai",
+      "name": "Craighead Diocesan School",
+      "type": "s",
+      "logo": "Craighead Diocesan School - crai.png"
+    },
+    "crga": {
+      "id": "crga",
+      "name": "Crimson Global Academy",
+      "type": "s",
+      "logo": "Crimson Global Academy - crga.png"
+    },
+    "croc": {
+      "id": "croc",
+      "name": "Cromwell Rowing Club",
+      "type": "c",
+      "logo": "Cromwell Rowing Club - croc.png"
+    },
+    "crom": {
+      "id": "crom",
+      "name": "Cromwell College",
+      "type": "s",
+      "logo": "Cromwell College - crom.png"
+    },
+    "csfc": {
+      "id": "csfc",
+      "name": "Club San Fernando",
+      "type": "c",
+      "logo": "Club San Fernando - csfc.png"
+    },
+    "ctyc": {
+      "id": "ctyc",
+      "name": "Canterbury Rowing Club",
+      "type": "c",
+      "logo": "Canterbury Rowing Club - ctyc.png"
+    },
+    "ctyz": {
+      "id": "ctyz",
+      "name": "Canterbury Composite",
+      "type": "",
+      "logo": "Canterbury Composite - CTYZ.png"
+    },
+    "cujc": {
+      "id": "cujc",
+      "name": "Chuo University Rowing Club",
+      "type": "c",
+      "logo": "Chuo University Rowing Club - cujc.png"
+    },
+    "culi": {
+      "id": "culi",
+      "name": "Cullinane College",
+      "type": "s",
+      "logo": "Cullinane College - culi.png"
+    },
+    "curc": {
+      "id": "curc",
+      "name": "Cure Boating Club",
+      "type": "c",
+      "logo": "Cure Boating Club - curc.png"
+    },
+    "darf": {
+      "id": "darf",
+      "name": "Darfield High School",
+      "type": "",
+      "logo": "Darfield High School - darf.png"
+    },
+    "dccx": {
+      "id": "dccx",
+      "name": "Daramalan College",
+      "type": "s",
+      "logo": "Daramalan College - dccx.png"
+    },
+    "demc": {
+      "id": "demc",
+      "name": "Demonstration Rowing Club",
+      "type": "c",
+      "logo": "Demonstration Rowing Club - demc.png"
+    },
+    "demo": {
+      "id": "demo",
+      "name": "Demonstration High School",
+      "type": "s",
+      "logo": "Demonstration High School - demo.png"
+    },
+    "dgnc": {
+      "id": "dgnc",
+      "name": "Dragons Rowing Club",
+      "type": "c",
+      "logo": "Dragons Rowing Club - dgnc.png"
+    },
+    "dilw": {
+      "id": "dilw",
+      "name": "Dilworth School",
+      "type": "s",
+      "logo": "Dilworth School - dilw.png"
+    },
+    "dioc": {
+      "id": "dioc",
+      "name": "Diocesan School For Girls",
+      "type": "s",
+      "logo": "Diocesan School For Girls - dioc.png"
+    },
+    "dta*": {
+      "id": "dta*",
+      "name": "Ever Green Boat Club",
+      "type": "",
+      "logo": "Ever Green Boat Club - dta*.png"
+    },
+    "dtuc": {
+      "id": "dtuc",
+      "name": "Dartmouth Rowing Club",
+      "type": "c",
+      "logo": "Dartmouth Rowing Club - dtuc.png"
+    },
+    "dua*": {
+      "id": "dua*",
+      "name": "Dunstan Arm*",
+      "type": "",
+      "logo": "Dunstan Arm* - dua*.png"
+    },
+    "duac": {
+      "id": "duac",
+      "name": "Dunstan Arm Rowing Club",
+      "type": "c",
+      "logo": "Dunstan Arm Rowing Club - duac.png"
+    },
+    "duns": {
+      "id": "duns",
+      "name": "Dunstan High School",
+      "type": "s",
+      "logo": "Dunstan High School - duns.png"
+    },
+    "ebsc": {
+      "id": "ebsc",
+      "name": "Eastern Bay Scullers Club",
+      "type": "c",
+      "logo": "Eastern Bay Scullers Club - ebsc.png"
+    },
+    "ecas": {
+      "id": "ecas",
+      "name": "Eden Christian Academy",
+      "type": "s",
+      "logo": "Eden Christian Academy - ecas.png"
+    },
+    "edbc": {
+      "id": "edbc",
+      "name": "Edgecumbe College",
+      "type": "s",
+      "logo": "Edgecumbe College - edbc.png"
+    },
+    "edwt": {
+      "id": "edwt",
+      "name": "Edgewater College",
+      "type": "s",
+      "logo": "Edgewater College - edwt.png"
+    },
+    "eggs": {
+      "id": "eggs",
+      "name": "Epsom Girls Grammar",
+      "type": "s",
+      "logo": "Epsom Girls Grammar - eggs.png"
+    },
+    "elle": {
+      "id": "elle",
+      "name": "Ellesmere College",
+      "type": "",
+      "logo": "Ellesmere College - elle.png"
+    },
+    "essc": {
+      "id": "essc",
+      "name": "Essendon Rowing Club",
+      "type": "c",
+      "logo": "Essendon Rowing Club - essc.png"
+    },
+    "etnc": {
+      "id": "etnc",
+      "name": "ESR Theta",
+      "type": "c",
+      "logo": "ESR Theta - etnc.png"
+    },
+    "fair": {
+      "id": "fair",
+      "name": "Fairfield College",
+      "type": "s",
+      "logo": "Fairfield College - fair.png"
+    },
+    "fioc": {
+      "id": "fioc",
+      "name": "Fiordland Rowing Club",
+      "type": "c",
+      "logo": "Fiordland Rowing Club - fioc.png"
+    },
+    "fior": {
+      "id": "fior",
+      "name": "Fiordland College",
+      "type": "s",
+      "logo": "Fiordland College - fior.png"
+    },
+    "fmmu": {
+      "id": "fmmu",
+      "name": "Fourth Military Medical University",
+      "type": "t",
+      "logo": "Fourth Military Medical University - fmmu.png"
+    },
+    "fran": {
+      "id": "fran",
+      "name": "Francis Douglas Memorial College",
+      "type": "s",
+      "logo": "Francis Douglas Memorial College - fran.png"
+    },
+    "fras": {
+      "id": "fras",
+      "name": "Fraser High School",
+      "type": "s",
+      "logo": "Fraser High School - fras.png"
+    },
+    "ftsc": {
+      "id": "ftsc",
+      "name": "Footscray City Rowing Club",
+      "type": "c",
+      "logo": "Footscray City Rowing Club - ftsc.png"
+    },
+    "gari": {
+      "id": "gari",
+      "name": "Garin College",
+      "type": "s",
+      "logo": "Garin College - gari.png"
+    },
+    "gbhs": {
+      "id": "gbhs",
+      "name": "Gisborne Boys High School",
+      "type": "s",
+      "logo": "Gisborne Boys High School - gbhs.png"
+    },
+    "gcmc": {
+      "id": "gcmc",
+      "name": "Gold Coast Master Rowers",
+      "type": "c",
+      "logo": "Gold Coast Master Rowers - gcmc.png"
+    },
+    "gera": {
+      "id": "gera",
+      "name": "Geraldine HS",
+      "type": "s",
+      "logo": "Geraldine HS - gera.png"
+    },
+    "gghs": {
+      "id": "gghs",
+      "name": "Gisborne Girls High School",
+      "type": "s",
+      "logo": "Gisborne Girls High School - gghs.png"
+    },
+    "gisc": {
+      "id": "gisc",
+      "name": "Gisborne Rowing Club",
+      "type": "c",
+      "logo": "Gisborne Rowing Club - gisc.png"
+    },
+    "gldw": {
+      "id": "gldw",
+      "name": "Glendowie College",
+      "type": "s",
+      "logo": "Glendowie College - gldw.png"
+    },
+    "glec": {
+      "id": "glec",
+      "name": "Glebe Rowing Club",
+      "type": "c",
+      "logo": "Glebe Rowing Club - glec.png"
+    },
+    "gore": {
+      "id": "gore",
+      "name": "Gore High School",
+      "type": "s",
+      "logo": "Gore High School - gore.png"
+    },
+    "gree": {
+      "id": "gree",
+      "name": "Green Bay High School",
+      "type": "s",
+      "logo": "Green Bay High School - gree.png"
+    },
+    "gusc": {
+      "id": "gusc",
+      "name": "Griffith University Surfers Paradise RC",
+      "type": "c",
+      "logo": "Griffith University Surfers Paradise RC - gusc.png"
+    },
+    "hacs": {
+      "id": "hacs",
+      "name": "Hastings Christian School",
+      "type": "s",
+      "logo": "Hastings Christian School - hacs.png"
+    },
+    "hagl": {
+      "id": "hagl",
+      "name": "Hagley Community College",
+      "type": "s",
+      "logo": "Hagley Community College - hagl.png"
+    },
+    "hamb": {
+      "id": "hamb",
+      "name": "Hamilton Boys High School",
+      "type": "s",
+      "logo": "Hamilton Boys High School - hamb.png"
+    },
+    "hamc": {
+      "id": "hamc",
+      "name": "Hamilton Rowing Club",
+      "type": "c",
+      "logo": "Hamilton Rowing Club - hamc.png"
+    },
+    "hamg": {
+      "id": "hamg",
+      "name": "Hamilton Girls High School",
+      "type": "s",
+      "logo": "Hamilton Girls High School - hamg.png"
+    },
+    "hasb": {
+      "id": "hasb",
+      "name": "Hastings Boys High School",
+      "type": "s",
+      "logo": "Hastings Boys High School - hasb.png"
+    },
+    "hasg": {
+      "id": "hasg",
+      "name": "Hastings Girls High School",
+      "type": "s",
+      "logo": "Hastings Girls High School - hasg.png"
+    },
+    "haur": {
+      "id": "haur",
+      "name": "Hauraki Plains College",
+      "type": "s",
+      "logo": "Hauraki Plains College - haur.png"
+    },
+    "have": {
+      "id": "have",
+      "name": "Havelock North High School",
+      "type": "s",
+      "logo": "Havelock North High School - have.png"
+    },
+    "hbcx": {
+      "id": "hbcx",
+      "name": "Haileybury College",
+      "type": "s",
+      "logo": "Haileybury College - hbcx.png"
+    },
+    "hilx": {
+      "id": "hilx",
+      "name": "Hilton College",
+      "type": "s",
+      "logo": "Hilton College - hilx.png"
+    },
+    "hkic": {
+      "id": "hkic",
+      "name": "Hauraki Plains Rowing Club",
+      "type": "c",
+      "logo": "Hauraki Plains Rowing Club - hkic.png"
+    },
+    "hlcr": {
+      "id": "hlcr",
+      "name": "Hillcrest High School",
+      "type": "s",
+      "logo": "Hillcrest High School - hlcr.png"
+    },
+    "hlmt": {
+      "id": "hlmt",
+      "name": "Hillmorton HS",
+      "type": "",
+      "logo": "Hillmorton HS - hlmt.png"
+    },
+    "hntc": {
+      "id": "hntc",
+      "name": "Henty Rowing Club",
+      "type": "c",
+      "logo": "Henty Rowing Club - hntc.png"
+    },
+    "horc": {
+      "id": "horc",
+      "name": "Horowhenua Rowing Club",
+      "type": "c",
+      "logo": "Horowhenua Rowing Club - horc.png"
+    },
+    "horo": {
+      "id": "horo",
+      "name": "Horowhenua College",
+      "type": "s",
+      "logo": "Horowhenua College - horo.png"
+    },
+    "howa": {
+      "id": "howa",
+      "name": "Te Kura Kaupapa Maori o Horouta Wananga",
+      "type": "s",
+      "logo": "Te Kura Kaupapa Maori o Horouta Wananga - howa.png"
+    },
+    "howi": {
+      "id": "howi",
+      "name": "Howick College",
+      "type": "s",
+      "logo": "Howick College - howi.png"
+    },
+    "hrfc": {
+      "id": "hrfc",
+      "name": "Hereford Rowing Club",
+      "type": "c",
+      "logo": "Hereford Rowing Club - hrfc.png"
+    },
+    "hsui": {
+      "id": "hsui",
+      "name": "Swiss High Performance Squad",
+      "type": "r",
+      "logo": "Swiss High Performance Squad - hsui.png"
+    },
+    "htib": {
+      "id": "htib",
+      "name": "Hutt International Boys School",
+      "type": "s",
+      "logo": "Hutt International Boys School - htib.png"
+    },
+    "htju": {
+      "id": "htju",
+      "name": "Hitotsubashi University Rowing Club",
+      "type": "c",
+      "logo": "Hitotsubashi University Rowing Club - htju.png"
+    },
+    "htvh": {
+      "id": "htvh",
+      "name": "Hutt Valley High School",
+      "type": "s",
+      "logo": "Hutt Valley High School - htvh.png"
+    },
+    "huan": {
+      "id": "huan",
+      "name": "Huanui College",
+      "type": "s",
+      "logo": "Huanui College - huan.png"
+    },
+    "huoc": {
+      "id": "huoc",
+      "name": "Huon Rowing Club",
+      "type": "c",
+      "logo": "Huon Rowing Club - huoc.png"
+    },
+    "huru": {
+      "id": "huru",
+      "name": "Hurunui College",
+      "type": "s",
+      "logo": "Hurunui College - huru.png"
+    },
+    "hwbc": {
+      "id": "hwbc",
+      "name": "Hawkes Bay Rowing Club",
+      "type": "c",
+      "logo": "Hawkes Bay Rowing Club - hwbc.png"
+    },
+    "ingl": {
+      "id": "ingl",
+      "name": "Inglewood High School",
+      "type": "s",
+      "logo": "Inglewood High School - ingl.png"
+    },
+    "invc": {
+      "id": "invc",
+      "name": "Invercargill Rowing Club",
+      "type": "c",
+      "logo": "Invercargill Rowing Club - invc.png"
+    },
+    "iona": {
+      "id": "iona",
+      "name": "Iona College",
+      "type": "s",
+      "logo": "Iona College - iona.png"
+    },
+    "itra": {
+      "id": "itra",
+      "name": "Travellers",
+      "type": "c",
+      "logo": "Travellers - itra.png"
+    },
+    "jhar": {
+      "id": "jhar",
+      "name": "James Hargest College",
+      "type": "s",
+      "logo": "James Hargest College - jhar.png"
+    },
+    "jmcg": {
+      "id": "jmcg",
+      "name": "John McGlashan College",
+      "type": "s",
+      "logo": "John McGlashan College - jmcg.png"
+    },
+    "jpcr": {
+      "id": "jpcr",
+      "name": "John Paul College",
+      "type": "s",
+      "logo": "John Paul College - jpcr.png"
+    },
+    "jsrc": {
+      "id": "jsrc",
+      "name": "Jiangsu",
+      "type": "c",
+      "logo": "Jiangsu - jsrc.png"
+    },
+    "jxcx": {
+      "id": "jxcx",
+      "name": "John XXIII College",
+      "type": "s",
+      "logo": "John XXIII College - jxcx.png"
+    },
+    "kaia": {
+      "id": "kaia",
+      "name": "Kaiapoi High School",
+      "type": "s",
+      "logo": "Kaiapoi High School - kaia.png"
+    },
+    "kapi": {
+      "id": "kapi",
+      "name": "Kapiti College",
+      "type": "s",
+      "logo": "Kapiti College - kapi.png"
+    },
+    "kati": {
+      "id": "kati",
+      "name": "Katikati College",
+      "type": "s",
+      "logo": "Katikati College - kati.png"
+    },
+    "kawc": {
+      "id": "kawc",
+      "name": "Kawatiri Rowing Club",
+      "type": "c",
+      "logo": "Kawatiri Rowing Club - kawc.png"
+    },
+    "kbrc": {
+      "id": "kbrc",
+      "name": "Kalundborg Rowing Club",
+      "type": "c",
+      "logo": "Kalundborg Rowing Club - kbrc.png"
+    },
+    "kcbc": {
+      "id": "kcbc",
+      "name": "Keble College Boat Club",
+      "type": "c",
+      "logo": "Keble College Boat Club - kcbc.png"
+    },
+    "kdhc": {
+      "id": "kdhc",
+      "name": "KARZV De Hoop",
+      "type": "c",
+      "logo": "KARZV De Hoop - kdhc.png"
+    },
+    "kenx": {
+      "id": "kenx",
+      "name": "Kenmore State High School",
+      "type": "s",
+      "logo": "Kenmore State High School - kenx.png"
+    },
+    "kgca": {
+      "id": "kgca",
+      "name": "Kings College",
+      "type": "s",
+      "logo": "Kings College - kgca.png"
+    },
+    "khsd": {
+      "id": "khsd",
+      "name": "Kings High School",
+      "type": "s",
+      "logo": "Kings High School - khsd.png"
+    },
+    "kicc": {
+      "id": "kicc",
+      "name": "Kings College Rowing Club",
+      "type": "c",
+      "logo": "Kings College Rowing Club - kicc.png"
+    },
+    "kmju": {
+      "id": "kmju",
+      "name": "Kyoto University School of Medicine",
+      "type": "t",
+      "logo": "Kyoto University School of Medicine - kmju.png"
+    },
+    "kris": {
+      "id": "kris",
+      "name": "Kristin School",
+      "type": "s",
+      "logo": "Kristin School - kris.png"
+    },
+    "krmu": {
+      "id": "krmu",
+      "name": "Karamu High School",
+      "type": "s",
+      "logo": "Karamu High School - krmu.png"
+    },
+    "kujc": {
+      "id": "kujc",
+      "name": "Keio University",
+      "type": "c",
+      "logo": "Keio University - kujc.png"
+    },
+    "kvly": {
+      "id": "kvly",
+      "name": "Kaikorai Valley College",
+      "type": "s",
+      "logo": "Kaikorai Valley College - kvly.png"
+    },
+    "lezc": {
+      "id": "lezc",
+      "name": "Canottieri La Sportiva Lezzeno",
+      "type": "c",
+      "logo": "Canottieri La Sportiva Lezzeno - lezc.png"
+    },
+    "lgby": {
+      "id": "lgby",
+      "name": "Long Bay College",
+      "type": "s",
+      "logo": "Long Bay College - lgby.png"
+    },
+    "lhoc": {
+      "id": "lhoc",
+      "name": "Leander Club",
+      "type": "",
+      "logo": "Leander Club - lhoc.png"
+    },
+    "linc": {
+      "id": "linc",
+      "name": "Lincoln High School",
+      "type": "",
+      "logo": "Lincoln High School - linc.png"
+    },
+    "lind": {
+      "id": "lind",
+      "name": "Lindisfarne College",
+      "type": "s",
+      "logo": "Lindisfarne College - lind.png"
+    },
+    "linu": {
+      "id": "linu",
+      "name": "Lincoln University",
+      "type": "t",
+      "logo": "Lincoln University - linu.png"
+    },
+    "list": {
+      "id": "list",
+      "name": "Liston College",
+      "type": "s",
+      "logo": "Liston College - list.png"
+    },
+    "lkgx": {
+      "id": "lkgx",
+      "name": "Loreto Kirirbilli",
+      "type": "s",
+      "logo": "Loreto Kirirbilli - lkgx.png"
+    },
+    "loga": {
+      "id": "loga",
+      "name": "Logan Park High School",
+      "type": "s",
+      "logo": "Logan Park High School - loga.png"
+    },
+    "lonc": {
+      "id": "lonc",
+      "name": "London Rowing Club",
+      "type": "c",
+      "logo": "London Rowing Club - lonc.png"
+    },
+    "lthc": {
+      "id": "lthc",
+      "name": "Lok Tsui Rowing Club",
+      "type": "c",
+      "logo": "Lok Tsui Rowing Club - lthc.png"
+    },
+    "lytt": {
+      "id": "lytt",
+      "name": "Lytton High School",
+      "type": "s",
+      "logo": "Lytton High School - lytt.png"
+    },
+    "mack": {
+      "id": "mack",
+      "name": "Mackenzie College",
+      "type": "s",
+      "logo": "Mackenzie College - mack.png"
+    },
+    "macl": {
+      "id": "macl",
+      "name": "Macleans College",
+      "type": "s",
+      "logo": "Macleans College - macl.png"
+    },
+    "malu": {
+      "id": "malu",
+      "name": "Massey University (Albany)",
+      "type": "t",
+      "logo": "Massey University (Albany) - malu.png"
+    },
+    "manc": {
+      "id": "manc",
+      "name": "Mana College",
+      "type": "s",
+      "logo": "Mana College - manc.png"
+    },
+    "manu": {
+      "id": "manu",
+      "name": "Manurewa High School",
+      "type": "s",
+      "logo": "Manurewa High School - manu.png"
+    },
+    "marn": {
+      "id": "marn",
+      "name": "Marian College",
+      "type": "s",
+      "logo": "Marian College - marn.png"
+    },
+    "mars": {
+      "id": "mars",
+      "name": "Samuel Marsden Whitby",
+      "type": "s",
+      "logo": "Samuel Marsden Whitby - mars.png"
+    },
+    "mart": {
+      "id": "mart",
+      "name": "Marist College",
+      "type": "s",
+      "logo": "Marist College - mart.png"
+    },
+    "mass": {
+      "id": "mass",
+      "name": "Massey High School",
+      "type": "s",
+      "logo": "Massey High School - mass.png"
+    },
+    "mata": {
+      "id": "mata",
+      "name": "Matamata College",
+      "type": "s",
+      "logo": "Matamata College - mata.png"
+    },
+    "mduc": {
+      "id": "mduc",
+      "name": "Murdoch University Rowing Club",
+      "type": "c",
+      "logo": "Murdoch University Rowing Club - mduc.png"
+    },
+    "melu": {
+      "id": "melu",
+      "name": "Melbourne University",
+      "type": "t",
+      "logo": "Melbourne University - melu.png"
+    },
+    "merc": {
+      "id": "merc",
+      "name": "Mercer Rowing Club",
+      "type": "c",
+      "logo": "Mercer Rowing Club - merc.png"
+    },
+    "mgcx": {
+      "id": "mgcx",
+      "name": "Melbourne Girls College",
+      "type": "s",
+      "logo": "Melbourne Girls College - mgcx.png"
+    },
+    "mlac": {
+      "id": "mlac",
+      "name": "Melbourne Rowing Club",
+      "type": "c",
+      "logo": "Melbourne Rowing Club - mlac.png"
+    },
+    "mlbb": {
+      "id": "mlbb",
+      "name": "Marlborough Boys College",
+      "type": "s",
+      "logo": "Marlborough Boys College - mlbb.png"
+    },
+    "mlbg": {
+      "id": "mlbg",
+      "name": "Marlborough Girls College",
+      "type": "s",
+      "logo": "Marlborough Girls College - mlbg.png"
+    },
+    "mluc": {
+      "id": "mluc",
+      "name": "Melbourne University Boat Club",
+      "type": "c",
+      "logo": "Melbourne University Boat Club - mluc.png"
+    },
+    "mmrc": {
+      "id": "mmrc",
+      "name": "Mercantile Rowing Club",
+      "type": "c",
+      "logo": "Mercantile Rowing Club - mmrc.png"
+    },
+    "mnpc": {
+      "id": "mnpc",
+      "name": "Mana Rowing Club",
+      "type": "c",
+      "logo": "Mana Rowing Club - mnpc.png"
+    },
+    "mnwt": {
+      "id": "mnwt",
+      "name": "Manawatu College",
+      "type": "s",
+      "logo": "Manawatu College - mnwt.png"
+    },
+    "motu": {
+      "id": "motu",
+      "name": "Motueka HS",
+      "type": "",
+      "logo": "Motueka HS - motu.png"
+    },
+    "mpnu": {
+      "id": "mpnu",
+      "name": "Massey University (Palmerston North)",
+      "type": "t",
+      "logo": "Massey University (Palmerston North) - mpnu.png"
+    },
+    "msmc": {
+      "id": "msmc",
+      "name": "Mosman Rowing Club",
+      "type": "c",
+      "logo": "Mosman Rowing Club - msmc.png"
+    },
+    "mssu": {
+      "id": "mssu",
+      "name": "Massey University",
+      "type": "t",
+      "logo": "Massey University - mssu.png"
+    },
+    "msuc": {
+      "id": "msuc",
+      "name": "Massey University Rowing Club",
+      "type": "c",
+      "logo": "Massey University Rowing Club - msuc.png"
+    },
+    "mtal": {
+      "id": "mtal",
+      "name": "Mt Albert Grammar School",
+      "type": "s",
+      "logo": "Mt Albert Grammar School - mtal.png"
+    },
+    "mtas": {
+      "id": "mtas",
+      "name": "Mt Aspiring College",
+      "type": "s",
+      "logo": "Mt Aspiring College - mtas.png"
+    },
+    "mtha": {
+      "id": "mtha",
+      "name": "Mt Hobson Academy",
+      "type": "s",
+      "logo": "Mt Hobson Academy - mtha.png"
+    },
+    "mtma": {
+      "id": "mtma",
+      "name": "Mt Maunganui College",
+      "type": "s",
+      "logo": "Mt Maunganui College - mtma.png"
+    },
+    "mtro": {
+      "id": "mtro",
+      "name": "Mount Roskill Grammar School",
+      "type": "s",
+      "logo": "Mount Roskill Grammar School - mtro.png"
+    },
+    "mtvw": {
+      "id": "mtvw",
+      "name": "Mountainview High School",
+      "type": "s",
+      "logo": "Mountainview High School - mtvw.png"
+    },
+    "mwlu": {
+      "id": "mwlu",
+      "name": "Massey University (Wellington)",
+      "type": "t",
+      "logo": "Massey University (Wellington) - mwlu.png"
+    },
+    "napb": {
+      "id": "napb",
+      "name": "Napier Boys High School",
+      "type": "s",
+      "logo": "Napier Boys High School - napb.png"
+    },
+    "napg": {
+      "id": "napg",
+      "name": "Napier Girls High School",
+      "type": "s",
+      "logo": "Napier Girls High School - napg.png"
+    },
+    "nayl": {
+      "id": "nayl",
+      "name": "Nayland College",
+      "type": "s",
+      "logo": "Nayland College - nayl.png"
+    },
+    "ncog": {
+      "id": "ncog",
+      "name": "Nelson College For Girls",
+      "type": "",
+      "logo": "Nelson College For Girls - ncog.png"
+    },
+    "nelb": {
+      "id": "nelb",
+      "name": "Nelson College",
+      "type": "s",
+      "logo": "Nelson College - nelb.png"
+    },
+    "nelc": {
+      "id": "nelc",
+      "name": "Nelson Rowing Club",
+      "type": "c",
+      "logo": "Nelson Rowing Club - nelc.png"
+    },
+    "nerc": {
+      "id": "nerc",
+      "name": "ARS Nereus",
+      "type": "c",
+      "logo": "ARS Nereus - nerc.png"
+    },
+    "ngar": {
+      "id": "ngar",
+      "name": "Ngaruawahia High School",
+      "type": "s",
+      "logo": "Ngaruawahia High School - ngar.png"
+    },
+    "ngsx": {
+      "id": "ngsx",
+      "name": "Newcastle Grammar School",
+      "type": "s",
+      "logo": "Newcastle Grammar School - ngsx.png"
+    },
+    "ngta": {
+      "id": "ngta",
+      "name": "Nga Tawa Diocesan School",
+      "type": "s",
+      "logo": "Nga Tawa Diocesan School - ngta.png"
+    },
+    "ngtw": {
+      "id": "ngtw",
+      "name": "Nga Taiatea Wharekura",
+      "type": "s",
+      "logo": "Nga Taiatea Wharekura - ngtw.png"
+    },
+    "noec": {
+      "id": "noec",
+      "name": "North End Rowing Club",
+      "type": "c",
+      "logo": "North End Rowing Club - noec.png"
+    },
+    "nplb": {
+      "id": "nplb",
+      "name": "New Plymouth Boys High School",
+      "type": "s",
+      "logo": "New Plymouth Boys High School - nplb.png"
+    },
+    "nplg": {
+      "id": "nplg",
+      "name": "New Plymouth Girls High School",
+      "type": "s",
+      "logo": "New Plymouth Girls High School - nplg.png"
+    },
+    "nshc": {
+      "id": "nshc",
+      "name": "North Shore Rowing Club",
+      "type": "c",
+      "logo": "North Shore Rowing Club - nshc.png"
+    },
+    "nswu": {
+      "id": "nswu",
+      "name": "University of New South Wales",
+      "type": "t",
+      "logo": "University of New South Wales - nswu.png"
+    },
+    "nthc": {
+      "id": "nthc",
+      "name": "Northcote College",
+      "type": "s",
+      "logo": "Northcote College - nthc.png"
+    },
+    "nykc": {
+      "id": "nykc",
+      "name": "New York Athletic Club",
+      "type": "c",
+      "logo": "New York Athletic Club - nykc.png"
+    },
+    "oamc": {
+      "id": "oamc",
+      "name": "Oamaru Rowing Club",
+      "type": "c",
+      "logo": "Oamaru Rowing Club - oamc.png"
+    },
+    "obhc": {
+      "id": "obhc",
+      "name": "Otago Boys High Rowing Club",
+      "type": "c",
+      "logo": "Otago Boys High Rowing Club - obhc.png"
+    },
+    "obhs": {
+      "id": "obhs",
+      "name": "Otago Boys High School",
+      "type": "s",
+      "logo": "Otago Boys High School - obhs.png"
+    },
+    "oghc": {
+      "id": "oghc",
+      "name": "Otago Girls Rowing Club",
+      "type": "c",
+      "logo": "Otago Girls Rowing Club - oghc.png"
+    },
+    "oghs": {
+      "id": "oghs",
+      "name": "Otago Girls High School",
+      "type": "s",
+      "logo": "Otago Girls High School - oghs.png"
+    },
+    "oguc": {
+      "id": "oguc",
+      "name": "Otago University Rowing Club",
+      "type": "c",
+      "logo": "Otago University Rowing Club - oguc.png"
+    },
+    "oklc": {
+      "id": "oklc",
+      "name": "Oklahoma City University Rowing Club",
+      "type": "c",
+      "logo": "Oklahoma City University Rowing Club - oklc.png"
+    },
+    "onew": {
+      "id": "onew",
+      "name": "Onewhero Area School",
+      "type": "s",
+      "logo": "Onewhero Area School - onew.png"
+    },
+    "onsl": {
+      "id": "onsl",
+      "name": "Onslow College",
+      "type": "s",
+      "logo": "Onslow College - onsl.png"
+    },
+    "orew": {
+      "id": "orew",
+      "name": "Orewa College",
+      "type": "s",
+      "logo": "Orewa College - orew.png"
+    },
+    "otac": {
+      "id": "otac",
+      "name": "Otago Rowing Club",
+      "type": "c",
+      "logo": "Otago Rowing Club - otac.png"
+    },
+    "otau": {
+      "id": "otau",
+      "name": "Otago University",
+      "type": "t",
+      "logo": "Otago University - otau.png"
+    },
+    "otum": {
+      "id": "otum",
+      "name": "Otumoetai College",
+      "type": "s",
+      "logo": "Otumoetai College - otum.png"
+    },
+    "oxfu": {
+      "id": "oxfu",
+      "name": "Oxford University",
+      "type": "t",
+      "logo": "Oxford University - oxfu.png"
+    },
+    "paec": {
+      "id": "paec",
+      "name": "Paernu SK",
+      "type": "c",
+      "logo": "Paernu SK - paec.png"
+    },
+    "paku": {
+      "id": "paku",
+      "name": "Pakuranga College",
+      "type": "s",
+      "logo": "Pakuranga College - paku.png"
+    },
+    "papa": {
+      "id": "papa",
+      "name": "Papamoa College",
+      "type": "s",
+      "logo": "Papamoa College - papa.png"
+    },
+    "para": {
+      "id": "para",
+      "name": "Paraparaumu College",
+      "type": "s",
+      "logo": "Paraparaumu College - para.png"
+    },
+    "parn": {
+      "id": "parn",
+      "name": "ACG Parnell College",
+      "type": "s",
+      "logo": "ACG Parnell College - parn.png"
+    },
+    "pcuc": {
+      "id": "pcuc",
+      "name": "Port Chalmers United Rowing Club",
+      "type": "c",
+      "logo": "Port Chalmers United Rowing Club - pcuc.png"
+    },
+    "petc": {
+      "id": "petc",
+      "name": "Petone Rowing Club",
+      "type": "c",
+      "logo": "Petone Rowing Club - petc.png"
+    },
+    "petz": {
+      "id": "petz",
+      "name": "Petone Composite",
+      "type": "c",
+      "logo": "Petone Composite - petz.png"
+    },
+    "picc": {
+      "id": "picc",
+      "name": "Picton Rowing Club",
+      "type": "c",
+      "logo": "Picton Rowing Club - picc.png"
+    },
+    "pine": {
+      "id": "pine",
+      "name": "Pinehurst School Inc.",
+      "type": "s",
+      "logo": "Pinehurst School Inc. - pine.png"
+    },
+    "piop": {
+      "id": "piop",
+      "name": "Piopio College",
+      "type": "s",
+      "logo": "Piopio College - piop.png"
+    },
+    "pmrb": {
+      "id": "pmrb",
+      "name": "Palmerston North Boys High School",
+      "type": "s",
+      "logo": "Palmerston North Boys High School - pmrb.png"
+    },
+    "pmrg": {
+      "id": "pmrg",
+      "name": "Palmerston North Girls High School",
+      "type": "s",
+      "logo": "Palmerston North Girls High School - pmrg.png"
+    },
+    "pnrx": {
+      "id": "pnrx",
+      "name": "Penrhos College",
+      "type": "s",
+      "logo": "Penrhos College - pnrx.png"
+    },
+    "pomp": {
+      "id": "pomp",
+      "name": "Pompallier Catholic College",
+      "type": "s",
+      "logo": "Pompallier Catholic College - pomp.png"
+    },
+    "porc": {
+      "id": "porc",
+      "name": "Porirua Rowing Club",
+      "type": "c",
+      "logo": "Porirua Rowing Club - porc.png"
+    },
+    "ppnu": {
+      "id": "ppnu",
+      "name": "Papanui High School",
+      "type": "s",
+      "logo": "Papanui High School - ppnu.png"
+    },
+    "pukc": {
+      "id": "pukc",
+      "name": "Pukekohe Christian School",
+      "type": "s",
+      "logo": "Pukekohe Christian School - pukc.png"
+    },
+    "puke": {
+      "id": "puke",
+      "name": "Pukekohe High School",
+      "type": "s",
+      "logo": "Pukekohe High School - puke.png"
+    },
+    "qcha": {
+      "id": "qcha",
+      "name": "Queen Charlotte College",
+      "type": "s",
+      "logo": "Queen Charlotte College - qcha.png"
+    },
+    "qhsd": {
+      "id": "qhsd",
+      "name": "Queens High School",
+      "type": "s",
+      "logo": "Queens High School - qhsd.png"
+    },
+    "qldu": {
+      "id": "qldu",
+      "name": "University of Queensland",
+      "type": "t",
+      "logo": "University of Queensland - qldu.png"
+    },
+    "qmar": {
+      "id": "qmar",
+      "name": "Queen Margaret College",
+      "type": "s",
+      "logo": "Queen Margaret College - qmar.png"
+    },
+    "qrcc": {
+      "id": "qrcc",
+      "name": "Queens Rowing Club",
+      "type": "c",
+      "logo": "Queens Rowing Club - qrcc.png"
+    },
+    "qsgx": {
+      "id": "qsgx",
+      "name": "Queenwood",
+      "type": "s",
+      "logo": "Queenwood - qsgx.png"
+    },
+    "rahs": {
+      "id": "rahs",
+      "name": "Rangiora High School",
+      "type": "s",
+      "logo": "Rangiora High School - rahs.png"
+    },
+    "raph": {
+      "id": "raph",
+      "name": "Raphael House",
+      "type": "s",
+      "logo": "Raphael House - raph.png"
+    },
+    "rghc": {
+      "id": "rghc",
+      "name": "Ruder Gesellschaft Hansa",
+      "type": "c",
+      "logo": "Ruder Gesellschaft Hansa - rghc.png"
+    },
+    "rgsx": {
+      "id": "rgsx",
+      "name": "Ruyton Girls School",
+      "type": "s",
+      "logo": "Ruyton Girls School - rgsx.png"
+    },
+    "rgtk": {
+      "id": "rgtk",
+      "name": "Rangitikei College",
+      "type": "s",
+      "logo": "Rangitikei College - rgtk.png"
+    },
+    "rgtt": {
+      "id": "rgtt",
+      "name": "Rangitoto College",
+      "type": "s",
+      "logo": "Rangitoto College - rgtt.png"
+    },
+    "ricc": {
+      "id": "ricc",
+      "name": "Riccarton High School",
+      "type": "s",
+      "logo": "Riccarton High School - ricc.png"
+    },
+    "rivc": {
+      "id": "rivc",
+      "name": "Riverton Rowing Club",
+      "type": "c",
+      "logo": "Riverton Rowing Club - rivc.png"
+    },
+    "rmac": {
+      "id": "rmac",
+      "name": "Richmond Rowing Club",
+      "type": "c",
+      "logo": "Richmond Rowing Club - rmac.png"
+    },
+    "rmbc": {
+      "id": "rmbc",
+      "name": "Radley Mariners Boat Club",
+      "type": "c",
+      "logo": "Radley Mariners Boat Club - rmbc.png"
+    },
+    "rnzx": {
+      "id": "rnzx",
+      "name": "Rowing New Zealand",
+      "type": "r",
+      "logo": "Rowing New Zealand - rnzx.png"
+    },
+    "roll": {
+      "id": "roll",
+      "name": "Rolleston College",
+      "type": "",
+      "logo": "Rolleston College - roll.png"
+    },
+    "ronc": {
+      "id": "ronc",
+      "name": "Roncalli College",
+      "type": "s",
+      "logo": "Roncalli College - ronc.png"
+    },
+    "rong": {
+      "id": "rong",
+      "name": "Rongotai College",
+      "type": "s",
+      "logo": "Rongotai College - rong.png"
+    },
+    "rose": {
+      "id": "rose",
+      "name": "Rosehill College",
+      "type": "s",
+      "logo": "Rosehill College - rose.png"
+    },
+    "rosm": {
+      "id": "rosm",
+      "name": "Rosmini College",
+      "type": "s",
+      "logo": "Rosmini College - rosm.png"
+    },
+    "rotb": {
+      "id": "rotb",
+      "name": "Rotorua Boys High School",
+      "type": "s",
+      "logo": "Rotorua Boys High School - rotb.png"
+    },
+    "rotc": {
+      "id": "rotc",
+      "name": "Rotorua Rowing Club",
+      "type": "c",
+      "logo": "Rotorua Rowing Club - rotc.png"
+    },
+    "rotg": {
+      "id": "rotg",
+      "name": "Rotorua Girls High School",
+      "type": "s",
+      "logo": "Rotorua Girls High School - rotg.png"
+    },
+    "rotl": {
+      "id": "rotl",
+      "name": "Rotorua Lakes High School",
+      "type": "s",
+      "logo": "Rotorua Lakes High School - rotl.png"
+    },
+    "roto": {
+      "id": "roto",
+      "name": "Rototuna High School",
+      "type": "s",
+      "logo": "Rototuna High School - roto.png"
+    },
+    "rpca": {
+      "id": "rpca",
+      "name": "Auckland RPC",
+      "type": "r",
+      "logo": "Auckland RPC - rpca.png"
+    },
+    "rpcc": {
+      "id": "rpcc",
+      "name": "Central RPC",
+      "type": "r",
+      "logo": "Central RPC - rpcc.png"
+    },
+    "rpcs": {
+      "id": "rpcs",
+      "name": "Southern RPC",
+      "type": "r",
+      "logo": "Southern RPC - rpcs.png"
+    },
+    "rpcw": {
+      "id": "rpcw",
+      "name": "Waikato RPC",
+      "type": "r",
+      "logo": "Waikato RPC - rpcw.png"
+    },
+    "rphn": {
+      "id": "rphn",
+      "name": "North Island Performance Hub",
+      "type": "",
+      "logo": "North Island Performance Hub - rphn.png"
+    },
+    "rrgs": {
+      "id": "rrgs",
+      "name": "Rangi Ruru Girls School",
+      "type": "s",
+      "logo": "Rangi Ruru Girls School - rrgs.png"
+    },
+    "rsha": {
+      "id": "rsha",
+      "name": "Taikura Rudolf Steiner School",
+      "type": "s",
+      "logo": "Taikura Rudolf Steiner School - rsha.png"
+    },
+    "ruth": {
+      "id": "ruth",
+      "name": "Rutherford College",
+      "type": "s",
+      "logo": "Rutherford College - ruth.png"
+    },
+    "rvwc": {
+      "id": "rvwc",
+      "name": "Riverway Rowing Club",
+      "type": "c",
+      "logo": "Riverway Rowing Club - rvwc.png"
+    },
+    "sabc": {
+      "id": "sabc",
+      "name": "Sabrina Club",
+      "type": "c",
+      "logo": "Sabrina Club - sabc.png"
+    },
+    "samu": {
+      "id": "samu",
+      "name": "Samuel Marsden Collegiate School",
+      "type": "s",
+      "logo": "Samuel Marsden Collegiate School - samu.png"
+    },
+    "scot": {
+      "id": "scot",
+      "name": "Scots College",
+      "type": "s",
+      "logo": "Scots College - scot.png"
+    },
+    "sgec": {
+      "id": "sgec",
+      "name": "St Georges Rowing Club",
+      "type": "c",
+      "logo": "St Georges Rowing Club - sgec.png"
+    },
+    "sgsx": {
+      "id": "sgsx",
+      "name": "Sydney Grammar School",
+      "type": "s",
+      "logo": "Sydney Grammar School - sgsx.png"
+    },
+    "sgtc": {
+      "id": "sgtc",
+      "name": "Saugatuck Rowing Club",
+      "type": "c",
+      "logo": "Saugatuck Rowing Club - sgtc.png"
+    },
+    "shac": {
+      "id": "shac",
+      "name": "Sacred Heart RC",
+      "type": "",
+      "logo": "Sacred Heart RC - shac.png"
+    },
+    "shak": {
+      "id": "shak",
+      "name": "Sacred Heart College (Auckland)",
+      "type": "s",
+      "logo": "Sacred Heart College (Auckland) - shak.png"
+    },
+    "shax": {
+      "id": "shax",
+      "name": "Shawnigan Lake School",
+      "type": "s",
+      "logo": "Shawnigan Lake School - shax.png"
+    },
+    "shgh": {
+      "id": "shgh",
+      "name": "Sacred Heart Girls College (Hamilton)",
+      "type": "s",
+      "logo": "Sacred Heart Girls College (Hamilton) - shgh.png"
+    },
+    "shgn": {
+      "id": "shgn",
+      "name": "Sacred Heart Girls College (NP)",
+      "type": "s",
+      "logo": "Sacred Heart Girls College (NP) - shgn.png"
+    },
+    "shir": {
+      "id": "shir",
+      "name": "Shirley Boys High School",
+      "type": "s",
+      "logo": "Shirley Boys High School - shir.png"
+    },
+    "shlh": {
+      "id": "shlh",
+      "name": "Sacred Heart College (Lower Hutt)",
+      "type": "s",
+      "logo": "Sacred Heart College (Lower Hutt) - shlh.png"
+    },
+    "shna": {
+      "id": "shna",
+      "name": "Sacred Heart College (Napier)",
+      "type": "s",
+      "logo": "Sacred Heart College (Napier) - shna.png"
+    },
+    "sigx": {
+      "id": "sigx",
+      "name": "St Ignatius' College",
+      "type": "s",
+      "logo": "St Ignatius' College - sigx.png"
+    },
+    "sjhm": {
+      "id": "sjhm",
+      "name": "St Johns College (Hamilton)",
+      "type": "s",
+      "logo": "St Johns College (Hamilton) - sjhm.png"
+    },
+    "sjhs": {
+      "id": "sjhs",
+      "name": "St Johns College (Hastings)",
+      "type": "s",
+      "logo": "St Johns College (Hastings) - sjhs.png"
+    },
+    "sjhx": {
+      "id": "sjhx",
+      "name": "St Joseph's College",
+      "type": "s",
+      "logo": "St Joseph's College - sjhx.png"
+    },
+    "sjnx": {
+      "id": "sjnx",
+      "name": "St Joseph's Nudgee College",
+      "type": "s",
+      "logo": "St Joseph's Nudgee College - sjnx.png"
+    },
+    "skbc": {
+      "id": "skbc",
+      "name": "Skibbereen Rowing Club",
+      "type": "c",
+      "logo": "Skibbereen Rowing Club - skbc.png"
+    },
+    "skec": {
+      "id": "skec",
+      "name": "St Kentigern College Rowing Club",
+      "type": "c",
+      "logo": "St Kentigern College Rowing Club - skec.png"
+    },
+    "sldb": {
+      "id": "sldb",
+      "name": "Southland Boys High School",
+      "type": "s",
+      "logo": "Southland Boys High School - sldb.png"
+    },
+    "sldg": {
+      "id": "sldg",
+      "name": "Southland Girls High School",
+      "type": "s",
+      "logo": "Southland Girls High School - sldg.png"
+    },
+    "smco": {
+      "id": "smco",
+      "name": "Sancta Maria College",
+      "type": "s",
+      "logo": "Sancta Maria College - smco.png"
+    },
+    "smju": {
+      "id": "smju",
+      "name": "Sendai University",
+      "type": "t",
+      "logo": "Sendai University - smju.png"
+    },
+    "snsc": {
+      "id": "snsc",
+      "name": "Sydney North Shore Rowing Club",
+      "type": "c",
+      "logo": "Sydney North Shore Rowing Club - snsc.png"
+    },
+    "somx": {
+      "id": "somx",
+      "name": "Somerset",
+      "type": "s",
+      "logo": "Somerset - somx.png"
+    },
+    "spcc": {
+      "id": "spcc",
+      "name": "St Pauls Collegiate Rowing Club",
+      "type": "c",
+      "logo": "St Pauls Collegiate Rowing Club - spcc.png"
+    },
+    "splh": {
+      "id": "splh",
+      "name": "St Pauls Collegiate School",
+      "type": "s",
+      "logo": "St Pauls Collegiate School - splh.png"
+    },
+    "spts": {
+      "id": "spts",
+      "name": "St Patricks College (Silverstream)",
+      "type": "s",
+      "logo": "St Patricks College (Silverstream) - spts.png"
+    },
+    "sptw": {
+      "id": "sptw",
+      "name": "St Patricks College",
+      "type": "s",
+      "logo": "St Patricks College - sptw.png"
+    },
+    "srpc": {
+      "id": "srpc",
+      "name": "Swan River Rowing Club",
+      "type": "c",
+      "logo": "Swan River Rowing Club - srpc.png"
+    },
+    "srvc": {
+      "id": "srvc",
+      "name": "Saarbrucken Rowing Club",
+      "type": "c",
+      "logo": "Saarbrucken Rowing Club - srvc.png"
+    },
+    "ssax": {
+      "id": "ssax",
+      "name": "Shore School",
+      "type": "s",
+      "logo": "Shore School - ssax.png"
+    },
+    "sscc": {
+      "id": "sscc",
+      "name": "Sunshine Coast Rowing Club",
+      "type": "c",
+      "logo": "Sunshine Coast Rowing Club - sscc.png"
+    },
+    "stac": {
+      "id": "stac",
+      "name": "Star Boating Club",
+      "type": "c",
+      "logo": "Star Boating Club - stac.png"
+    },
+    "stan": {
+      "id": "stan",
+      "name": "St Andrews College",
+      "type": "s",
+      "logo": "St Andrews College - stan.png"
+    },
+    "stbd": {
+      "id": "stbd",
+      "name": "St Bedes College",
+      "type": "s",
+      "logo": "St Bedes College - stbd.png"
+    },
+    "stbn": {
+      "id": "stbn",
+      "name": "St Bernard's College",
+      "type": "s",
+      "logo": "St Bernard's College - stbn.png"
+    },
+    "stca": {
+      "id": "stca",
+      "name": "St Catherine's College",
+      "type": "s",
+      "logo": "St Catherine's College - stca.png"
+    },
+    "stcc": {
+      "id": "stcc",
+      "name": "St Thomas Of Canterbury",
+      "type": "s",
+      "logo": "St Thomas Of Canterbury - stcc.png"
+    },
+    "stcu": {
+      "id": "stcu",
+      "name": "St Cuthberts College",
+      "type": "s",
+      "logo": "St Cuthberts College - stcu.png"
+    },
+    "stdo": {
+      "id": "stdo",
+      "name": "St Dominics College (Henderson)",
+      "type": "s",
+      "logo": "St Dominics College (Henderson) - stdo.png"
+    },
+    "sthi": {
+      "id": "sthi",
+      "name": "St Hildas Collegiate",
+      "type": "s",
+      "logo": "St Hildas Collegiate - sthi.png"
+    },
+    "stil": {
+      "id": "stil",
+      "name": "St Ignatius of Loyola Catholic College",
+      "type": "s",
+      "logo": "St Ignatius of Loyola Catholic College - stil.png"
+    },
+    "stkt": {
+      "id": "stkt",
+      "name": "St Kentigern College",
+      "type": "s",
+      "logo": "St Kentigern College - stkt.png"
+    },
+    "stkv": {
+      "id": "stkv",
+      "name": "St Kevins College",
+      "type": "s",
+      "logo": "St Kevins College - stkv.png"
+    },
+    "stln": {
+      "id": "stln",
+      "name": "ACG Strathallan",
+      "type": "s",
+      "logo": "ACG Strathallan - stln.png"
+    },
+    "stma": {
+      "id": "stma",
+      "name": "St Mary's College (Auck)",
+      "type": "s",
+      "logo": "St Mary's College (Auck) - stma.png"
+    },
+    "stmd": {
+      "id": "stmd",
+      "name": "St Marys Diocesan School for Girls",
+      "type": "s",
+      "logo": "St Marys Diocesan School for Girls - stmd.png"
+    },
+    "stmg": {
+      "id": "stmg",
+      "name": "St Margarets College",
+      "type": "s",
+      "logo": "St Margarets College - stmg.png"
+    },
+    "stmw": {
+      "id": "stmw",
+      "name": "St Mary's College (Wgtn)",
+      "type": "s",
+      "logo": "St Mary's College (Wgtn) - stmw.png"
+    },
+    "stor": {
+      "id": "stor",
+      "name": "St Orans College",
+      "type": "s",
+      "logo": "St Orans College - stor.png"
+    },
+    "stpa": {
+      "id": "stpa",
+      "name": "St Peters College",
+      "type": "s",
+      "logo": "St Peters College - stpa.png"
+    },
+    "stpc": {
+      "id": "stpc",
+      "name": "St Peters School",
+      "type": "s",
+      "logo": "St Peters School - stpc.png"
+    },
+    "stra": {
+      "id": "stra",
+      "name": "Stratford High School",
+      "type": "s",
+      "logo": "Stratford High School - stra.png"
+    },
+    "sund": {
+      "id": "sund",
+      "name": "ACG Sunderland",
+      "type": "s",
+      "logo": "ACG Sunderland - sund.png"
+    },
+    "sydc": {
+      "id": "sydc",
+      "name": "Sydney Rowing Club",
+      "type": "c",
+      "logo": "Sydney Rowing Club - sydc.png"
+    },
+    "sydu": {
+      "id": "sydu",
+      "name": "University of Sydney",
+      "type": "t",
+      "logo": "University of Sydney - sydu.png"
+    },
+    "tacc": {
+      "id": "tacc",
+      "name": "Tasman Coastal Rowing Club",
+      "type": "c",
+      "logo": "Tasman Coastal Rowing Club - tacc.png"
+    },
+    "taka": {
+      "id": "taka",
+      "name": "Takapuna Grammar School",
+      "type": "s",
+      "logo": "Takapuna Grammar School - taka.png"
+    },
+    "talc": {
+      "id": "talc",
+      "name": "Te Aratai College",
+      "type": "",
+      "logo": "Te Aratai College - talc.png"
+    },
+    "taop": {
+      "id": "taop",
+      "name": "Te Aho O Te Kura Pounamu",
+      "type": "s",
+      "logo": "Te Aho O Te Kura Pounamu - taop.png"
+    },
+    "tauh": {
+      "id": "tauh",
+      "name": "Tauhara College",
+      "type": "s",
+      "logo": "Tauhara College - tauh.png"
+    },
+    "taup": {
+      "id": "taup",
+      "name": "Taupo-Nui-A-Tia College",
+      "type": "s",
+      "logo": "Taupo-Nui-A-Tia College - taup.png"
+    },
+    "tawa": {
+      "id": "tawa",
+      "name": "Tawa College",
+      "type": "s",
+      "logo": "Tawa College - tawa.png"
+    },
+    "tawc": {
+      "id": "tawc",
+      "name": "Te Awamutu Rowing Club",
+      "type": "c",
+      "logo": "Te Awamutu Rowing Club - tawc.png"
+    },
+    "teaw": {
+      "id": "teaw",
+      "name": "Te Awamutu College",
+      "type": "s",
+      "logo": "Te Awamutu College - teaw.png"
+    },
+    "tekc": {
+      "id": "tekc",
+      "name": "Te Kauwhata College",
+      "type": "s",
+      "logo": "Te Kauwhata College - tekc.png"
+    },
+    "terx": {
+      "id": "terx",
+      "name": "Gregory Terrace",
+      "type": "s",
+      "logo": "Gregory Terrace - terx.png"
+    },
+    "tgac": {
+      "id": "tgac",
+      "name": "Tauranga Rowing Club",
+      "type": "c",
+      "logo": "Tauranga Rowing Club - tgac.png"
+    },
+    "tgbc": {
+      "id": "tgbc",
+      "name": "Tauranga Boys College Rowing Club",
+      "type": "c",
+      "logo": "Tauranga Boys College Rowing Club - tgbc.png"
+    },
+    "tgsc": {
+      "id": "tgsc",
+      "name": "Takapuna Grammar Rowing Club",
+      "type": "c",
+      "logo": "Takapuna Grammar Rowing Club - tgsc.png"
+    },
+    "thac": {
+      "id": "thac",
+      "name": "Thames Rowing Club",
+      "type": "c",
+      "logo": "Thames Rowing Club - thac.png"
+    },
+    "tham": {
+      "id": "tham",
+      "name": "Thames High School",
+      "type": "s",
+      "logo": "Thames High School - tham.png"
+    },
+    "tiki": {
+      "id": "tiki",
+      "name": "Tikipunga High School",
+      "type": "s",
+      "logo": "Tikipunga High School - tiki.png"
+    },
+    "timb": {
+      "id": "timb",
+      "name": "Timaru Boys High School",
+      "type": "s",
+      "logo": "Timaru Boys High School - timb.png"
+    },
+    "timc": {
+      "id": "timc",
+      "name": "Timaru Rowing Club",
+      "type": "c",
+      "logo": "Timaru Rowing Club - timc.png"
+    },
+    "timg": {
+      "id": "timg",
+      "name": "Timaru Girls High School",
+      "type": "s",
+      "logo": "Timaru Girls High School - timg.png"
+    },
+    "tmth": {
+      "id": "tmth",
+      "name": "Tamatea High School",
+      "type": "s",
+      "logo": "Tamatea High School - tmth.png"
+    },
+    "tooc": {
+      "id": "tooc",
+      "name": "Toowong Rowing Club",
+      "type": "c",
+      "logo": "Toowong Rowing Club - tooc.png"
+    },
+    "tpoc": {
+      "id": "tpoc",
+      "name": "Taupo Rowing Club",
+      "type": "c",
+      "logo": "Taupo Rowing Club - tpoc.png"
+    },
+    "trdl": {
+      "id": "trdl",
+      "name": "Taradale High School",
+      "type": "s",
+      "logo": "Taradale High School - trdl.png"
+    },
+    "trgb": {
+      "id": "trgb",
+      "name": "Tauranga Boys College",
+      "type": "s",
+      "logo": "Tauranga Boys College - trgb.png"
+    },
+    "trgg": {
+      "id": "trgg",
+      "name": "Tauranga Girls College",
+      "type": "s",
+      "logo": "Tauranga Girls College - trgg.png"
+    },
+    "trid": {
+      "id": "trid",
+      "name": "Trident High School",
+      "type": "s",
+      "logo": "Trident High School - trid.png"
+    },
+    "trin": {
+      "id": "trin",
+      "name": "Trinity Catholic College",
+      "type": "s",
+      "logo": "Trinity Catholic College - trin.png"
+    },
+    "trvc": {
+      "id": "trvc",
+      "name": "ASD Societa Canottieri Sile Treviso",
+      "type": "c",
+      "logo": "ASD Societa Canottieri Sile Treviso - trvc.png"
+    },
+    "tscx": {
+      "id": "tscx",
+      "name": "The Scots College",
+      "type": "s",
+      "logo": "The Scots College - tscx.png"
+    },
+    "tssc": {
+      "id": "tssc",
+      "name": "Tideway Scullers School",
+      "type": "",
+      "logo": "Tideway Scullers School - tssc.png"
+    },
+    "tssx": {
+      "id": "tssx",
+      "name": "The Southport School",
+      "type": "s",
+      "logo": "The Southport School - tssx.png"
+    },
+    "ttai": {
+      "id": "ttai",
+      "name": "Taieri College",
+      "type": "s",
+      "logo": "Taieri College - ttai.png"
+    },
+    "tuak": {
+      "id": "tuak",
+      "name": "Tuakau College",
+      "type": "s",
+      "logo": "Tuakau College - tuak.png"
+    },
+    "twiz": {
+      "id": "twiz",
+      "name": "Twizel Area School",
+      "type": "s",
+      "logo": "Twizel Area School - twiz.png"
+    },
+    "twlc": {
+      "id": "twlc",
+      "name": "Twizel Rowing Club",
+      "type": "c",
+      "logo": "Twizel Rowing Club - twlc.png"
+    },
+    "udsc": {
+      "id": "udsc",
+      "name": "Club Sportif Universitaire d'Oran",
+      "type": "c",
+      "logo": "Club Sportif Universitaire d'Oran - udsc.png"
+    },
+    "umrc": {
+      "id": "umrc",
+      "name": "Club De Remeros Mercedes",
+      "type": "c",
+      "logo": "Club De Remeros Mercedes - umrc.png"
+    },
+    "unc*": {
+      "id": "unc*",
+      "name": "Union*",
+      "type": "c",
+      "logo": "Union* - unc*.png"
+    },
+    "uncc": {
+      "id": "uncc",
+      "name": "Union Rowing Club",
+      "type": "c",
+      "logo": "Union Rowing Club - uncc.png"
+    },
+    "unwc": {
+      "id": "unwc",
+      "name": "Union Boat Club",
+      "type": "c",
+      "logo": "Union Boat Club - unwc.png"
+    },
+    "uppe": {
+      "id": "uppe",
+      "name": "Upper Hutt College",
+      "type": "s",
+      "logo": "Upper Hutt College - uppe.png"
+    },
+    "uqbc": {
+      "id": "uqbc",
+      "name": "University of Queensland Boat Club",
+      "type": "c",
+      "logo": "University of Queensland Boat Club - uqbc.png"
+    },
+    "utsc": {
+      "id": "utsc",
+      "name": "UTS Rowing Club",
+      "type": "c",
+      "logo": "UTS Rowing Club - utsc.png"
+    },
+    "uwoc": {
+      "id": "uwoc",
+      "name": "University of Western Ontario Boat Club",
+      "type": "c",
+      "logo": "University of Western Ontario Boat Club - uwoc.png"
+    },
+    "vaic": {
+      "id": "vaic",
+      "name": "Vashon Island RC",
+      "type": "c",
+      "logo": "Vashon Island RC - vaic.png"
+    },
+    "verd": {
+      "id": "verd",
+      "name": "Verdon College",
+      "type": "s",
+      "logo": "Verdon College - verd.png"
+    },
+    "vicu": {
+      "id": "vicu",
+      "name": "Victoria University",
+      "type": "t",
+      "logo": "Victoria University - vicu.png"
+    },
+    "vilc": {
+      "id": "vilc",
+      "name": "Port Vila",
+      "type": "c",
+      "logo": "Port Vila - vilc.png"
+    },
+    "vill": {
+      "id": "vill",
+      "name": "Villa Maria College",
+      "type": "s",
+      "logo": "Villa Maria College - vill.png"
+    },
+    "viuc": {
+      "id": "viuc",
+      "name": "Victoria University Rowing Club",
+      "type": "c",
+      "logo": "Victoria University Rowing Club - viuc.png"
+    },
+    "waio": {
+      "id": "waio",
+      "name": "Waiopehu College",
+      "type": "s",
+      "logo": "Waiopehu College - waio.png"
+    },
+    "waiu": {
+      "id": "waiu",
+      "name": "Waiuku College",
+      "type": "s",
+      "logo": "Waiuku College - waiu.png"
+    },
+    "waka": {
+      "id": "waka",
+      "name": "Wakatipu High School",
+      "type": "s",
+      "logo": "Wakatipu High School - waka.png"
+    },
+    "wanc": {
+      "id": "wanc",
+      "name": "Whanganui Collegiate Rowing Club",
+      "type": "c",
+      "logo": "Whanganui Collegiate Rowing Club - wanc.png"
+    },
+    "wdic": {
+      "id": "wdic",
+      "name": "Waikato Diocesan Rowing Club",
+      "type": "c",
+      "logo": "Waikato Diocesan Rowing Club - wdic.png"
+    },
+    "wegc": {
+      "id": "wegc",
+      "name": "Wellington East Girls College",
+      "type": "s",
+      "logo": "Wellington East Girls College - wegc.png"
+    },
+    "wel*": {
+      "id": "wel*",
+      "name": "Wellington*",
+      "type": "",
+      "logo": "Wellington* - wel*.png"
+    },
+    "welc": {
+      "id": "welc",
+      "name": "Wellington Rowing Club",
+      "type": "c",
+      "logo": "Wellington Rowing Club - welc.png"
+    },
+    "went": {
+      "id": "went",
+      "name": "Wentworth College",
+      "type": "s",
+      "logo": "Wentworth College - went.png"
+    },
+    "wesc": {
+      "id": "wesc",
+      "name": "West End Rowing Club",
+      "type": "c",
+      "logo": "West End Rowing Club - wesc.png"
+    },
+    "wgtc": {
+      "id": "wgtc",
+      "name": "Whangateau Sculling Club",
+      "type": "c",
+      "logo": "Whangateau Sculling Club - wgtc.png"
+    },
+    "whac": {
+      "id": "whac",
+      "name": "Whakatane Rowing Club",
+      "type": "c",
+      "logo": "Whakatane Rowing Club - whac.png"
+    },
+    "whak": {
+      "id": "whak",
+      "name": "Whakatane High School",
+      "type": "s",
+      "logo": "Whakatane High School - whak.png"
+    },
+    "whgb": {
+      "id": "whgb",
+      "name": "Whangarei Boys High School",
+      "type": "s",
+      "logo": "Whangarei Boys High School - whgb.png"
+    },
+    "whgg": {
+      "id": "whgg",
+      "name": "Whangarei Girls High School",
+      "type": "s",
+      "logo": "Whangarei Girls High School - whgg.png"
+    },
+    "whhs": {
+      "id": "whhs",
+      "name": "Western Heights High School",
+      "type": "s",
+      "logo": "Western Heights High School - whhs.png"
+    },
+    "whic": {
+      "id": "whic",
+      "name": "Waihi College",
+      "type": "s",
+      "logo": "Waihi College - whic.png"
+    },
+    "whoc": {
+      "id": "whoc",
+      "name": "Waihopai Rowing Club",
+      "type": "c",
+      "logo": "Waihopai Rowing Club - whoc.png"
+    },
+    "whtc": {
+      "id": "whtc",
+      "name": "Whitby Collegiate",
+      "type": "s",
+      "logo": "Whitby Collegiate - whtc.png"
+    },
+    "wkds": {
+      "id": "wkds",
+      "name": "Waikato Diocesan School",
+      "type": "s",
+      "logo": "Waikato Diocesan School - wkds.png"
+    },
+    "wko*": {
+      "id": "wko*",
+      "name": "Waikato*",
+      "type": "",
+      "logo": "Waikato* - wko*.png"
+    },
+    "wkoc": {
+      "id": "wkoc",
+      "name": "Waikato Rowing Club",
+      "type": "c",
+      "logo": "Waikato Rowing Club - wkoc.png"
+    },
+    "wkou": {
+      "id": "wkou",
+      "name": "Waikato University",
+      "type": "t",
+      "logo": "Waikato University - wkou.png"
+    },
+    "wkuc": {
+      "id": "wkuc",
+      "name": "Waikato University Rowing Club",
+      "type": "c",
+      "logo": "Waikato University Rowing Club - wkuc.png"
+    },
+    "wlco": {
+      "id": "wlco",
+      "name": "Wellington College",
+      "type": "s",
+      "logo": "Wellington College - wlco.png"
+    },
+    "wlgc": {
+      "id": "wlgc",
+      "name": "Wellington Girls College",
+      "type": "s",
+      "logo": "Wellington Girls College - wlgc.png"
+    },
+    "wlhs": {
+      "id": "wlhs",
+      "name": "Wellington High School",
+      "type": "s",
+      "logo": "Wellington High School - wlhs.png"
+    },
+    "wmea": {
+      "id": "wmea",
+      "name": "Waimea College",
+      "type": "s",
+      "logo": "Waimea College - wmea.png"
+    },
+    "wncc": {
+      "id": "wncc",
+      "name": "Whanganui City College",
+      "type": "s",
+      "logo": "Whanganui City College - wncc.png"
+    },
+    "wncs": {
+      "id": "wncs",
+      "name": "Whanganui Collegiate School",
+      "type": "s",
+      "logo": "Whanganui Collegiate School - wncs.png"
+    },
+    "wngc": {
+      "id": "wngc",
+      "name": "Whanganui Girls College",
+      "type": "s",
+      "logo": "Whanganui Girls College - wngc.png"
+    },
+    "wnhs": {
+      "id": "wnhs",
+      "name": "Whanganui High School",
+      "type": "s",
+      "logo": "Whanganui High School - wnhs.png"
+    },
+    "wnkc": {
+      "id": "wnkc",
+      "name": "Wanaka Rowing Club",
+      "type": "c",
+      "logo": "Wanaka Rowing Club - wnkc.png"
+    },
+    "wood": {
+      "id": "wood",
+      "name": "Woodford House",
+      "type": "s",
+      "logo": "Woodford House - wood.png"
+    },
+    "wrac": {
+      "id": "wrac",
+      "name": "Wairau Rowing Club",
+      "type": "c",
+      "logo": "Wairau Rowing Club - wrac.png"
+    },
+    "wrbc": {
+      "id": "wrbc",
+      "name": "Wannsee RK Berlin",
+      "type": "c",
+      "logo": "Wannsee RK Berlin - wrbc.png"
+    },
+    "wrec": {
+      "id": "wrec",
+      "name": "Whangarei Rowing Club",
+      "type": "c",
+      "logo": "Whangarei Rowing Club - wrec.png"
+    },
+    "wrkc": {
+      "id": "wrkc",
+      "name": "Waiariki Rowing Club",
+      "type": "c",
+      "logo": "Waiariki Rowing Club - wrkc.png"
+    },
+    "wroa": {
+      "id": "wroa",
+      "name": "Wairoa College",
+      "type": "s",
+      "logo": "Wairoa College - wroa.png"
+    },
+    "wtar": {
+      "id": "wtar",
+      "name": "Waitara High School",
+      "type": "s",
+      "logo": "Waitara High School - wtar.png"
+    },
+    "wtkb": {
+      "id": "wtkb",
+      "name": "Waitaki Boys High School",
+      "type": "s",
+      "logo": "Waitaki Boys High School - wtkb.png"
+    },
+    "wtkg": {
+      "id": "wtkg",
+      "name": "Waitaki Girls High School",
+      "type": "s",
+      "logo": "Waitaki Girls High School - wtkg.png"
+    },
+    "wtkr": {
+      "id": "wtkr",
+      "name": "Waitakere College",
+      "type": "s",
+      "logo": "Waitakere College - wtkr.png"
+    },
+    "wtlb": {
+      "id": "wtlb",
+      "name": "Westlake Boys High School",
+      "type": "s",
+      "logo": "Westlake Boys High School - wtlb.png"
+    },
+    "wtlg": {
+      "id": "wtlg",
+      "name": "Westlake Girls High School",
+      "type": "s",
+      "logo": "Westlake Girls High School - wtlg.png"
+    },
+    "wtmc": {
+      "id": "wtmc",
+      "name": "Waitemata Rowing Club",
+      "type": "c",
+      "logo": "Waitemata Rowing Club - wtmc.png"
+    },
+    "wtsc": {
+      "id": "wtsc",
+      "name": "Western Springs College",
+      "type": "s",
+      "logo": "Western Springs College - wtsc.png"
+    },
+    "wtuc": {
+      "id": "wtuc",
+      "name": "Whakatipu Rowing Club",
+      "type": "c",
+      "logo": "Whakatipu Rowing Club - wtuc.png"
+    },
+    "xaju": {
+      "id": "xaju",
+      "name": "Xi`an Jiaotong University",
+      "type": "t",
+      "logo": "Xi`an Jiaotong University - xaju.png"
+    }
+  },
+  "gender": {
+    "B": "Boys",
+    "G": "Girls",
+    "M": "Mens",
+    "Mx": "Mixed",
+    "W": "Womens"
+  },
+  "class": {
+    "Op": "Open",
+    "Nov": "Novice",
+    "Int": "Intermediate",
+    "U22": "Under 22",
+    "Clb": "Club",
+    "E": "Exhibition",
+    "Snr": "Senior",
+    "Prm": "Premier",
+    "U15": "Under 15",
+    "U16": "Under 16",
+    "U17": "Under 17",
+    "U18": "Under 18",
+    "N18": "Novice",
+    "Opn": "Open",
+    "Vrs": "Varsity",
+    "Trn": "Tournament",
+    "Chm": "Championship",
+    "Uni": "University",
+    "UNv": "University Novice",
+    "1x": "Para",
+    "2x": "Para"
+  },
+  "boat": {
+    "1x": "Single",
+    "2x": "Double",
+    "4x": "Quad",
+    "4x+": "Coxed Quad",
+    "2-": "Pair",
+    "4-": "Four",
+    "4+": "Coxed Four",
+    "8+": "Coxed Eight",
+    "8X+": "Coxed Octuple"
+  }
+}

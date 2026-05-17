@@ -4,54 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
     <title>vMix — KRI</title>
-    <link rel="stylesheet" href="vmix-overlay.css">
+    <link rel="stylesheet" href="vmix-graphics.css">
 </head>
-<body class="vmix-overlay vmix-theme-kri" data-vmix-theme="kri">
-    <div class="vmix-stage">
-        <header class="vmix-header">
-            <div class="vmix-brand">
-                <div class="vmix-logos" id="vmixLogos"></div>
-                <div class="vmix-title-block">
-                    <h1 class="vmix-title" id="vmixTitle">KRI</h1>
-                    <p class="vmix-subtitle" id="vmixSubtitle">Live</p>
-                </div>
-            </div>
-            <div class="vmix-header-right">
-                <span class="vmix-live-badge">Live</span>
-                <span class="vmix-clock" id="vmixClock">—</span>
-                <span class="vmix-day-label" id="vmixDayLabel"></span>
-            </div>
-        </header>
-
-        <aside class="vmix-next" id="vmixNext" hidden>
-            <p class="vmix-next-label">On deck</p>
-            <p class="vmix-next-race" id="vmixNextRace">—</p>
-            <p class="vmix-next-event" id="vmixNextEvent"></p>
-            <p class="vmix-next-time" id="vmixNextTime"></p>
-        </aside>
-
-        <footer class="vmix-lower">
-            <div class="vmix-race-card">
-                <div class="vmix-race-head">
-                    <span class="vmix-race-num" id="vmixRaceNum">—</span>
-                    <span class="vmix-race-time" id="vmixRaceTime">—</span>
-                    <span class="vmix-status" id="vmixResultStatus" hidden>Official</span>
-                </div>
-                <p class="vmix-event-name" id="vmixEventName">Loading…</p>
-                <p class="vmix-event-meta" id="vmixEventMeta"></p>
-                <div class="vmix-lanes" id="vmixLanes" hidden>
-                    <p class="vmix-lanes-label">Lane draw</p>
-                    <div class="vmix-lane-row"></div>
-                </div>
-            </div>
-            <div class="vmix-results-panel" id="vmixResults">
-                <p class="vmix-results-title">Top 3</p>
-                <div class="vmix-results-body">Results pending</div>
-            </div>
-        </footer>
-
-        <p class="vmix-error" id="vmixError" hidden></p>
+<body class="vmix-page" data-vmix-theme="kri">
+    <div class="vg-stage">
+        <div class="vg-bg" id="vgBg" aria-hidden="true"></div>
+        <div class="vg-layer" id="vgLayer"></div>
+        <p class="vg-error" id="vgError" hidden></p>
     </div>
-    <script src="vmix-overlay.js"></script>
+    <script src="hub-csv.js"></script>
+    <script src="vmix-graphics.js"></script>
 </body>
 </html>

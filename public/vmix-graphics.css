@@ -1,0 +1,224 @@
+/* vMix graphics — 1920×1080 transparent overlay */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+}
+
+.vmix-page {
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+}
+
+.vg-stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+}
+
+.vg-bg {
+    position: absolute;
+    inset: 0;
+    background-size: 1920px 1080px;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    pointer-events: none;
+}
+
+.vg-bg--plain {
+    background: linear-gradient(
+        135deg,
+        rgba(0, 32, 64, 0.92) 0%,
+        rgba(0, 48, 96, 0.88) 100%
+    );
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-bg--plain {
+    background: linear-gradient(
+        135deg,
+        rgba(180, 80, 0, 0.92) 0%,
+        rgba(120, 40, 0, 0.88) 100%
+    );
+}
+
+.vg-layer {
+    position: absolute;
+    z-index: 2;
+    box-sizing: border-box;
+}
+
+.vg-error {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    margin: 0;
+    padding: 8px 14px;
+    background: rgba(180, 0, 0, 0.85);
+    border-radius: 4px;
+    font-size: 18px;
+    z-index: 10;
+}
+
+/* —— Title —— */
+.vg-layer--title {
+    left: 120px;
+    top: 420px;
+    width: 1680px;
+    text-align: center;
+}
+
+.vg-title-code {
+    margin: 0;
+    font-size: 96px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.vg-title-date {
+    margin: 16px 0 0;
+    font-size: 42px;
+    font-weight: 500;
+    opacity: 0.95;
+}
+
+/* —— Lower third —— */
+.vg-layer--lower {
+    left: 80px;
+    bottom: 72px;
+    width: 1760px;
+    padding: 0 40px;
+}
+
+.vg-lower-race {
+    margin: 0 0 6px;
+    font-size: 28px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.vg-lower-event {
+    margin: 0;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.vg-lower-meta {
+    margin: 8px 0 0;
+    font-size: 26px;
+    opacity: 0.88;
+}
+
+/* —— Draw / Results —— */
+.vg-layer--draw,
+.vg-layer--results {
+    left: 100px;
+    top: 140px;
+    width: 1720px;
+}
+
+.vg-draw-head {
+    margin-bottom: 28px;
+}
+
+.vg-draw-event {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.vg-draw-meta {
+    margin: 8px 0 0;
+    font-size: 26px;
+    opacity: 0.9;
+}
+
+.vg-draw-lanes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.vg-lane {
+    display: grid;
+    grid-template-columns: 72px 40px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    min-height: 64px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 6px;
+}
+
+.vg-lane-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 4px;
+    padding: 4px;
+    box-sizing: border-box;
+}
+
+.vg-lane-logo--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #666;
+}
+
+.vg-lane-n {
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.vg-lane-crew {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.vg-lane-club {
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.vg-lane-names {
+    font-size: 20px;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vg-lane-time {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 100px;
+    text-align: right;
+}
+
+.vg-lane--empty {
+    grid-column: 1 / -1;
+    justify-content: center;
+    font-size: 24px;
+    opacity: 0.7;
+}
