@@ -26,6 +26,16 @@
         </div>
     </header>
 
+    <div class="hub-stats-bar hub-stats-bar--rnz" id="hubStatsBar" aria-live="polite">
+        <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="#rnzWarningBox">Warnings: —</a>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <span class="hub-stats-item" id="hubStatDistance">Distance today: —</span>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <a class="hub-stats-item hub-stats-item--event" id="hubStatEvent" href="index.html#hub-calendar-title">—</a>
+    </div>
+
     <main class="rnz-main" id="rnz-main">
         <div class="rnz-dashboard" id="rnzLayout">
             <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Warnings">
@@ -128,6 +138,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="speed-color-scale.js"></script>
+    <script src="rnz-safety-core.js"></script>
+    <script src="hub-regatta-events.js"></script>
+    <script src="hub-stats-bar.js"></script>
     <script src="rowsafe-map.js"></script>
 </body>
 </html>

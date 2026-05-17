@@ -30,6 +30,16 @@
         </div>
     </header>
 
+    <div class="hub-stats-bar" id="hubStatsBar" aria-live="polite">
+        <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="rowsafe-map.html">Warnings: —</a>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <span class="hub-stats-item" id="hubStatDistance">Distance today: —</span>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <span class="hub-stats-item hub-stats-item--event" id="hubStatEvent">—</span>
+    </div>
+
     <div class="hub-wrap">
         <div class="hub-dashboard">
             <div class="hub-dashboard-sidebar">
@@ -292,6 +302,9 @@
             Altitude HD · Traccar overlay
         </footer>
     </div>
+    <script src="rnz-safety-core.js"></script>
+    <script src="hub-regatta-events.js"></script>
+    <script src="hub-stats-bar.js"></script>
     <script src="hub-csv.js"></script>
     <script src="hub-live-race.js"></script>
     <script src="hub-calendar.js"></script>
