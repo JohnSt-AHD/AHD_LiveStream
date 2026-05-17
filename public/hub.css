@@ -378,6 +378,46 @@
     line-height: 1.45;
 }
 
+.hub-vmix-trigger-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.hub-vmix-trigger-key {
+    min-width: 44px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.hub-vmix-trigger-key:hover {
+    background: rgba(244, 114, 182, 0.25);
+    border-color: rgba(244, 114, 182, 0.5);
+}
+
+.hub-vmix-trigger-key--out {
+    margin-left: 4px;
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fde68a;
+}
+
+.hub-vmix-trigger-hint {
+    font-size: 11px;
+    color: var(--ahd-muted);
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
 .hub-vmix-table {
     width: 100%;
     border-collapse: collapse;

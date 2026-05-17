@@ -31,6 +31,16 @@ body {
     background-position: 0 0;
     pointer-events: none;
     overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+.vg-bg--visible {
+    opacity: 1;
+}
+
+.vg-bg--outro {
+    transition: opacity 0.35s ease;
 }
 
 .vg-bg-video {
@@ -62,6 +72,18 @@ body {
     position: absolute;
     z-index: 2;
     box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.vg-layer--visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.vg-stage[data-vg-state='idle'] .vg-bg-video {
+    visibility: hidden;
 }
 
 .vg-error {

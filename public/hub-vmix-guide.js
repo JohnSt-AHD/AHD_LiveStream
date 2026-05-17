@@ -8,11 +8,26 @@ const VMIX_PAGES = {
 };
 
 const VMIX_TRIGGERS = [
-    { key: 't', graphic: 'Title', desc: 'Regatta code and day date' },
-    { key: 'l', graphic: 'Lower third', desc: 'Race number, time, full event name, round, progression' },
-    { key: 'd', graphic: 'Draw', desc: 'Lane draw — club logos, crew names, race title' },
-    { key: 'r', graphic: 'Results', desc: 'Finish order with times (from results CSV)' },
+    { key: 't', graphic: 'Title', desc: 'Play in — background 3s, then regatta code and date' },
+    { key: 'l', graphic: 'Lower third', desc: 'Play in — background 3s, then race info text' },
+    { key: 'd', graphic: 'Draw', desc: 'Play in — background 3s, then lane draw text' },
+    { key: 'r', graphic: 'Results', desc: 'Play in — background 3s, then results text' },
+    { key: 'o', graphic: 'Out', desc: 'Hide text, reverse background, reset to idle' },
 ];
+
+const VMIX_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
+
+function hubSendVmixTrigger(action, graphic) {
+    const payload = { action, graphic: graphic || null, t: Date.now() };
+    try {
+        localStorage.setItem(VMIX_LS_TRIGGER, JSON.stringify(payload));
+    } catch {
+        /* ignore */
+    }
+    document.dispatchEvent(
+        new CustomEvent('altitudehd:vmixtrigger', { detail: payload }),
+    );
+}
 
 function hubVmixBaseUrl(page) {
     const path = location.pathname.replace(/[^/]*$/, '');
@@ -50,7 +65,11 @@ function hubRenderVmixGuide() {
             tbody.replaceChildren();
             for (const t of VMIX_TRIGGERS) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><code>g=${t.key}</code></td><td>${t.graphic}</td><td>${t.desc}</td>`;
+                const code =
+                    t.key === 'o'
+                        ? '<code>o</code>'
+                        : `<code>${t.key}</code> / <code>g=${t.key}</code>`;
+                tr.innerHTML = `<td>${code}</td><td>${t.graphic}</td><td>${t.desc}</td>`;
                 tbody.appendChild(tr);
             }
         }
@@ -69,12 +88,13 @@ function hubRenderVmixGuide() {
             const ul = document.createElement('ul');
             ul.className = 'hub-vmix-url-list';
             for (const t of VMIX_TRIGGERS) {
+                if (t.key === 'o') continue;
                 const li = document.createElement('li');
                 const a = document.createElement('a');
-                a.href = hubVmixUrl(page, t.key, race);
+                a.href = `${hubVmixUrl(page, t.key, race)}&autoplay=1`;
                 a.target = '_blank';
                 a.rel = 'noopener';
-                a.textContent = `${t.graphic} (?g=${t.key}&race=${race})`;
+                a.textContent = `${t.graphic} (preview)`;
                 li.appendChild(a);
                 ul.appendChild(li);
             }
@@ -99,9 +119,25 @@ function hubUpdateVmixLinkCards() {
     });
 }
 
+function hubBindVmixTriggerButtons() {
+    const row = document.getElementById('hubVmixTriggerButtons');
+    if (!row || row.dataset.bound === '1') return;
+    row.dataset.bound = '1';
+
+    row.querySelectorAll('[data-vmix-trigger]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.vmixTrigger;
+            const graphic = btn.dataset.vmixGraphic || null;
+            if (action === 'out') hubSendVmixTrigger('out');
+            else if (graphic) hubSendVmixTrigger('in', graphic);
+        });
+    });
+}
+
 function initHubVmixGuide() {
     hubRenderVmixGuide();
     hubUpdateVmixLinkCards();
+    hubBindVmixTriggerButtons();
     document.addEventListener('altitudehd:urls', hubRenderVmixGuide);
     document.addEventListener('altitudehd:liverace', () => {
         hubRenderVmixGuide();
@@ -113,5 +149,7 @@ function initHubVmixGuide() {
         codeInput.addEventListener('change', hubRenderVmixGuide);
     }
 }
+
+window.hubSendVmixTrigger = hubSendVmixTrigger;
 
 document.addEventListener('DOMContentLoaded', initHubVmixGuide);

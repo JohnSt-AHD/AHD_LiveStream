@@ -1,6 +1,7 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results.
- * URL: ?g=d|l|r|t  &race=12  &regatta=mads2026
+ * Keys: d/l/r/t = play in (background 3s, then text) · o = out (hide text, reverse bg).
+ * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
     t: 'title',
@@ -11,6 +12,18 @@ const VG_GRAPHIC_ALIASES = {
     lower: 'lower',
     r: 'results',
     results: 'results',
+};
+
+const VG_HOLD_MS = 3000;
+const VG_OUTRO_MS = 3000;
+
+const vgPlayback = {
+    state: 'idle',
+    graphic: null,
+    introTimer: null,
+    outroTimer: null,
+    rewindRaf: null,
+    onVideoTime: null,
 };
 
 const VG_THEMES = {
@@ -291,6 +304,7 @@ function vgClubInfo(clubId, lookup) {
 }
 
 const VG_LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
+const VG_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
 
 function vgGetRaceParam() {
     const urlRace = new URLSearchParams(location.search).get('race');
@@ -356,12 +370,6 @@ function vgFormatDayLabel(dayLabel) {
     return dayLabel.replace(/^DAY\s+\d+:\s*/i, '').trim();
 }
 
-function vgResolveGraphic() {
-    const p = new URLSearchParams(location.search);
-    const g = (p.get('g') || p.get('graphic') || 'lower').toLowerCase();
-    return VG_GRAPHIC_ALIASES[g] || 'lower';
-}
-
 function vgResolveTheme() {
     return document.body.dataset.vmixTheme || 'kri';
 }
@@ -370,35 +378,101 @@ function vgIsVideoAsset(src) {
     return /\.(mp4|webm|mov)(\?|$)/i.test(src || '');
 }
 
-function vgSetBackground(graphic) {
-    const bg = document.getElementById('vgBg');
-    if (!bg) return;
+function vgGetBackgroundSrc(graphic) {
     const theme = VG_THEMES[vgResolveTheme()] || VG_THEMES.kri;
-    const src = theme.backgrounds[graphic];
+    return theme.backgrounds[graphic] || null;
+}
+
+function vgGetBgEl() {
+    return document.getElementById('vgBg');
+}
+
+function vgGetLayerEl() {
+    return document.getElementById('vgLayer');
+}
+
+function vgGetBgVideo() {
+    const bg = vgGetBgEl();
+    if (!bg) return null;
+    return bg.querySelector('video.vg-bg-video');
+}
+
+function vgEnsureBgVideo() {
+    const bg = vgGetBgEl();
+    if (!bg) return null;
     let video = bg.querySelector('video.vg-bg-video');
+    if (!video) {
+        video = document.createElement('video');
+        video.className = 'vg-bg-video';
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.setAttribute('aria-hidden', 'true');
+        bg.appendChild(video);
+    }
+    video.loop = false;
+    return video;
+}
+
+function vgClearPlaybackTimers() {
+    if (vgPlayback.introTimer) {
+        clearTimeout(vgPlayback.introTimer);
+        vgPlayback.introTimer = null;
+    }
+    if (vgPlayback.outroTimer) {
+        clearTimeout(vgPlayback.outroTimer);
+        vgPlayback.outroTimer = null;
+    }
+    if (vgPlayback.rewindRaf) {
+        cancelAnimationFrame(vgPlayback.rewindRaf);
+        vgPlayback.rewindRaf = null;
+    }
+    const video = vgGetBgVideo();
+    if (video && vgPlayback.onVideoTime) {
+        video.removeEventListener('timeupdate', vgPlayback.onVideoTime);
+        vgPlayback.onVideoTime = null;
+    }
+}
+
+function vgSetStageState(state) {
+    vgPlayback.state = state;
+    const stage = document.querySelector('.vg-stage');
+    if (stage) {
+        stage.dataset.vgState = state;
+    }
+}
+
+function vgShowBackground(visible) {
+    const bg = vgGetBgEl();
+    if (!bg) return;
+    bg.classList.toggle('vg-bg--visible', visible);
+    bg.classList.toggle('vg-bg--outro', vgPlayback.state === 'outro');
+}
+
+function vgShowTextLayer(visible) {
+    const layer = vgGetLayerEl();
+    if (!layer) return;
+    layer.classList.toggle('vg-layer--visible', visible);
+}
+
+function vgLoadBackgroundAsset(graphic) {
+    const bg = vgGetBgEl();
+    if (!bg) return { isVideo: false };
+    const src = vgGetBackgroundSrc(graphic);
 
     if (src && vgIsVideoAsset(src)) {
-        if (!video) {
-            video = document.createElement('video');
-            video.className = 'vg-bg-video';
-            video.loop = true;
-            video.muted = true;
-            video.playsInline = true;
-            video.autoplay = true;
-            video.setAttribute('aria-hidden', 'true');
-            bg.appendChild(video);
-        }
+        const video = vgEnsureBgVideo();
         bg.style.backgroundImage = '';
+        bg.classList.remove('vg-bg--plain');
         if (video.dataset.src !== src) {
             video.dataset.src = src;
             video.src = src;
             video.load();
         }
-        video.play().catch(() => {});
-        bg.classList.remove('vg-bg--plain');
-        return;
+        return { isVideo: true, video };
     }
 
+    const video = vgGetBgVideo();
     if (video) {
         video.pause();
         video.removeAttribute('src');
@@ -412,6 +486,199 @@ function vgSetBackground(graphic) {
         bg.style.backgroundImage = '';
         bg.classList.add('vg-bg--plain');
     }
+    return { isVideo: false };
+}
+
+function vgResetBackground() {
+    const bg = vgGetBgEl();
+    const video = vgGetBgVideo();
+    if (video) {
+        video.pause();
+        video.playbackRate = 1;
+        video.currentTime = 0;
+    }
+    if (bg) {
+        bg.style.backgroundImage = '';
+        bg.classList.remove('vg-bg--visible', 'vg-bg--outro', 'vg-bg--plain');
+    }
+}
+
+function vgHoldDelayMs(video) {
+    if (video && Number.isFinite(video.duration) && video.duration > 0) {
+        return Math.min(VG_HOLD_MS, Math.max(0, video.duration * 1000 - 80));
+    }
+    return VG_HOLD_MS;
+}
+
+function vgStartIntroPlayback(isVideo, video) {
+    vgShowBackground(true);
+    vgShowTextLayer(false);
+
+    if (isVideo && video) {
+        video.loop = false;
+        video.playbackRate = 1;
+        video.currentTime = 0;
+        const onPlay = () => {
+            vgPlayback.introTimer = setTimeout(
+                () => vgEnterHold(),
+                vgHoldDelayMs(video),
+            );
+        };
+        if (video.readyState >= 2) {
+            video.play().then(onPlay).catch(onPlay);
+        } else {
+            video.addEventListener(
+                'loadeddata',
+                () => video.play().then(onPlay).catch(onPlay),
+                { once: true },
+            );
+        }
+        return;
+    }
+
+    vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
+}
+
+function vgEnterHold() {
+    if (vgPlayback.state !== 'intro') return;
+    vgClearPlaybackTimers();
+    const video = vgGetBgVideo();
+    if (video) {
+        video.pause();
+        video.playbackRate = 1;
+    }
+    vgSetStageState('hold');
+    vgShowTextLayer(true);
+}
+
+function vgPlayVideoReverse(video, onDone) {
+    video.loop = false;
+    video.pause();
+    video.currentTime = Math.min(
+        video.duration || VG_HOLD_MS / 1000,
+        video.currentTime || VG_HOLD_MS / 1000,
+    );
+
+    const finish = () => {
+        if (vgPlayback.outroTimer) {
+            clearTimeout(vgPlayback.outroTimer);
+            vgPlayback.outroTimer = null;
+        }
+        if (vgPlayback.rewindRaf) {
+            cancelAnimationFrame(vgPlayback.rewindRaf);
+            vgPlayback.rewindRaf = null;
+        }
+        video.pause();
+        video.playbackRate = 1;
+        video.currentTime = 0;
+        if (vgPlayback.onVideoTime) {
+            video.removeEventListener('timeupdate', vgPlayback.onVideoTime);
+            vgPlayback.onVideoTime = null;
+        }
+        onDone();
+    };
+
+    const rewindStep = () => {
+        if (video.currentTime <= 0.05) {
+            finish();
+            return;
+        }
+        video.currentTime = Math.max(0, video.currentTime - 1 / 30);
+        vgPlayback.rewindRaf = requestAnimationFrame(rewindStep);
+    };
+
+    video.playbackRate = -1;
+    const rev = video.play();
+    if (rev && typeof rev.then === 'function') {
+        rev
+            .then(() => {
+                vgPlayback.onVideoTime = () => {
+                    if (video.currentTime <= 0.05) finish();
+                };
+                video.addEventListener('timeupdate', vgPlayback.onVideoTime);
+            })
+            .catch(() => {
+                video.pause();
+                video.playbackRate = 1;
+                rewindStep();
+            });
+    } else {
+        rewindStep();
+    }
+
+    vgPlayback.outroTimer = setTimeout(finish, VG_OUTRO_MS + 500);
+}
+
+function vgStartOutroPlayback(isVideo, video) {
+    vgShowTextLayer(false);
+    vgShowBackground(true);
+    const bg = vgGetBgEl();
+    if (bg) bg.classList.add('vg-bg--outro');
+
+    const done = () => {
+        vgClearPlaybackTimers();
+        vgResetToIdle();
+    };
+
+    if (isVideo && video) {
+        vgPlayVideoReverse(video, done);
+        return;
+    }
+
+    vgPlayback.outroTimer = setTimeout(done, VG_OUTRO_MS);
+}
+
+function vgResetToIdle() {
+    vgClearPlaybackTimers();
+    vgPlayback.graphic = null;
+    vgSetStageState('idle');
+    vgShowTextLayer(false);
+    vgShowBackground(false);
+    vgResetBackground();
+    const layer = vgGetLayerEl();
+    if (layer) layer.replaceChildren();
+}
+
+function vgTriggerIn(graphic) {
+    if (vgPlayback.state !== 'idle') return;
+
+    vgPlayback.graphic = graphic;
+    vgSetStageState('intro');
+    vgPrepareContent(graphic, vgGetRaceParam());
+
+    const { isVideo, video } = vgLoadBackgroundAsset(graphic);
+    vgStartIntroPlayback(isVideo, video);
+}
+
+function vgTriggerOut() {
+    if (vgPlayback.state !== 'hold') return;
+    vgSetStageState('outro');
+    const video = vgGetBgVideo();
+    vgStartOutroPlayback(!!video && vgIsVideoAsset(vgGetBackgroundSrc(vgPlayback.graphic)), video);
+}
+
+function vgPrepareContent(graphic, raceParam) {
+    const layer = vgGetLayerEl();
+    const err = document.getElementById('vgError');
+    if (!layer) return;
+
+    const race = vgFindRace(raceParam);
+
+    if (!race && graphic !== 'title') {
+        if (err) {
+            err.hidden = false;
+            err.textContent = 'No race data — check regatta code and daysheet.';
+        }
+        layer.replaceChildren();
+        return;
+    }
+    if (err) err.hidden = true;
+
+    layer.replaceChildren();
+    if (graphic === 'title') vgRenderTitle(layer, race);
+    else if (graphic === 'lower') vgRenderLower(layer, race);
+    else if (graphic === 'draw') vgRenderDraw(layer, race);
+    else if (graphic === 'results') vgRenderResults(layer, race);
 }
 
 function vgEl(tag, className, text) {
@@ -534,29 +801,66 @@ function vgRenderResults(layer, race) {
     layer.appendChild(list);
 }
 
-function vgRender(graphic, raceParam) {
-    const layer = document.getElementById('vgLayer');
-    const err = document.getElementById('vgError');
-    if (!layer) return;
+function vgRefreshHoldContent() {
+    if (vgPlayback.state === 'hold' && vgPlayback.graphic) {
+        vgPrepareContent(vgPlayback.graphic, vgGetRaceParam());
+    }
+}
 
-    vgSetBackground(graphic);
-    const race = vgFindRace(raceParam);
-
-    if (!race && graphic !== 'title') {
-        if (err) {
-            err.hidden = false;
-            err.textContent = 'No race data — check regatta code and daysheet.';
+function vgHandleRemoteTrigger(raw) {
+    if (!raw) return;
+    try {
+        const msg = JSON.parse(raw);
+        if (msg.action === 'out') {
+            vgTriggerOut();
+            return;
         }
-        layer.replaceChildren();
+        if (msg.action === 'in' && msg.graphic) {
+            const g = VG_GRAPHIC_ALIASES[msg.graphic] || msg.graphic;
+            vgTriggerIn(g);
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
+function vgBindKeyboard() {
+    document.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
+        if (e.target.closest('input, textarea, select')) return;
+        const key = e.key.toLowerCase();
+        if (key === 'o') {
+            e.preventDefault();
+            vgTriggerOut();
+            return;
+        }
+        const graphic = VG_GRAPHIC_ALIASES[key];
+        if (graphic) {
+            e.preventDefault();
+            vgTriggerIn(graphic);
+        }
+    });
+
+    window.addEventListener('storage', (e) => {
+        if (e.key === VG_LS_LIVE_RACE) vgRefreshHoldContent();
+        if (e.key === VG_LS_TRIGGER) vgHandleRemoteTrigger(e.newValue);
+    });
+}
+
+function vgBindRemoteTriggers() {
+    const params = new URLSearchParams(location.search);
+    const action = (params.get('action') || params.get('a') || '').toLowerCase();
+    if (action === 'out' || action === 'o') {
+        vgTriggerOut();
         return;
     }
-    if (err) err.hidden = true;
-
-    layer.replaceChildren();
-    if (graphic === 'title') vgRenderTitle(layer, race);
-    else if (graphic === 'lower') vgRenderLower(layer, race);
-    else if (graphic === 'draw') vgRenderDraw(layer, race);
-    else if (graphic === 'results') vgRenderResults(layer, race);
+    const g = params.get('g') || params.get('graphic');
+    if (!g) return;
+    const graphic = VG_GRAPHIC_ALIASES[g.toLowerCase()];
+    if (!graphic) return;
+    if (params.get('autoplay') === '1' || params.get('play') === '1') {
+        vgTriggerIn(graphic);
+    }
 }
 
 async function vgReload() {
@@ -574,16 +878,12 @@ async function vgReload() {
     vgState.results = vgParseResults(resultsText);
 }
 
-function vgRefreshGraphic() {
-    vgRender(vgResolveGraphic(), vgGetRaceParam());
-}
-
 async function vgInit() {
-    const graphic = vgResolveGraphic();
+    vgResetToIdle();
+    vgBindKeyboard();
 
     try {
         await vgReload();
-        vgRender(graphic, vgGetRaceParam());
     } catch (e) {
         const err = document.getElementById('vgError');
         if (err) {
@@ -593,19 +893,27 @@ async function vgInit() {
         }
     }
 
-    window.addEventListener('storage', (e) => {
-        if (e.key === VG_LS_LIVE_RACE) vgRefreshGraphic();
+    vgBindRemoteTriggers();
+
+    document.addEventListener('altitudehd:liverace', () => vgRefreshHoldContent());
+    document.addEventListener('altitudehd:vmixtrigger', (e) => {
+        vgHandleRemoteTrigger(JSON.stringify(e.detail || {}));
     });
-    document.addEventListener('altitudehd:liverace', () => vgRefreshGraphic());
 
     setInterval(async () => {
         try {
             await vgReload();
-            vgRefreshGraphic();
+            vgRefreshHoldContent();
         } catch {
             /* ignore refresh errors */
         }
     }, 60000);
 }
+
+window.VmixGraphics = {
+    triggerIn: vgTriggerIn,
+    triggerOut: vgTriggerOut,
+    getState: () => vgPlayback.state,
+};
 
 document.addEventListener('DOMContentLoaded', vgInit);
