@@ -536,7 +536,7 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
-    min-height: 59.7px;
+    min-height: 59.8px;
     column-gap: calc(28px * 0.92);
 }
 
@@ -574,7 +574,7 @@ body {
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo,
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo--empty {
-    transform: translate(-3px, -3px);
+    transform: translate(-2px, -3px);
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-crew,
