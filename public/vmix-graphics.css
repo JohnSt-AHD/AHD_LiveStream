@@ -406,7 +406,7 @@ body {
 [data-vmix-theme='kri'] .vg-layer--title {
     left: 0;
     right: 0;
-    top: 574px;
+    top: 470px;
     width: 100%;
     text-align: center;
 }
@@ -487,9 +487,16 @@ body {
     background: transparent;
     padding: 0;
     min-height: 53px;
-    column-gap: 28px;
     justify-items: start;
     align-items: center;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
+    column-gap: calc(28px * 0.92);
+}
+
+[data-vmix-theme='kri'] .vg-layer--results .vg-lane {
+    column-gap: 28px;
 }
 
 [data-vmix-theme='kri'] .vg-lane--draw,
