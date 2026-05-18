@@ -29,6 +29,43 @@
         return { left: p[0], top: p[1] };
     }
 
+    /** vMix GT Composition: Location="x,y,z" Dimensions="w,h,d" */
+    function parseLocation(location) {
+        if (!location) return null;
+        const p = String(location)
+            .split(',')
+            .map((s) => parseFloat(s.trim()));
+        if (p.length < 2 || Number.isNaN(p[0]) || Number.isNaN(p[1])) return null;
+        return { left: p[0], top: p[1] };
+    }
+
+    function parseDimensions(dimensions) {
+        if (!dimensions) return null;
+        const p = String(dimensions)
+            .split(',')
+            .map((s) => parseFloat(s.trim()));
+        if (p.length < 2 || Number.isNaN(p[0]) || Number.isNaN(p[1])) return null;
+        return { width: p[0], height: p[1] };
+    }
+
+    function brushColor(el) {
+        const brush = el.querySelector('Brush[Color]');
+        if (!brush) return null;
+        const raw = brush.getAttribute('Color');
+        if (!raw) return null;
+        const hex = String(raw).replace(/^#/, '');
+        if (hex.length === 8) {
+            const a = parseInt(hex.slice(0, 2), 16) / 255;
+            const r = parseInt(hex.slice(2, 4), 16);
+            const g = parseInt(hex.slice(4, 6), 16);
+            const b = parseInt(hex.slice(6, 8), 16);
+            if (a >= 0.99) return `rgb(${r}, ${g}, ${b})`;
+            return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`;
+        }
+        if (hex.length === 6) return `#${hex}`;
+        return colorToCss(raw);
+    }
+
     function parseDuration(raw) {
         if (raw == null || raw === '') return null;
         const s = String(raw).trim();
@@ -62,29 +99,35 @@
     }
 
     function elementPosition(el) {
+        const gtLoc = parseLocation(attr(el, 'Location'));
+        const gtDim = parseDimensions(attr(el, 'Dimensions'));
         const margin = parseMargin(attr(el, 'Margin'));
         const canvasLeft = parseFloat(attr(el, 'Canvas.Left'));
         const canvasTop = parseFloat(attr(el, 'Canvas.Top'));
-        const left = Number.isFinite(canvasLeft)
-            ? canvasLeft
-            : margin
-              ? margin.left
-              : null;
-        const top = Number.isFinite(canvasTop)
-            ? canvasTop
-            : margin
-              ? margin.top
-              : null;
+        const left = gtLoc
+            ? gtLoc.left
+            : Number.isFinite(canvasLeft)
+              ? canvasLeft
+              : margin
+                ? margin.left
+                : null;
+        const top = gtLoc
+            ? gtLoc.top
+            : Number.isFinite(canvasTop)
+              ? canvasTop
+              : margin
+                ? margin.top
+                : null;
         const props = {};
         if (left != null) props.left = px(left);
         if (top != null) props.top = px(top);
-        const w = attr(el, 'Width');
-        const h = attr(el, 'Height');
+        const w = gtDim ? gtDim.width : attr(el, 'Width');
+        const h = gtDim ? gtDim.height : attr(el, 'Height');
         if (w) props.width = px(w);
         if (h) props.height = px(h);
         const fs = attr(el, 'FontSize');
         if (fs) props.fontSize = px(fs);
-        const fg = colorToCss(attr(el, 'Foreground'));
+        const fg = colorToCss(attr(el, 'Foreground')) || brushColor(el);
         if (fg) props.color = fg;
         return props;
     }
@@ -92,16 +135,37 @@
     function guessRegionId(name, graphic) {
         if (!name) return null;
         const n = String(name);
-        for (const [regionId, re] of Object.entries(REGION_ALIASES)) {
-            if (!regionId.startsWith(graphic.split('-')[0]) && graphic.includes('-')) {
-                if (!regionId.includes(graphic.replace(/-.*/, '')) && graphic !== 'lower') {
-                    /* allow cross-match for draw/results prefixes */
-                }
+
+        if (/^logo_/i.test(n)) {
+            return graphic === 'results' ? 'results-logo' : 'draw-logo';
+        }
+        if (/^lane\s*\d/i.test(n) || /^lane\d/i.test(n)) {
+            if (graphic === 'results') return 'results-crew';
+            if (graphic === 'draw') return 'draw-crew';
+        }
+        if (n === 'Race Title') {
+            return graphic === 'results' ? 'results-head' : 'draw-head';
+        }
+        if (n === 'Event Name') return 'lower-event';
+        if (n === 'Event no') return 'lower-race';
+        if (n === 'Final1' || n === 'Final') {
+            return graphic === 'lower' ? 'lower-meta' : null;
+        }
+        if (n === 'Race No' || n === 'Race Ab' || n === 'Race Ab1') {
+            if (graphic === 'draw' || graphic === 'results') {
+                return graphic === 'results' ? 'results-head' : 'draw-head';
             }
+        }
+        if (n === 'Event abr') return 'lower-meta';
+        if (/^time_/i.test(n)) return graphic === 'results' ? 'results-crew' : null;
+
+        for (const [regionId, re] of Object.entries(REGION_ALIASES)) {
             if (re.test(n)) return regionId;
         }
         if (/head/i.test(n) && graphic === 'draw') return 'draw-head';
         if (/head/i.test(n) && graphic === 'results') return 'results-head';
+        if (/^lane/i.test(n) && graphic === 'draw') return 'draw-lanes';
+        if (/^lane/i.test(n) && graphic === 'results') return 'results-lanes';
         return null;
     }
 
@@ -140,6 +204,19 @@
                 durationSec: dur,
                 endSec: dur != null ? begin + dur : null,
                 tag: 'Storyboard',
+            });
+        });
+        doc.querySelectorAll('Fade, Fly').forEach((anim) => {
+            const target = attr(anim, 'Object');
+            if (!target) return;
+            const delay = parseFloat(attr(anim, 'Delay'));
+            const beginSec = Number.isFinite(delay) ? delay : 0;
+            if (!out[target]) out[target] = [];
+            out[target].push({
+                beginSec,
+                durationSec: null,
+                endSec: null,
+                tag: anim.tagName,
             });
         });
         return out;
@@ -187,7 +264,10 @@
         const unmapped = [];
 
         for (const el of parsed.elements) {
-            const regionId = guessRegionId(el.name, graphic);
+            let regionId = guessRegionId(el.name, graphic);
+            if (!regionId && /^logo_1$/i.test(el.name) && (graphic === 'draw' || graphic === 'results')) {
+                regionId = graphic === 'results' ? 'results-lanes' : 'draw-lanes';
+            }
             if (!regionId) {
                 unmapped.push(el);
                 continue;

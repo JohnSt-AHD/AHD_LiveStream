@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0" Locked="False">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image2" Dimensions="194.5,90,0" Location="1722.5,4,0">
+          <Image.Bitmap>
+            <Bitmap Source="79fcd375-d670-46c5-a4f6-75ebc2d937e9\U15s-Livestream-screen-no-play-V2.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Image1" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="30b56ddc-11e4-4fba-90fc-f31ee4de4a90\Milfor_Draw.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_1" Dimensions="37,39,0" Location="273,386,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_2" Dimensions="37,39,0" Location="285,463,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_3" Dimensions="37,39,0" Location="298.5,540,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_4" Dimensions="37,39,0" Location="310,617,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_5" Dimensions="37,39,0" Location="322,693,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_6" Dimensions="37,39,0" Location="335.5,770,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_7" Dimensions="37,39,0" Location="347,847,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Logo_8" Dimensions="37,39,0" Location="359,925,0">
+          <Image.Bitmap>
+            <Bitmap Source="6b10a3e4-bd63-423f-879a-a14c7ce988de\ACG Strathallan College - STLN.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="Final" Dimensions="118,42,0" Location="167,258,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Race No" Dimensions="74,42,0" Location="310,258,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Race Ab" Dimensions="122,42,0" Location="384,258,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Race Title" Dimensions="812,109,0" Location="140,134,0" Text="Womens Prem Quad" FontFamily="Inter" FontSize="42" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 1" Dimensions="568,53,0" Location="335.5,378,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 2" Dimensions="723,53,0" Location="347,454,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 3" Dimensions="723,53,0" Location="359,531.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 4" Dimensions="723,53,0" Location="372.5,609,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane5" Dimensions="723,53,0" Location="384,685,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane6" Dimensions="723,53,0" Location="396,762,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane7" Dimensions="723,53,0" Location="409.5,839.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 8" Dimensions="723,53,0" Location="421.5,916.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Race Ab1" Dimensions="501,42,0" Location="546,250,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 9" Dimensions="723,53,0" Location="444.5,989,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 10" Dimensions="723,53,0" Location="1167.5,989,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Sponsor" Dimensions="227.5,39,0" Location="1621,-6,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_1" Dimensions="201,53,0" Location="911.5,379,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_2" Dimensions="201,53,0" Location="924.5,454,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_3" Dimensions="201,53,0" Location="931.5,531.5,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_4" Dimensions="201,53,0" Location="943.5,609,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_5" Dimensions="201,53,0" Location="952,685,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_6" Dimensions="201,53,0" Location="966.5,762,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_7" Dimensions="201,53,0" Location="975.5,833,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time_8" Dimensions="201,53,0" Location="988,904,0" Text="7:00:00" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+  <Storyboard>
+    <Storyboard.Animations>
+      <Fly Object="Image2" Interpolation="CubicEasingInOut" Direction="Right" />
+      <Fade Object="Race Ab1" Delay="3" Interpolation="CubicEasingInOut" />
+      <Fly Object="Lane5" Delay="0.9" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fly Object="Lane 8" Delay="1.2" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Lane 8" Delay="1.2" Interpolation="CubicEasingIn" />
+      <Fly Object="Lane7" Delay="1.1" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fly Object="Lane6" Delay="1" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Lane6" Interpolation="CubicEasingIn" />
+      <Fly Object="Lane 4" Delay="0.8" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fly Object="Lane 4" Delay="0.8" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Logo_8" Delay="1.5" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_7" Delay="1.4" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_6" Delay="1.3" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_5" Delay="1.2" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_4" Delay="1.1" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_3" Delay="1" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_2" Delay="0.9" Interpolation="CubicEasingIn" />
+      <Fade Object="Logo_1" Delay="0.8" Interpolation="CubicEasingIn" />
+      <Fly Object="Lane 3" Delay="0.7" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Lane 3" Delay="0.7" Interpolation="CubicEasingIn" />
+      <Fly Object="Lane 1" Delay="0.5" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fly Object="Lane 2" Delay="0.6" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Lane 2" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fade Object="Race Ab" Delay="0.5" />
+      <Fade Object="Race No" Delay="0.5" />
+      <Fade Object="Final" Delay="0.5" />
+      <Fly Object="Race Title" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Race Title" Interpolation="CubicEasingIn" />
+      <Fade Object="Lane 1" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Lane 9" Delay="1.2" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Lane 9" Delay="1.2" Interpolation="CubicEasingIn" />
+      <Fly Object="Lane 10" Delay="1.2" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Lane 10" Delay="1.2" Interpolation="CubicEasingIn" />
+      <Fade Object="Sponsor" Delay="0.5" />
+      <Fly Object="Time_1" Delay="0.5" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_1" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_2" Delay="0.6" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_2" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_3" Delay="0.7" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_3" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_4" Delay="0.8" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_4" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_5" Delay="0.9" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_5" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_6" Delay="1" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_6" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_7" Delay="1.1" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_7" Delay="0.5" Interpolation="CubicEasingIn" />
+      <Fly Object="Time_8" Delay="1.2" Interpolation="CubicEasingIn" Direction="Right" />
+      <Fade Object="Time_8" Delay="0.5" Interpolation="CubicEasingIn" />
+    </Storyboard.Animations>
+  </Storyboard>
+  <Storyboard Type="TransitionOut">
+    <Storyboard.Animations>
+      <Fly Object="Image2" Delay="1.3" Interpolation="CubicEasingInOut" Direction="Right" />
+      <Fade Object="Image1" />
+      <Fade Object="Logo_1" />
+      <Fade Object="Logo_2" />
+      <Fade Object="Logo_3" />
+      <Fade Object="Logo_4" />
+      <Fade Object="Logo_5" />
+      <Fade Object="Logo_6" />
+      <Fade Object="Logo_7" />
+      <Fade Object="Logo_8" />
+      <Fade Object="Final" />
+      <Fade Object="Race No" />
+      <Fade Object="Race Ab" />
+      <Fade Object="Race Title" />
+      <Fade Object="Lane 1" />
+      <Fade Object="Lane 2" />
+      <Fade Object="Lane 3" />
+      <Fade Object="Lane 4" />
+      <Fade Object="Lane5" />
+      <Fade Object="Lane6" />
+      <Fade Object="Lane7" />
+      <Fade Object="Lane 8" />
+      <Fade Object="Race Ab1" />
+      <Fade Object="Lane 9" />
+      <Fade Object="Lane 10" />
+      <Fade Object="Sponsor" />
+      <Fade Object="Time_1" />
+      <Fade Object="Time_2" />
+      <Fade Object="Time_3" />
+      <Fade Object="Time_4" />
+      <Fade Object="Time_5" />
+      <Fade Object="Time_6" />
+      <Fade Object="Time_7" />
+      <Fade Object="Time_8" />
+    </Storyboard.Animations>
+  </Storyboard>
+</Composition>

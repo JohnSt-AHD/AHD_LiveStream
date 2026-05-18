@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Back" Visible="False" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="8aec4d0b-c75a-4e03-9a94-9ebc8d83773b\Milford Lt.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="Event Name" Dimensions="615,64,0" Location="287,996,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Final" Dimensions="131,36,0" Location="270,946,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Event no" Dimensions="77,36,0" Location="416,946,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Event abr" Dimensions="122,36,0" Location="493,946,0" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Final1" Dimensions="179,38,0" Location="657,958,0" Text="Progression" FontFamily="Inter" FontSize="20" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+  <Storyboard>
+    <Storyboard.Animations>
+      <Fade Object="Event abr" />
+      <Fade Object="Event no" />
+      <Fade Object="Final" />
+      <Fade Object="Event Name" />
+      <Fade Object="Final1" />
+    </Storyboard.Animations>
+  </Storyboard>
+</Composition>

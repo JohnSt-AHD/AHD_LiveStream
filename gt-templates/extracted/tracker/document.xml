@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image1" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="9513609a-7559-4982-9350-3d8a11049665\Milford_Tracker.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock1" Dimensions="163,51,0" Location="1198,1011,0" FontFamily="Inter" FontSize="28" FontWeight="Bold" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>

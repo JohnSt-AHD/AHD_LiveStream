@@ -27,6 +27,51 @@
                 },
             },
         },
+        /* Positions from Milford GT templates (1920×1080) in gt-templates/extracted/ */
+        'rnz-milford': {
+            draw: {
+                'draw-head': { left: '140px', top: '134px', width: '812px' },
+                'draw-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
+                'draw-logo': { width: '37px', height: '39px' },
+                'draw-crew': {},
+            },
+            results: {
+                'results-head': { left: '140px', top: '134px', width: '812px' },
+                'results-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
+                'results-logo': { width: '37px', height: '39px' },
+                'results-crew': {},
+            },
+            lower: {
+                'lower-meta': { left: '270px', top: '946px', fontSize: '20px' },
+                'lower-race': { left: '416px', top: '946px', fontSize: '20px' },
+                'lower-event': {
+                    left: '287px',
+                    top: '996px',
+                    width: '615px',
+                    fontSize: '36px',
+                    color: 'rgb(255, 255, 255)',
+                },
+            },
+        },
+        'beachsprints-milford': {
+            draw: {
+                'draw-head': { left: '140px', top: '134px', width: '812px' },
+                'draw-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
+                'draw-logo': { width: '37px', height: '39px' },
+                'draw-crew': {},
+            },
+            lower: {
+                'lower-meta': { left: '270px', top: '946px', fontSize: '20px' },
+                'lower-race': { left: '416px', top: '946px', fontSize: '20px' },
+                'lower-event': {
+                    left: '287px',
+                    top: '996px',
+                    width: '615px',
+                    fontSize: '36px',
+                    color: 'rgb(255, 255, 255)',
+                },
+            },
+        },
     };
 
     const STYLE_KEYS = [

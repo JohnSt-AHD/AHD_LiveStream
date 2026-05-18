@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image3" Visible="False" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="d7f04ee3-1399-4a52-99ab-e3f56fd463aa\Leader_shot.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Image1" Visible="False" Dimensions="1994,1109,0" Location="-32,0,0">
+          <Image.Bitmap>
+            <Bitmap Source="7e86d4a6-d4b1-4d67-b065-ced5958a77b0\Leader.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Image2" Dimensions="67,60,0" Location="1367.5,110,0">
+          <Image.Bitmap>
+            <Bitmap Source="9e5b4037-c6d8-4e4d-af33-9f911376c458\Chilton St James School - CHIL.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock1" Dimensions="381,51,0" Location="1456.5,119,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="TextBlock2" Dimensions="92,39,0" Location="1573,71,0" FontSize="16" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="TextBlock3" Dimensions="126.5,39,0" Location="1690,71,0" FontSize="20" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>

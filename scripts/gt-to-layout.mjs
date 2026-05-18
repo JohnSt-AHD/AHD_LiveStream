@@ -49,6 +49,20 @@ function parseMargin(margin) {
     return { left: p[0], top: p[1] };
 }
 
+function parseLocation(location) {
+    if (!location) return null;
+    const p = location.split(',').map((s) => parseFloat(s.trim()));
+    if (p.length < 2 || Number.isNaN(p[0]) || Number.isNaN(p[1])) return null;
+    return { left: p[0], top: p[1] };
+}
+
+function parseDimensions(dimensions) {
+    if (!dimensions) return null;
+    const p = dimensions.split(',').map((s) => parseFloat(s.trim()));
+    if (p.length < 2 || Number.isNaN(p[0]) || Number.isNaN(p[1])) return null;
+    return { width: p[0], height: p[1] };
+}
+
 function parseGtXml(xml) {
     const elements = [];
     const re = /<(\w+)([^>]*?)(?:\/>|>([\s\S]*?)<\/\1>)/g;
@@ -59,17 +73,25 @@ function parseGtXml(xml) {
         const attrs = m[2];
         const nameM = attrs.match(/(?:x:)?Name="([^"]+)"/);
         const marginM = attrs.match(/Margin="([^"]+)"/);
+        const locM = attrs.match(/Location="([^"]+)"/);
+        const dimM = attrs.match(/Dimensions="([^"]+)"/);
         const wM = attrs.match(/Width="([^"]+)"/);
         const hM = attrs.match(/Height="([^"]+)"/);
         const fgM = attrs.match(/Foreground="([^"]+)"/);
+        const fsM = attrs.match(/FontSize="([^"]+)"/);
         const margin = marginM ? parseMargin(marginM[1]) : null;
+        const loc = locM ? parseLocation(locM[1]) : null;
+        const dim = dimM ? parseDimensions(dimM[1]) : null;
         const props = {};
-        if (margin) {
-            props.left = `${margin.left}px`;
-            props.top = `${margin.top}px`;
-        }
-        if (wM) props.width = wM[1].endsWith('px') ? wM[1] : `${wM[1]}px`;
-        if (hM) props.height = hM[1].endsWith('px') ? hM[1] : `${hM[1]}px`;
+        const left = loc ? loc.left : margin?.left;
+        const top = loc ? loc.top : margin?.top;
+        if (left != null) props.left = `${left}px`;
+        if (top != null) props.top = `${top}px`;
+        const w = dim ? dim.width : wM?.[1];
+        const h = dim ? dim.height : hM?.[1];
+        if (w != null) props.width = String(w).endsWith('px') ? w : `${w}px`;
+        if (h != null) props.height = String(h).endsWith('px') ? h : `${h}px`;
+        if (fsM) props.fontSize = fsM[1].endsWith('px') ? fsM[1] : `${fsM[1]}px`;
         if (fgM && /^#|^rgb/i.test(fgM[1])) props.color = fgM[1];
         if (!nameM && !props.left) continue;
         elements.push({ name: nameM?.[1] || tag, tag, props });
