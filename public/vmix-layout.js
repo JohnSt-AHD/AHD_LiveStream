@@ -15,10 +15,11 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lanes': {
-                    left: '80px',
-                    top: '365px',
+                    left: '209px',
+                    top: '409px',
                     gap: 'calc(4.5px * 0.98 * 1.05)',
                     color: 'rgb(255, 255, 255)',
+                    scale: 0.915,
                 },
                 'draw-logo': {},
                 'draw-crew': {

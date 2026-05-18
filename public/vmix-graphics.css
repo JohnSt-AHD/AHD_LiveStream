@@ -472,11 +472,13 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-draw-lanes {
-    left: 80px;
-    top: 365px;
+    left: 209px;
+    top: 409px;
     width: 860px;
     gap: calc(4.5px * 0.98 * 1.05);
     color: #fff;
+    transform: scale(0.915);
+    transform-origin: top left;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
