@@ -22,7 +22,7 @@ const VG_MILFORD_DRAW_RESULTS_HOLD_MS = 6000;
 const VG_OUTRO_MS = 3000;
 const VG_KRI_FADE_MS = 650;
 const VG_MILFORD_FADE_MS = 500;
-const VG_REVERSE_FPS = 30;
+const VG_REVERSE_NATIVE_PROBE_MS = 280;
 
 const vgPlayback = {
     state: 'idle',
@@ -796,25 +796,30 @@ function vgEnterHold() {
     }
 }
 
+function vgEaseOutCubic(x) {
+    return 1 - (1 - x) ** 3;
+}
+
+function vgReverseFinish(video, onDone, finishedRef) {
+    if (finishedRef.done) return;
+    finishedRef.done = true;
+    vgClearPlaybackTimers();
+    video.pause();
+    video.playbackRate = 1;
+    try {
+        video.currentTime = 0;
+    } catch {
+        /* ignore */
+    }
+    onDone();
+}
+
 /**
- * Reverse WebM by stepping currentTime (reliable in vMix / embedded Chromium).
- * Plays at real-time from hold point back to 0, minimum VG_OUTRO_MS total.
+ * Smooth reverse: try native playbackRate -1, else seek on each decoded frame.
  */
 function vgPlayVideoReverse(video, onDone) {
-    let finished = false;
-    const finish = () => {
-        if (finished) return;
-        finished = true;
-        vgClearPlaybackTimers();
-        video.pause();
-        video.playbackRate = 1;
-        try {
-            video.currentTime = 0;
-        } catch {
-            /* ignore */
-        }
-        onDone();
-    };
+    const finishedRef = { done: false };
+    const finish = () => vgReverseFinish(video, onDone, finishedRef);
 
     const startTime = vgGetVideoOutroStartTime(video);
     if (startTime <= 0.02) {
@@ -822,56 +827,116 @@ function vgPlayVideoReverse(video, onDone) {
         return;
     }
 
+    const rewindMs = Math.max(VG_OUTRO_MS, startTime * 1000);
     video.loop = false;
     video.muted = true;
-    video.playbackRate = 1;
 
-    const steps = Math.max(1, Math.ceil(startTime * VG_REVERSE_FPS));
-    const stepSize = startTime / steps;
-    const rewindMs = Math.max(VG_OUTRO_MS, (startTime * 1000));
-    const stepDelay = rewindMs / steps;
-    let step = 0;
+    vgPlayback.outroTimer = setTimeout(finish, rewindMs + 800);
 
-    const seekTo = (t) => {
-        try {
-            video.currentTime = Math.max(0, t);
-        } catch {
-            /* ignore seek errors */
+    const startSmoothSeek = () => {
+        if (finishedRef.done) return;
+        video.removeEventListener('timeupdate', onNativeTime);
+        video.pause();
+        video.playbackRate = 1;
+        vgPlayVideoReverseSmoothSeek(video, startTime, rewindMs, finish, finishedRef);
+    };
+
+    const onNativeTime = () => {
+        if (finishedRef.done) return;
+        if (video.currentTime <= 0.05) {
+            finish();
         }
     };
 
-    const runStep = () => {
-        if (finished) return;
-        const t = Math.max(0, startTime - step * stepSize);
-        seekTo(t);
-        step += 1;
-        if (t <= 0.02 || step > steps) {
-            seekTo(0);
+    const tryNativeReverse = () => {
+        try {
+            video.currentTime = startTime;
+        } catch {
+            startSmoothSeek();
+            return;
+        }
+        video.playbackRate = -1;
+        vgPlayback.onVideoTime = onNativeTime;
+        video.addEventListener('timeupdate', onNativeTime);
+
+        const probeStart = startTime;
+
+        const playPromise = video.play();
+        const afterPlay = () => {
+            setTimeout(() => {
+                if (finishedRef.done) return;
+                const moved =
+                    video.playbackRate < 0 &&
+                    video.currentTime < probeStart - 0.04;
+                if (!moved) {
+                    startSmoothSeek();
+                }
+            }, VG_REVERSE_NATIVE_PROBE_MS);
+        };
+
+        if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.then(afterPlay).catch(startSmoothSeek);
+        } else {
+            afterPlay();
+        }
+    };
+
+    if (video.readyState >= 1) {
+        tryNativeReverse();
+    } else {
+        video.addEventListener('loadeddata', tryNativeReverse, { once: true });
+    }
+}
+
+/** Seek chain paced to seeked events — avoids overlapping jumps in vMix. */
+function vgPlayVideoReverseSmoothSeek(video, startTime, rewindMs, onDone, finishedRef) {
+    const finish = () => vgReverseFinish(video, onDone, finishedRef);
+    const t0 = performance.now();
+    let pendingSeek = false;
+
+    const scheduleSeek = () => {
+        if (finishedRef.done || pendingSeek) return;
+
+        const progress = Math.min(1, (performance.now() - t0) / rewindMs);
+        const t = Math.max(0, startTime * (1 - vgEaseOutCubic(progress)));
+
+        if (progress >= 1) {
+            try {
+                video.currentTime = 0;
+            } catch {
+                /* ignore */
+            }
             finish();
             return;
         }
-        vgPlayback.rewindStepTimer = setTimeout(runStep, stepDelay);
+
+        pendingSeek = true;
+        const onSeeked = () => {
+            video.removeEventListener('seeked', onSeeked);
+            pendingSeek = false;
+            if (finishedRef.done) return;
+            vgPlayback.rewindRaf = requestAnimationFrame(scheduleSeek);
+        };
+        video.addEventListener('seeked', onSeeked, { once: true });
+
+        try {
+            if (Math.abs(video.currentTime - t) > 0.001) {
+                video.currentTime = t;
+            } else {
+                onSeeked();
+            }
+        } catch {
+            onSeeked();
+        }
     };
 
-    const begin = () => {
-        seekTo(startTime);
-        runStep();
-    };
-
-    seekTo(startTime);
-    const playPromise = video.play();
-    if (playPromise && typeof playPromise.then === 'function') {
-        playPromise
-            .then(() => {
-                video.pause();
-                begin();
-            })
-            .catch(begin);
-    } else {
-        begin();
+    video.playbackRate = 1;
+    try {
+        video.currentTime = startTime;
+    } catch {
+        /* ignore */
     }
-
-    vgPlayback.outroTimer = setTimeout(finish, rewindMs + 600);
+    vgPlayback.rewindRaf = requestAnimationFrame(scheduleSeek);
 }
 
 function vgStartOutroPlayback(isVideo, video) {
