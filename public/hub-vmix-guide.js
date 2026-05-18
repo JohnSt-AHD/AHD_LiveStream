@@ -109,6 +109,21 @@ function hubRenderVmixGuide() {
         mapNote.innerHTML =
             '<strong>Speed overlay (<code>g</code>):</strong> on the <a href="live-map.html">fleet map</a>, set device + start/finish markers, open Speed page once — then use <code>g</code> on <a href="vmix-rnz-milford.html">Milford vMix</a>.';
         examples.appendChild(mapNote);
+
+        const devNote = document.createElement('p');
+        devNote.className = 'hub-vmix-map-note';
+        const devLinks = Object.entries(VMIX_PAGES)
+            .map(([theme, page]) => {
+                const u = new URL(hubVmixBaseUrl(page));
+                u.searchParams.set('dev', '1');
+                u.searchParams.set('g', 'd');
+                u.searchParams.set('regatta', document.getElementById('hubRegattaCode')?.value || 'mads2026');
+                u.searchParams.set('race', race);
+                return `<a href="${u.href}" target="_blank" rel="noopener">${theme} layout editor</a>`;
+            })
+            .join(' · ');
+        devNote.innerHTML = `<strong>Layout dev mode:</strong> drag text and logos into place, then save (${devLinks}). Uses this browser’s local storage — vMix on the same PC picks up saved positions.`;
+        examples.appendChild(devNote);
     }
 }
 

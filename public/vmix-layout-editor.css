@@ -1,0 +1,129 @@
+body.vg-layout-dev {
+    cursor: default;
+}
+
+body.vg-layout-dev .vg-layer--visible {
+    animation: none;
+    opacity: 1;
+}
+
+body.vg-layout-dev .vg-stage[data-vg-state='hold'] .vg-bg--visible:not(.vg-bg--outro) {
+    animation: none;
+    opacity: 1;
+}
+
+body.vg-layout-dev [data-vg-layout],
+body.vg-layout-dev [data-vg-layout-target] {
+    outline: 2px dashed rgba(0, 230, 255, 0.85);
+    outline-offset: 2px;
+    cursor: move;
+}
+
+body.vg-layout-dev [data-vg-layout].vg-layout-selected,
+body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
+    outline-color: #ff7a18;
+    outline-width: 3px;
+}
+
+.vg-layout-panel {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: auto;
+    right: 16px;
+    bottom: 16px;
+    width: min(420px, calc(100vw - 32px));
+    max-height: min(520px, calc(100vh - 32px));
+    overflow: auto;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(8, 18, 32, 0.94);
+    border: 1px solid rgba(0, 230, 255, 0.45);
+    color: #e8f4ff;
+    font: 13px/1.4 'Segoe UI', system-ui, sans-serif;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+.vg-layout-panel h2 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #7dd3fc;
+}
+
+.vg-layout-panel p {
+    margin: 0 0 10px;
+    opacity: 0.88;
+    font-size: 12px;
+}
+
+.vg-layout-panel label {
+    display: block;
+    margin: 8px 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.vg-layout-panel select,
+.vg-layout-panel input {
+    width: 100%;
+    padding: 7px 9px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.vg-layout-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.vg-layout-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.vg-layout-actions button {
+    flex: 1 1 auto;
+    min-width: 88px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.vg-layout-actions button.primary {
+    background: #0ea5e9;
+    color: #041018;
+}
+
+.vg-layout-actions button.secondary {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.vg-layout-actions button.danger {
+    background: rgba(220, 38, 38, 0.85);
+    color: #fff;
+}
+
+.vg-layout-status {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #86efac;
+    min-height: 1.2em;
+}
+
+.vg-layout-status--err {
+    color: #fca5a5;
+}

@@ -697,6 +697,7 @@ function vgEnterHold() {
             vgShowBackground(true);
         }
         vgShowTextLayer(true);
+        vgApplySavedLayout(vgPlayback.graphic);
     }
 }
 
@@ -856,6 +857,14 @@ function vgPrepareContent(graphic, raceParam) {
     else if (graphic === 'lower') vgRenderLower(layer, race);
     else if (graphic === 'draw') vgRenderDraw(layer, race);
     else if (graphic === 'results') vgRenderResults(layer, race);
+
+    vgApplySavedLayout(graphic);
+}
+
+function vgApplySavedLayout(graphic) {
+    const theme = document.body?.dataset?.vmixTheme;
+    if (!theme || !graphic || !window.VmixLayout) return;
+    window.VmixLayout.apply(theme, graphic);
 }
 
 function vgEl(tag, className, text) {
@@ -867,6 +876,7 @@ function vgEl(tag, className, text) {
 
 function vgRenderTitle(layer, race) {
     layer.className = 'vg-layer vg-layer--title';
+    layer.dataset.vgLayout = 'title';
     const code = vgState.regattaCode.toUpperCase();
     const day = race
         ? vgFormatDayLabel(race.dayLabel)
@@ -879,6 +889,7 @@ function vgRenderTitle(layer, race) {
 
 function vgRenderLower(layer, race) {
     layer.className = 'vg-layer vg-layer--lower';
+    layer.dataset.vgLayout = 'lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const meta = [race.round, race.progression].filter(Boolean).join(' · ');
     if (meta) layer.appendChild(vgEl('p', 'vg-lower-meta', meta));
@@ -916,6 +927,11 @@ function vgBuildLaneRow(entry, lookup, mode) {
         img.className = 'vg-lane-logo';
         img.src = info.logoUrl;
         img.alt = '';
+        if (mode === 'draw') {
+            img.dataset.vgLayoutTarget = 'draw-logo';
+        } else {
+            img.dataset.vgLayoutTarget = 'results-logo';
+        }
         li.appendChild(img);
     } else {
         li.appendChild(vgEl('span', 'vg-lane-logo vg-lane-logo--empty', '—'));
@@ -944,9 +960,11 @@ function vgRenderDraw(layer, race) {
         ),
     );
     head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+    head.dataset.vgLayout = 'draw-head';
     layer.appendChild(head);
 
     const list = vgEl('ul', 'vg-draw-lanes');
+    list.dataset.vgLayout = 'draw-lanes';
     for (const lane of race.lanes) {
         if (!lane.code) continue;
         list.appendChild(
@@ -971,10 +989,12 @@ function vgRenderResults(layer, race) {
         vgEl('p', 'vg-draw-meta', `Race ${race.race} · ${race.round} · Results`),
     );
     head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+    head.dataset.vgLayout = 'results-head';
     layer.appendChild(head);
 
     const result = vgState.results.get(race.raceNum);
     const list = vgEl('ul', 'vg-draw-lanes vg-draw-lanes--results');
+    list.dataset.vgLayout = 'results-lanes';
     if (result?.placings?.length) {
         for (const p of result.placings) {
             const laneRef = { lane: p.place, code: p.competitor };
@@ -987,6 +1007,7 @@ function vgRenderResults(layer, race) {
                         time: p.time,
                     },
                     vgState.lookup,
+                    'results',
                 ),
             );
         }
@@ -1131,11 +1152,28 @@ async function vgInit() {
     }, 60000);
 }
 
+/** Dev layout editor (?dev=1) — show graphic on hold with background + text visible. */
+function vgDevPreviewHold(graphic) {
+    vgClearPlaybackTimers();
+    vgPlayback.graphic = graphic;
+    vgPrepareContent(graphic, vgGetRaceParam());
+    const { isVideo, video } = vgLoadBackgroundAsset(graphic);
+    vgSetStageState('hold');
+    vgShowBackground(true);
+    vgShowTextLayer(true);
+    if (isVideo && video) {
+        vgPauseVideoAtHoldPoint(video);
+    }
+    vgApplySavedLayout(graphic);
+}
+
 window.VmixGraphics = {
     triggerIn: vgTriggerIn,
     triggerOut: vgTriggerOut,
     triggerClear: vgTriggerClear,
     getState: () => vgPlayback.state,
+    devPreviewHold: vgDevPreviewHold,
 };
+window.AltitudeHdVmix = window.VmixGraphics;
 
 document.addEventListener('DOMContentLoaded', vgInit);
