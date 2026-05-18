@@ -5,6 +5,32 @@
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v1';
 
+    /** Baked-in layout defaults (localStorage overrides per region). */
+    const DEFAULT_LAYOUTS = {
+        kri: {
+            draw: {
+                'draw-head': {
+                    left: '171px',
+                    top: '274px',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-lanes': {
+                    left: '247px',
+                    top: '400px',
+                    transform: 'scale(0.93) translate(131px, 19px)',
+                    color: 'rgb(255, 255, 255)',
+                    scale: 0.93,
+                },
+                'draw-logo': {
+                    transform: 'translate(0, 25px)',
+                },
+                'draw-crew': {
+                    color: 'rgb(255, 255, 255)',
+                },
+            },
+        },
+    };
+
     const STYLE_KEYS = [
         'left',
         'top',
@@ -94,10 +120,16 @@
         }
     }
 
+    function getRegions(theme, graphic) {
+        const defaults = DEFAULT_LAYOUTS[theme]?.[graphic] || {};
+        const saved = readAll()[theme]?.[graphic] || {};
+        return { ...defaults, ...saved };
+    }
+
     function apply(theme, graphic) {
         if (!theme || !graphic) return;
-        const regions = readAll()[theme]?.[graphic];
-        if (!regions) return;
+        const regions = getRegions(theme, graphic);
+        if (!Object.keys(regions).length) return;
 
         for (const [id, props] of Object.entries(regions)) {
             if (id.endsWith('-logo') || id.endsWith('-crew')) {
@@ -122,9 +154,11 @@
 
     global.VmixLayout = {
         LS_KEY,
+        DEFAULT_LAYOUTS,
         readAll,
         writeAll,
         getRegion,
+        getRegions,
         setRegion,
         clearGraphic,
         apply,

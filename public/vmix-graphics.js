@@ -1112,14 +1112,14 @@ function vgRenderDraw(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--draw');
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const head = vgEl('div', 'vg-draw-head');
-    head.appendChild(
-        vgEl(
-            'p',
-            'vg-draw-meta',
-            `Race ${race.race} · ${race.round}${race.division ? ` · Div ${race.division}` : ''}`,
-        ),
-    );
-    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+    const metaText = `Race ${race.race} · ${race.round}${race.division ? ` · Div ${race.division}` : ''}`;
+    if (vgIsKriTheme()) {
+        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
+    } else {
+        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
+        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+    }
     head.dataset.vgLayout = 'draw-head';
     layer.appendChild(head);
 
