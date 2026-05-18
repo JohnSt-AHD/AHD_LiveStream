@@ -478,21 +478,32 @@ body {
     left: 253px;
     top: 434px;
     width: 900px;
-    gap: 10px;
     color: #fff;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-lanes {
+    gap: 0;
+}
+
+[data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {
+    gap: 10px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane,
 [data-vmix-theme='kri'] .vg-layer--results .vg-lane {
     background: transparent;
     padding: 0;
-    min-height: 53px;
     justify-items: start;
     align-items: center;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
+    min-height: 58px;
     column-gap: calc(28px * 0.92);
+}
+
+[data-vmix-theme='kri'] .vg-layer--results .vg-lane {
+    min-height: 53px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-lane {

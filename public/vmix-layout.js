@@ -20,7 +20,7 @@
                     left: '253px',
                     top: '434px',
                     width: '900px',
-                    gap: '10px',
+                    gap: '0',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-logo': { width: '37px', height: '35px' },
