@@ -401,7 +401,17 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-draw-head {
+    left: calc(152px - 2vw);
     top: 212px;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-meta {
+    font-size: 21.6px;
+    margin-bottom: 9px;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-event {
+    font-size: 32.4px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-head {
@@ -409,15 +419,27 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-draw-lanes {
-    left: 190px;
+    left: calc(190px - 2vw);
     top: 408px;
     width: 860px;
-    gap: 5px;
+    gap: 4.5px;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
+    min-height: 54.9px;
+    column-gap: 10.8px;
+    grid-template-columns: 52px minmax(0, 1fr);
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo,
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo--empty {
+    width: 48.6px;
+    height: 48.6px;
     transform: translate(5vw, 1vh);
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-club {
+    font-size: 21.6px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {
