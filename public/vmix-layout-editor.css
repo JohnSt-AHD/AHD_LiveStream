@@ -140,3 +140,22 @@ body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
 .vg-layout-status--err {
     color: #fca5a5;
 }
+
+.vg-layout-gt-import {
+    margin: 12px 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.vg-layout-gt-import label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #cbd5e1;
+}
+
+.vg-layout-gt-import input[type='file'] {
+    width: 100%;
+    font-size: 12px;
+    color: #e2e8f0;
+}

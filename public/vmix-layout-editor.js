@@ -350,6 +350,10 @@
                 <div><label>Scale</label><input data-field="scale" type="number" step="0.05" min="0.5" max="1.5"></div>
                 <div class="vg-layout-field-color"><label>Text colour</label><input data-field="color" type="color"></div>
             </div>
+            <div class="vg-layout-gt-import">
+                <label for="vgGtFile">Import GT template (.gtxml / .gtzip / .gt)</label>
+                <input type="file" id="vgGtFile" accept=".gtxml,.gtzip,.gt,.xml" />
+            </div>
             <div class="vg-layout-actions">
                 <button type="button" class="primary" data-action="save">Save region</button>
                 <button type="button" class="secondary" data-action="save-all">Save all</button>
@@ -389,6 +393,39 @@
         const colorInput = editor.panel.querySelector('[data-field="color"]');
         if (colorInput) {
             colorInput.addEventListener('input', () => applyFieldsToSelection());
+        }
+
+        const gtInput = editor.panel.querySelector('#vgGtFile');
+        if (gtInput) {
+            gtInput.addEventListener('change', async () => {
+                const file = gtInput.files?.[0];
+                if (!file || !global.VmixGtImport) {
+                    setStatus('GT import unavailable — load vmix-gt-import.js', true);
+                    return;
+                }
+                try {
+                    const result = await global.VmixGtImport.importFileToLayout(
+                        file,
+                        editor.theme,
+                        editor.graphic,
+                    );
+                    const n = Object.keys(result.regions).length;
+                    const u = result.unmapped.length;
+                    const t = result.hints.length;
+                    setStatus(
+                        `GT import: ${n} regions mapped, ${u} unmapped elements, ${t} animation hints. Check console.`,
+                    );
+                    console.info('[VmixGtImport]', result);
+                    previewGraphic(editor.graphic);
+                    syncFieldsFromSelection();
+                } catch (err) {
+                    setStatus(
+                        err instanceof Error ? err.message : 'GT import failed',
+                        true,
+                    );
+                }
+                gtInput.value = '';
+            });
         }
 
         populateRegionSelect();
