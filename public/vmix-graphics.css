@@ -294,11 +294,11 @@ body {
     opacity: 0.7;
 }
 
-/* —— KRI (aligned to public/assets/vmix/kri/*.png white circles) —— */
+/* —— KRI (aligned to public/assets/vmix/kri/*.png & KRI_*_Ref.png) —— */
 [data-vmix-theme='kri'] .vg-layer--title {
     left: 0;
     right: 0;
-    top: 520px;
+    top: 574px;
     width: 100%;
     text-align: center;
 }
@@ -342,39 +342,80 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-draw-head {
-    top: 158px;
+    top: 212px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-head {
-    top: 148px;
+    top: 202px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-draw-lanes {
-    left: 152px;
+    left: 190px;
     top: 408px;
-    width: 880px;
-    gap: 6px;
+    width: 860px;
+    gap: 5px;
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {
-    left: 152px;
+    left: 198px;
     top: 408px;
-    width: 880px;
-    gap: 6px;
+    width: 840px;
+    gap: 4px;
 }
 
 [data-vmix-theme='kri'] .vg-lane {
     background: transparent;
-    padding: 4px 0;
-    min-height: 62px;
+    padding: 2px 0;
+    min-height: 61px;
+    column-gap: 12px;
 }
 
-[data-vmix-theme='kri'] .vg-lane-n {
-    font-size: 30px;
+[data-vmix-theme='kri'] .vg-lane--draw,
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane {
+    grid-template-columns: 58px minmax(0, 1fr);
+}
+
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane {
+    grid-template-columns: 58px minmax(0, 1fr) 92px;
+    column-gap: 10px 14px;
+}
+
+[data-vmix-theme='kri'] .vg-lane-logo,
+[data-vmix-theme='kri'] .vg-lane-logo--empty {
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    margin: 0 auto;
+    background: transparent;
+    border-radius: 0;
+    justify-self: center;
+    align-self: center;
+    object-fit: contain;
+    box-sizing: border-box;
+}
+
+[data-vmix-theme='kri'] .vg-lane-logo--empty {
+    font-size: 0;
+    color: transparent;
+}
+
+[data-vmix-theme='kri'] .vg-lane-n,
+[data-vmix-theme='kri'] .vg-lane-names {
+    display: none;
 }
 
 [data-vmix-theme='kri'] .vg-lane-club {
     font-size: 24px;
+    line-height: 1.15;
+}
+
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane-club {
+    font-size: 23px;
+}
+
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane-time {
+    font-size: 26px;
+    min-width: 88px;
 }
 
 /* —— RNZ Milford (Milford_*_Ref.png, LT_Traccar_Milford_overlay.png) —— */
@@ -384,7 +425,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--title {
     left: 148px;
-    top: 118px;
+    top: 172px;
     width: 720px;
     text-align: left;
 }
@@ -434,13 +475,13 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head {
     left: 148px;
-    top: 168px;
+    top: 222px;
     width: 700px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-head {
     left: 148px;
-    top: 118px;
+    top: 172px;
     width: 700px;
 }
 
@@ -458,36 +499,72 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes {
-    left: 158px;
+    left: 172px;
     top: 348px;
-    width: 680px;
-    gap: 10px;
+    width: 660px;
+    gap: 8px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes {
-    left: 158px;
+    left: 182px;
     top: 378px;
-    width: 720px;
-    gap: 8px;
+    width: 680px;
+    gap: 5px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lane {
     background: transparent;
-    padding: 4px 0;
-    min-height: 56px;
+    padding: 2px 0;
+    min-height: 54px;
+    column-gap: 10px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-lane-n {
-    font-size: 28px;
-    color: #1a1a1a;
+[data-vmix-theme='rnz-milford'] .vg-lane--draw,
+[data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane {
+    grid-template-columns: 56px minmax(0, 1fr);
+}
+
+[data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane {
+    grid-template-columns: 56px minmax(0, 1fr) 88px;
+    column-gap: 8px 12px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-lane-logo,
+[data-vmix-theme='rnz-milford'] .vg-lane-logo--empty {
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    margin: 0 auto;
+    background: transparent;
+    border-radius: 0;
+    justify-self: center;
+    align-self: center;
+    object-fit: contain;
+    box-sizing: border-box;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-lane-logo--empty {
+    font-size: 0;
+    color: transparent;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-lane-n,
+[data-vmix-theme='rnz-milford'] .vg-lane-names {
+    display: none;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lane-club {
     font-size: 22px;
     color: #1a1a1a;
+    line-height: 1.15;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane-club {
+    font-size: 21px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lane-time {
-    font-size: 26px;
+    font-size: 24px;
     color: #1a1a1a;
+    min-width: 84px;
 }

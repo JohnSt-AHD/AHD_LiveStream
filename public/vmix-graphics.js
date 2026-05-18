@@ -854,11 +854,29 @@ function vgRenderLower(layer, race) {
     layer.appendChild(vgEl('h2', 'vg-lower-event', fullName));
 }
 
+function vgThemeId() {
+    return document.body?.dataset?.vmixTheme || '';
+}
+
+/** Lane/placing numbers are baked into KRI & Milford PNG/WebM backgrounds. */
+function vgShowLaneNumber() {
+    const theme = vgThemeId();
+    return theme !== 'kri' && theme !== 'rnz-milford';
+}
+
+function vgShowAthleteNames(mode) {
+    if (mode === 'draw') return false;
+    const theme = vgThemeId();
+    return theme !== 'kri' && theme !== 'rnz-milford';
+}
+
 function vgBuildLaneRow(entry, lookup, mode) {
     const li = vgEl('li', `vg-lane${mode === 'draw' ? ' vg-lane--draw' : ''}`);
     const club = vgParseClubCode(entry.code);
     const info = vgClubInfo(club.id, lookup);
-    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
+    if (vgShowLaneNumber()) {
+        li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
+    }
     if (info.logoUrl) {
         const img = document.createElement('img');
         img.className = 'vg-lane-logo';
@@ -870,7 +888,7 @@ function vgBuildLaneRow(entry, lookup, mode) {
     }
     const crew = vgEl('div', 'vg-lane-crew');
     crew.appendChild(vgEl('span', 'vg-lane-club', info.name));
-    if (entry.names) {
+    if (entry.names && vgShowAthleteNames(mode)) {
         crew.appendChild(vgEl('span', 'vg-lane-names', entry.names));
     }
     li.appendChild(crew);
