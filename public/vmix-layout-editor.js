@@ -22,6 +22,7 @@
             { id: 'results-logo', label: 'Results — school logos', target: 'results-logo' },
             { id: 'results-crew', label: 'Results — crew text', target: 'results-crew' },
         ],
+        leader: [],
     };
 
     const editor = {
@@ -420,7 +421,14 @@
         editor.theme = global.document.body?.dataset?.vmixTheme || 'kri';
         const params = new URLSearchParams(global.location.search);
         const g = (params.get('g') || params.get('graphic') || 'draw').toLowerCase();
-        const aliases = { t: 'title', l: 'lower', d: 'draw', r: 'results' };
+        const aliases = {
+            t: 'title',
+            l: 'lower',
+            d: 'draw',
+            r: 'results',
+            w: 'leader',
+            g: 'speed',
+        };
         editor.graphic = aliases[g] || g;
 
         global.document.body.classList.add('vg-layout-dev');

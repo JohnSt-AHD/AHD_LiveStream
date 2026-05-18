@@ -69,8 +69,9 @@ body {
     animation: vg-fade-out 0.65s ease forwards;
 }
 
-/* Milford: text fades out on o while WebM reverses */
-[data-vmix-theme='rnz-milford'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out {
+/* Milford / Beach Sprints: text fades out on o while video continues */
+[data-vmix-theme='rnz-milford'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out,
+[data-vmix-theme='beachsprints-milford'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out {
     animation: vg-fade-out 0.5s ease forwards;
 }
 
@@ -713,4 +714,107 @@ body {
     font-size: 24px;
     color: #1a1a1a;
     min-width: 84px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker {
+    left: 120px;
+    bottom: 120px;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+}
+
+[data-vmix-theme='rnz-milford'] .vg-tracker-label {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* —— Beach Sprints Milford (shared layout with RNZ Milford) —— */
+[data-vmix-theme='beachsprints-milford'] .vg-layer {
+    color: #1a1a1a;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-layer--lower {
+    left: 158px;
+    bottom: 86px;
+    width: 820px;
+    padding: 0;
+    color: #fff;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lower-meta {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #111;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lower-race {
+    margin: 0 0 8px;
+    font-size: 22px;
+    color: #111;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lower-event {
+    font-size: 36px;
+    color: #fff;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-layer--draw .vg-draw-head {
+    left: 148px;
+    top: 222px;
+    width: 700px;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-draw-meta {
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #c45a12;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-draw-event {
+    font-size: 34px;
+    color: #1a1a1a;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-layer--draw .vg-draw-lanes {
+    left: 172px;
+    top: 348px;
+    width: 660px;
+    gap: 8px;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lane {
+    background: transparent;
+    padding: 2px 0;
+    min-height: 54px;
+    column-gap: 10px;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lane--draw {
+    grid-template-columns: 56px minmax(0, 1fr);
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lane-logo,
+[data-vmix-theme='beachsprints-milford'] .vg-lane-logo--empty {
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    margin: 0 auto;
+    background: transparent;
+    justify-self: center;
+    object-fit: contain;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lane-n,
+[data-vmix-theme='beachsprints-milford'] .vg-lane-names {
+    display: none;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lane-club {
+    font-size: 22px;
+    color: #1a1a1a;
 }

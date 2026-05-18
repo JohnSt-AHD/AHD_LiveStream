@@ -8,12 +8,13 @@ const VMIX_PAGES = {
 };
 
 const VMIX_TRIGGERS = [
-    { key: 't', graphic: 'Title', desc: 'Play in — background 3s, then regatta code and date' },
-    { key: 'l', graphic: 'Lower third', desc: 'Play in — background 3s, then race info text' },
-    { key: 'd', graphic: 'Draw', desc: 'Play in — background 3s, then lane draw text' },
-    { key: 'r', graphic: 'Results', desc: 'Play in — background 3s, then results text' },
-    { key: 'o', graphic: 'Out', desc: 'Hide text, reverse background, reset to idle' },
-    { key: 'g', graphic: 'Speed / race', desc: 'Milford only — TimeTracker video + live speed dot (configure device on hub map first)' },
+    { key: 't', graphic: 'Title', desc: 'KRI — title graphic' },
+    { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 3s; o fades text and finishes video' },
+    { key: 'd', graphic: 'Draw', desc: 'Milford: video in, text at 6s, pause at 9s; o fades text and finishes video' },
+    { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
+    { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video, no overlay text' },
+    { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
+    { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; text at 1s, pause at 3s; o finishes video' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
 ];
 
@@ -107,7 +108,7 @@ function hubRenderVmixGuide() {
         const mapNote = document.createElement('p');
         mapNote.className = 'hub-vmix-map-note';
         mapNote.innerHTML =
-            '<strong>Speed overlay (<code>g</code>):</strong> on the <a href="live-map.html">fleet map</a>, set device + start/finish markers, open Speed page once — then use <code>g</code> on <a href="vmix-rnz-milford.html">Milford vMix</a>.';
+            '<strong>Tracker (<code>g</code>):</strong> Milford tracker WebM — text at 1s, pause at 3s; <code>o</code> fades text and plays to the end. Optional device label from the <a href="live-map.html">fleet map</a>.';
         examples.appendChild(mapNote);
 
         const devNote = document.createElement('p');

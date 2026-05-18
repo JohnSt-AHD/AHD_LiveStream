@@ -1,6 +1,6 @@
 /**
- * vMix broadcast graphics — title, lower third, draw, results.
- * Keys: d/l/r/t = play in · g = fleet map (Milford) · o = out · c = clear all.
+ * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
+ * Keys: d/l/r/t/w = play in · g = tracker (Milford) · o = out · c = clear all.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -12,26 +12,25 @@ const VG_GRAPHIC_ALIASES = {
     lower: 'lower',
     r: 'results',
     results: 'results',
+    w: 'leader',
+    leader: 'leader',
     g: 'speed',
     map: 'speed',
     gps: 'speed',
 };
 
 const VG_HOLD_MS = 3000;
-const VG_MILFORD_DRAW_RESULTS_HOLD_MS = 6000;
 const VG_OUTRO_MS = 3000;
 const VG_KRI_FADE_MS = 650;
 const VG_MILFORD_FADE_MS = 500;
-const VG_REVERSE_NATIVE_PROBE_MS = 280;
 
 const vgPlayback = {
     state: 'idle',
     graphic: null,
     introTimer: null,
     outroTimer: null,
-    rewindRaf: null,
-    rewindStepTimer: null,
-    onVideoTime: null,
+    profileTimers: [],
+    onVideoEnded: null,
     videoHoldTime: null,
 };
 
@@ -47,17 +46,22 @@ const VG_THEMES = {
     },
     'rnz-milford': {
         label: 'RNZ Milford',
-        speedEmbed: true,
+        videoGraphics: true,
         backgrounds: {
-            title: 'assets/vmix/milford/title.webm',
+            speed: 'assets/vmix/milford/tracker.webm',
             lower: 'assets/vmix/milford/lower.webm',
             draw: 'assets/vmix/milford/draw.webm',
             results: 'assets/vmix/milford/results.webm',
+            leader: 'assets/vmix/milford/leader.webm',
         },
     },
     'beachsprints-milford': {
         label: 'Beach Sprints Milford',
-        backgrounds: {},
+        videoGraphics: true,
+        backgrounds: {
+            draw: 'assets/vmix/beachsprints/draw.webm',
+            lower: 'assets/vmix/beachsprints/lower.webm',
+        },
     },
 };
 
@@ -394,7 +398,18 @@ function vgIsSpeedGraphic(graphic) {
 }
 
 function vgSpeedEnabled() {
-    return !!vgThemeConfig().speedEmbed;
+    const theme = vgThemeConfig();
+    if (theme.videoGraphics && vgGetBackgroundSrc('speed')) return true;
+    return !!theme.speedEmbed;
+}
+
+function vgIsVideoTheme() {
+    const theme = document.body?.dataset?.vmixTheme;
+    return theme === 'rnz-milford' || theme === 'beachsprints-milford';
+}
+
+function vgIsBeachSprintsTheme() {
+    return document.body?.dataset?.vmixTheme === 'beachsprints-milford';
 }
 
 function vgBuildSpeedEmbedUrl() {
@@ -472,19 +487,40 @@ function vgClearPlaybackTimers() {
         clearTimeout(vgPlayback.outroTimer);
         vgPlayback.outroTimer = null;
     }
-    if (vgPlayback.rewindRaf) {
-        cancelAnimationFrame(vgPlayback.rewindRaf);
-        vgPlayback.rewindRaf = null;
+    for (const id of vgPlayback.profileTimers) {
+        clearTimeout(id);
     }
-    if (vgPlayback.rewindStepTimer) {
-        clearTimeout(vgPlayback.rewindStepTimer);
-        vgPlayback.rewindStepTimer = null;
-    }
+    vgPlayback.profileTimers = [];
     const video = vgGetBgVideo();
-    if (video && vgPlayback.onVideoTime) {
-        video.removeEventListener('timeupdate', vgPlayback.onVideoTime);
-        vgPlayback.onVideoTime = null;
+    if (video && vgPlayback.onVideoEnded) {
+        video.removeEventListener('ended', vgPlayback.onVideoEnded);
+        vgPlayback.onVideoEnded = null;
     }
+}
+
+function vgScheduleProfile(ms, fn) {
+    const id = setTimeout(fn, ms);
+    vgPlayback.profileTimers.push(id);
+    return id;
+}
+
+function vgGetVideoProfile(graphic) {
+    if (graphic === 'leader') {
+        return { noText: true, playThrough: true };
+    }
+    if (graphic === 'speed') {
+        return { textInMs: 1000, pauseAtMs: 3000 };
+    }
+    if (graphic === 'lower') {
+        return { textInMs: 1000, pauseAtMs: 3000 };
+    }
+    if (graphic === 'draw') {
+        return { textInMs: 6000, pauseAtMs: 9000 };
+    }
+    if (graphic === 'results') {
+        return { textInMs: 6000, textOutMs: 16000, playThrough: true };
+    }
+    return { textInMs: 3000, pauseAtMs: 3000 };
 }
 
 function vgSetStageState(state) {
@@ -539,20 +575,16 @@ function vgIsMilfordTheme() {
     return document.body?.dataset?.vmixTheme === 'rnz-milford';
 }
 
-function vgGetVideoOutroStartTime(video) {
-    const stored = vgPlayback.videoHoldTime;
-    if (Number.isFinite(stored) && stored > 0.02) {
-        return stored;
+function vgArmVideoEndedReset(video) {
+    if (!video) return;
+    if (vgPlayback.onVideoEnded) {
+        video.removeEventListener('ended', vgPlayback.onVideoEnded);
     }
-    const current = video?.currentTime;
-    if (Number.isFinite(current) && current > 0.02) {
-        return current;
-    }
-    const graphic = vgPlayback.graphic;
-    if (vgIsMilfordTheme() && (graphic === 'draw' || graphic === 'results')) {
-        return 6;
-    }
-    return 0;
+    vgPlayback.onVideoEnded = () => {
+        if (vgPlayback.state === 'idle') return;
+        vgResetToIdle();
+    };
+    video.addEventListener('ended', vgPlayback.onVideoEnded);
 }
 
 function vgSyncLayerVisibility(layer) {
@@ -690,46 +722,11 @@ function vgHideMap() {
     }
 }
 
-function vgMilfordDrawResultsHoldMs() {
-    const theme = document.body?.dataset?.vmixTheme;
-    const graphic = vgPlayback.graphic;
-    if (theme === 'rnz-milford' && (graphic === 'draw' || graphic === 'results')) {
-        return VG_MILFORD_DRAW_RESULTS_HOLD_MS;
-    }
-    return VG_HOLD_MS;
-}
-
-function vgHoldDelayMs(video) {
-    const holdMs = vgMilfordDrawResultsHoldMs();
-    if (video && Number.isFinite(video.duration) && video.duration > 0) {
-        return Math.min(holdMs, Math.max(0, video.duration * 1000 - 80));
-    }
-    return holdMs;
-}
-
 function vgPauseVideoAtHoldPoint(video) {
     if (!video) return;
-    const theme = document.body?.dataset?.vmixTheme;
-    const graphic = vgPlayback.graphic;
-    const commitHoldTime = () => {
-        video.pause();
-        video.playbackRate = 1;
-        vgPlayback.videoHoldTime = video.currentTime;
-    };
-    if (theme === 'rnz-milford' && (graphic === 'draw' || graphic === 'results')) {
-        const target = 6;
-        const t = Number.isFinite(video.duration)
-            ? Math.min(target, Math.max(0, video.duration - 0.05))
-            : target;
-        video.currentTime = t;
-        if (video.readyState >= 2) {
-            commitHoldTime();
-        } else {
-            video.addEventListener('seeked', commitHoldTime, { once: true });
-        }
-        return;
-    }
-    commitHoldTime();
+    video.pause();
+    video.playbackRate = 1;
+    vgPlayback.videoHoldTime = video.currentTime;
 }
 
 function vgIsKriTheme() {
@@ -741,39 +738,74 @@ function vgKriDefersBackgroundFade() {
     return vgIsKriTheme();
 }
 
-function vgStartIntroPlayback(isVideo, video) {
-    vgShowBackground(!vgKriDefersBackgroundFade());
+function vgMilfordFadeTextOut() {
+    vgStartMilfordOutroFade();
+    vgScheduleProfile(VG_MILFORD_FADE_MS, () => vgShowTextLayer(false));
+}
+
+function vgVideoGraphicEnterHold(video, graphic) {
+    if (vgPlayback.state !== 'intro') return;
+    vgClearPlaybackTimers();
+    vgPauseVideoAtHoldPoint(video);
+    vgSetStageState('hold');
+    vgShowTextLayer(true);
+    vgApplySavedLayout(graphic);
+}
+
+function vgStartVideoGraphicIntro(graphic, video) {
+    const profile = vgGetVideoProfile(graphic);
+    vgShowBackground(true);
     vgShowTextLayer(false);
 
-    if (isVideo && video) {
-        video.loop = false;
-        video.playbackRate = 1;
-        video.currentTime = 0;
-        vgPlayback.videoHoldTime = null;
-        const scheduleHold = () => {
+    video.loop = false;
+    video.muted = true;
+    video.playbackRate = 1;
+    video.currentTime = 0;
+    vgPlayback.videoHoldTime = null;
+
+    vgArmVideoEndedReset(video);
+
+    if (!profile.noText && profile.textInMs != null) {
+        vgScheduleProfile(profile.textInMs, () => {
             if (vgPlayback.state !== 'intro') return;
-            if (vgPlayback.introTimer) {
-                clearTimeout(vgPlayback.introTimer);
-            }
-            vgPlayback.introTimer = setTimeout(
-                () => vgEnterHold(),
-                vgHoldDelayMs(video),
-            );
-        };
-        const armIntro = () => {
-            video.play().then(scheduleHold).catch(scheduleHold);
-        };
-        if (video.readyState >= 2) {
-            armIntro();
-        } else {
-            video.addEventListener('loadeddata', armIntro, { once: true });
-        }
-        setTimeout(() => {
-            if (vgPlayback.state === 'intro') vgEnterHold();
-        }, vgMilfordDrawResultsHoldMs() + 2500);
+            vgShowTextLayer(true, { fadeIn: true });
+            vgApplySavedLayout(graphic);
+        });
+    }
+
+    if (profile.textOutMs != null) {
+        vgScheduleProfile(profile.textOutMs, () => {
+            if (vgPlayback.state === 'idle') return;
+            vgMilfordFadeTextOut();
+        });
+    }
+
+    if (profile.pauseAtMs != null) {
+        vgScheduleProfile(profile.pauseAtMs, () => {
+            vgVideoGraphicEnterHold(video, graphic);
+        });
+    }
+
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+    }
+
+    const safetyMs =
+        (Number.isFinite(video.duration) ? video.duration * 1000 : 45000) + 8000;
+    vgPlayback.introTimer = setTimeout(() => {
+        if (vgPlayback.state !== 'idle') vgResetToIdle();
+    }, safetyMs);
+}
+
+function vgStartIntroPlayback(isVideo, video) {
+    if (isVideo && video && vgIsVideoTheme()) {
+        vgStartVideoGraphicIntro(vgPlayback.graphic, video);
         return;
     }
 
+    vgShowBackground(!vgKriDefersBackgroundFade());
+    vgShowTextLayer(false);
     vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
 }
 
@@ -782,172 +814,52 @@ function vgEnterHold() {
     vgClearPlaybackTimers();
     vgPauseVideoAtHoldPoint(vgGetBgVideo());
     vgSetStageState('hold');
-    if (vgIsSpeedGraphic(vgPlayback.graphic)) {
+    if (vgKriDefersBackgroundFade()) {
+        vgShowBackground(true);
+        const bg = vgGetBgEl();
+        if (bg) bg.classList.add('vg-bg--fade-in');
+    }
+    vgShowTextLayer(true, { fadeIn: true });
+    vgApplySavedLayout(vgPlayback.graphic);
+}
+
+function vgResumeVideoToEnd(video, onDone) {
+    vgShowBackground(true);
+    const bg = vgGetBgEl();
+    if (bg) bg.classList.add('vg-bg--outro');
+
+    const finish = () => {
+        vgClearPlaybackTimers();
         vgShowTextLayer(false);
-        vgShowMap(true, false);
-    } else {
-        if (vgKriDefersBackgroundFade()) {
-            vgShowBackground(true);
-            const bg = vgGetBgEl();
-            if (bg) bg.classList.add('vg-bg--fade-in');
-        }
-        vgShowTextLayer(true, { fadeIn: true });
-        vgApplySavedLayout(vgPlayback.graphic);
-    }
-}
+        onDone();
+    };
 
-function vgEaseOutCubic(x) {
-    return 1 - (1 - x) ** 3;
-}
-
-function vgReverseFinish(video, onDone, finishedRef) {
-    if (finishedRef.done) return;
-    finishedRef.done = true;
-    vgClearPlaybackTimers();
-    video.pause();
-    video.playbackRate = 1;
-    try {
-        video.currentTime = 0;
-    } catch {
-        /* ignore */
-    }
-    onDone();
-}
-
-/**
- * Smooth reverse: try native playbackRate -1, else seek on each decoded frame.
- */
-function vgPlayVideoReverse(video, onDone) {
-    const finishedRef = { done: false };
-    const finish = () => vgReverseFinish(video, onDone, finishedRef);
-
-    const startTime = vgGetVideoOutroStartTime(video);
-    if (startTime <= 0.02) {
-        finish();
-        return;
-    }
-
-    const rewindMs = Math.max(VG_OUTRO_MS, startTime * 1000);
-    video.loop = false;
-    video.muted = true;
-
-    vgPlayback.outroTimer = setTimeout(finish, rewindMs + 800);
-
-    const startSmoothSeek = () => {
-        if (finishedRef.done) return;
-        video.removeEventListener('timeupdate', onNativeTime);
-        video.pause();
+    const startPlay = () => {
         video.playbackRate = 1;
-        vgPlayVideoReverseSmoothSeek(video, startTime, rewindMs, finish, finishedRef);
-    };
-
-    const onNativeTime = () => {
-        if (finishedRef.done) return;
-        if (video.currentTime <= 0.05) {
+        const onEnd = () => {
+            video.removeEventListener('ended', onEnd);
             finish();
-        }
-    };
-
-    const tryNativeReverse = () => {
-        try {
-            video.currentTime = startTime;
-        } catch {
-            startSmoothSeek();
-            return;
-        }
-        video.playbackRate = -1;
-        vgPlayback.onVideoTime = onNativeTime;
-        video.addEventListener('timeupdate', onNativeTime);
-
-        const probeStart = startTime;
-
+        };
+        video.addEventListener('ended', onEnd, { once: true });
+        const remain = Number.isFinite(video.duration)
+            ? Math.max(500, (video.duration - video.currentTime) * 1000)
+            : 15000;
+        vgPlayback.outroTimer = setTimeout(finish, remain + 400);
         const playPromise = video.play();
-        const afterPlay = () => {
-            setTimeout(() => {
-                if (finishedRef.done) return;
-                const moved =
-                    video.playbackRate < 0 &&
-                    video.currentTime < probeStart - 0.04;
-                if (!moved) {
-                    startSmoothSeek();
-                }
-            }, VG_REVERSE_NATIVE_PROBE_MS);
-        };
-
-        if (playPromise && typeof playPromise.then === 'function') {
-            playPromise.then(afterPlay).catch(startSmoothSeek);
-        } else {
-            afterPlay();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(finish);
         }
     };
 
-    if (video.readyState >= 1) {
-        tryNativeReverse();
-    } else {
-        video.addEventListener('loadeddata', tryNativeReverse, { once: true });
-    }
-}
-
-/** Seek chain paced to seeked events — avoids overlapping jumps in vMix. */
-function vgPlayVideoReverseSmoothSeek(video, startTime, rewindMs, onDone, finishedRef) {
-    const finish = () => vgReverseFinish(video, onDone, finishedRef);
-    const t0 = performance.now();
-    let pendingSeek = false;
-
-    const scheduleSeek = () => {
-        if (finishedRef.done || pendingSeek) return;
-
-        const progress = Math.min(1, (performance.now() - t0) / rewindMs);
-        const t = Math.max(0, startTime * (1 - vgEaseOutCubic(progress)));
-
-        if (progress >= 1) {
-            try {
-                video.currentTime = 0;
-            } catch {
-                /* ignore */
-            }
-            finish();
-            return;
-        }
-
-        pendingSeek = true;
-        const onSeeked = () => {
-            video.removeEventListener('seeked', onSeeked);
-            pendingSeek = false;
-            if (finishedRef.done) return;
-            vgPlayback.rewindRaf = requestAnimationFrame(scheduleSeek);
-        };
-        video.addEventListener('seeked', onSeeked, { once: true });
-
-        try {
-            if (Math.abs(video.currentTime - t) > 0.001) {
-                video.currentTime = t;
-            } else {
-                onSeeked();
-            }
-        } catch {
-            onSeeked();
-        }
-    };
-
-    video.playbackRate = 1;
-    try {
-        video.currentTime = startTime;
-    } catch {
-        /* ignore */
-    }
-    vgPlayback.rewindRaf = requestAnimationFrame(scheduleSeek);
+    vgMilfordFadeTextOut();
+    vgScheduleProfile(VG_MILFORD_FADE_MS, startPlay);
 }
 
 function vgStartOutroPlayback(isVideo, video) {
     const graphic = vgPlayback.graphic;
-    const done = () => {
-        vgClearPlaybackTimers();
-        vgShowTextLayer(false);
-        vgResetToIdle();
-    };
+    const done = () => vgResetToIdle();
 
-    if (vgIsSpeedGraphic(graphic)) {
+    if (vgIsSpeedGraphic(graphic) && !vgIsVideoTheme()) {
         vgShowBackground(false);
         vgShowMap(true, false);
         vgPostToSpeedFrame('outro');
@@ -955,17 +867,15 @@ function vgStartOutroPlayback(isVideo, video) {
         return;
     }
 
+    if (isVideo && video && vgIsVideoTheme()) {
+        vgSetStageState('outro');
+        vgResumeVideoToEnd(video, done);
+        return;
+    }
+
     vgShowBackground(true);
     const bg = vgGetBgEl();
     if (bg) bg.classList.add('vg-bg--outro');
-
-    if (isVideo && video) {
-        if (vgIsMilfordTheme()) {
-            vgStartMilfordOutroFade();
-        }
-        vgPlayVideoReverse(video, done);
-        return;
-    }
 
     if (vgIsKriTheme()) {
         vgStartKriOutroFade();
@@ -997,6 +907,13 @@ function vgTriggerIn(graphic) {
     vgSetStageState('intro');
     vgHideMap();
 
+    if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+        vgPrepareTrackerContent();
+        const { isVideo, video } = vgLoadBackgroundAsset('speed');
+        vgStartIntroPlayback(isVideo, video);
+        return;
+    }
+
     if (vgIsSpeedGraphic(graphic)) {
         vgStartSpeedIntro();
         return;
@@ -1008,30 +925,57 @@ function vgTriggerIn(graphic) {
 }
 
 function vgTriggerOut() {
-    if (vgPlayback.state === 'intro' && vgIsMilfordTheme() && vgPlayback.graphic) {
+    const graphic = vgPlayback.graphic;
+    const video = vgGetBgVideo();
+    const isThemeVideo =
+        !!video &&
+        vgIsVideoTheme() &&
+        vgIsVideoAsset(vgGetBackgroundSrc(graphic));
+
+    if (
+        vgPlayback.state === 'intro' &&
+        isThemeVideo &&
+        vgGetVideoProfile(graphic).pauseAtMs != null
+    ) {
         vgClearPlaybackTimers();
-        vgPauseVideoAtHoldPoint(vgGetBgVideo());
-        vgSetStageState('hold');
-        vgShowBackground(true);
-        vgShowTextLayer(true);
+        vgVideoGraphicEnterHold(video, graphic);
+        return;
     }
+
+    if (vgPlayback.state !== 'hold' && vgPlayback.state !== 'intro') return;
+
+    if (isThemeVideo && vgGetVideoProfile(graphic).playThrough) {
+        vgMilfordFadeTextOut();
+        return;
+    }
+
     if (vgPlayback.state !== 'hold') return;
     vgSetStageState('outro');
-    const graphic = vgPlayback.graphic;
-    if (vgIsSpeedGraphic(graphic)) {
+    if (vgIsSpeedGraphic(graphic) && !isThemeVideo) {
         vgStartOutroPlayback(false, null);
         return;
     }
-    const video = vgGetBgVideo();
-    vgStartOutroPlayback(
-        !!video && vgIsVideoAsset(vgGetBackgroundSrc(graphic)),
-        video,
-    );
+    vgStartOutroPlayback(isThemeVideo, video);
 }
 
 function vgTriggerClear() {
     vgClearPlaybackTimers();
     vgResetToIdle();
+}
+
+function vgPrepareTrackerContent() {
+    const layer = vgGetLayerEl();
+    if (!layer) return;
+    layer.replaceChildren();
+    vgSetLayerGraphicClass(layer, 'vg-layer--tracker');
+    let label = 'Live tracking';
+    try {
+        const s = JSON.parse(localStorage.getItem(VG_LS_SPEED) || '{}');
+        if (s.deviceId) label = `Tracker · device ${s.deviceId}`;
+    } catch {
+        /* ignore */
+    }
+    layer.appendChild(vgEl('p', 'vg-tracker-label', label));
 }
 
 function vgPrepareContent(graphic, raceParam) {
@@ -1117,13 +1061,17 @@ function vgThemeId() {
 /** Lane/placing numbers are baked into KRI & Milford PNG/WebM backgrounds. */
 function vgShowLaneNumber() {
     const theme = vgThemeId();
-    return theme !== 'kri' && theme !== 'rnz-milford';
+    return theme !== 'kri' && theme !== 'rnz-milford' && theme !== 'beachsprints-milford';
 }
 
 function vgShowAthleteNames(mode) {
     if (mode === 'draw') return false;
     const theme = vgThemeId();
-    return theme !== 'kri' && theme !== 'rnz-milford';
+    return (
+        theme !== 'kri' &&
+        theme !== 'rnz-milford' &&
+        theme !== 'beachsprints-milford'
+    );
 }
 
 function vgBuildLaneRow(entry, lookup, mode) {
@@ -1344,6 +1292,7 @@ async function vgInit() {
     window.addEventListener('message', (e) => {
         if (e.data?.type !== 'altitudehd:vg') return;
         if (!vgIsSpeedGraphic(vgPlayback.graphic)) return;
+        if (vgIsVideoTheme()) return;
         if (e.data.phase === 'hold' && vgPlayback.state === 'intro') {
             vgClearPlaybackTimers();
             vgEnterHold();
@@ -1368,8 +1317,13 @@ async function vgInit() {
 function vgDevPreviewHold(graphic) {
     vgClearPlaybackTimers();
     vgPlayback.graphic = graphic;
-    vgPrepareContent(graphic, vgGetRaceParam());
-    const { isVideo, video } = vgLoadBackgroundAsset(graphic);
+    if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+        vgPrepareTrackerContent();
+    } else {
+        vgPrepareContent(graphic, vgGetRaceParam());
+    }
+    const assetKey = vgIsSpeedGraphic(graphic) ? 'speed' : graphic;
+    const { isVideo, video } = vgLoadBackgroundAsset(assetKey);
     vgSetStageState('hold');
     vgShowBackground(true);
     vgShowTextLayer(true);
