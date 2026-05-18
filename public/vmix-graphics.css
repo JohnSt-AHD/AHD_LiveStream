@@ -23,6 +23,15 @@ body {
     height: 1080px;
 }
 
+@keyframes vg-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 .vg-bg {
     position: absolute;
     inset: 0;
@@ -32,11 +41,15 @@ body {
     pointer-events: none;
     overflow: hidden;
     opacity: 0;
-    transition: opacity 0.35s ease;
 }
 
-.vg-bg--visible {
+.vg-bg--visible:not(.vg-bg--outro) {
     opacity: 1;
+}
+
+/* KRI uses PNG backgrounds — fade in on play-in */
+[data-vmix-theme='kri'] .vg-bg--visible:not(.vg-bg--outro) {
+    animation: vg-fade-in 0.85s ease forwards;
 }
 
 .vg-bg--outro {
@@ -74,12 +87,58 @@ body {
     box-sizing: border-box;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.35s ease, visibility 0.35s ease;
 }
 
 .vg-layer--visible {
     opacity: 1;
     visibility: visible;
+    animation: vg-fade-in 0.65s ease forwards;
+}
+
+.vg-layer--visible .vg-lane-logo,
+.vg-layer--visible .vg-lane-logo--empty {
+    opacity: 0;
+    animation: vg-fade-in 0.5s ease forwards;
+}
+
+.vg-layer--visible .vg-lane:nth-child(1) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(1) .vg-lane-logo--empty {
+    animation-delay: 0.06s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(2) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(2) .vg-lane-logo--empty {
+    animation-delay: 0.1s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(3) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(3) .vg-lane-logo--empty {
+    animation-delay: 0.14s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(4) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(4) .vg-lane-logo--empty {
+    animation-delay: 0.18s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(5) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(5) .vg-lane-logo--empty {
+    animation-delay: 0.22s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(6) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(6) .vg-lane-logo--empty {
+    animation-delay: 0.26s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(7) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(7) .vg-lane-logo--empty {
+    animation-delay: 0.3s;
+}
+
+.vg-layer--visible .vg-lane:nth-child(8) .vg-lane-logo,
+.vg-layer--visible .vg-lane:nth-child(8) .vg-lane-logo--empty {
+    animation-delay: 0.34s;
 }
 
 .vg-stage[data-vg-state='idle'] .vg-bg-video {

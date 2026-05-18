@@ -18,6 +18,7 @@ const VG_GRAPHIC_ALIASES = {
 };
 
 const VG_HOLD_MS = 3000;
+const VG_MILFORD_DRAW_RESULTS_HOLD_MS = 6000;
 const VG_OUTRO_MS = 3000;
 
 const vgPlayback = {
@@ -613,11 +614,36 @@ function vgHideMap() {
     }
 }
 
-function vgHoldDelayMs(video) {
-    if (video && Number.isFinite(video.duration) && video.duration > 0) {
-        return Math.min(VG_HOLD_MS, Math.max(0, video.duration * 1000 - 80));
+function vgMilfordDrawResultsHoldMs() {
+    const theme = document.body?.dataset?.vmixTheme;
+    const graphic = vgPlayback.graphic;
+    if (theme === 'rnz-milford' && (graphic === 'draw' || graphic === 'results')) {
+        return VG_MILFORD_DRAW_RESULTS_HOLD_MS;
     }
     return VG_HOLD_MS;
+}
+
+function vgHoldDelayMs(video) {
+    const holdMs = vgMilfordDrawResultsHoldMs();
+    if (video && Number.isFinite(video.duration) && video.duration > 0) {
+        return Math.min(holdMs, Math.max(0, video.duration * 1000 - 80));
+    }
+    return holdMs;
+}
+
+function vgPauseVideoAtHoldPoint(video) {
+    if (!video) return;
+    const theme = document.body?.dataset?.vmixTheme;
+    const graphic = vgPlayback.graphic;
+    if (theme === 'rnz-milford' && (graphic === 'draw' || graphic === 'results')) {
+        const target = 6;
+        const t = Number.isFinite(video.duration)
+            ? Math.min(target, Math.max(0, video.duration - 0.05))
+            : target;
+        video.currentTime = t;
+    }
+    video.pause();
+    video.playbackRate = 1;
 }
 
 function vgStartIntroPlayback(isVideo, video) {
@@ -652,11 +678,7 @@ function vgStartIntroPlayback(isVideo, video) {
 function vgEnterHold() {
     if (vgPlayback.state !== 'intro') return;
     vgClearPlaybackTimers();
-    const video = vgGetBgVideo();
-    if (video) {
-        video.pause();
-        video.playbackRate = 1;
-    }
+    vgPauseVideoAtHoldPoint(vgGetBgVideo());
     vgSetStageState('hold');
     if (vgIsSpeedGraphic(vgPlayback.graphic)) {
         vgShowTextLayer(false);
