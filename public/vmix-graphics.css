@@ -69,6 +69,16 @@ body {
     animation: vg-fade-out 0.65s ease forwards;
 }
 
+/* Milford: text fades out on o while WebM reverses */
+[data-vmix-theme='rnz-milford'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out {
+    animation: vg-fade-out 0.5s ease forwards;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-stage[data-vg-state='outro'] .vg-bg--visible .vg-bg-video {
+    opacity: 1;
+    visibility: visible;
+}
+
 .vg-bg--outro {
     opacity: 1;
 }
