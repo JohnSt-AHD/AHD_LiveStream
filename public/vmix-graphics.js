@@ -646,8 +646,17 @@ function vgPauseVideoAtHoldPoint(video) {
     video.playbackRate = 1;
 }
 
+function vgIsKriTheme() {
+    return document.body?.dataset?.vmixTheme === 'kri';
+}
+
+/** KRI PNG graphics: background and text fade in together on hold. */
+function vgKriDefersBackgroundFade() {
+    return vgIsKriTheme();
+}
+
 function vgStartIntroPlayback(isVideo, video) {
-    vgShowBackground(true);
+    vgShowBackground(!vgKriDefersBackgroundFade());
     vgShowTextLayer(false);
 
     if (isVideo && video) {
@@ -684,6 +693,9 @@ function vgEnterHold() {
         vgShowTextLayer(false);
         vgShowMap(true, false);
     } else {
+        if (vgKriDefersBackgroundFade()) {
+            vgShowBackground(true);
+        }
         vgShowTextLayer(true);
     }
 }

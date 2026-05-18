@@ -47,9 +47,9 @@ body {
     opacity: 1;
 }
 
-/* KRI uses PNG backgrounds — fade in on play-in */
-[data-vmix-theme='kri'] .vg-bg--visible:not(.vg-bg--outro) {
-    animation: vg-fade-in 0.85s ease forwards;
+/* KRI: PNG background fades in with text when hold starts */
+[data-vmix-theme='kri'] .vg-stage[data-vg-state='hold'] .vg-bg--visible:not(.vg-bg--outro) {
+    animation: vg-fade-in 0.65s ease forwards;
 }
 
 .vg-bg--outro {
@@ -413,6 +413,11 @@ body {
     top: 408px;
     width: 860px;
     gap: 5px;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo,
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo--empty {
+    transform: translate(5vw, 1vh);
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {
