@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image1" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="ecbf6a59-32a1-4ff5-a22f-19addb19a3bc\KRI_ Leaders.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="1st" Dimensions="141,128,0" Location="1741,318,0">
+          <Image.Bitmap>
+            <Bitmap Source="b5c166b9-0c01-43d2-86e3-fbb62b3833f1\Avon Rowing Club - AVNC.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="2nd" Dimensions="141,128,0" Location="1741,522,0">
+          <Image.Bitmap>
+            <Bitmap Source="b5c166b9-0c01-43d2-86e3-fbb62b3833f1\Avon Rowing Club - AVNC.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="3rd" Dimensions="141,128,0" Location="1741,723,0">
+          <Image.Bitmap>
+            <Bitmap Source="b5c166b9-0c01-43d2-86e3-fbb62b3833f1\Avon Rowing Club - AVNC.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock1" Dimensions="70,58,0" Location="1847,271.5,0" FontFamily="Inter" FontSize="24" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="TextBlock2" Dimensions="95,93,0" Location="1853,460,0" FontFamily="Inter" FontSize="24" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="TextBlock3" Dimensions="95,93,0" Location="1852,660,0" FontFamily="Inter" FontSize="24" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>

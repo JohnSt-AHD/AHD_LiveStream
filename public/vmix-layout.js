@@ -7,22 +7,49 @@
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
+        /* Positions from KRI GT templates (1920×1080) in gt-templates/extracted/kri/ */
         kri: {
             draw: {
                 'draw-head': {
-                    left: '169px',
-                    top: '226px',
+                    left: '156px',
+                    top: '191px',
+                    width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lanes': {
-                    left: '209px',
-                    top: '409px',
-                    gap: 'calc(4.5px * 0.98 * 1.05)',
+                    left: '253px',
+                    top: '434px',
+                    width: '900px',
+                    gap: '10px',
                     color: 'rgb(255, 255, 255)',
-                    scale: 0.915,
                 },
-                'draw-logo': {},
-                'draw-crew': {
+                'draw-logo': { width: '37px', height: '35px' },
+                'draw-crew': { color: 'rgb(255, 255, 255)' },
+            },
+            results: {
+                'results-head': {
+                    left: '156px',
+                    top: '191px',
+                    width: '935px',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'results-lanes': {
+                    left: '253px',
+                    top: '434px',
+                    width: '900px',
+                    gap: '10px',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'results-logo': { width: '37px', height: '35px' },
+                'results-crew': { color: 'rgb(255, 255, 255)' },
+            },
+            lower: {
+                'lower-meta': { left: '182px', top: '866px', fontSize: '28px' },
+                'lower-race': { left: '370px', top: '866px', fontSize: '28px' },
+                'lower-event': {
+                    left: '160px',
+                    top: '931px',
+                    width: '586px',
                     color: 'rgb(255, 255, 255)',
                 },
             },

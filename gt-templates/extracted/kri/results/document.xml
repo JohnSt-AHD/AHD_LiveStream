@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image1" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="69385b23-3d20-433b-83ee-7210bf15aa77\KRI_ Results.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="event name" Dimensions="935,66,0" Location="156,191,0" FontFamily="Inter" FontSize="48" FontWeight="Bold" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="nevent no" Dimensions="224,43,0" Location="156,265,0" FontFamily="Inter" FontSize="28" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="event n" Dimensions="145,37.5,0" Location="318,265,0" FontFamily="Inter" FontSize="30" TextAlign="Right" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="1" Dimensions="408,53,0" Location="318,434,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="2" Dimensions="408,53,0" Location="318,497,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="3" Dimensions="408,53,0" Location="318,555.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="4" Dimensions="408,53,0" Location="318,615.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="5" Dimensions="408,53,0" Location="318,676.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="6" Dimensions="408,53,0" Location="318,737.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="7" Dimensions="355,53,0" Location="318,795.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="8" Dimensions="408,53,0" Location="318,857,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <Image Name="l1" Dimensions="36.79676,35.25,0" Location="252.6016,444.375,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l2" Dimensions="36.79676,35.25,0" Location="252.6016,504.75,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l3" Dimensions="36.79676,35.25,0" Location="252.6016,563.5,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l4" Dimensions="36.79676,35.25,0" Location="252.6016,624.375,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l5" Dimensions="36.79676,35.25,0" Location="252.6016,683.875,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l6" Dimensions="36.79676,35.25,0" Location="252.6016,744.5,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l7" Dimensions="36.79676,35.25,0" Location="252.6016,802.5,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l8" Dimensions="36.79676,35.25,0" Location="252.6016,862.875,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="75e7cec8-b797-4442-b2e1-3789ebc9f22a\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Sponsor" Dimensions="242,95,0" Location="849,67,0">
+          <Image.Bitmap>
+            <Bitmap Source="3557aa40-8b47-46b3-b5b5-5e81dbd467f2\Aon_Corporation_logo.svg.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock1" Dimensions="151,54,0" Location="673,79,0" Text="Sponsor" FontFamily="Inter" FontSize="28">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 1" Dimensions="52,53,0" Location="740,434,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 2" Dimensions="52,53,0" Location="740,497,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 3" Dimensions="52,53,0" Location="740,555.5,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 4" Dimensions="52,53,0" Location="740,615.5,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 5" Dimensions="52,53,0" Location="740,676.5,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 6" Dimensions="52,53,0" Location="740,737.5,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 7" Dimensions="52,53,0" Location="740,795.5,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Lane 8" Dimensions="52,53,0" Location="740,857,0" Text="1&#xD;&#xA;" FontFamily="Inter" TextAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 1" Dimensions="161,53,0" Location="823,434,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 2" Dimensions="161,53,0" Location="823,497,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 3" Dimensions="161,53,0" Location="823,555.5,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 4" Dimensions="161,53,0" Location="823,615.5,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 5" Dimensions="161,53,0" Location="823,676.5,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 6" Dimensions="161,53,0" Location="823,737.5,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 7" Dimensions="161,53,0" Location="823,795.5,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="Time 8" Dimensions="161,53,0" Location="823,857,0" Text="6:32:09" FontFamily="Inter" FontSize="28" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <Image Name="Gold" Dimensions="75,79,0" Location="108,418,0">
+          <Image.Bitmap>
+            <Bitmap Source="bf981a95-f573-47ad-bfbd-9218c086fa38\Gold.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Bronze" Dimensions="75,79,0" Location="108,550,0">
+          <Image.Bitmap>
+            <Bitmap Source="bf981a95-f573-47ad-bfbd-9218c086fa38\Gold.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Silver" Dimensions="75,79,0" Location="108,484.5,0">
+          <Image.Bitmap>
+            <Bitmap Source="bf981a95-f573-47ad-bfbd-9218c086fa38\Gold.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="event n1" Dimensions="65,37.5,0" Location="471,265,0" FontFamily="Inter" FontSize="30" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="event n2" Dimensions="147,37.5,0" Location="830,265,0" FontFamily="Inter" FontSize="30" TextAlign="Center" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>

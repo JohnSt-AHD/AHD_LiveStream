@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image1" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="b587c233-9741-4eaf-ab2d-205de7ecc61a\KRI_ Leader.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock2" Dimensions="409,57,0" Location="1439,75,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF000000" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <Image Name="Image2" Dimensions="86,96,0" Location="1353,57,0">
+          <Image.Bitmap>
+            <Bitmap Source="2a106839-da1d-468f-badd-9e3f70dac280\Auckland Grammar School - AGSB.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock3" Dimensions="196,47,0" Location="1567,10,0" Text="Leader" FontFamily="Le" FontWeight="Bold">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>

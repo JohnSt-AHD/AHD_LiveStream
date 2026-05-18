@@ -1,0 +1,7 @@
+{
+    "draw": "GT/KRI_SL.gtzip",
+    "results": "GT/KRI_Results.gtzip",
+    "lower": "GT/KRI_LT3.gtzip",
+    "leader": "GT/KRI_Leader.gtzip",
+    "leaders": "GT/Leaders.gtzip"
+}

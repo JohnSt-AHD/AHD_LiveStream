@@ -420,86 +420,104 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--lower {
-    left: 158px;
-    bottom: 88px;
-    width: 780px;
+    left: 0;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    width: auto;
     padding: 0;
 }
 
 [data-vmix-theme='kri'] .vg-lower-meta {
-    margin: 0 0 4px;
-    font-size: 22px;
+    margin: 0;
+    font-size: 28px;
     font-weight: 700;
     text-transform: uppercase;
+    color: #fff;
 }
 
 [data-vmix-theme='kri'] .vg-lower-race {
-    margin: 0 0 6px;
-    font-size: 24px;
+    margin: 0;
+    font-size: 28px;
+    color: #fff;
 }
 
 [data-vmix-theme='kri'] .vg-lower-event {
+    margin: 0;
     font-size: 34px;
     line-height: 1.12;
+    color: #fff;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-draw-head,
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-head {
-    left: 152px;
-    width: 900px;
-}
-
-[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-head {
-    left: 169px;
-    top: 226px;
+    left: 156px;
+    top: 191px;
+    width: 935px;
     color: #fff;
 }
 
-[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-event {
-    font-size: 32.4px;
-    margin: 0 0 9px;
-    color: #fff;
-}
-
-[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-meta {
-    font-size: 21.6px;
+[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-event,
+[data-vmix-theme='kri'] .vg-layer--results .vg-draw-event {
+    font-size: 48px;
+    font-weight: 700;
     margin: 0;
+    line-height: 1.1;
     color: #fff;
 }
 
-[data-vmix-theme='kri'] .vg-layer--results .vg-draw-head {
-    top: 202px;
-}
-
-[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-lanes {
-    left: 209px;
-    top: 409px;
-    width: 860px;
-    gap: calc(4.5px * 0.98 * 1.05);
+[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-meta,
+[data-vmix-theme='kri'] .vg-layer--results .vg-draw-meta {
+    font-size: 28px;
+    margin: 8px 0 0;
     color: #fff;
-    transform: scale(0.915);
-    transform-origin: top left;
 }
 
-[data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
-    min-height: calc(54.9px * 1.05);
-    column-gap: 12px;
-    grid-template-columns: 46.2px minmax(0, 1fr);
+[data-vmix-theme='kri'] .vg-layer--draw .vg-draw-lanes,
+[data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {
+    left: 253px;
+    top: 434px;
+    width: 900px;
+    gap: 10px;
+    color: #fff;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane,
+[data-vmix-theme='kri'] .vg-layer--results .vg-lane {
+    background: transparent;
+    padding: 0;
+    min-height: 53px;
+    column-gap: 28px;
     justify-items: start;
     align-items: center;
 }
 
-[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo,
-[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo--empty {
-    width: 46.2px;
-    height: 46.2px;
-    justify-self: start;
-    align-self: center;
-    margin: 0;
-    transform: none;
+[data-vmix-theme='kri'] .vg-lane--draw,
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane {
+    grid-template-columns: 37px minmax(0, 1fr);
 }
 
-[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-crew {
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane {
+    grid-template-columns: 37px minmax(0, 1fr) 161px;
+    column-gap: 28px 12px;
+}
+
+[data-vmix-theme='kri'] .vg-lane-logo,
+[data-vmix-theme='kri'] .vg-lane-logo--empty {
+    width: 37px;
+    height: 35px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border-radius: 0;
+    justify-self: start;
+    align-self: center;
+    object-fit: contain;
+    box-sizing: border-box;
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-crew,
+[data-vmix-theme='kri'] .vg-layer--results .vg-lane-crew {
     justify-self: start;
     align-self: center;
     text-align: left;
@@ -509,48 +527,12 @@ body {
     padding: 0;
 }
 
-[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-club {
-    font-size: 21.6px;
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-club,
+[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane-club {
+    font-size: 24px;
     text-align: left;
+    line-height: 1.15;
     color: #fff;
-}
-
-[data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {
-    left: 198px;
-    top: 408px;
-    width: 840px;
-    gap: 4px;
-}
-
-[data-vmix-theme='kri'] .vg-lane {
-    background: transparent;
-    padding: 2px 0;
-    min-height: 61px;
-    column-gap: 12px;
-}
-
-[data-vmix-theme='kri'] .vg-lane--draw,
-[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane {
-    grid-template-columns: 58px minmax(0, 1fr);
-}
-
-[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane {
-    grid-template-columns: 58px minmax(0, 1fr) 92px;
-    column-gap: 10px 14px;
-}
-
-[data-vmix-theme='kri'] .vg-lane-logo,
-[data-vmix-theme='kri'] .vg-lane-logo--empty {
-    width: 54px;
-    height: 54px;
-    padding: 0;
-    margin: 0 auto;
-    background: transparent;
-    border-radius: 0;
-    justify-self: center;
-    align-self: center;
-    object-fit: contain;
-    box-sizing: border-box;
 }
 
 [data-vmix-theme='kri'] .vg-lane-logo--empty {
@@ -563,18 +545,11 @@ body {
     display: none;
 }
 
-[data-vmix-theme='kri'] .vg-lane-club {
-    font-size: 24px;
-    line-height: 1.15;
-}
-
-[data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane-club {
-    font-size: 23px;
-}
-
 [data-vmix-theme='kri'] .vg-draw-lanes--results .vg-lane-time {
-    font-size: 26px;
-    min-width: 88px;
+    font-size: 28px;
+    min-width: 161px;
+    text-align: center;
+    color: #fff;
 }
 
 /* —— RNZ Milford (Milford_*_Ref.png, LT_Traccar_Milford_overlay.png) —— */

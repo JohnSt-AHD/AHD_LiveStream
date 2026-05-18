@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image2" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="6beaa7e9-97c7-42e4-be01-6a84a9c1aa77\KRI_ Draw.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Image1" Visible="False" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="b48a7838-ca66-403f-b161-160b7cceeec4\KRI_ Draw_KCR.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="event name" Dimensions="935,66,0" Location="156,191,0" FontFamily="Inter" FontSize="48" FontWeight="Bold" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="nevent no" Dimensions="224,43,0" Location="156,265,0" FontFamily="Inter" FontSize="28" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="event n" Dimensions="134,37.5,0" Location="318,265,0" FontFamily="Inter" FontSize="30" TextAlign="Right" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="1" Dimensions="807,53,0" Location="318,434,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="2" Dimensions="807,53,0" Location="318,497,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="3" Dimensions="807,53,0" Location="318,555.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="4" Dimensions="815,53,0" Location="318,615.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="5" Dimensions="807,53,0" Location="318,676.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="6" Dimensions="807,53,0" Location="318,737.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="7" Dimensions="807,53,0" Location="318,795.5,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="8" Dimensions="807,53,0" Location="318,857,0" FontFamily="Inter" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <Image Name="l1" Dimensions="36.79676,35.25,0" Location="252.6016,444.375,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l2" Dimensions="36.79676,35.25,0" Location="252.6016,504.75,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l3" Dimensions="36.79676,35.25,0" Location="252.6016,563.5,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l4" Dimensions="36.79676,35.25,0" Location="252.6016,624.375,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l5" Dimensions="36.79676,35.25,0" Location="252.6016,683.875,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l6" Dimensions="36.79676,35.25,0" Location="252.6016,744.5,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l7" Dimensions="36.79676,35.25,0" Location="252.6016,802.5,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="l8" Dimensions="36.79676,35.25,0" Location="252.6016,862.875,0">
+          <Image.Crop>
+            <Crop Range="0.1,0.1,0.9,0.9" Feather="100,100,100,100" />
+          </Image.Crop>
+          <Image.Bitmap>
+            <Bitmap Source="d14cf00a-d115-4634-a077-65165f0c4e18\ACG Tauranga - ACGT.png" />
+          </Image.Bitmap>
+        </Image>
+        <Image Name="Sponsor" Dimensions="242,95,0" Location="849,67,0">
+          <Image.Bitmap>
+            <Bitmap Source="afdf9280-c570-4ede-b810-52a8cf96395c\Aon_Corporation_logo.svg.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock1" Dimensions="151,54,0" Location="673,79,0" Text="Sponsor" FontFamily="Inter" FontSize="28">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="event n1" Dimensions="106,37.5,0" Location="458,265,0" FontFamily="Inter" FontSize="30" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>

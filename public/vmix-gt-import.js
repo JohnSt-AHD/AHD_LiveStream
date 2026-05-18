@@ -143,8 +143,22 @@
             if (graphic === 'results') return 'results-crew';
             if (graphic === 'draw') return 'draw-crew';
         }
-        if (n === 'Race Title') {
+        if (n === 'Race Title' || /^event name$/i.test(n)) {
             return graphic === 'results' ? 'results-head' : 'draw-head';
+        }
+        if (/^nevent no$/i.test(n) || /^event n\d*$/i.test(n)) {
+            if (graphic === 'draw' || graphic === 'results') {
+                return graphic === 'results' ? 'results-head' : 'draw-head';
+            }
+        }
+        if (/^l\d+$/i.test(n)) {
+            return graphic === 'results' ? 'results-logo' : 'draw-logo';
+        }
+        if (/^\d+$/.test(n) && (graphic === 'draw' || graphic === 'results')) {
+            return graphic === 'results' ? 'results-crew' : 'draw-crew';
+        }
+        if (/^time\s*\d/i.test(n)) {
+            return graphic === 'results' ? 'results-crew' : null;
         }
         if (n === 'Event Name') return 'lower-event';
         if (n === 'Event no') return 'lower-race';
@@ -265,8 +279,33 @@
 
         for (const el of parsed.elements) {
             let regionId = guessRegionId(el.name, graphic);
-            if (!regionId && /^logo_1$/i.test(el.name) && (graphic === 'draw' || graphic === 'results')) {
+            if (
+                !regionId &&
+                (/^logo_1$/i.test(el.name) || /^l1$/i.test(el.name)) &&
+                (graphic === 'draw' || graphic === 'results')
+            ) {
                 regionId = graphic === 'results' ? 'results-lanes' : 'draw-lanes';
+            }
+            if (
+                !regionId &&
+                /^textblock2$/i.test(el.name) &&
+                graphic === 'lower'
+            ) {
+                regionId = 'lower-event';
+            }
+            if (
+                !regionId &&
+                /^textblock1$/i.test(el.name) &&
+                graphic === 'lower'
+            ) {
+                regionId = 'lower-meta';
+            }
+            if (
+                !regionId &&
+                /^textblock3$/i.test(el.name) &&
+                graphic === 'lower'
+            ) {
+                regionId = 'lower-race';
             }
             if (!regionId) {
                 unmapped.push(el);

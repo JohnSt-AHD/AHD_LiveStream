@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Composition Width="1920" Height="1080">
+  <Layer Name="Layer1" Dimensions="1920,1080,0">
+    <Layer.Composition>
+      <Composition Width="1920" Height="1080">
+        <Image Name="Image3" Dimensions="1920,1080,0">
+          <Image.Bitmap>
+            <Bitmap Source="e04d6fa2-30f8-4fe2-b1d6-a1b098b472a9\KRI_ Lower Third.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock1" Dimensions="182,55,0" Location="182,866,0" FontFamily="Inter" FontSize="28" TextAlign="Right" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <TextBlock Name="TextBlock2" Dimensions="586,72,0" Location="160,931,0" FontFamily="Inter" FontWeight="Medium" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FF0060BF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+        <Image Name="Image2" Dimensions="204,80,0" Location="775,972,0">
+          <Image.Bitmap>
+            <Bitmap Source="eede5799-6de7-4e87-b3fc-11ba0ca9775d\Fresh Choice Supermarket.png" />
+          </Image.Bitmap>
+        </Image>
+        <TextBlock Name="TextBlock3" Dimensions="82,55,0" Location="370,866,0" FontFamily="Inter" FontSize="28" VerticalAlign="Center">
+          <TextBlock.Fill>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Fill>
+          <TextBlock.Stroke>
+            <Brush Color="#FFFFFFFF" />
+          </TextBlock.Stroke>
+        </TextBlock>
+      </Composition>
+    </Layer.Composition>
+  </Layer>
+</Composition>
