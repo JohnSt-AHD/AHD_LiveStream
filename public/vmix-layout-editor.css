@@ -7,7 +7,8 @@ body.vg-layout-dev .vg-layer--visible {
     opacity: 1;
 }
 
-body.vg-layout-dev .vg-stage[data-vg-state='hold'] .vg-bg--visible:not(.vg-bg--outro) {
+body.vg-layout-dev .vg-stage[data-vg-state='hold'] .vg-bg--visible,
+body.vg-layout-dev .vg-stage[data-vg-state='outro'] .vg-bg--visible {
     animation: none;
     opacity: 1;
 }

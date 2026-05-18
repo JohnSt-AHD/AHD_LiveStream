@@ -43,17 +43,17 @@ body {
     opacity: 0;
 }
 
-.vg-bg--visible:not(.vg-bg--outro) {
+.vg-bg--visible {
     opacity: 1;
 }
 
 /* KRI: PNG background fades in with text when hold starts */
-[data-vmix-theme='kri'] .vg-stage[data-vg-state='hold'] .vg-bg--visible:not(.vg-bg--outro) {
-    animation: vg-fade-in 0.65s ease forwards;
+[data-vmix-theme='kri'] .vg-stage[data-vg-state='hold'] .vg-bg--visible.vg-bg--fade-in {
+    animation: vg-fade-in 0.85s ease forwards;
 }
 
 .vg-bg--outro {
-    transition: opacity 0.35s ease;
+    opacity: 1;
 }
 
 .vg-bg-video {
@@ -92,52 +92,62 @@ body {
 .vg-layer--visible {
     opacity: 1;
     visibility: visible;
+}
+
+/* Fade in once when entering hold (not on data refresh) */
+.vg-layer--visible.vg-layer--fade-in {
     animation: vg-fade-in 0.65s ease forwards;
 }
 
-.vg-layer--visible .vg-lane-logo,
-.vg-layer--visible .vg-lane-logo--empty {
+.vg-stage[data-vg-state='hold'] .vg-layer--visible,
+.vg-stage[data-vg-state='outro'] .vg-layer--visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.vg-layer--visible.vg-layer--fade-in .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane-logo--empty {
     opacity: 0;
     animation: vg-fade-in 0.5s ease forwards;
 }
 
-.vg-layer--visible .vg-lane:nth-child(1) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(1) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(1) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(1) .vg-lane-logo--empty {
     animation-delay: 0.06s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(2) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(2) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(2) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(2) .vg-lane-logo--empty {
     animation-delay: 0.1s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(3) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(3) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(3) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(3) .vg-lane-logo--empty {
     animation-delay: 0.14s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(4) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(4) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(4) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(4) .vg-lane-logo--empty {
     animation-delay: 0.18s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(5) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(5) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(5) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(5) .vg-lane-logo--empty {
     animation-delay: 0.22s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(6) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(6) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(6) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(6) .vg-lane-logo--empty {
     animation-delay: 0.26s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(7) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(7) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(7) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(7) .vg-lane-logo--empty {
     animation-delay: 0.3s;
 }
 
-.vg-layer--visible .vg-lane:nth-child(8) .vg-lane-logo,
-.vg-layer--visible .vg-lane:nth-child(8) .vg-lane-logo--empty {
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(8) .vg-lane-logo,
+.vg-layer--visible.vg-layer--fade-in .vg-lane:nth-child(8) .vg-lane-logo--empty {
     animation-delay: 0.34s;
 }
 
