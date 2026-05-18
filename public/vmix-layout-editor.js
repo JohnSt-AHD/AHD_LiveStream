@@ -4,16 +4,23 @@
 (function (global) {
     const LAYOUT_IDS = {
         title: [{ id: 'title', label: 'Title block' }],
-        lower: [{ id: 'lower', label: 'Lower third' }],
+        lower: [
+            { id: 'lower', label: 'Lower third (whole layer)' },
+            { id: 'lower-meta', label: 'Lower — round / progression' },
+            { id: 'lower-race', label: 'Lower — race number + time' },
+            { id: 'lower-event', label: 'Lower — event title' },
+        ],
         draw: [
             { id: 'draw-head', label: 'Draw — header text' },
             { id: 'draw-lanes', label: 'Draw — lane list' },
             { id: 'draw-logo', label: 'Draw — school logos', target: 'draw-logo' },
+            { id: 'draw-crew', label: 'Draw — crew text', target: 'draw-crew' },
         ],
         results: [
             { id: 'results-head', label: 'Results — header text' },
             { id: 'results-lanes', label: 'Results — lane list' },
             { id: 'results-logo', label: 'Results — school logos', target: 'results-logo' },
+            { id: 'results-crew', label: 'Results — crew text', target: 'results-crew' },
         ],
     };
 
@@ -50,7 +57,7 @@
     function readPropsFromEl(el) {
         const s = el.style;
         const props = {};
-        for (const key of ['left', 'top', 'width', 'height', 'gap', 'fontSize', 'transform', 'columnGap']) {
+        for (const key of ['left', 'top', 'width', 'height', 'gap', 'fontSize', 'transform', 'columnGap', 'color']) {
             if (s[key]) props[key] = s[key];
         }
         const m = s.transform?.match(/scale\(([\d.]+)\)/);
@@ -121,6 +128,20 @@
         set('fontSize', saved?.fontSize || el.style.fontSize || '');
         set('transform', saved?.transform || el.style.transform || '');
         set('scale', saved?.scale ?? '');
+        const computedColor = global.getComputedStyle(el).color || '';
+        set('color', saved?.color || el.style.color || rgbToHex(computedColor) || '');
+    }
+
+    function rgbToHex(rgb) {
+        if (!rgb) return '';
+        if (/^#/.test(rgb)) return rgb;
+        const m = rgb.match(/rgba?\(([^)]+)\)/);
+        if (!m) return '';
+        const parts = m[1].split(',').map((s) => parseFloat(s.trim()));
+        if (parts.length < 3) return '';
+        const [r, g, b] = parts;
+        const to2 = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+        return `#${to2(r)}${to2(g)}${to2(b)}`;
     }
 
     function applyFieldsToSelection() {
@@ -128,6 +149,18 @@
         const panel = editor.panel;
         if (!def || !panel) return;
 
+        const props = collectFieldProps();
+
+        if (def.target) {
+            findTargetEls(def.target).forEach((el) => global.VmixLayout.applyStyle(el, props));
+        } else {
+            const el = findBlockEl(def.id);
+            if (el) global.VmixLayout.applyStyle(el, props);
+        }
+    }
+
+    function collectFieldProps() {
+        const panel = editor.panel;
         const get = (name) => panel.querySelector(`[data-field="${name}"]`)?.value?.trim() ?? '';
         const props = {};
         if (get('left') !== '') props.left = `${get('left')}px`;
@@ -137,13 +170,8 @@
         if (get('fontSize')) props.fontSize = get('fontSize');
         if (get('transform')) props.transform = get('transform');
         if (get('scale') !== '') props.scale = Number(get('scale')) || 1;
-
-        if (def.target) {
-            findTargetEls(def.target).forEach((el) => global.VmixLayout.applyStyle(el, props));
-        } else {
-            const el = findBlockEl(def.id);
-            if (el) global.VmixLayout.applyStyle(el, props);
-        }
+        if (get('color')) props.color = get('color');
+        return props;
     }
 
     function setStatus(msg, isErr) {
@@ -161,15 +189,7 @@
         applyFieldsToSelection();
         const el = def.target ? findTargetEls(def.target)[0] : findBlockEl(def.id);
         const props = el ? readPropsFromEl(el) : {};
-        const panel = editor.panel;
-        const get = (name) => panel.querySelector(`[data-field="${name}"]`)?.value?.trim() ?? '';
-        if (get('left') !== '') props.left = `${get('left')}px`;
-        if (get('top') !== '') props.top = `${get('top')}px`;
-        if (get('width')) props.width = get('width');
-        if (get('gap')) props.gap = get('gap');
-        if (get('fontSize')) props.fontSize = get('fontSize');
-        if (get('transform')) props.transform = get('transform');
-        if (get('scale') !== '') props.scale = Number(get('scale')) || 1;
+        Object.assign(props, collectFieldProps());
 
         global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
         setStatus(`Saved ${editor.theme} / ${editor.graphic} / ${def.id}`);
@@ -327,6 +347,7 @@
                 <div><label>Font size</label><input data-field="fontSize" type="text"></div>
                 <div><label>Transform</label><input data-field="transform" type="text" placeholder="translate(5vw, 1vh)"></div>
                 <div><label>Scale</label><input data-field="scale" type="number" step="0.05" min="0.5" max="1.5"></div>
+                <div class="vg-layout-field-color"><label>Text colour</label><input data-field="color" type="color"></div>
             </div>
             <div class="vg-layout-actions">
                 <button type="button" class="primary" data-action="save">Save region</button>
@@ -363,6 +384,11 @@
                 else if (a === 'reset') resetGraphic();
             });
         });
+
+        const colorInput = editor.panel.querySelector('[data-field="color"]');
+        if (colorInput) {
+            colorInput.addEventListener('input', () => applyFieldsToSelection());
+        }
 
         populateRegionSelect();
     }

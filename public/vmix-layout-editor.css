@@ -84,6 +84,16 @@ body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
     gap: 8px;
 }
 
+.vg-layout-field-color {
+    grid-column: 1 / -1;
+}
+
+.vg-layout-field-color input[type='color'] {
+    height: 32px;
+    padding: 2px;
+    cursor: pointer;
+}
+
 .vg-layout-actions {
     display: flex;
     flex-wrap: wrap;

@@ -16,6 +16,7 @@
         'scale',
         'columnGap',
         'rowGap',
+        'color',
     ];
 
     function readAll() {
@@ -76,6 +77,21 @@
             transform = transform ? `${s} ${transform}` : s;
         }
         if (transform) el.style.transform = transform;
+
+        const hasLeft = props.left != null && props.left !== '';
+        const hasTop = props.top != null && props.top !== '';
+        if (hasLeft || hasTop) {
+            const cs = global.getComputedStyle(el);
+            if (cs.position === 'static') {
+                el.style.position = 'absolute';
+            }
+        }
+
+        if (props.color) {
+            el.querySelectorAll('h1, h2, h3, h4, p, span, li, ul, div').forEach((node) => {
+                node.style.color = String(props.color);
+            });
+        }
     }
 
     function apply(theme, graphic) {

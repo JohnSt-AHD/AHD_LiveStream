@@ -217,6 +217,17 @@ body {
     padding: 0 40px;
 }
 
+/* When dev mode positions individual lower-third parts absolutely */
+.vg-layer--lower [data-vg-layout='lower-meta'][style*='left'],
+.vg-layer--lower [data-vg-layout='lower-race'][style*='left'],
+.vg-layer--lower [data-vg-layout='lower-event'][style*='left'],
+.vg-layer--lower [data-vg-layout='lower-meta'][style*='top'],
+.vg-layer--lower [data-vg-layout='lower-race'][style*='top'],
+.vg-layer--lower [data-vg-layout='lower-event'][style*='top'] {
+    position: absolute;
+    margin: 0;
+}
+
 .vg-lower-race {
     margin: 0 0 6px;
     font-size: 28px;

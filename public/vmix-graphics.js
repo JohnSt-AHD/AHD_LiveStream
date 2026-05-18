@@ -892,11 +892,21 @@ function vgRenderLower(layer, race) {
     layer.dataset.vgLayout = 'lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const meta = [race.round, race.progression].filter(Boolean).join(' · ');
-    if (meta) layer.appendChild(vgEl('p', 'vg-lower-meta', meta));
-    layer.appendChild(
-        vgEl('p', 'vg-lower-race', `Race ${race.race} · ${vgFormatTime(race.startAt)}`),
+    if (meta) {
+        const metaEl = vgEl('p', 'vg-lower-meta', meta);
+        metaEl.dataset.vgLayout = 'lower-meta';
+        layer.appendChild(metaEl);
+    }
+    const raceEl = vgEl(
+        'p',
+        'vg-lower-race',
+        `Race ${race.race} · ${vgFormatTime(race.startAt)}`,
     );
-    layer.appendChild(vgEl('h2', 'vg-lower-event', fullName));
+    raceEl.dataset.vgLayout = 'lower-race';
+    layer.appendChild(raceEl);
+    const eventEl = vgEl('h2', 'vg-lower-event', fullName);
+    eventEl.dataset.vgLayout = 'lower-event';
+    layer.appendChild(eventEl);
 }
 
 function vgThemeId() {
@@ -937,6 +947,7 @@ function vgBuildLaneRow(entry, lookup, mode) {
         li.appendChild(vgEl('span', 'vg-lane-logo vg-lane-logo--empty', '—'));
     }
     const crew = vgEl('div', 'vg-lane-crew');
+    crew.dataset.vgLayoutTarget = mode === 'draw' ? 'draw-crew' : 'results-crew';
     crew.appendChild(vgEl('span', 'vg-lane-club', info.name));
     if (entry.names && vgShowAthleteNames(mode)) {
         crew.appendChild(vgEl('span', 'vg-lane-names', entry.names));
