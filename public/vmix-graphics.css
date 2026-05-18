@@ -498,7 +498,7 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
-    min-height: 58px;
+    min-height: 59px;
     column-gap: calc(28px * 0.92);
 }
 
