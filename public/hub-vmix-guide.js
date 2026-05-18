@@ -16,6 +16,8 @@ const VMIX_TRIGGERS = [
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; text at 1s, pause at 3s; o finishes video' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
+    { key: 'n', graphic: 'Next race', desc: 'Step live race number up (daysheet order)' },
+    { key: 'p', graphic: 'Previous race', desc: 'Step live race number down (daysheet order)' },
 ];
 
 const VMIX_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';

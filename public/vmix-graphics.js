@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t/w = play in · g = tracker (Milford) · o = out · c = clear all.
+ * Keys: d/l/r/t/w = play in · g = tracker (Milford) · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -350,6 +350,53 @@ function vgFindRace(raceParam) {
         return true;
     });
     return found || vgState.races.find((r) => r.raceNum === num) || vgState.races[0];
+}
+
+function vgFindRaceIndex(raceParam) {
+    const race = vgFindRace(raceParam);
+    if (!race) return -1;
+    return vgState.races.indexOf(race);
+}
+
+function vgSetLiveRace(raceLabel) {
+    const race = String(raceLabel || '').trim();
+    if (!race) return;
+    if (window.AltitudeHdLiveRace?.setLiveRace) {
+        window.AltitudeHdLiveRace.setLiveRace(race);
+        return;
+    }
+    try {
+        localStorage.setItem(VG_LS_LIVE_RACE, race);
+    } catch {
+        /* ignore */
+    }
+}
+
+function vgStepLiveRace(delta) {
+    if (window.AltitudeHdLiveRace?.stepLiveRace) {
+        window.AltitudeHdLiveRace.stepLiveRace(delta);
+        vgRefreshLiveRaceContent();
+        return;
+    }
+    const races = vgState.races;
+    if (!races.length) {
+        const cur = parseInt(vgGetRaceParam(), 10);
+        const base = Number.isFinite(cur) ? cur : 1;
+        vgSetLiveRace(String(Math.max(1, base + delta)));
+        vgRefreshLiveRaceContent();
+        return;
+    }
+    let idx = vgFindRaceIndex(vgGetRaceParam());
+    if (idx < 0) idx = 0;
+    idx = Math.max(0, Math.min(races.length - 1, idx + delta));
+    vgSetLiveRace(races[idx].race);
+    vgRefreshLiveRaceContent();
+}
+
+function vgRefreshLiveRaceContent() {
+    if (vgPlayback.graphic && vgPlayback.state !== 'idle') {
+        vgPrepareContent(vgPlayback.graphic, vgGetRaceParam());
+    }
 }
 
 function vgCompetitorNames(race, lane) {
@@ -1189,9 +1236,7 @@ function vgRenderResults(layer, race) {
 }
 
 function vgRefreshHoldContent() {
-    if (vgPlayback.state === 'hold' && vgPlayback.graphic) {
-        vgPrepareContent(vgPlayback.graphic, vgGetRaceParam());
-    }
+    vgRefreshLiveRaceContent();
 }
 
 function vgHandleRemoteTrigger(raw) {
@@ -1230,6 +1275,16 @@ function vgBindKeyboard() {
             vgTriggerClear();
             return;
         }
+        if (key === 'n') {
+            e.preventDefault();
+            vgStepLiveRace(1);
+            return;
+        }
+        if (key === 'p') {
+            e.preventDefault();
+            vgStepLiveRace(-1);
+            return;
+        }
         const graphic = VG_GRAPHIC_ALIASES[key];
         if (graphic) {
             e.preventDefault();
@@ -1238,7 +1293,7 @@ function vgBindKeyboard() {
     });
 
     window.addEventListener('storage', (e) => {
-        if (e.key === VG_LS_LIVE_RACE) vgRefreshHoldContent();
+        if (e.key === VG_LS_LIVE_RACE) vgRefreshLiveRaceContent();
         if (e.key === VG_LS_TRIGGER) vgHandleRemoteTrigger(e.newValue);
     });
 }
