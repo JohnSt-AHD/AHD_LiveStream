@@ -1032,6 +1032,12 @@ function vgRenderTitle(layer, race) {
     if (day) layer.appendChild(vgEl('p', 'vg-title-date', day));
 }
 
+function vgKriCapitalizeFirst(text) {
+    const s = String(text || '').toLowerCase();
+    if (!s) return s;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function vgRenderLower(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--lower');
     layer.dataset.vgLayout = 'lower';
@@ -1042,10 +1048,11 @@ function vgRenderLower(layer, race) {
         metaEl.dataset.vgLayout = 'lower-meta';
         layer.appendChild(metaEl);
     }
+    const raceLabel = `Race ${race.race} · ${vgFormatTime(race.startAt)}`;
     const raceEl = vgEl(
         'p',
         'vg-lower-race',
-        `Race ${race.race} · ${vgFormatTime(race.startAt)}`,
+        vgIsKriTheme() ? vgKriCapitalizeFirst(raceLabel) : raceLabel,
     );
     raceEl.dataset.vgLayout = 'lower-race';
     layer.appendChild(raceEl);
