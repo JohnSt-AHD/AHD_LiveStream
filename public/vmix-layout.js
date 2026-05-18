@@ -100,7 +100,7 @@
         if (!regions) return;
 
         for (const [id, props] of Object.entries(regions)) {
-            if (id.endsWith('-logo')) {
+            if (id.endsWith('-logo') || id.endsWith('-crew')) {
                 global.document
                     .querySelectorAll(`[data-vg-layout-target="${id}"]`)
                     .forEach((el) => applyStyle(el, props));

@@ -2,9 +2,11 @@ body.vg-layout-dev {
     cursor: default;
 }
 
-body.vg-layout-dev .vg-layer--visible {
+body.vg-layout-dev .vg-layer--visible,
+body.vg-layout-dev .vg-layer--fade-out {
     animation: none;
     opacity: 1;
+    visibility: visible;
 }
 
 body.vg-layout-dev .vg-stage[data-vg-state='hold'] .vg-bg--visible,

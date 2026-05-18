@@ -32,6 +32,17 @@ body {
     }
 }
 
+@keyframes vg-fade-out {
+    from {
+        opacity: 1;
+        visibility: visible;
+    }
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
 .vg-bg {
     position: absolute;
     inset: 0;
@@ -50,6 +61,12 @@ body {
 /* KRI: PNG background fades in with text when hold starts */
 [data-vmix-theme='kri'] .vg-stage[data-vg-state='hold'] .vg-bg--visible.vg-bg--fade-in {
     animation: vg-fade-in 0.85s ease forwards;
+}
+
+/* KRI: PNG background + text fade out together on o */
+[data-vmix-theme='kri'] .vg-stage[data-vg-state='outro'] .vg-bg.vg-bg--fade-out,
+[data-vmix-theme='kri'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out {
+    animation: vg-fade-out 0.65s ease forwards;
 }
 
 .vg-bg--outro {
@@ -99,8 +116,8 @@ body {
     animation: vg-fade-in 0.65s ease forwards;
 }
 
-.vg-stage[data-vg-state='hold'] .vg-layer--visible,
-.vg-stage[data-vg-state='outro'] .vg-layer--visible {
+.vg-stage[data-vg-state='hold'] .vg-layer--visible:not(.vg-layer--fade-out),
+.vg-stage[data-vg-state='outro'] .vg-layer--visible:not(.vg-layer--fade-out) {
     opacity: 1;
     visibility: visible;
 }
@@ -443,24 +460,36 @@ body {
     left: calc(190px - 2vw);
     top: 408px;
     width: 860px;
-    gap: 4.5px;
+    gap: calc(4.5px * 0.98);
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane {
     min-height: 54.9px;
-    column-gap: 10.8px;
-    grid-template-columns: 52px minmax(0, 1fr);
+    column-gap: 12px;
+    grid-template-columns: calc(48.6px + 5vw) minmax(0, 1fr);
+    justify-items: start;
+    align-items: center;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo,
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-logo--empty {
     width: 48.6px;
     height: 48.6px;
-    transform: translate(5vw, 1vh);
+    justify-self: start;
+    margin: 0;
+    transform: translate(0, 1vh);
+}
+
+[data-vmix-theme='kri'] .vg-layer--draw .vg-lane-crew {
+    justify-self: start;
+    align-self: center;
+    text-align: left;
+    width: 100%;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw .vg-lane-club {
     font-size: 21.6px;
+    text-align: left;
 }
 
 [data-vmix-theme='kri'] .vg-layer--results .vg-draw-lanes {

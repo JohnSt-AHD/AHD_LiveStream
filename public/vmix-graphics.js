@@ -20,6 +20,7 @@ const VG_GRAPHIC_ALIASES = {
 const VG_HOLD_MS = 3000;
 const VG_MILFORD_DRAW_RESULTS_HOLD_MS = 6000;
 const VG_OUTRO_MS = 3000;
+const VG_KRI_FADE_MS = 650;
 
 const vgPlayback = {
     state: 'idle',
@@ -501,7 +502,20 @@ function vgShowTextLayer(visible, opts = {}) {
         layer.classList.add('vg-layer--fade-in');
     }
     if (!visible) {
+        layer.classList.remove('vg-layer--fade-in', 'vg-layer--fade-out');
+    }
+}
+
+function vgStartKriOutroFade() {
+    const bg = vgGetBgEl();
+    const layer = vgGetLayerEl();
+    if (bg) {
+        bg.classList.remove('vg-bg--fade-in');
+        bg.classList.add('vg-bg--fade-out');
+    }
+    if (layer) {
         layer.classList.remove('vg-layer--fade-in');
+        layer.classList.add('vg-layer--fade-out');
     }
 }
 
@@ -568,6 +582,7 @@ function vgResetBackground() {
             'vg-bg--outro',
             'vg-bg--plain',
             'vg-bg--fade-in',
+            'vg-bg--fade-out',
         );
     }
     vgHideMap();
@@ -886,6 +901,12 @@ function vgStartOutroPlayback(isVideo, video) {
 
     if (isVideo && video) {
         vgPlayVideoReverse(video, done);
+        return;
+    }
+
+    if (vgIsKriTheme()) {
+        vgStartKriOutroFade();
+        vgPlayback.outroTimer = setTimeout(done, VG_KRI_FADE_MS + 100);
         return;
     }
 
