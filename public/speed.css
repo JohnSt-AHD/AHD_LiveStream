@@ -46,10 +46,11 @@ body.speed-transparent {
     fill: #9ca3af;
 }
 
-.speed-route-device-dot {
+.speed-route-device-arrow {
     fill: #ff7a18;
     stroke: rgba(0, 0, 0, 0.35);
-    stroke-width: 0.12;
+    stroke-width: 0.1;
+    stroke-linejoin: round;
 }
 
 .speed-bg-video-wrap {

@@ -51,7 +51,7 @@ const routeLayer = document.getElementById('speedRouteLayer');
 const routeLine = document.getElementById('speedRouteLine');
 const routeMarkerStart = document.getElementById('speedRouteMarkerStart');
 const routeMarkerEnd = document.getElementById('speedRouteMarkerEnd');
-const routeDeviceDot = document.getElementById('speedRouteDeviceDot');
+const routeDeviceArrow = document.getElementById('speedRouteDeviceArrow');
 
 /** Progress 0–1 along start→finish from device position (projection onto segment, meters plane). */
 function segmentProgressT(dLat, dLng, sLat, sLng, eLat, eLng) {
@@ -69,8 +69,15 @@ function segmentProgressT(dLat, dLng, sLat, sLng, eLat, eLng) {
     return Math.max(0, Math.min(1, t));
 }
 
+function speedRouteArrowTransform(cx, cy) {
+    const { d1x, d1y, d2x, d2y } = routeCfg;
+    const angleDeg =
+        (Math.atan2(d2y - d1y, d2x - d1x) * 180) / Math.PI;
+    return `translate(${cx},${cy}) rotate(${angleDeg})`;
+}
+
 function layoutSpeedRouteOverlay() {
-    if (!routeCfg || !routeLine || !routeMarkerStart || !routeMarkerEnd || !routeDeviceDot || !routeLayer) {
+    if (!routeCfg || !routeLine || !routeMarkerStart || !routeMarkerEnd || !routeDeviceArrow || !routeLayer) {
         return;
     }
     const { d1x, d1y, d2x, d2y } = routeCfg;
@@ -82,18 +89,16 @@ function layoutSpeedRouteOverlay() {
     routeMarkerStart.setAttribute('cy', String(d1y));
     routeMarkerEnd.setAttribute('cx', String(d2x));
     routeMarkerEnd.setAttribute('cy', String(d2y));
-    routeDeviceDot.setAttribute('cx', String(d1x));
-    routeDeviceDot.setAttribute('cy', String(d1y));
+    routeDeviceArrow.setAttribute('transform', speedRouteArrowTransform(d1x, d1y));
     routeLayer.hidden = false;
 }
 
-function updateSpeedRouteDot(lat, lng) {
-    if (!routeCfg || !routeDeviceDot) return;
+function updateSpeedRouteArrow(lat, lng) {
+    if (!routeCfg || !routeDeviceArrow) return;
     const t = segmentProgressT(lat, lng, routeCfg.rsLat, routeCfg.rsLng, routeCfg.reLat, routeCfg.reLng);
     const cx = routeCfg.d1x + t * (routeCfg.d2x - routeCfg.d1x);
     const cy = routeCfg.d1y + t * (routeCfg.d2y - routeCfg.d1y);
-    routeDeviceDot.setAttribute('cx', String(cx));
-    routeDeviceDot.setAttribute('cy', String(cy));
+    routeDeviceArrow.setAttribute('transform', speedRouteArrowTransform(cx, cy));
 }
 
 if (routeCfg) {
@@ -324,7 +329,7 @@ async function tick() {
             !Number.isNaN(pos.latitude) &&
             !Number.isNaN(pos.longitude)
         ) {
-            updateSpeedRouteDot(pos.latitude, pos.longitude);
+            updateSpeedRouteArrow(pos.latitude, pos.longitude);
         }
 
         if (!pos || typeof pos.speed !== 'number') {
