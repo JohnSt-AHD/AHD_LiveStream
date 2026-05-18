@@ -10,20 +10,17 @@
         kri: {
             draw: {
                 'draw-head': {
-                    left: '171px',
-                    top: '274px',
+                    left: '169px',
+                    top: '226px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lanes': {
-                    left: '247px',
-                    top: '400px',
-                    transform: 'scale(0.93) translate(131px, 19px)',
+                    left: '80px',
+                    top: '365px',
+                    gap: 'calc(4.5px * 0.98 * 1.05)',
                     color: 'rgb(255, 255, 255)',
-                    scale: 0.93,
                 },
-                'draw-logo': {
-                    transform: 'translate(0, 25px)',
-                },
+                'draw-logo': {},
                 'draw-crew': {
                     color: 'rgb(255, 255, 255)',
                 },
