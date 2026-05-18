@@ -47,17 +47,17 @@
                 'lower-meta': {
                     left: '500px',
                     top: '900px',
-                    width: '55px',
-                    height: '182px',
-                    fontSize: '10px',
+                    width: '100px',
+                    height: '28px',
+                    fontSize: '20px',
                     color: '#0060BF',
                 },
                 'lower-race': {
                     left: '182px',
                     top: '870px',
-                    width: '55px',
-                    height: '82px',
-                    fontSize: '28px',
+                    width: '100px',
+                    height: '28px',
+                    fontSize: '20px',
                 },
                 'lower-event': {
                     left: '160px',

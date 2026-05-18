@@ -429,27 +429,37 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-lower-meta {
+    box-sizing: border-box;
     margin: 0;
     left: 500px;
     top: 900px;
-    width: 55px;
-    height: 182px;
-    font-size: 10px;
+    width: 100px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
     font-weight: 700;
     text-transform: none;
     color: #0060bf;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: visible;
 }
 
 [data-vmix-theme='kri'] .vg-lower-race {
+    box-sizing: border-box;
     margin: 0;
     left: 182px;
     top: 870px;
-    width: 55px;
-    height: 82px;
-    font-size: 28px;
+    width: 100px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
     color: #fff;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: visible;
 }
 
 [data-vmix-theme='kri'] .vg-lower-event {
