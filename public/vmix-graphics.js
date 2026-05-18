@@ -515,7 +515,7 @@ function vgGetVideoProfile(graphic) {
         return { textInMs: 1000, pauseAtMs: 3000 };
     }
     if (graphic === 'draw') {
-        return { textInMs: 6000, pauseAtMs: 9000 };
+        return { textInMs: 6000, textOutMs: 20000, playThrough: true };
     }
     if (graphic === 'results') {
         return { textInMs: 6000, textOutMs: 16000, playThrough: true };
