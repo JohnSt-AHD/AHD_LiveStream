@@ -16,8 +16,12 @@
         topBuoySeawardNudgeM: 8,
         /** Do not shift the beach gate further offshore than this (metres). */
         maxBeachGateShorewardM: 30,
-        /** WR beach run: start/finish line to water edge (10–50 m; default 30). */
-        beachRunDistM: 30,
+        /** WR beach run: start/finish line to boat at water (10–50 m; default 25). */
+        beachRunDistM: 25,
+        /** Tide/surf line landward of boat stop (metres toward beach). */
+        tideLineFromBoatM: 10,
+        /** Run flags landward of tide line (metres on sand). */
+        runFlagLandwardOfTideM: 4,
         /** Typical runner speed on sand for time labels (m/s). */
         runnerSprintMps: 7.5,
         /** Water return leg before beach run (approx. metres, for time split). */
@@ -717,8 +721,20 @@
         };
     }
 
-    function estimateWaterEdgeFromStops(athletes, frame) {
-        const shoreS = [];
+    function landwardXY(x, y, frame, distM) {
+        return { x: x - frame.ux * distM, y: y - frame.uy * distM };
+    }
+
+    function medianOf(nums) {
+        if (!nums.length) return NaN;
+        const s = [...nums].sort((a, b) => a - b);
+        const m = Math.floor(s.length / 2);
+        return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    }
+
+    /** Boat stop/start at surf line from GPS (stationary points near beach). */
+    function estimateBoatBeachPositions(athletes, frame) {
+        const stops = [];
         for (const ath of athletes || []) {
             if (!ath.analysis?.valid || !ath.points?.length) continue;
             const sorted = sortRoutePoints(ath.points);
@@ -731,21 +747,51 @@
                 if (!Number.isFinite(t)) continue;
                 if (pointSpeedMps(p) > 2.2) continue;
                 const m = latLngToLocalMeters(p.latitude, p.longitude, frame.refLat, frame.refLng);
-                const s =
-                    (m.x - frame.g1m.x) * frame.ux + (m.y - frame.g1m.y) * frame.uy;
+                const cross =
+                    (m.x - frame.g1m.x) * frame.px + (m.y - frame.g1m.y) * frame.py;
                 const nearOut = t1 != null && t <= t1 + 8000;
                 const nearIn = t3 != null && t >= t3 - 5000;
-                if (nearOut || nearIn) shoreS.push(s);
+                if (nearOut || nearIn) {
+                    stops.push({ x: m.x, y: m.y, cross, lane: ath.lane });
+                }
             }
         }
-        if (shoreS.length < 4) return null;
-        shoreS.sort((a, b) => a - b);
-        const targetS = shoreS[Math.floor(shoreS.length * 0.3)];
-        const delta = targetS - -WR_COURSE_SPEC.gateOffsetsM[0];
-        if (Math.abs(delta) > 45) return null;
+
+        const fallbackLeft = {
+            x: frame.water.x + frame.px * frame.laneHalfSpan,
+            y: frame.water.y + frame.py * frame.laneHalfSpan,
+        };
+        const fallbackRight = {
+            x: frame.water.x - frame.px * frame.laneHalfSpan,
+            y: frame.water.y - frame.py * frame.laneHalfSpan,
+        };
+        if (stops.length < 2) {
+            return {
+                fromGps: false,
+                left: fallbackLeft,
+                right: fallbackRight,
+                center: frame.water,
+            };
+        }
+
+        const leftPts = stops.filter((s) => s.lane === 1 || (s.lane == null && s.cross < 0));
+        const rightPts = stops.filter((s) => s.lane === 2 || (s.lane == null && s.cross >= 0));
+        const pick = (arr, fb) =>
+            arr.length
+                ? {
+                      x: medianOf(arr.map((s) => s.x)),
+                      y: medianOf(arr.map((s) => s.y)),
+                  }
+                : fb;
+
         return {
-            x: frame.water.x + frame.ux * delta,
-            y: frame.water.y + frame.uy * delta,
+            fromGps: true,
+            left: pick(leftPts, fallbackLeft),
+            right: pick(rightPts, fallbackRight),
+            center: {
+                x: medianOf(stops.map((s) => s.x)),
+                y: medianOf(stops.map((s) => s.y)),
+            },
         };
     }
 
@@ -772,42 +818,45 @@
             return { ok: false, reason: 'Need six course buoys to draw beach run layout.' };
         }
 
-        const stopWater = estimateWaterEdgeFromStops(athletes, frame);
-        const water = stopWater || frame.water;
+        const boats = estimateBoatBeachPositions(athletes, frame);
+        const tideOff = WR_COURSE_SPEC.tideLineFromBoatM;
+        const flagOff = WR_COURSE_SPEC.runFlagLandwardOfTideM;
         const beachRun = WR_COURSE_SPEC.beachRunDistM;
-        const startX = water.x - frame.ux * beachRun;
-        const startY = water.y - frame.uy * beachRun;
-        const span = frame.laneHalfSpan + 14;
+        const span = frame.laneHalfSpan + 16;
 
-        const tideLine = crossLineEndpoints(frame, water.x, water.y, span + 6);
-        const startGate = crossLineEndpoints(frame, startX, startY, span + 10);
-        const finishGate = crossLineEndpoints(frame, startX, startY, span + 10);
+        const tideCenter = landwardXY(boats.center.x, boats.center.y, frame, tideOff);
+        const tideLine = crossLineEndpoints(frame, tideCenter.x, tideCenter.y, span + 8);
 
-        const l1 = buoyByLabel(buoys, 'L1');
-        const r1 = buoyByLabel(buoys, 'R1');
-        const l1m = latLngToLocalMeters(l1.lat, l1.lng, frame.refLat, frame.refLng);
-        const r1m = latLngToLocalMeters(r1.lat, r1.lng, frame.refLat, frame.refLng);
+        const startLand = Math.max(8, beachRun - tideOff);
+        const startCenter = landwardXY(tideCenter.x, tideCenter.y, frame, startLand);
+        const startFinishGate = crossLineEndpoints(frame, startCenter.x, startCenter.y, span + 12);
+        const startFinishPt = xyToLatLng(startCenter.x, startCenter.y, frame);
 
-        function flagAtLane(laneM) {
-            const tCross = (laneM.x - water.x) * frame.px + (laneM.y - water.y) * frame.py;
-            return xyToLatLng(water.x + frame.px * tCross, water.y + frame.py * tCross, frame);
+        function tidePointAtBoat(boatXY) {
+            return landwardXY(boatXY.x, boatXY.y, frame, tideOff);
         }
 
-        const flagL = flagAtLane(l1m);
-        const flagR = flagAtLane(r1m);
+        function flagPointOnBeach(boatXY) {
+            const onTide = tidePointAtBoat(boatXY);
+            return landwardXY(onTide.x, onTide.y, frame, flagOff);
+        }
+
+        const flagLxy = flagPointOnBeach(boats.left);
+        const flagRxy = flagPointOnBeach(boats.right);
+        const boatL = xyToLatLng(boats.left.x, boats.left.y, frame);
+        const boatR = xyToLatLng(boats.right.x, boats.right.y, frame);
+        const flagL = xyToLatLng(flagLxy.x, flagLxy.y, frame);
+        const flagR = xyToLatLng(flagRxy.x, flagRxy.y, frame);
+
         const runFlags = [
             { side: 'L', lane: 1, label: 'Run flag L', lat: flagL.lat, lng: flagL.lng },
             { side: 'R', lane: 2, label: 'Run flag R', lat: flagR.lat, lng: flagR.lng },
         ];
 
-        function startPointForLane(side) {
-            const sign = side === 'L' ? -1 : 1;
-            return xyToLatLng(
-                startX + frame.px * frame.laneHalfSpan * sign * 0.85,
-                startY + frame.py * frame.laneHalfSpan * sign * 0.85,
-                frame,
-            );
-        }
+        const boatStops = [
+            { side: 'L', lane: 1, label: 'Boat L', lat: boatL.lat, lng: boatL.lng },
+            { side: 'R', lane: 2, label: 'Boat R', lat: boatR.lat, lng: boatR.lng },
+        ];
 
         const runnerPaths = [];
         const sortedAth = [...(athletes || [])].filter((a) => a.analysis?.valid);
@@ -822,9 +871,8 @@
                       : sortedAth.indexOf(ath) === 0
                         ? 'L'
                         : 'R';
-            const flag = runFlags.find((f) => f.side === side) || runFlags[0];
-            const startPt = startPointForLane(side);
-            const finishPt = startPt;
+            const flag = side === 'L' ? flagL : flagR;
+            const boat = side === 'L' ? boatL : boatR;
             const times = estimateBeachRunTimes(ath.analysis);
             const estOut =
                 times.outMs != null
@@ -839,15 +887,17 @@
                 side,
                 runOut: {
                     latlngs: [
-                        [startPt.lat, startPt.lng],
+                        [startFinishPt.lat, startFinishPt.lng],
                         [flag.lat, flag.lng],
+                        [boat.lat, boat.lng],
                     ],
                     estMs: estOut,
                 },
                 runIn: {
                     latlngs: [
+                        [boat.lat, boat.lng],
                         [flag.lat, flag.lng],
-                        [finishPt.lat, finishPt.lng],
+                        [startFinishPt.lat, startFinishPt.lng],
                     ],
                     estMs: estIn,
                 },
@@ -857,13 +907,14 @@
         return {
             ok: true,
             tideLine,
-            startGate,
-            finishGate,
+            startFinishGate,
             runFlags,
+            boatStops,
+            startFinishPt,
             runnerPaths,
-            note: stopWater
-                ? 'Tide/water line from GPS boat stops; beach runs per WR (~30 m) with times from split analysis.'
-                : 'Theoretical tide line from B1 gate (85 m WR); beach runs ~30 m with estimated run times from GPS splits.',
+            note: boats.fromGps
+                ? `WR layout: boats at GPS stop, tide line ${tideOff} m toward beach, shared start/finish, run flags on sand.`
+                : `WR layout: tide line ${tideOff} m beachward of B1 gate; shared start/finish ~${beachRun} m beach run.`,
         };
     }
 

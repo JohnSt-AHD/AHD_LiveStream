@@ -2102,21 +2102,46 @@
                 dashArray: '10 6',
             },
         )
-            .bindPopup('<strong>Theoretical tide / water line</strong><br>From GPS boat stops or WR B1 spacing.')
+            .bindPopup(
+                `<strong>Tide / surf line</strong><br>${coastal?.WR_COURSE_SPEC?.tideLineFromBoatM || 10} m toward beach from boat stop.`,
+            )
             .addTo(layer);
 
-        for (const gate of [
-            { seg: overlay.startGate, label: 'Run start gate', cls: 'bsr-start-gate-icon' },
-            { seg: overlay.finishGate, label: 'Run finish line', cls: 'bsr-finish-gate-icon' },
-        ]) {
+        if (overlay.startFinishGate) {
             L.polyline(
                 [
-                    [gate.seg.a.lat, gate.seg.a.lng],
-                    [gate.seg.b.lat, gate.seg.b.lng],
+                    [overlay.startFinishGate.a.lat, overlay.startFinishGate.a.lng],
+                    [overlay.startFinishGate.b.lat, overlay.startFinishGate.b.lng],
                 ],
-                { color: '#f8fafc', weight: 4, opacity: 0.95 },
+                { color: '#f8fafc', weight: 5, opacity: 0.95 },
             )
-                .bindPopup(`<strong>${gate.label}</strong><br>~${coastal?.WR_COURSE_SPEC?.beachRunDistM || 30} m from water (WR).`)
+                .bindPopup(
+                    `<strong>START / FINISH</strong><br>Shared for both lanes · ~${coastal?.WR_COURSE_SPEC?.beachRunDistM || 25} m beach run (WR).`,
+                )
+                .addTo(layer);
+            const sf = overlay.startFinishPt;
+            if (sf) {
+                L.circleMarker([sf.lat, sf.lng], {
+                    radius: 5,
+                    color: '#fff',
+                    weight: 2,
+                    fillColor: '#ef4444',
+                    fillOpacity: 1,
+                })
+                    .bindPopup('<strong>START / FINISH</strong><br>Common run point for both lanes.')
+                    .addTo(layer);
+            }
+        }
+
+        for (const b of overlay.boatStops || []) {
+            L.circleMarker([b.lat, b.lng], {
+                radius: 7,
+                color: '#1e293b',
+                weight: 2,
+                fillColor: '#0f172a',
+                fillOpacity: 0.9,
+            })
+                .bindPopup(`<strong>${escapeHtml(b.label)}</strong><br>Boat stop / launch at surf line.`)
                 .addTo(layer);
         }
 
@@ -2128,7 +2153,9 @@
                 iconAnchor: [16, 16],
             });
             L.marker([f.lat, f.lng], { icon, zIndexOffset: 750 })
-                .bindPopup(`<strong>${escapeHtml(f.label)}</strong><br>Lane ${f.lane} · water's edge`)
+                .bindPopup(
+                    `<strong>${escapeHtml(f.label)}</strong><br>Lane ${f.lane} · on beach (landward of tide line).`,
+                )
                 .addTo(layer);
         }
 
@@ -2137,8 +2164,8 @@
             const fmt = coastal?.formatDurationMs?.bind(coastal) || ((ms) => `${(ms / 1000).toFixed(1)}s`);
 
             for (const leg of [
-                { key: 'runOut', title: 'Run out (start → flag)' },
-                { key: 'runIn', title: 'Run in (flag → finish)' },
+                { key: 'runOut', title: 'Run out (start → flag → boat)' },
+                { key: 'runIn', title: 'Run in (boat → flag → finish)' },
             ]) {
                 const seg = run[leg.key];
                 if (!seg?.latlngs?.length) continue;
@@ -2281,8 +2308,12 @@
                     boatTheme(i).color,
                 );
                 if (beachLayer) state.miniMapLayers.push(beachLayer);
-                for (const leg of [overlay.tideLine, overlay.startGate]) {
+                for (const leg of [overlay.tideLine, overlay.startFinishGate]) {
+                    if (!leg) continue;
                     bounds.push([leg.a.lat, leg.a.lng], [leg.b.lat, leg.b.lng]);
+                }
+                for (const b of overlay.boatStops || []) {
+                    bounds.push([b.lat, b.lng]);
                 }
             }
         }
@@ -2515,7 +2546,7 @@
             `<div id="bsrCompareAnalysis"></div>` +
             `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
             `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
-            `<p class="bsr-speed-legend-note">Boat trace = lane colour (speed gradient). Yellow = water gates · blue dashed = tide line · white = run start/finish · flags = run markers · dashed coloured lines = athlete beach runs (est. time from splits).</p></div>` +
+            `<p class="bsr-speed-legend-note">Boat trace = lane colour. Yellow = water gates · blue dashed = tide (10 m beachward of boats) · white = shared START/FINISH · red flags on sand · black dots = boats · dashed lines = run paths.</p></div>` +
             `<div class="bsr-gps-charts-grid">` +
             `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
