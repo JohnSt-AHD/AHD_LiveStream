@@ -76,7 +76,11 @@
         buoySource: 'gps',
         lastBuoyFitNote: '',
         loading: false,
+        gpsSession: null,
     };
+
+    const TRIM_MIN_BOAT_MS = 20000;
+    const TRIM_HANDLE_HIT_PX = 12;
 
     function escapeHtml(s) {
         return String(s ?? '')
@@ -1833,17 +1837,382 @@
         return { x: t, y };
     }
 
-    function renderBsrSpeedChart(traces) {
+    function gpsChartPointAll(p) {
+        const t = gpsChartTimeMs(p);
+        const y = gpsPointSpeedMps(p) * 3.6;
+        if (!Number.isFinite(t) || !Number.isFinite(y)) return null;
+        return { x: t, y };
+    }
+
+    function traceTimeBounds(tr) {
+        const pts = tr?.rawPoints || tr?.points || [];
+        let minT = Infinity;
+        let maxT = -Infinity;
+        for (const p of pts) {
+            const t = gpsChartTimeMs(p);
+            if (!Number.isFinite(t)) continue;
+            minT = Math.min(minT, t);
+            maxT = Math.max(maxT, t);
+        }
+        return Number.isFinite(minT) ? { minT, maxT } : null;
+    }
+
+    function autoDetectTraceTrim(tr, coastal) {
+        const src = tr.rawPoints || tr.points;
+        if (!src?.length || !coastal?.trimToBoatRacingSection) return false;
+        const trimmed = coastal.trimToBoatRacingSection(src, {
+            useTimingLines: !!state.gpsSession?.courseBuoys?.length,
+        });
+        if (!trimmed.section) return false;
+        tr.trimStartMs = trimmed.section.gpsRaceStartMs;
+        tr.trimEndMs = trimmed.section.gpsRaceEndMs;
+        tr.trimManual = false;
+        return true;
+    }
+
+    function analyzeGpsTrace(tr, courseBuoys, coastal) {
+        const src = tr.rawPoints || tr.points;
+        if (!src?.length) return { valid: false, name: tr.label, reason: 'No GPS points.' };
+        if (!Number.isFinite(tr.trimStartMs) || !Number.isFinite(tr.trimEndMs)) {
+            autoDetectTraceTrim(tr, coastal);
+        }
+        if (Number.isFinite(tr.trimStartMs) && Number.isFinite(tr.trimEndMs)) {
+            return coastal.analyzeCoastalRace(src, tr.label, {
+                buoys: courseBuoys,
+                officialTimeMs: tr.officialTimeMs,
+                manualTrim: { startMs: tr.trimStartMs, endMs: tr.trimEndMs },
+            });
+        }
+        return coastal.analyzeCoastalRace(src, tr.label, {
+            buoys: courseBuoys,
+            officialTimeMs: tr.officialTimeMs,
+        });
+    }
+
+    function runGpsTraceAnalysis(session) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!coastal || !session?.traces?.length) return;
+        session.analyses = [];
+        session.labels = [];
+        session.analysisByTrace = session.traces.map(() => null);
+        for (let ti = 0; ti < session.traces.length; ti++) {
+            const tr = session.traces[ti];
+            if (!tr.rawPoints?.length) continue;
+            const analysis = analyzeGpsTrace(tr, session.courseBuoys, coastal);
+            session.analysisByTrace[ti] = analysis.valid ? analysis : null;
+            if (analysis.valid) {
+                tr.points = analysis.points;
+                tr.section = analysis.section;
+                tr.trimStartMs = analysis.section?.gpsRaceStartMs ?? tr.trimStartMs;
+                tr.trimEndMs = analysis.section?.gpsRaceEndMs ?? tr.trimEndMs;
+                session.analyses.push(analysis);
+                session.labels.push(tr.label);
+            }
+        }
+    }
+
+    function buildGpsCardsHtml(session) {
+        const coastal = window.BeachSprintsCoastal;
+        const cards = [];
+        const win = session.win;
+        for (let ti = 0; ti < session.traces.length; ti++) {
+            const tr = session.traces[ti];
+            const analysis = session.analysisByTrace[ti];
+            const boat = boatSectionCardStats(analysis, tr.officialTimeMs, win.center);
+            const stats = tr.fetchStats;
+            const title = `Lane ${tr.lane} · ${escapeHtml(tr.devName || '')}`;
+            const mapLink = tr.laneMapUrl
+                ? `<a href="${escapeHtml(tr.laneMapUrl)}">Open on map →</a>`
+                : '';
+            if (!stats) {
+                cards.push(
+                    `<div class="bsr-gps-card"><h4>${title}</h4>` +
+                        `<p class="bsr-note">No GPS points in window (${formatDateTime(win.from)} — ${formatDateTime(win.to)}).</p>${mapLink}</div>`,
+                );
+                continue;
+            }
+            let body =
+                `<p class="bsr-gps-stat"><strong>Fetch window points:</strong> ${stats.pointCount}</p>` +
+                `<p class="bsr-gps-stat"><strong>Max speed (window):</strong> ${stats.maxSpeedKmh.toFixed(1)} km/h</p>`;
+            if (tr.trimManual) {
+                body += `<p class="bsr-gps-stat"><strong>Trim:</strong> manual (drag handles on speed chart)</p>`;
+            }
+            if (boat) {
+                const d = boat.deltaLaunchSec;
+                body +=
+                    `<p class="bsr-gps-stat"><strong>Boat launch GPS:</strong> ${formatDateTime(new Date(boat.gpsLaunchMs))}</p>` +
+                    `<p class="bsr-gps-stat"><strong>vs daysheet:</strong> ${d != null ? `${d >= 0 ? '+' : ''}${d.toFixed(0)} s` : '—'}</p>` +
+                    `<p class="bsr-gps-stat"><strong>Boat on water (GPS):</strong> ${boat.fmt(boat.boatWaterMs)}</p>`;
+                if (boat.officialTimeMs != null) {
+                    body += `<p class="bsr-gps-stat"><strong>Official total (CSV):</strong> ${boat.fmt(boat.officialTimeMs)}</p>`;
+                }
+                if (boat.runMs != null) {
+                    body += `<p class="bsr-gps-stat"><strong>Beach run (CSV − GPS boat):</strong> ${boat.fmt(boat.runMs)}</p>`;
+                }
+                if (
+                    boat.officialTimeMs != null &&
+                    boat.boatWaterMs != null &&
+                    boat.runMs != null
+                ) {
+                    body += `<p class="bsr-gps-stat"><strong>Check (run + boat):</strong> ${boat.fmt(boat.runMs + boat.boatWaterMs)} · matches CSV</p>`;
+                }
+            } else if (analysis && !analysis.valid) {
+                body += `<p class="bsr-note">${escapeHtml(analysis.reason || 'Could not analyse trim window.')}</p>`;
+            }
+            cards.push(`<div class="bsr-gps-card"><h4>${title}</h4>${body}${mapLink}</div>`);
+        }
+        return cards.join('');
+    }
+
+    function refreshGpsRaceUi() {
+        const session = state.gpsSession;
+        if (!session) return;
+        const container = document.getElementById('bsrGpsContent');
+        if (!container) return;
+        const race = session.race;
+        const mapAllUrl = buildMapDeepLink(race, { compare: false });
+        const mapCompareUrl = buildMapDeepLink(race, { compare: true });
+        const lanesToLoad = race.lanes.length ? race.lanes : [];
+        container.innerHTML =
+            `<div class="bsr-gps-grid">${(session.errorCards || []).join('')}${buildGpsCardsHtml(session)}</div>` +
+            `<p class="bsr-links">` +
+            `<a href="${escapeHtml(mapAllUrl)}">Load all ${lanesToLoad.length} lane(s) on map</a>` +
+            (lanesToLoad.length >= 2
+                ? ` · <a href="${escapeHtml(mapCompareUrl)}">Map + compare first two boats</a>`
+                : '') +
+            `</p>` +
+            `<p class="bsr-note">Fetch window: ${formatDateTime(session.win.from)} — ${formatDateTime(session.win.to)} (offset ${state.gpsOffsetMin} min). ` +
+            `Drag coloured handles on the speed chart to set boat launch/stop; analysis updates automatically.</p>`;
+        const compareEl = document.getElementById('bsrCompareAnalysis');
+        if (compareEl) {
+            compareEl.innerHTML = session.analyses.length
+                ? renderCompareAnalysis(session.analyses.slice(0, 2), session.labels.slice(0, 2))
+                : '';
+        }
+        const buoyNoteEl = document.getElementById('bsrBuoyFitNote');
+        if (buoyNoteEl) buoyNoteEl.textContent = state.lastBuoyFitNote;
+        renderMiniMap(session.traces, session.courseBuoys, session.analysisByTrace);
+        renderBsrSpeedChart(session.traces, onSpeedChartTrimChange);
+        renderBsrAnalysisCharts(session.analyses, session.labels);
+        const trimToolbar = document.getElementById('bsrTrimToolbar');
+        if (trimToolbar) {
+            const parts = session.traces
+                .map((tr, ti) => {
+                    if (!Number.isFinite(tr.trimStartMs) || !Number.isFinite(tr.trimEndMs)) return '';
+                    const color = boatTheme(ti).color;
+                    const name = tr.label || `Lane ${tr.lane}`;
+                    const mode = tr.trimManual ? 'manual' : 'auto';
+                    return (
+                        `<span class="bsr-trim-lane" style="--trim-color:${escapeHtml(color)}">` +
+                        `<span class="bsr-trim-lane-dot" aria-hidden="true"></span>` +
+                        `<span>${escapeHtml(name)} <em>(${mode})</em></span>` +
+                        `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost" data-bsr-trim-reset="${ti}">Reset auto trim</button>` +
+                        `</span>`
+                    );
+                })
+                .filter(Boolean);
+            trimToolbar.innerHTML = parts.join('');
+            trimToolbar.hidden = !parts.length;
+            trimToolbar.querySelectorAll('[data-bsr-trim-reset]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    resetTraceTrimAuto(Number(btn.getAttribute('data-bsr-trim-reset')));
+                });
+            });
+        }
+    }
+
+    function onSpeedChartTrimChange(traceIdx, edge, timeMs) {
+        const session = state.gpsSession;
+        const tr = session?.traces?.[traceIdx];
+        if (!tr) return;
+        const bounds = traceTimeBounds(tr);
+        if (!bounds) return;
+        let startMs = tr.trimStartMs;
+        let endMs = tr.trimEndMs;
+        if (edge === 'start') startMs = timeMs;
+        else endMs = timeMs;
+        startMs = Math.max(bounds.minT, Math.min(startMs, bounds.maxT - TRIM_MIN_BOAT_MS));
+        endMs = Math.min(bounds.maxT, Math.max(endMs, startMs + TRIM_MIN_BOAT_MS));
+        tr.trimStartMs = startMs;
+        tr.trimEndMs = endMs;
+        tr.trimManual = true;
+        runGpsTraceAnalysis(session);
+        refreshGpsRaceUi();
+    }
+
+    function resetTraceTrimAuto(traceIdx) {
+        const session = state.gpsSession;
+        const tr = session?.traces?.[traceIdx];
+        const coastal = window.BeachSprintsCoastal;
+        if (!tr || !coastal) return;
+        autoDetectTraceTrim(tr, coastal);
+        runGpsTraceAnalysis(session);
+        refreshGpsRaceUi();
+    }
+
+    const bsrSpeedTrimPlugin = {
+        id: 'bsrSpeedTrim',
+        afterInit(chart) {
+            const canvas = chart.canvas;
+            const drag = { active: null };
+            chart.$bsrTrimDrag = drag;
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+                return clientX - rect.left;
+            };
+
+            const pickHandle = (x) => {
+                const traces = chart.$bsrTraces || [];
+                let best = null;
+                let bestDist = TRIM_HANDLE_HIT_PX;
+                traces.forEach((tr, ti) => {
+                    if (!Number.isFinite(tr.trimStartMs) || !Number.isFinite(tr.trimEndMs)) return;
+                    const color = boatTheme(ti).color;
+                    const xs = [
+                        { edge: 'start', px: chart.scales.x.getPixelForValue(tr.trimStartMs) },
+                        { edge: 'end', px: chart.scales.x.getPixelForValue(tr.trimEndMs) },
+                    ];
+                    for (const h of xs) {
+                        const d = Math.abs(x - h.px);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            best = { traceIdx: ti, edge: h.edge, color };
+                        }
+                    }
+                });
+                return best;
+            };
+
+            const onDown = (e) => {
+                const hit = pickHandle(getPos(e));
+                if (!hit) return;
+                drag.active = hit;
+                canvas.style.cursor = 'ew-resize';
+                e.preventDefault();
+            };
+
+            const onMove = (e) => {
+                const x = getPos(e);
+                if (drag.active) {
+                    const ms = chart.scales.x.getValueForPixel(x);
+                    if (Number.isFinite(ms)) {
+                        chart.$bsrTrimPreview = { ...drag.active, timeMs: ms };
+                        chart.draw();
+                    }
+                    e.preventDefault();
+                    return;
+                }
+                canvas.style.cursor = pickHandle(x) ? 'ew-resize' : '';
+            };
+
+            const onUp = (e) => {
+                if (drag.active) {
+                    const x = getPos(e);
+                    const ms = chart.scales.x.getValueForPixel(x);
+                    if (Number.isFinite(ms) && chart.$bsrOnTrimChange) {
+                        chart.$bsrOnTrimChange(drag.active.traceIdx, drag.active.edge, ms);
+                    }
+                }
+                drag.active = null;
+                chart.$bsrTrimPreview = null;
+                canvas.style.cursor = '';
+            };
+
+            chart.$bsrTrimCleanup = () => {
+                canvas.removeEventListener('mousedown', onDown);
+                canvas.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                canvas.removeEventListener('touchstart', onDown);
+                canvas.removeEventListener('touchmove', onMove);
+                canvas.removeEventListener('touchend', onUp);
+            };
+
+            canvas.addEventListener('mousedown', onDown);
+            canvas.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            canvas.addEventListener('touchstart', onDown, { passive: false });
+            canvas.addEventListener('touchmove', onMove, { passive: false });
+            canvas.addEventListener('touchend', onUp);
+        },
+        beforeDestroy(chart) {
+            chart.$bsrTrimCleanup?.();
+        },
+        afterDraw(chart) {
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+            const traces = chart.$bsrTraces || [];
+            const xScale = chart.scales.x;
+            const preview = chart.$bsrTrimPreview;
+
+            const drawLine = (ms, color, dashed) => {
+                const x = xScale.getPixelForValue(ms);
+                if (x < chartArea.left || x > chartArea.right) return;
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = dashed ? 2 : 3;
+                if (dashed) ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x, chartArea.top);
+                ctx.lineTo(x, chartArea.bottom);
+                ctx.stroke();
+                ctx.restore();
+            };
+
+            const drawHandle = (ms, color, label) => {
+                const x = xScale.getPixelForValue(ms);
+                if (x < chartArea.left - 20 || x > chartArea.right + 20) return;
+                const y = chartArea.top + 14;
+                ctx.save();
+                ctx.fillStyle = color;
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 10px system-ui,sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, x, y);
+                ctx.restore();
+            };
+
+            traces.forEach((tr, ti) => {
+                if (!Number.isFinite(tr.trimStartMs) || !Number.isFinite(tr.trimEndMs)) return;
+                const color = boatTheme(ti).color;
+                let startMs = tr.trimStartMs;
+                let endMs = tr.trimEndMs;
+                if (preview?.traceIdx === ti) {
+                    if (preview.edge === 'start') startMs = preview.timeMs;
+                    else endMs = preview.timeMs;
+                }
+                drawLine(startMs, color, false);
+                drawLine(endMs, color, true);
+                drawHandle(startMs, color, '▶');
+                drawHandle(endMs, color, '■');
+            });
+        },
+    };
+
+    function renderBsrSpeedChart(traces, onTrimChange) {
         const wrap = document.getElementById('bsrSpeedChartWrap');
         const canvas = document.getElementById('bsrSpeedChart');
         const chartCtor = getChartCtor();
         destroyChartOnCanvas('bsrSpeedChart', 'speedChart');
         if (!wrap || !canvas || !chartCtor) return;
 
+        if (chartCtor?.register && !state._bsrTrimPluginRegistered) {
+            chartCtor.register(bsrSpeedTrimPlugin);
+            state._bsrTrimPluginRegistered = true;
+        }
+
         const datasets = (traces || [])
             .map((t, i) => {
-                const data = (t.points || [])
-                    .map(gpsChartPoint)
+                const data = (t.rawPoints || t.points || [])
+                    .map(gpsChartPointAll)
                     .filter(Boolean)
                     .sort((a, b) => a.x - b.x);
                 if (!data.length) return null;
@@ -1864,6 +2233,16 @@
 
         if (!datasets.length) return;
 
+        const hasTrim = (traces || []).some(
+            (t) => Number.isFinite(t.trimStartMs) && Number.isFinite(t.trimEndMs),
+        );
+        const titleEl = wrap.querySelector('.bsr-speed-chart-title');
+        if (titleEl) {
+            titleEl.textContent = hasTrim
+                ? 'Speed vs time — drag ▶ launch / ■ stop handles per boat'
+                : 'Speed vs time';
+        }
+
         wrap.hidden = false;
         state.speedChart = new chartCtor(canvas, {
             type: 'line',
@@ -1873,6 +2252,7 @@
                 maintainAspectRatio: false,
                 interaction: { mode: 'nearest', axis: 'x', intersect: false },
                 parsing: false,
+                events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
                 scales: {
                     x: {
                         type: 'linear',
@@ -1914,7 +2294,11 @@
                     },
                 },
             },
+            plugins: [bsrSpeedTrimPlugin],
         });
+        state.speedChart.$bsrTraces = traces;
+        state.speedChart.$bsrOnTrimChange = onTrimChange || null;
+        state.speedChart.canvas.style.touchAction = 'none';
         requestAnimationFrame(() => state.speedChart?.resize());
     }
 
@@ -2663,7 +3047,8 @@
             `<div class="bsr-gps-charts-grid">` +
             `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
-            `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSpeedChart" aria-label="Speed versus time chart"></canvas></div></div>` +
+            `<p class="bsr-trim-toolbar" id="bsrTrimToolbar" hidden></p>` +
+            `<div class="bsr-speed-chart-canvas-box bsr-speed-chart-canvas-box--trim"><canvas id="bsrSpeedChart" aria-label="Speed versus time chart"></canvas></div></div>` +
             `<div id="bsrSplitsChartWrap" class="bsr-speed-chart-wrap" hidden>` +
             `<h4 class="bsr-speed-chart-title">Leg splits</h4>` +
             `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSplitsChart" aria-label="Leg split durations"></canvas></div></div>` +
@@ -3022,104 +3407,19 @@
         );
         courseBuoys = buoyResolve.buoys;
         state.lastBuoyFitNote = buoyResolve.note || '';
-        if (coastal && traces.length) {
-            analyses.length = 0;
-            labels.length = 0;
-            for (let ti = 0; ti < traces.length; ti++) {
-                const tr = traces[ti];
-                if (!tr.rawPoints?.length && !tr.points?.length) continue;
-                const src = tr.rawPoints || tr.points;
-                const analysis = coastal.analyzeCoastalRace(src, tr.label, {
-                    buoys: courseBuoys,
-                    officialTimeMs: tr.officialTimeMs,
-                });
-                analysisByTrace[ti] = analysis.valid ? analysis : null;
-                if (analysis.valid) {
-                    tr.points = analysis.points;
-                    tr.section = analysis.section;
-                    analyses.push(analysis);
-                    labels.push(tr.label);
-                } else if (coastal.trimToBoatRacingSection) {
-                    const trimmed = coastal.trimToBoatRacingSection(src, {
-                        useTimingLines: !!courseBuoys?.length,
-                    });
-                    if (trimmed.section) {
-                        tr.points = trimmed.points;
-                        tr.section = trimmed.section;
-                    }
-                }
-            }
-        }
-
-        for (let ti = 0; ti < traces.length; ti++) {
-            const tr = traces[ti];
-            const analysis = analysisByTrace[ti];
-            const boat = boatSectionCardStats(analysis, tr.officialTimeMs, win.center);
-            const stats = tr.fetchStats;
-            const title = `Lane ${tr.lane} · ${escapeHtml(tr.devName || '')}`;
-            const mapLink = tr.laneMapUrl
-                ? `<a href="${escapeHtml(tr.laneMapUrl)}">Open on map →</a>`
-                : '';
-            if (!stats) {
-                cards.push(
-                    `<div class="bsr-gps-card"><h4>${title}</h4>` +
-                        `<p class="bsr-note">No GPS points in window (${formatDateTime(win.from)} — ${formatDateTime(win.to)}).</p>${mapLink}</div>`,
-                );
-                continue;
-            }
-            let body =
-                `<p class="bsr-gps-stat"><strong>Fetch window points:</strong> ${stats.pointCount}</p>` +
-                `<p class="bsr-gps-stat"><strong>Max speed (window):</strong> ${stats.maxSpeedKmh.toFixed(1)} km/h</p>`;
-            if (boat) {
-                const d = boat.deltaLaunchSec;
-                body +=
-                    `<p class="bsr-gps-stat"><strong>Boat launch GPS (~20 km/h):</strong> ${formatDateTime(new Date(boat.gpsLaunchMs))}</p>` +
-                    `<p class="bsr-gps-stat"><strong>vs daysheet:</strong> ${d != null ? `${d >= 0 ? '+' : ''}${d.toFixed(0)} s` : '—'}</p>` +
-                    `<p class="bsr-gps-stat"><strong>Boat on water (GPS):</strong> ${boat.fmt(boat.boatWaterMs)}</p>`;
-                if (boat.officialTimeMs != null) {
-                    body += `<p class="bsr-gps-stat"><strong>Official total (CSV):</strong> ${boat.fmt(boat.officialTimeMs)}</p>`;
-                }
-                if (boat.runMs != null) {
-                    body += `<p class="bsr-gps-stat"><strong>Beach run (CSV − GPS boat):</strong> ${boat.fmt(boat.runMs)}</p>`;
-                }
-                if (
-                    boat.officialTimeMs != null &&
-                    boat.boatWaterMs != null &&
-                    boat.runMs != null
-                ) {
-                    body += `<p class="bsr-gps-stat"><strong>Check (run + boat):</strong> ${boat.fmt(boat.runMs + boat.boatWaterMs)} · matches CSV</p>`;
-                }
-                body +=
-                    '<p class="bsr-note">Official CSV = run (start gate → boat) + boat on water (GPS ~20 km/h launch, ~15→7 km/h stop at beach) + run in. Map trace is boat section only (±5 s padding).</p>';
-            } else if (analysis && !analysis.valid) {
-                body += `<p class="bsr-note">${escapeHtml(analysis.reason || 'Could not detect boat racing section.')}</p>`;
-            }
-            cards.push(`<div class="bsr-gps-card"><h4>${title}</h4>${body}${mapLink}</div>`);
-        }
-
-        const mapAllUrl = buildMapDeepLink(race, { compare: false });
-        const mapCompareUrl = buildMapDeepLink(race, { compare: true });
-        container.innerHTML =
-            `<div class="bsr-gps-grid">${cards.join('')}</div>` +
-            `<p class="bsr-links">` +
-            `<a href="${escapeHtml(mapAllUrl)}">Load all ${lanesToLoad.length} lane(s) on map</a>` +
-            (lanesToLoad.length >= 2
-                ? ` · <a href="${escapeHtml(mapCompareUrl)}">Map + compare first two boats</a>`
-                : '') +
-            `</p>` +
-            `<p class="bsr-note">Fetch window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min). ` +
-            `Official CSV = beach runs + GPS boat time. Boat GPS: launch ~20 km/h from rest, return stop ~15→7 km/h at beach after top buoy. Yellow line = shared start/finish gate.</p>`;
-        const compareEl = document.getElementById('bsrCompareAnalysis');
-        if (compareEl) {
-            compareEl.innerHTML = analyses.length
-                ? renderCompareAnalysis(analyses.slice(0, 2), labels.slice(0, 2))
-                : '';
-        }
-        const buoyNoteEl = document.getElementById('bsrBuoyFitNote');
-        if (buoyNoteEl) buoyNoteEl.textContent = state.lastBuoyFitNote;
-        renderMiniMap(traces, courseBuoys, analysisByTrace);
-        renderBsrSpeedChart(traces);
-        renderBsrAnalysisCharts(analyses, labels);
+        state.gpsSession = {
+            race,
+            traces,
+            courseBuoys,
+            analysisByTrace,
+            analyses: [],
+            labels: [],
+            win,
+            match,
+            errorCards: cards,
+        };
+        runGpsTraceAnalysis(state.gpsSession);
+        refreshGpsRaceUi();
     }
 
     function selectRace(raceNum) {

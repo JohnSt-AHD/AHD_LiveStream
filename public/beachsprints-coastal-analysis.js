@@ -530,6 +530,43 @@
         return { points: trimmed, section };
     }
 
+    function buildSectionFromManualTrim(sorted, startMs, endMs, options) {
+        if (!sorted?.length || !Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+            return null;
+        }
+        const padMs = options?.padMs ?? WR_COURSE_SPEC.raceSectionPadMs;
+        const firstT = positionTimeMs(sorted[0]);
+        const lastT = positionTimeMs(sorted[sorted.length - 1]);
+        const accelMs = Math.max(firstT, Math.min(startMs, endMs - 1000));
+        const decelMs = Math.min(lastT, Math.max(endMs, accelMs + 1000));
+        const gpsEndMs = decelMs;
+        return {
+            accelMs,
+            decelMs,
+            boatStartMs: Math.max(firstT, accelMs - padMs),
+            boatEndMs: Math.min(lastT, decelMs + padMs),
+            gpsRaceStartMs: accelMs,
+            gpsRaceEndMs: gpsEndMs,
+            boatWaterMs: gpsEndMs - accelMs,
+            launchLat: interpolatePointAtTime(sorted, accelMs)?.latitude,
+            launchLng: interpolatePointAtTime(sorted, accelMs)?.longitude,
+            manual: true,
+        };
+    }
+
+    function trimToManualSection(points, startMs, endMs, options) {
+        const sorted = sortRoutePoints(points);
+        const section = buildSectionFromManualTrim(sorted, startMs, endMs, options);
+        if (!section) {
+            return { points: sorted, section: null };
+        }
+        const trimmed = sorted.filter((p) => {
+            const t = positionTimeMs(p);
+            return t >= section.boatStartMs && t <= section.boatEndMs;
+        });
+        return { points: trimmed, section };
+    }
+
     function findRaceWindow(sorted, section) {
         if (!sorted || sorted.length < 2) return null;
         const sec = section || detectBoatRacingSection(sorted);
@@ -926,21 +963,41 @@
 
     function analyzeCoastalRace(points, deviceName, options) {
         return withCourseBuoys(options?.buoys, () => {
-        const trimmed = trimToBoatRacingSection(points, { useTimingLines: true });
+        const fullSorted = sortRoutePoints(points);
+        const manual = options?.manualTrim;
+        const hasManual =
+            manual &&
+            Number.isFinite(manual.startMs) &&
+            Number.isFinite(manual.endMs) &&
+            manual.endMs > manual.startMs;
+
+        let trimmed;
+        let section;
+        if (hasManual) {
+            trimmed = trimToManualSection(fullSorted, manual.startMs, manual.endMs);
+            section = trimmed.section;
+        } else {
+            trimmed = trimToBoatRacingSection(points, { useTimingLines: true });
+            section = trimmed.section;
+        }
         const sorted = trimmed.points;
-        const section = trimmed.section;
         if (!section || sorted.length < 8) {
             return {
                 valid: false,
                 name: deviceName,
-                reason: 'No boat racing section detected (launch ~20 km/h / beach stop not found).',
+                reason: hasManual
+                    ? 'Manual trim window too short or invalid.'
+                    : 'No boat racing section detected (launch ~20 km/h / beach stop not found).',
             };
         }
-        const raceWindow = findRaceWindow(sorted, section);
-        if (!raceWindow) {
-            return { valid: false, name: deviceName, reason: 'Could not analyse boat racing window.' };
-        }
-        const { startMs, endMs, timing } = raceWindow;
+        const timing = analyzeDeviceTiming(fullSorted);
+        const raceWindow = {
+            startMs: section.gpsRaceStartMs,
+            endMs: section.gpsRaceEndMs,
+            timing,
+            section,
+        };
+        const { startMs, endMs } = raceWindow;
         const boatWaterMs = section.boatWaterMs;
         if (!Number.isFinite(boatWaterMs) || boatWaterMs <= 0) {
             return { valid: false, name: deviceName, reason: 'Boat on-water window too short to analyse.' };
@@ -1360,6 +1417,8 @@
         inferCourseBuoysFromGps,
         detectBoatRacingSection,
         trimToBoatRacingSection,
+        trimToManualSection,
+        buildSectionFromManualTrim,
         buildBeachRunOverlay,
         sortRoutePoints,
         positionTimeMs,

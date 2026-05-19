@@ -646,6 +646,43 @@ body.bsr-page {
     height: 180px;
 }
 
+.bsr-speed-chart-canvas-box--trim {
+    height: 260px;
+}
+
+.bsr-trim-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    margin: 0 0 10px;
+    font-size: 0.8rem;
+    color: var(--bsr-muted);
+}
+
+.bsr-trim-toolbar[hidden] {
+    display: none;
+}
+
+.bsr-trim-lane {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bsr-trim-lane em {
+    font-style: normal;
+    opacity: 0.85;
+}
+
+.bsr-trim-lane-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--trim-color, var(--bsr-sand));
+    flex-shrink: 0;
+}
+
 .bsr-speed-chart-wrap--wide {
     grid-column: 1 / -1;
 }
