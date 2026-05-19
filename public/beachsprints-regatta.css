@@ -1137,11 +1137,49 @@ body.bsr-page {
     background: #fff;
 }
 
-.bsr-lane-logo--empty {
-    width: 44px;
-    height: 44px;
-    background: var(--bsr-border);
-    border-radius: 4px;
+.bsr-lane-logo,
+.bsr-tt-logo,
+.bsr-tree-crew-logo,
+.bsr-tree-champion-logo {
+    background: #fff;
+    object-fit: contain;
+}
+
+.bsr-toggle--toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #b8d4e8;
+    white-space: nowrap;
+}
+
+.bsr-missing-logos-scroll {
+    max-height: 320px;
+    overflow: auto;
+    margin-top: 10px;
+    border: 1px solid var(--bsr-border);
+    border-radius: 8px;
+}
+
+.bsr-missing-logos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.bsr-missing-logos-table th,
+.bsr-missing-logos-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(45, 212, 191, 0.2);
+}
+
+.bsr-missing-logos-table th {
+    position: sticky;
+    top: 0;
+    background: rgba(8, 47, 66, 0.95);
+    color: var(--bsr-sand);
 }
 
 .bsr-lane-club {

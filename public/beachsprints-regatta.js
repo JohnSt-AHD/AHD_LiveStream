@@ -21,6 +21,9 @@
     const LS_LANE_DEVICES = 'bsrLaneDevices_v1';
     const LS_REGATTA_PRESETS = 'bsrRegattaPresets_v1';
     const LS_PROGRESSION_VIEW = 'bsrProgressionView_v1';
+    const LS_LIVE_REFRESH = 'bsrLiveRefresh_v1';
+    const LOGO_PLACEHOLDER = 'assets/school-logos/placeholder-white.svg';
+    const LIVE_REFRESH_MS = 60000;
 
     const BOAT_ALIASES = ['boat_1', 'boat_2', 'boat_3', 'boat_4', 'boat_5', 'boat_6'];
     const ROUND_ORDER = ['tt', 'heat', 'rep', 'qf', 'sf', 'final', 'other'];
@@ -75,7 +78,11 @@
         courseNote: '',
         loading: false,
         gpsSession: null,
+        liveRefresh: false,
+        missingLogos: null,
     };
+
+    let liveRefreshTimer = null;
 
     const TRIM_MIN_BOAT_MS = 20000;
     const TRIM_HANDLE_HIT_PX = 12;
@@ -86,6 +93,21 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function clubLogoSrc(logoFilename) {
+        const name = String(logoFilename || '').trim();
+        return name
+            ? `assets/school-logos/${encodeURIComponent(name)}`
+            : LOGO_PLACEHOLDER;
+    }
+
+    function logoImgHtml(className, logoUrl, alt = '') {
+        const src = logoUrl || LOGO_PLACEHOLDER;
+        return (
+            `<img class="${className}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" ` +
+            `onerror="this.onerror=null;this.src='${LOGO_PLACEHOLDER}'">`
+        );
     }
 
     function parseCsvLine(line) {
@@ -621,7 +643,8 @@
         if (!clubId || !state.lookup?.clubs) {
             return {
                 name: clubId ? String(clubId).toUpperCase() : '—',
-                logoUrl: null,
+                logoUrl: LOGO_PLACEHOLDER,
+                logoMissing: true,
                 clubId: clubId || '',
                 match: resolved.match,
             };
@@ -630,14 +653,17 @@
         if (!c) {
             return {
                 name: String(clubId).toUpperCase(),
-                logoUrl: null,
+                logoUrl: LOGO_PLACEHOLDER,
+                logoMissing: true,
                 clubId,
                 match: resolved.match,
             };
         }
+        const hasLogoFile = Boolean(String(c.logo || '').trim());
         return {
             name: c.name || String(clubId).toUpperCase(),
-            logoUrl: c.logo ? `assets/school-logos/${encodeURIComponent(c.logo)}` : null,
+            logoUrl: clubLogoSrc(c.logo),
+            logoMissing: !hasLogoFile,
             clubId,
             match: resolved.match,
             isComposite: resolved.isComposite,
@@ -1195,6 +1221,7 @@
             state.gpsOffsetMin = parseInt(localStorage.getItem(LS_GPS_OFFSET) || '0', 10) || 0;
             state.progressionView =
                 localStorage.getItem(LS_PROGRESSION_VIEW) === 'bracket' ? 'bracket' : 'linear';
+            state.liveRefresh = localStorage.getItem(LS_LIVE_REFRESH) === '1';
             const aliases = JSON.parse(localStorage.getItem(LS_DEVICE_ALIASES) || '{}');
             state.deviceAliases = typeof aliases === 'object' && aliases ? { ...aliases } : {};
             const laneMap = JSON.parse(localStorage.getItem(LS_LANE_DEVICES) || '{}');
@@ -1221,6 +1248,7 @@
             localStorage.setItem(LS_DEVICE_ALIASES, JSON.stringify(state.deviceAliases));
             localStorage.setItem(LS_LANE_DEVICES, JSON.stringify(state.laneDevices));
             localStorage.setItem(LS_PROGRESSION_VIEW, state.progressionView);
+            localStorage.setItem(LS_LIVE_REFRESH, state.liveRefresh ? '1' : '0');
             const presets = loadRegattaPresets();
             presets[state.regattaCode] = {
                 gpsOffsetMin: state.gpsOffsetMin,
@@ -1457,7 +1485,7 @@
             rows +=
                 `<tr class="${rowClass.trim()}">` +
                 `<td class="bsr-tt-rank">${escapeHtml(seed)}</td>` +
-                `<td>${info.logoUrl ? `<img class="bsr-tt-logo" src="${escapeHtml(info.logoUrl)}" alt="">` : '<span class="bsr-tt-logo--empty"></span>'}` +
+                `<td>${logoImgHtml('bsr-tt-logo', info.logoUrl, info.name)}` +
                 `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span><span class="bsr-note"> ${escapeHtml(row.crew)}</span></td>` +
                 `<td class="bsr-tt-time">${escapeHtml(row.time)}</td>` +
                 `<td class="bsr-tt-race">R${row.raceNum || '—'}</td>` +
@@ -1476,9 +1504,7 @@
         const win = slot.place === 1;
         return (
             `<span class="bsr-tree-crew${win ? ' bsr-tree-crew--winner' : ''}">` +
-            (slot.info.logoUrl
-                ? `<img class="bsr-tree-crew-logo" src="${escapeHtml(slot.info.logoUrl)}" alt="">`
-                : '') +
+            logoImgHtml('bsr-tree-crew-logo', slot.info.logoUrl, slot.info.name) +
             `<span class="bsr-tree-crew-name">${escapeHtml(slot.info.name)}</span>` +
             (slot.time ? `<span class="bsr-tree-crew-time">${escapeHtml(slot.time)}</span>` : '') +
             `</span>`
@@ -1531,9 +1557,7 @@
         const info = clubInfo(win.competitor);
         return (
             `<div class="bsr-tree-champion">` +
-            (info.logoUrl
-                ? `<img class="bsr-tree-champion-logo" src="${escapeHtml(info.logoUrl)}" alt="">`
-                : '<span class="bsr-tree-champion-logo bsr-tree-champion-logo--empty"></span>') +
+            logoImgHtml('bsr-tree-champion-logo', info.logoUrl, info.name) +
             `<span class="bsr-tree-champion-name">${escapeHtml(info.name)}</span>` +
             (win.time ? `<span class="bsr-tree-champion-time">${escapeHtml(win.time)}</span>` : '') +
             `</div>`
@@ -3007,9 +3031,7 @@
             lanesHtml +=
                 `<div class="bsr-lane-row${isWinner ? ' bsr-lane-row--winner' : ''}">` +
                 `<span class="bsr-lane-n">${lane.lane}</span>` +
-                (info.logoUrl
-                    ? `<img class="bsr-lane-logo" src="${escapeHtml(info.logoUrl)}" alt="">`
-                    : '<span class="bsr-lane-logo--empty"></span>') +
+                logoImgHtml('bsr-lane-logo', info.logoUrl, info.name) +
                 `<div><div class="bsr-lane-club">${escapeHtml(info.name)}${matchHint}</div>` +
                 `<div class="bsr-lane-names">${escapeHtml(lane.crew || '')}${alias ? ` · GPS: ${escapeHtml(alias)}` : ''}</div></div>` +
                 (placing
@@ -3473,55 +3495,164 @@
         history.replaceState(null, '', url);
     }
 
+    async function loadMissingLogosReport() {
+        try {
+            const res = await fetch('data/missing-school-logos.json');
+            if (res.ok) state.missingLogos = await res.json();
+        } catch {
+            state.missingLogos = null;
+        }
+    }
+
+    function renderMissingLogosPanel() {
+        const el = document.getElementById('bsrMissingLogos');
+        if (!el) return;
+        const rep = state.missingLogos;
+        if (!rep) {
+            el.innerHTML =
+                '<p class="bsr-note">Missing-logo report not loaded. Run <code>node scripts/report-missing-school-logos.js</code> to regenerate.</p>';
+            return;
+        }
+        const items = [
+            ...(rep.missingFile || []).map((r) => ({
+                kind: 'file',
+                id: r.id,
+                name: r.name,
+                detail: r.logo,
+            })),
+            ...(rep.noLogo || []).map((r) => ({
+                kind: 'field',
+                id: r.id,
+                name: r.name,
+                detail: '(no logo in lookup)',
+            })),
+        ];
+        items.sort((a, b) => a.name.localeCompare(b.name));
+        const rows = items
+            .map(
+                (r) =>
+                    `<tr><td><code>${escapeHtml(r.id)}</code></td>` +
+                    `<td>${escapeHtml(r.name)}</td>` +
+                    `<td>${escapeHtml(r.detail)}</td></tr>`,
+            )
+            .join('');
+        el.innerHTML =
+            `<p class="bsr-note">${items.length} club(s) without a logo image on disk ` +
+            `(${rep.missingFileCount || 0} filename in lookup but file missing, ` +
+            `${rep.noLogoFieldCount || 0} empty logo field). ` +
+            `Dashboard shows a white placeholder for these.</p>` +
+            `<div class="bsr-missing-logos-scroll">` +
+            `<table class="bsr-missing-logos-table"><thead><tr><th>Code</th><th>Club</th><th>Expected file</th></tr></thead>` +
+            `<tbody>${rows || '<tr><td colspan="3">All lookup logos present on disk.</td></tr>'}</tbody></table></div>`;
+    }
+
+    async function applyRegattaPayload(code, options = {}) {
+        const preserveSelection = options.preserveSelection !== false;
+        const selRace = preserveSelection ? state.selectedRaceNum : null;
+        const selEvent = preserveSelection ? state.selectedEventKey : null;
+
+        const [daysheet, results, competitors, events, lookup] = await Promise.all([
+            fetchRegattaCsv(code, 'daysheet'),
+            fetchRegattaCsv(code, 'results').catch(() => ''),
+            fetchRegattaCsv(code, 'competitors').catch(() => ''),
+            fetchRegattaCsv(code, 'events').catch(() => ''),
+            state.lookup
+                ? Promise.resolve(state.lookup)
+                : fetch('data/ahd-lookup.json').then((r) => r.json()),
+        ]);
+        state.races = parseDaysheet(daysheet);
+        state.results = parseResults(results);
+        state.competitors = parseCompetitors(competitors);
+        state.events = parseEvents(events);
+        if (!state.lookup) {
+            state.lookup = lookup;
+            buildClubIndex();
+        }
+        ensureDeviceAliases();
+        if (applyRegattaPreset(code)) {
+            const offsetInput = document.getElementById('bsrGpsOffset');
+            if (offsetInput) offsetInput.value = String(state.gpsOffsetMin);
+        }
+        if (!preserveSelection && !state.selectedRaceNum && state.races.length) {
+            const p = new URLSearchParams(location.search).get('race');
+            state.selectedRaceNum = p
+                ? parseInt(p, 10)
+                : state.races[Math.floor(state.races.length / 2)]?.raceNum;
+        }
+        let statusMsg = `Loaded ${state.races.length} races · ${state.results.size} results · ${state.events.length} events · ${code}`;
+        if (options.refreshedAt) {
+            statusMsg = `Updated ${options.refreshedAt} · ${statusMsg}`;
+        }
+        if (state.liveRefresh) {
+            statusMsg += ' · live refresh 1 min';
+        }
+        if (state.races.length === 0 && state.events.length > 0) {
+            statusMsg +=
+                ' — daysheet parsed empty; check daysheet.csv format (race numbers and lane columns).';
+        } else if (state.results.size === 0) {
+            statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
+        }
+        setStatus(statusMsg);
+        renderStatsOverview();
+        renderFilters();
+        renderRaceList();
+        renderDeviceConfig();
+        const urlEvent = new URLSearchParams(location.search).get('event');
+        if (!selEvent && urlEvent && buildEventGroups().some((g) => g.key === urlEvent)) {
+            selectEvent(urlEvent);
+        } else if (selEvent && buildEventGroups().some((g) => g.key === selEvent)) {
+            selectEvent(selEvent);
+        }
+        if (selRace && findRace(selRace)) {
+            selectRace(selRace);
+        } else if (state.selectedRaceNum && findRace(state.selectedRaceNum)) {
+            selectRace(state.selectedRaceNum);
+        }
+        if (!options.skipGpsProbe) probeGpsForDays();
+    }
+
+    function stopLiveRefresh() {
+        if (liveRefreshTimer) {
+            clearInterval(liveRefreshTimer);
+            liveRefreshTimer = null;
+        }
+    }
+
+    function startLiveRefresh() {
+        stopLiveRefresh();
+        if (!state.liveRefresh) return;
+        liveRefreshTimer = setInterval(async () => {
+            if (state.loading) return;
+            state.loading = true;
+            try {
+                await applyRegattaPayload(state.regattaCode, {
+                    preserveSelection: true,
+                    skipGpsProbe: true,
+                    refreshedAt: new Date().toLocaleTimeString(),
+                });
+                const race = findRace(state.selectedRaceNum);
+                if (race) await loadGpsForRace(race);
+            } catch (err) {
+                setStatus(`Live refresh failed: ${err.message}`, true);
+            } finally {
+                state.loading = false;
+            }
+        }, LIVE_REFRESH_MS);
+    }
+
     async function loadRegatta() {
         state.loading = true;
         setStatus('Loading regatta data…');
         const code = state.regattaCode;
         try {
-            const [daysheet, results, competitors, events, lookup] = await Promise.all([
-                fetchRegattaCsv(code, 'daysheet'),
-                fetchRegattaCsv(code, 'results').catch(() => ''),
-                fetchRegattaCsv(code, 'competitors').catch(() => ''),
-                fetchRegattaCsv(code, 'events').catch(() => ''),
-                fetch('data/ahd-lookup.json').then((r) => r.json()),
-            ]);
-            state.races = parseDaysheet(daysheet);
-            state.results = parseResults(results);
-            state.competitors = parseCompetitors(competitors);
-            state.events = parseEvents(events);
-            state.lookup = lookup;
-            buildClubIndex();
-            ensureDeviceAliases();
-            if (applyRegattaPreset(code)) {
-                const offsetInput = document.getElementById('bsrGpsOffset');
-                if (offsetInput) offsetInput.value = String(state.gpsOffsetMin);
+            if (!state.lookup) {
+                state.lookup = await fetch('data/ahd-lookup.json').then((r) => r.json());
+                buildClubIndex();
             }
-            if (!state.selectedRaceNum && state.races.length) {
-                const p = new URLSearchParams(location.search).get('race');
-                state.selectedRaceNum = p
-                    ? parseInt(p, 10)
-                    : state.races[Math.floor(state.races.length / 2)]?.raceNum;
-            }
-            let statusMsg = `Loaded ${state.races.length} races · ${state.results.size} results · ${state.events.length} events · ${code}`;
-            if (state.races.length === 0 && state.events.length > 0) {
-                statusMsg +=
-                    ' — daysheet parsed empty; check daysheet.csv format (race numbers and lane columns).';
-            } else if (state.results.size === 0) {
-                statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
-            }
-            setStatus(statusMsg);
-            renderStatsOverview();
-            renderFilters();
-            renderRaceList();
-            renderDeviceConfig();
-            const urlEvent = new URLSearchParams(location.search).get('event');
-            if (urlEvent && buildEventGroups().some((g) => g.key === urlEvent)) {
-                selectEvent(urlEvent);
-            }
-            if (state.selectedRaceNum) {
-                selectRace(state.selectedRaceNum);
-            }
-            probeGpsForDays();
+            await loadMissingLogosReport();
+            await applyRegattaPayload(code, { preserveSelection: false, skipGpsProbe: false });
+            renderMissingLogosPanel();
+            startLiveRefresh();
         } catch (err) {
             setStatus(`Failed to load: ${err.message}`, true);
         } finally {
@@ -3544,6 +3675,19 @@
             saveSettings();
             loadRegatta();
         });
+
+        const liveRefreshEl = document.getElementById('bsrLiveRefresh');
+        if (liveRefreshEl) {
+            liveRefreshEl.checked = state.liveRefresh;
+            liveRefreshEl.addEventListener('change', () => {
+                state.liveRefresh = liveRefreshEl.checked;
+                saveSettings();
+                startLiveRefresh();
+                if (state.liveRefresh) {
+                    setStatus((document.getElementById('bsrStatus')?.textContent || '') + ' · live refresh 1 min');
+                }
+            });
+        }
 
         offsetInput?.addEventListener('change', () => {
             state.gpsOffsetMin = parseInt(offsetInput.value, 10) || 0;

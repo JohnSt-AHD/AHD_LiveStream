@@ -33,6 +33,10 @@
                     <input type="number" id="bsrGpsOffset" value="0" step="1" title="Add to scheduled start when matching GPS">
                 </div>
                 <button type="button" class="bsr-btn bsr-btn--primary" id="bsrLoadBtn">Load regatta</button>
+                <label class="bsr-toggle bsr-toggle--toolbar">
+                    <input type="checkbox" id="bsrLiveRefresh">
+                    <span>Live refresh (1 min)</span>
+                </label>
                 <a class="bsr-btn bsr-btn--ghost" href="beachsprints-map.html">GPS map</a>
                 <a class="bsr-btn bsr-btn--ghost" href="index.html">Hub</a>
             </div>
@@ -88,6 +92,12 @@
             <summary>GPS device mapping &amp; presets</summary>
             <p class="bsr-card-lead">Map <code>boat_1</code> / <code>boat_2</code> to lanes (Main: 1–2, North: 4–5). Keys <strong>n</strong> / <strong>p</strong> step races in schedule order.</p>
             <div id="bsrDeviceConfig"></div>
+        </details>
+
+        <details class="bsr-card bsr-settings-details">
+            <summary>Missing school logos</summary>
+            <p class="bsr-card-lead">Clubs in <code>AHD_lookup</code> without a PNG in <code>assets/school-logos/</code> show a white placeholder on this dashboard.</p>
+            <div id="bsrMissingLogos"></div>
         </details>
     </main>
 
