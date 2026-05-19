@@ -2133,6 +2133,32 @@
             )
             .addTo(layer);
 
+        if (overlay.approxStartGate) {
+            L.polyline(
+                [
+                    [overlay.approxStartGate.a.lat, overlay.approxStartGate.a.lng],
+                    [overlay.approxStartGate.b.lat, overlay.approxStartGate.b.lng],
+                ],
+                { color: '#fbbf24', weight: 6, opacity: 0.95 },
+            )
+                .bindPopup(
+                    `<strong>Approx. start gate (GPS)</strong><br>~${coastal?.WR_COURSE_SPEC?.startGateWidthM || 10} m wide, perpendicular to course · launch detected at 7→20 km/h (not daysheet time).`,
+                )
+                .addTo(layer);
+            if (overlay.approxStartGate.center) {
+                const c = overlay.approxStartGate.center;
+                L.circleMarker([c.lat, c.lng], {
+                    radius: 4,
+                    color: '#fbbf24',
+                    weight: 2,
+                    fillColor: '#f59e0b',
+                    fillOpacity: 1,
+                })
+                    .bindPopup('<strong>GPS launch</strong><br>Speed crosses from &lt;7 km/h toward ~20 km/h.')
+                    .addTo(layer);
+            }
+        }
+
         if (overlay.startFinishGate) {
             L.polyline(
                 [
@@ -2203,7 +2229,7 @@
                     lineCap: 'round',
                 })
                     .bindPopup(
-                        `<strong>${escapeHtml(run.name)}</strong><br>${leg.title}<br>Est. ${fmt(seg.estMs)}`,
+                        `<strong>${escapeHtml(run.name)}</strong><br>${leg.title}<br>${fmt(seg.estMs)}${escapeHtml(overlay.runLabelSuffix || '')}`,
                     )
                     .addTo(layer);
             }
@@ -2293,14 +2319,23 @@
                         : cmp.totalLeader === 'b'
                           ? labels[1]
                           : 'Dead heat';
+                const runA = valid[0].runTiming?.runTotalMs;
+                const runB = valid[1].runTiming?.runTotalMs;
+                const runNote =
+                    runA != null && runB != null
+                        ? ` · Beach run (CSV−GPS) ${coastal.formatDurationMs(runA)} vs ${coastal.formatDurationMs(runB)}`
+                        : '';
                 headline =
-                    `<p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong> ahead overall</p>` +
-                    `<p class="bsr-gps-stat">Race ${coastal.formatDurationMs(valid[0].totalMs)} vs ${coastal.formatDurationMs(valid[1].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)} vs ${coastal.formatDurationMs(valid[1].turnTimeMs)}</p>`;
+                    `<p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong> ahead on GPS boat section</p>` +
+                    `<p class="bsr-gps-stat">Boat ${coastal.formatDurationMs(valid[0].totalMs)} vs ${coastal.formatDurationMs(valid[1].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)} vs ${coastal.formatDurationMs(valid[1].turnTimeMs)}${runNote}</p>`;
             }
         } else {
+            const runMs = valid[0].runTiming?.runTotalMs;
+            const runNote =
+                runMs != null ? ` · Beach run (CSV−GPS) ${coastal.formatDurationMs(runMs)}` : '';
             headline =
                 `<p class="bsr-card-lead"><strong>${escapeHtml(labels[0] || valid[0].name)}</strong></p>` +
-                `<p class="bsr-gps-stat">Race ${coastal.formatDurationMs(valid[0].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)}</p>`;
+                `<p class="bsr-gps-stat">Boat ${coastal.formatDurationMs(valid[0].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)}${runNote}</p>`;
         }
         return (
             `<div class="bsr-compare-block">${headline}${table}` +
@@ -2326,6 +2361,8 @@
                 lane: t.lane,
                 label: t.label,
                 points: t.points,
+                section: t.section ?? traceAnalyses?.[i]?.section ?? null,
+                officialTimeMs: t.officialTimeMs ?? traceAnalyses?.[i]?.officialTimeMs ?? null,
                 analysis: traceAnalyses?.[i] ?? null,
             }));
             const overlay = coastal.buildBeachRunOverlay({ buoys: courseBuoys, athletes });
@@ -2334,7 +2371,7 @@
                     boatTheme(i).color,
                 );
                 if (beachLayer) state.miniMapLayers.push(beachLayer);
-                for (const leg of [overlay.tideLine, overlay.startFinishGate]) {
+                for (const leg of [overlay.tideLine, overlay.startFinishGate, overlay.approxStartGate]) {
                     if (!leg) continue;
                     bounds.push([leg.a.lat, leg.a.lng], [leg.b.lat, leg.b.lng]);
                 }
@@ -2834,14 +2871,38 @@
             const s = typeof p.speed === 'number' ? p.speed : 0;
             if (s > maxSpeed) maxSpeed = s;
         }
-        const schedMs = scheduledStart.getTime();
+        const schedMs = scheduledStart?.getTime?.();
         return {
             startMs,
             endMs,
             durationSec: (endMs - startMs) / 1000,
             maxSpeedKmh: maxSpeed * 3.6,
-            deltaFromScheduleSec: (startMs - schedMs) / 1000,
+            deltaFromScheduleSec: Number.isFinite(schedMs) ? (startMs - schedMs) / 1000 : null,
             pointCount: points.length,
+        };
+    }
+
+    function boatSectionCardStats(analysis, officialTimeMs, scheduledStart) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!analysis?.valid || !analysis.section) return null;
+        const schedMs = scheduledStart?.getTime?.();
+        const fmt = coastal?.formatDurationMs?.bind(coastal) || ((ms) => `${(ms / 1000).toFixed(2)}s`);
+        const csvMs = Number.isFinite(officialTimeMs)
+            ? officialTimeMs
+            : analysis.officialTimeMs;
+        const runMs =
+            analysis.runTiming?.runTotalMs ??
+            (Number.isFinite(csvMs) && csvMs > analysis.totalMs ? csvMs - analysis.totalMs : null);
+        return {
+            gpsLaunchMs: analysis.section.accelMs,
+            gpsStopMs: analysis.section.decelMs,
+            boatWaterMs: analysis.totalMs,
+            deltaLaunchSec: Number.isFinite(schedMs)
+                ? (analysis.section.accelMs - schedMs) / 1000
+                : null,
+            officialTimeMs: Number.isFinite(csvMs) ? csvMs : null,
+            runMs,
+            fmt,
         };
     }
 
@@ -2850,6 +2911,7 @@
         const container = document.getElementById('bsrGpsContent');
         if (!container) return;
         const win = gpsWindowForRace(race);
+        const match = getRaceMatchData(race.raceNum);
         const lanesToLoad = race.lanes.length ? race.lanes : [];
 
         if (!lanesToLoad.length) {
@@ -2876,34 +2938,28 @@
                 continue;
             }
             try {
-                const points = await fetchRoute(deviceId, win.from, win.to);
+                const rawPoints = await fetchRoute(deviceId, win.from, win.to);
+                const slot = match.slots.find((s) => s.lane === lane.lane);
+                const officialTimeMs = parseRaceTimeMs(slot?.time);
                 const info = clubInfo(lane.crew);
                 const label = `${info.name} (L${lane.lane})`;
-                traces.push({ points, label, lane: lane.lane });
-                analysisByTrace.push(null);
-                const stats = routeStats(points, win.center);
+                const stats = routeStats(rawPoints, win.center);
                 const dev = state.devices.find((d) => String(d.id) === String(deviceId));
                 const laneMapUrl = buildMapDeepLink(
                     { ...race, lanes: [lane] },
                     { compare: false },
                 );
-                if (!stats) {
-                    cards.push(
-                        `<div class="bsr-gps-card"><h4>Lane ${lane.lane} · ${escapeHtml(dev?.name || alias)}</h4>` +
-                            `<p class="bsr-note">No GPS points in window (${formatDateTime(win.from)} — ${formatDateTime(win.to)}).</p>` +
-                            `<a href="${escapeHtml(laneMapUrl)}">Open on map â†’</a></div>`,
-                    );
-                } else {
-                    cards.push(
-                        `<div class="bsr-gps-card"><h4>Lane ${lane.lane} · ${escapeHtml(dev?.name || alias)}</h4>` +
-                            `<p class="bsr-gps-stat"><strong>Points:</strong> ${stats.pointCount}</p>` +
-                            `<p class="bsr-gps-stat"><strong>GPS start:</strong> ${formatDateTime(new Date(stats.startMs))}</p>` +
-                            `<p class="bsr-gps-stat"><strong>Duration:</strong> ${stats.durationSec.toFixed(1)} s</p>` +
-                            `<p class="bsr-gps-stat"><strong>Max speed:</strong> ${stats.maxSpeedKmh.toFixed(1)} km/h</p>` +
-                            `<p class="bsr-gps-stat"><strong>vs schedule:</strong> ${stats.deltaFromScheduleSec >= 0 ? '+' : ''}${stats.deltaFromScheduleSec.toFixed(0)} s</p>` +
-                            `<a href="${escapeHtml(laneMapUrl)}">Open on map â†’</a></div>`,
-                    );
-                }
+                traces.push({
+                    points: rawPoints,
+                    rawPoints,
+                    label,
+                    lane: lane.lane,
+                    officialTimeMs: Number.isFinite(officialTimeMs) ? officialTimeMs : null,
+                    devName: dev?.name || alias,
+                    laneMapUrl,
+                    fetchStats: stats,
+                });
+                analysisByTrace.push(null);
             } catch (err) {
                 cards.push(
                     `<div class="bsr-gps-card"><h4>Lane ${lane.lane}</h4><p class="bsr-note">GPS error: ${escapeHtml(err.message)}</p></div>`,
@@ -2911,24 +2967,74 @@
             }
         }
 
-        const buoyResolve = resolveRaceCourseBuoys(traces);
+        const buoyResolve = resolveRaceCourseBuoys(
+            traces.map((t) => ({ ...t, points: t.rawPoints || t.points })),
+        );
         courseBuoys = buoyResolve.buoys;
         state.lastBuoyFitNote = buoyResolve.note || '';
         if (coastal && traces.length) {
             analyses.length = 0;
             labels.length = 0;
-            let ai = 0;
             for (let ti = 0; ti < traces.length; ti++) {
                 const tr = traces[ti];
-                if (!tr.points?.length) continue;
-                const analysis = coastal.analyzeCoastalRace(tr.points, tr.label, { buoys: courseBuoys });
+                if (!tr.rawPoints?.length && !tr.points?.length) continue;
+                const src = tr.rawPoints || tr.points;
+                const analysis = coastal.analyzeCoastalRace(src, tr.label, {
+                    buoys: courseBuoys,
+                    officialTimeMs: tr.officialTimeMs,
+                });
                 analysisByTrace[ti] = analysis.valid ? analysis : null;
                 if (analysis.valid) {
+                    tr.points = analysis.points;
+                    tr.section = analysis.section;
                     analyses.push(analysis);
                     labels.push(tr.label);
-                    ai++;
+                } else if (coastal.trimToBoatRacingSection) {
+                    const trimmed = coastal.trimToBoatRacingSection(src);
+                    if (trimmed.section) {
+                        tr.points = trimmed.points;
+                        tr.section = trimmed.section;
+                    }
                 }
             }
+        }
+
+        for (let ti = 0; ti < traces.length; ti++) {
+            const tr = traces[ti];
+            const analysis = analysisByTrace[ti];
+            const boat = boatSectionCardStats(analysis, tr.officialTimeMs, win.center);
+            const stats = tr.fetchStats;
+            const title = `Lane ${tr.lane} · ${escapeHtml(tr.devName || '')}`;
+            const mapLink = tr.laneMapUrl
+                ? `<a href="${escapeHtml(tr.laneMapUrl)}">Open on map →</a>`
+                : '';
+            if (!stats) {
+                cards.push(
+                    `<div class="bsr-gps-card"><h4>${title}</h4>` +
+                        `<p class="bsr-note">No GPS points in window (${formatDateTime(win.from)} — ${formatDateTime(win.to)}).</p>${mapLink}</div>`,
+                );
+                continue;
+            }
+            let body =
+                `<p class="bsr-gps-stat"><strong>Fetch window points:</strong> ${stats.pointCount}</p>` +
+                `<p class="bsr-gps-stat"><strong>Max speed (window):</strong> ${stats.maxSpeedKmh.toFixed(1)} km/h</p>`;
+            if (boat) {
+                const d = boat.deltaLaunchSec;
+                body +=
+                    `<p class="bsr-gps-stat"><strong>GPS launch (7→20 km/h):</strong> ${formatDateTime(new Date(boat.gpsLaunchMs))}</p>` +
+                    `<p class="bsr-gps-stat"><strong>vs daysheet:</strong> ${d != null ? `${d >= 0 ? '+' : ''}${d.toFixed(0)} s` : '—'}</p>` +
+                    `<p class="bsr-gps-stat"><strong>Boat on water (GPS):</strong> ${boat.fmt(boat.boatWaterMs)}</p>`;
+                if (boat.officialTimeMs != null) {
+                    body += `<p class="bsr-gps-stat"><strong>Official total (CSV):</strong> ${boat.fmt(boat.officialTimeMs)}</p>`;
+                }
+                if (boat.runMs != null) {
+                    body += `<p class="bsr-gps-stat"><strong>Beach run (CSV − GPS boat):</strong> ${boat.fmt(boat.runMs)}</p>`;
+                }
+                body += `<p class="bsr-note">Trace trimmed ±5 s around launch/stop; map shows boat racing section only.</p>`;
+            } else if (analysis && !analysis.valid) {
+                body += `<p class="bsr-note">${escapeHtml(analysis.reason || 'Could not detect boat racing section.')}</p>`;
+            }
+            cards.push(`<div class="bsr-gps-card"><h4>${title}</h4>${body}${mapLink}</div>`);
         }
 
         const mapAllUrl = buildMapDeepLink(race, { compare: false });
@@ -2941,7 +3047,8 @@
                 ? ` · <a href="${escapeHtml(mapCompareUrl)}">Map + compare first two boats</a>`
                 : '') +
             `</p>` +
-            `<p class="bsr-note">Window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min).</p>`;
+            `<p class="bsr-note">Fetch window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min). ` +
+            `Splits and map use the boat racing section (7→20 km/h launch/stop, ±5 s padding). Yellow line = approx. 10 m start gate from GPS launch.</p>`;
         const compareEl = document.getElementById('bsrCompareAnalysis');
         if (compareEl) {
             compareEl.innerHTML = analyses.length

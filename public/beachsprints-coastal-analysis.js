@@ -26,6 +26,14 @@
         runnerSprintMps: 7.5,
         /** Water return leg before beach run (approx. metres, for time split). */
         waterReturnBeforeBeachM: 80,
+        /** Detect launch when speed crosses above this (km/h). */
+        raceAccelFromKmh: 7,
+        /** Detect launch when speed reaches ~this (km/h). */
+        raceAccelToKmh: 20,
+        /** Padding before launch accel / after stop decel (ms). */
+        raceSectionPadMs: 5000,
+        /** Approximate GPS start gate width (metres), perpendicular to course. */
+        startGateWidthM: 10,
     };
 
     const DEFAULT_BEACH_BUOYS = [
@@ -222,8 +230,135 @@
         return null;
     }
 
-    function findRaceWindow(sorted) {
+    function kmhToMps(kmh) {
+        return kmh / 3.6;
+    }
+
+    function interpCrossingTimeMs(sorted, i, s0, s1, threshold) {
+        const t0 = positionTimeMs(sorted[i - 1]);
+        const t1 = positionTimeMs(sorted[i]);
+        if (!Number.isFinite(t0) || !Number.isFinite(t1) || s1 === s0) return t1;
+        const frac = (threshold - s0) / (s1 - s0);
+        return t0 + Math.min(1, Math.max(0, frac)) * (t1 - t0);
+    }
+
+    function detectBoatRacingSection(points) {
+        const sorted = sortRoutePoints(points);
+        if (sorted.length < 4) return null;
+
+        const lowMps = kmhToMps(WR_COURSE_SPEC.raceAccelFromKmh);
+        const highMps = kmhToMps(WR_COURSE_SPEC.raceAccelToKmh);
+        const midMps = (lowMps + highMps) / 2;
+        const padMs = WR_COURSE_SPEC.raceSectionPadMs;
+
+        let accelMs = null;
+        for (let i = 1; i < sorted.length; i++) {
+            const s0 = pointSpeedMps(sorted[i - 1]);
+            const s1 = pointSpeedMps(sorted[i]);
+            if (s0 < lowMps && s1 >= midMps) {
+                accelMs = interpCrossingTimeMs(sorted, i, s0, s1, midMps);
+                break;
+            }
+        }
+        if (!Number.isFinite(accelMs)) {
+            for (let i = 0; i < sorted.length; i++) {
+                if (pointSpeedMps(sorted[i]) >= highMps * 0.88) {
+                    accelMs = positionTimeMs(sorted[i]);
+                    break;
+                }
+            }
+        }
+        if (!Number.isFinite(accelMs)) return null;
+
+        const searchFromMs = accelMs + 20000;
+        let decelMs = null;
+        for (let i = sorted.length - 1; i >= 1; i--) {
+            const t = positionTimeMs(sorted[i]);
+            if (t < searchFromMs) break;
+            const s0 = pointSpeedMps(sorted[i - 1]);
+            const s1 = pointSpeedMps(sorted[i]);
+            if (s0 >= midMps && s1 < lowMps) {
+                decelMs = interpCrossingTimeMs(sorted, i, s0, s1, lowMps);
+                break;
+            }
+        }
+        if (!Number.isFinite(decelMs)) {
+            for (let i = sorted.length - 1; i >= 0; i--) {
+                const t = positionTimeMs(sorted[i]);
+                if (t < searchFromMs) break;
+                if (pointSpeedMps(sorted[i]) < lowMps) {
+                    decelMs = t;
+                    break;
+                }
+            }
+        }
+
+        const firstT = positionTimeMs(sorted[0]);
+        const lastT = positionTimeMs(sorted[sorted.length - 1]);
+        const boatStartMs = Math.max(firstT, accelMs - padMs);
+        const boatEndMs = Number.isFinite(decelMs)
+            ? Math.min(lastT, decelMs + padMs)
+            : lastT;
+        const gpsEndMs = Number.isFinite(decelMs) ? decelMs : lastT;
+
+        return {
+            accelMs,
+            decelMs,
+            boatStartMs,
+            boatEndMs,
+            gpsRaceStartMs: accelMs,
+            gpsRaceEndMs: gpsEndMs,
+            boatWaterMs: gpsEndMs - accelMs,
+        };
+    }
+
+    function trimToBoatRacingSection(points) {
+        const sorted = sortRoutePoints(points);
+        const section = detectBoatRacingSection(sorted);
+        if (!section) {
+            return { points: sorted, section: null };
+        }
+        const trimmed = sorted.filter((p) => {
+            const t = positionTimeMs(p);
+            return t >= section.boatStartMs && t <= section.boatEndMs;
+        });
+        return { points: trimmed, section };
+    }
+
+    function interpolatePointAtTime(sorted, timeMs) {
+        if (!sorted?.length || !Number.isFinite(timeMs)) return null;
+        if (timeMs <= positionTimeMs(sorted[0])) return sorted[0];
+        if (timeMs >= positionTimeMs(sorted[sorted.length - 1])) return sorted[sorted.length - 1];
+        for (let i = 1; i < sorted.length; i++) {
+            const t0 = positionTimeMs(sorted[i - 1]);
+            const t1 = positionTimeMs(sorted[i]);
+            if (timeMs < t0 || timeMs > t1) continue;
+            const frac = t1 === t0 ? 0 : (timeMs - t0) / (t1 - t0);
+            const a = sorted[i - 1];
+            const b = sorted[i];
+            return {
+                latitude: a.latitude + (b.latitude - a.latitude) * frac,
+                longitude: a.longitude + (b.longitude - a.longitude) * frac,
+                speed: pointSpeedMps(a) + (pointSpeedMps(b) - pointSpeedMps(a)) * frac,
+                fixTime: a.fixTime,
+                deviceTime: a.deviceTime,
+            };
+        }
+        return null;
+    }
+
+    function findRaceWindow(sorted, section) {
         if (!sorted || sorted.length < 2) return null;
+        const sec = section || detectBoatRacingSection(sorted);
+        if (sec) {
+            const timing = analyzeDeviceTiming(sorted);
+            return {
+                startMs: sec.gpsRaceStartMs,
+                endMs: sec.gpsRaceEndMs,
+                timing,
+                section: sec,
+            };
+        }
         let startMs = null;
         let startIdx = -1;
         for (let i = 0; i < sorted.length; i++) {
@@ -255,7 +390,7 @@
             }
         }
         if (!Number.isFinite(endMs)) endMs = positionTimeMs(sorted[sorted.length - 1]);
-        return { startMs, endMs, timing };
+        return { startMs, endMs, timing, section: null };
     }
 
     function buildRacePhases(sorted, raceWindow) {
@@ -608,15 +743,38 @@
 
     function analyzeCoastalRace(points, deviceName, options) {
         return withCourseBuoys(options?.buoys, () => {
-        const sorted = sortRoutePoints(points);
-        const raceWindow = findRaceWindow(sorted);
+        const trimmed = trimToBoatRacingSection(points);
+        const sorted = trimmed.points;
+        const section = trimmed.section;
+        if (!section || sorted.length < 8) {
+            return {
+                valid: false,
+                name: deviceName,
+                reason: 'No boat racing section detected (7→20 km/h launch / stop not found).',
+            };
+        }
+        const raceWindow = findRaceWindow(sorted, section);
         if (!raceWindow) {
-            return { valid: false, name: deviceName, reason: 'No race detected (never exceeded 2 m/s).' };
+            return { valid: false, name: deviceName, reason: 'Could not analyse boat racing window.' };
         }
         const { startMs, endMs, timing } = raceWindow;
         const totalMs = endMs - startMs;
         if (!Number.isFinite(totalMs) || totalMs <= 0) {
             return { valid: false, name: deviceName, reason: 'Race window too short to analyse.' };
+        }
+        const officialTimeMs = options?.officialTimeMs;
+        let runTiming = null;
+        if (Number.isFinite(officialTimeMs) && officialTimeMs > totalMs) {
+            const runTotalMs = officialTimeMs - totalMs;
+            const half = runTotalMs / 2;
+            runTiming = {
+                fromCsv: true,
+                officialTimeMs,
+                boatWaterMs: totalMs,
+                runTotalMs,
+                runOutMs: half,
+                runInMs: half,
+            };
         }
         return {
             valid: true,
@@ -625,6 +783,9 @@
             endMs,
             totalMs,
             timing,
+            section,
+            runTiming,
+            officialTimeMs: Number.isFinite(officialTimeMs) ? officialTimeMs : null,
             phases: buildRacePhases(sorted, raceWindow),
             raceSpeed: speedStatsBetween(sorted, startMs, endMs),
             turnTimeMs: timing.turnTimeMs,
@@ -835,7 +996,21 @@
         };
     }
 
-    function estimateBeachRunTimes(analysis) {
+    function estimateBeachRunTimes(analysis, officialTimeMs) {
+        if (analysis?.runTiming?.fromCsv) {
+            return {
+                outMs: analysis.runTiming.runOutMs,
+                inMs: analysis.runTiming.runInMs,
+                fromCsv: true,
+            };
+        }
+        const csvMs = officialTimeMs ?? analysis?.officialTimeMs;
+        const boatMs = analysis?.totalMs;
+        if (Number.isFinite(csvMs) && Number.isFinite(boatMs) && csvMs > boatMs) {
+            const runTotalMs = csvMs - boatMs;
+            const half = runTotalMs / 2;
+            return { outMs: half, inMs: half, fromCsv: true };
+        }
         const launch = analysis?.phases?.find((p) => p.id === 'launch');
         const ret = analysis?.phases?.find((p) => p.id === 'return');
         const b = WR_COURSE_SPEC.beachRunDistM;
@@ -849,7 +1024,31 @@
         if (ret?.durationMs != null && ret.durationMs > 0) {
             inMs = ret.durationMs * (b / (b + wIn));
         }
-        return { outMs, inMs };
+        return { outMs, inMs, fromCsv: false };
+    }
+
+    function buildApproxStartGate(buoys, athletes) {
+        const frame = courseFrameFromBuoys(buoys);
+        if (!frame) return null;
+        const xs = [];
+        const ys = [];
+        for (const ath of athletes || []) {
+            if (!ath.section?.accelMs || !ath.points?.length) continue;
+            const sorted = sortRoutePoints(ath.points);
+            const pt = interpolatePointAtTime(sorted, ath.section.accelMs);
+            if (!pt) continue;
+            const m = latLngToLocalMeters(pt.latitude, pt.longitude, frame.refLat, frame.refLng);
+            xs.push(m.x);
+            ys.push(m.y);
+        }
+        if (!xs.length) return null;
+        const cx = medianOf(xs);
+        const cy = medianOf(ys);
+        const halfW = WR_COURSE_SPEC.startGateWidthM / 2;
+        return {
+            ...crossLineEndpoints(frame, cx, cy, halfW),
+            center: xyToLatLng(cx, cy, frame),
+        };
     }
 
     function buildBeachRunOverlay({ buoys, athletes }) {
@@ -858,6 +1057,7 @@
             return { ok: false, reason: 'Need six course buoys to draw beach run layout.' };
         }
 
+        const approxStartGate = buildApproxStartGate(buoys, athletes);
         const boats = estimateBoatBeachPositions(athletes, frame);
         const tideOff = WR_COURSE_SPEC.tideLineFromBoatM;
         const flagOff = WR_COURSE_SPEC.runFlagLandwardOfTideM;
@@ -901,6 +1101,7 @@
         const runnerPaths = [];
         const sortedAth = [...(athletes || [])].filter((a) => a.analysis?.valid);
         sortedAth.sort((a, b) => (a.lane || 99) - (b.lane || 99));
+        let runFromCsv = false;
 
         for (const ath of sortedAth) {
             const side =
@@ -913,13 +1114,14 @@
                         : 'R';
             const flag = side === 'L' ? flagL : flagR;
             const boat = side === 'L' ? boatL : boatR;
-            const times = estimateBeachRunTimes(ath.analysis);
+            const times = estimateBeachRunTimes(ath.analysis, ath.officialTimeMs);
             const estOut =
                 times.outMs != null
                     ? times.outMs
                     : (beachRun / WR_COURSE_SPEC.runnerSprintMps) * 1000;
             const estIn =
                 times.inMs != null ? times.inMs : (beachRun / WR_COURSE_SPEC.runnerSprintMps) * 1000;
+            if (times.fromCsv) runFromCsv = true;
 
             runnerPaths.push({
                 name: ath.label || ath.analysis.name,
@@ -948,13 +1150,15 @@
             ok: true,
             tideLine,
             startFinishGate,
+            approxStartGate,
             runFlags,
             boatStops,
             startFinishPt,
             runnerPaths,
+            runLabelSuffix: runFromCsv ? ' (from results CSV)' : ' (est.)',
             note: boats.fromGps
-                ? `WR layout: boats at GPS stop, tide line ${tideOff} m toward beach, shared start/finish, run flags on sand.`
-                : `WR layout: tide line ${tideOff} m beachward of B1 gate; shared start/finish ~${beachRun} m beach run.`,
+                ? `WR beach layout; run times from results CSV minus GPS boat time. Approx. start gate at GPS launch (7→20 km/h).`
+                : `WR beach layout from B1 gate; run times from CSV when available.`,
         };
     }
 
@@ -965,6 +1169,8 @@
         compareRaceAnalyses,
         analyzeDeviceTiming,
         inferCourseBuoysFromGps,
+        detectBoatRacingSection,
+        trimToBoatRacingSection,
         buildBeachRunOverlay,
         sortRoutePoints,
         positionTimeMs,
