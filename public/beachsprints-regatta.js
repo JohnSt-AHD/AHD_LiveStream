@@ -969,7 +969,7 @@
 
     function collectKnockoutRaces(group) {
         const races = getRacesForEvent(group);
-        const knockoutKinds = ['qf', 'sf', 'final'];
+        const knockoutKinds = ['rep', 'qf', 'sf', 'final'];
         return races.filter((r) => knockoutKinds.includes(classifyRound(r.round)));
     }
 
@@ -1249,23 +1249,19 @@
             return;
         }
         const tt1All = collectQualifyingTimes(group, new Set(['heat', 'e', 'tt']));
-        const tt2All = collectQualifyingTimes(group, new Set(['rep']));
         const standings = buildQualifyingStandings(group);
         const cutoff = inferProgressionCutoff(group);
         if (lead) {
             lead.textContent =
                 standings.length > 0
-                    ? `${tt1All.length} qualifying times · top ${cutoff} seeds advance to knockouts.`
+                    ? `${tt1All.length} qualifying times · top ${cutoff} advance to repechage or knockouts.`
                     : 'Qualifying times will appear when heat results are posted.';
         }
-        if (!tt1All.length && !tt2All.length) {
+        if (!tt1All.length) {
             root.innerHTML = '<p class="bsr-note">No qualifying times in results for this event yet.</p>';
             return;
         }
-        root.innerHTML =
-            renderQualifyingColumn('Time trial / heats (TT1)', tt1All, cutoff, 'TT1') +
-            (tt2All.length ? renderQualifyingColumn('Repechage (TT2)', tt2All, null, 'TT2') : '') +
-            renderQualifyingColumn('Seeding (best per crew)', standings, cutoff, '');
+        root.innerHTML = renderQualifyingColumn('Time trial / heats (TT1)', tt1All, cutoff, 'TT1');
     }
 
     function renderQualifyingColumn(title, entries, cutoff, seedPrefix) {
@@ -1372,7 +1368,7 @@
         const knockout = collectKnockoutRaces(group);
         if (!knockout.length) {
             root.innerHTML =
-                '<p class="bsr-note">No knockout races posted yet — quarter-finals, semi-finals and final will appear here.</p>';
+                '<p class="bsr-note">No knockout races posted yet — repechage, quarter-finals, semi-finals and final will appear here.</p>';
             return;
         }
         const byKind = new Map();
@@ -1381,12 +1377,14 @@
             if (!byKind.has(k)) byKind.set(k, []);
             byKind.get(k).push(r);
         }
+        const rep = (byKind.get('rep') || []).sort((a, b) => a.raceNum - b.raceNum);
         const qf = (byKind.get('qf') || []).sort((a, b) => a.raceNum - b.raceNum);
         const sf = (byKind.get('sf') || []).sort((a, b) => a.raceNum - b.raceNum);
         const fin = (byKind.get('final') || []).sort((a, b) => a.raceNum - b.raceNum);
 
         const toMatch = (races, prefix) => races.map((r, i) => ({ raceNum: r.raceNum, label: `${prefix}${i + 1}` }));
 
+        const repFeeders = chunkBracketPairs(toMatch(rep, 'R')).map((pair) => renderTreeFeeder(pair)).join('');
         const qfFeeders = chunkBracketPairs(toMatch(qf, 'Q')).map((pair) => renderTreeFeeder(pair)).join('');
         const sfFeeders = chunkBracketPairs(toMatch(sf, 'S')).map((pair) => renderTreeFeeder(pair)).join('');
         const finLabels = ['A Final', 'B Final', 'C Final'];
@@ -1397,6 +1395,9 @@
             .join('');
 
         let html = '<div class="bsr-knockout-tree">';
+        if (rep.length) {
+            html += renderTreeColumn('Repechage', repFeeders, 'bsr-tree-col--rep');
+        }
         if (qf.length) {
             html += renderTreeColumn('Quarter-finals', qfFeeders, 'bsr-tree-col--qf');
         }
