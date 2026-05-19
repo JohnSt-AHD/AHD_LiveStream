@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Beach Sprints · Regatta dashboard</title>
+    <link rel="stylesheet" href="beachsprints-regatta.css">
+</head>
+<body class="bsr-page">
+    <header class="bsr-header">
+        <div class="bsr-header-inner">
+            <div class="bsr-brand">
+                <h1>Beach Sprints regatta dashboard</h1>
+                <p>Race-by-race insight — RowIT CSV, progression, school logos, and Traccar GPS (boat_1 / boat_2).</p>
+            </div>
+            <div class="bsr-toolbar">
+                <div class="bsr-field">
+                    <label for="bsrRegattaCode">Regatta code</label>
+                    <input type="text" id="bsrRegattaCode" value="cnzb2026" spellcheck="false" autocomplete="off">
+                </div>
+                <div class="bsr-field">
+                    <label for="bsrGpsOffset">GPS offset (min)</label>
+                    <input type="number" id="bsrGpsOffset" value="0" step="1" title="Add to scheduled start when matching GPS">
+                </div>
+                <button type="button" class="bsr-btn" id="bsrLoadBtn">Load regatta</button>
+                <a class="bsr-btn bsr-btn--ghost" href="beachsprints-map.html">GPS map</a>
+                <a class="bsr-btn bsr-btn--ghost" href="index.html">Hub</a>
+            </div>
+        </div>
+    </header>
+
+    <p class="bsr-status" id="bsrStatus">Ready — default regatta CNZB 2026 (25–27 Apr, Titahi Bay).</p>
+
+    <section class="bsr-card" style="max-width:1600px;margin:0 auto 0;padding:12px 20px">
+        <h2 style="margin:0 0 8px;font-size:0.95rem">GPS device mapping</h2>
+        <p class="bsr-card-lead">Map Traccar devices <code>boat_1</code> … <code>boat_6</code> to lanes (up to 6 lanes). Save a preset per regatta code. Scheduled start and GPS often differ — use offset to align.</p>
+        <div id="bsrDeviceConfig"></div>
+        <p class="bsr-note">Keys: <strong>n</strong> next race · <strong>p</strong> previous race (same as vMix overlays).</p>
+    </section>
+
+    <div class="bsr-layout">
+        <aside class="bsr-sidebar">
+            <div class="bsr-sidebar-head">
+                <h2>Races</h2>
+                <div class="bsr-filters">
+                    <div class="bsr-field">
+                        <label for="bsrFilterDay">Day</label>
+                        <select id="bsrFilterDay"></select>
+                    </div>
+                    <div class="bsr-field">
+                        <label for="bsrFilterEvent">Event</label>
+                        <select id="bsrFilterEvent"></select>
+                    </div>
+                </div>
+            </div>
+            <ul class="bsr-race-list" id="bsrRaceList"></ul>
+        </aside>
+
+        <main class="bsr-main">
+            <section class="bsr-card">
+                <div class="bsr-progression-head">
+                    <h2>Event progression</h2>
+                    <div class="bsr-view-toggle" role="group" aria-label="Progression view">
+                        <button type="button" class="bsr-btn bsr-btn--small" id="bsrViewLinear" aria-pressed="true">Timeline</button>
+                        <button type="button" class="bsr-btn bsr-btn--small" id="bsrViewBracket" aria-pressed="false">Bracket</button>
+                    </div>
+                </div>
+                <p class="bsr-card-lead">
+                    Time trials → heats → knockouts (QF / SF / F). Beach sprints use timed qualifying then head-to-head lanes.
+                    Click a round to open race detail. School names from the draw are matched to club codes for logos and results.
+                </p>
+                <div id="bsrProgression"></div>
+            </section>
+
+            <div id="bsrRaceDetail">
+                <p class="bsr-empty">Select a race from the list or progression tree.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="hub-csv.js"></script>
+    <script src="beachsprints-regatta.js"></script>
+</body>
+</html>

@@ -28,6 +28,7 @@ let pollTimer = null;
 let historyLayer = null;
 let customPinsLayer = null;
 let historyDefaultsApplied = false;
+let regattaDeepLinkApplied = false;
 let historySpeedChart = null;
 let customMapPins = [];
 let courseBuoys = [];
@@ -101,6 +102,11 @@ function toLocalInputValue(d) {
 
 function initHistoryDateDefaultsIfNeeded() {
     if (historyDefaultsApplied) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('bsrFrom') || params.get('bsrTo') || params.get('bsrDevice') || params.get('bsrDevices')) {
+        historyDefaultsApplied = true;
+        return;
+    }
     const fromEl = document.getElementById('historyFrom');
     const toEl = document.getElementById('historyTo');
     if (!fromEl || !toEl) return;
@@ -110,6 +116,62 @@ function initHistoryDateDefaultsIfNeeded() {
     fromEl.value = toLocalInputValue(start);
     toEl.value = toLocalInputValue(now);
     historyDefaultsApplied = true;
+}
+
+/** Deep-link from regatta dashboard: ?bsrFrom=&bsrTo=&bsrDevices=&bsrCompare=1&bsrCompareA=&bsrCompareB= */
+async function applyRegattaDashboardDeepLink() {
+    if (regattaDeepLinkApplied) return;
+    const params = new URLSearchParams(location.search);
+    const fromIso = params.get('bsrFrom');
+    const toIso = params.get('bsrTo');
+    const devicesParam = params.get('bsrDevices') || params.get('bsrDevice');
+    if (!fromIso && !toIso && !devicesParam) return;
+
+    regattaDeepLinkApplied = true;
+    historyDefaultsApplied = true;
+
+    const fromEl = document.getElementById('historyFrom');
+    const toEl = document.getElementById('historyTo');
+    if (fromIso && fromEl) {
+        const d = new Date(fromIso);
+        if (!Number.isNaN(d.getTime())) fromEl.value = toLocalInputValue(d);
+    }
+    if (toIso && toEl) {
+        const d = new Date(toIso);
+        if (!Number.isNaN(d.getTime())) toEl.value = toLocalInputValue(d);
+    }
+
+    const sel = document.getElementById('historyDevice');
+    if (sel && devicesParam) {
+        const ids = new Set(
+            devicesParam
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+        );
+        Array.from(sel.options).forEach((opt) => {
+            opt.selected = ids.has(opt.value);
+        });
+    }
+
+    if (fromIso && toIso && devicesParam) {
+        await loadHistoryRoute();
+    }
+
+    const wantCompare = params.get('bsrCompare') === '1';
+    const compareA = params.get('bsrCompareA');
+    const compareB = params.get('bsrCompareB');
+    if (wantCompare && compareA && compareB) {
+        const selA = document.getElementById('bspCompareA');
+        const selB = document.getElementById('bspCompareB');
+        if (selA) selA.value = compareA;
+        if (selB) selB.value = compareB;
+        if (typeof openCompareWorkspace === 'function') {
+            openCompareWorkspace();
+        } else if (typeof renderRaceCompareDashboard === 'function') {
+            renderRaceCompareDashboard();
+        }
+    }
 }
 
 function populateHistoryDeviceSelect() {
@@ -1631,6 +1693,8 @@ async function updateData() {
         updateTimestamp();
 
         if (map) requestAnimationFrame(() => map.invalidateSize());
+
+        await applyRegattaDashboardDeepLink();
     } catch (error) {
         console.error('Beach sprints map snapshot error:', error);
         showError(error.message || 'Failed to load device data');
