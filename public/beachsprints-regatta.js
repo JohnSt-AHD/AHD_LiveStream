@@ -1651,11 +1651,29 @@
             .sort((a, b) => gpsChartTimeMs(a) - gpsChartTimeMs(b));
     }
 
-    function speedColorForPoint(p) {
+    const BOAT_TRACE_THEME = [
+        { color: '#2dd4bf', hue: 168, sat: 72 },
+        { color: '#f97316', hue: 24, sat: 92 },
+        { color: '#fde68a', hue: 48, sat: 88 },
+        { color: '#fb7185', hue: 350, sat: 82 },
+    ];
+
+    function boatTheme(traceIdx) {
+        return BOAT_TRACE_THEME[traceIdx % BOAT_TRACE_THEME.length];
+    }
+
+    function speedColorForPoint(p, traceIdx = 0) {
+        const theme = boatTheme(traceIdx);
         const sc = window.AltitudeHdSpeedColor;
-        if (!sc) return '#2dd4bf';
-        const spd = sc.speedMpsForColor(typeof p.speed === 'number' ? p.speed : 0);
-        return sc.speedToRainbowColor(spd);
+        let t = 0.5;
+        if (sc) {
+            const { minMps, maxMps } = sc.getRange();
+            const span = maxMps - minMps || 1;
+            const spd = sc.speedMpsForColor(typeof p.speed === 'number' ? p.speed : 0);
+            t = Math.min(1, Math.max(0, (spd - minMps) / span));
+        }
+        const lightness = 30 + t * 32;
+        return `hsl(${theme.hue}, ${theme.sat}%, ${lightness}%)`;
     }
 
     function bsrChartTheme() {
@@ -1751,7 +1769,6 @@
         destroyChartOnCanvas('bsrSpeedChart', 'speedChart');
         if (!wrap || !canvas || !chartCtor) return;
 
-        const colors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
         const datasets = (traces || [])
             .map((t, i) => {
                 const data = (t.points || [])
@@ -1759,7 +1776,7 @@
                     .filter(Boolean)
                     .sort((a, b) => a.x - b.x);
                 if (!data.length) return null;
-                const color = colors[i % colors.length];
+                const color = boatTheme(i).color;
                 return {
                     label: t.label || `Lane ${i + 1}`,
                     data,
@@ -1839,7 +1856,6 @@
         if (!wrap || !canvas || !chartCtor || !valid.length) return;
 
         const theme = bsrChartTheme();
-        const traceColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
         const aligned = buildAlignedPhaseChartSeries(valid);
         if (!aligned.labels.length) return;
 
@@ -1848,8 +1864,8 @@
             return {
                 label: labels[i] || a.name || `Boat ${i + 1}`,
                 data: splits,
-                backgroundColor: traceColors[i % traceColors.length],
-                borderColor: traceColors[i % traceColors.length],
+                backgroundColor: boatTheme(i).color,
+                borderColor: boatTheme(i).color,
                 borderWidth: 1,
             };
         });
@@ -1890,7 +1906,6 @@
         if (!wrap || !canvas || !chartCtor || !valid.length) return;
 
         const theme = bsrChartTheme();
-        const traceColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
         const data = valid.map((a) => a.turnTimeMs / 1000);
         const chartLabels = valid.map((a, i) => labels[i] || a.name || `Boat ${i + 1}`);
 
@@ -1903,8 +1918,8 @@
                     {
                         label: 'Turn at top (s)',
                         data,
-                        backgroundColor: valid.map((_, i) => traceColors[i % traceColors.length]),
-                        borderColor: valid.map((_, i) => traceColors[i % traceColors.length]),
+                        backgroundColor: valid.map((_, i) => boatTheme(i).color),
+                        borderColor: valid.map((_, i) => boatTheme(i).color),
                         borderWidth: 1,
                     },
                 ],
@@ -1941,7 +1956,6 @@
         if (!wrap || !canvas || !chartCtor || !valid.length) return;
 
         const theme = bsrChartTheme();
-        const traceColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
         const aligned = buildAlignedPhaseChartSeries(valid);
         if (!aligned.labels.length) return;
 
@@ -1950,8 +1964,8 @@
             return {
                 label: labels[i] || a.name || `Boat ${i + 1}`,
                 data: cumulative,
-                borderColor: traceColors[i % traceColors.length],
-                backgroundColor: traceColors[i % traceColors.length],
+                borderColor: boatTheme(i).color,
+                backgroundColor: boatTheme(i).color,
                 fill: false,
                 tension: 0.15,
                 pointRadius: 4,
@@ -1998,6 +2012,143 @@
         });
     }
 
+    function renderCourseBuoysLayer(map) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!coastal?.getCourseBuoys || typeof L === 'undefined') return null;
+        const buoyLayer = L.layerGroup().addTo(map);
+        const buoys = coastal.getCourseBuoys();
+        const byLabel = new Map(buoys.map((b) => [b.label, b]));
+
+        for (const def of coastal.TIMING_LINES || []) {
+            const a = byLabel.get(def.buoyA);
+            const b = byLabel.get(def.buoyB);
+            if (!a || !b) continue;
+            L.polyline(
+                [
+                    [a.lat, a.lng],
+                    [b.lat, b.lng],
+                ],
+                {
+                    color: 'rgba(253, 230, 138, 0.85)',
+                    weight: 2,
+                    dashArray: '6 5',
+                    opacity: 0.9,
+                },
+            ).addTo(buoyLayer);
+        }
+
+        for (const b of buoys) {
+            const icon = L.divIcon({
+                className: 'bsr-buoy-icon',
+                html: `<span class="bsr-buoy-icon-label">${escapeHtml(b.label)}</span>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+            });
+            L.marker([b.lat, b.lng], { icon, zIndexOffset: 800 })
+                .bindPopup(
+                    `<strong>Buoy ${escapeHtml(b.label)}</strong><br>${b.lat.toFixed(5)}, ${b.lng.toFixed(5)}`,
+                )
+                .addTo(buoyLayer);
+        }
+        return buoyLayer;
+    }
+
+    function splitWinnerClass(leader, side) {
+        return leader === side ? 'bsr-split-winner' : '';
+    }
+
+    function renderGpsSplitsTable(valid, labels) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!valid.length) return '';
+
+        if (valid.length === 1) {
+            const a = valid[0];
+            let cum = 0;
+            let rows = '';
+            for (const ph of a.phases) {
+                if (ph.skipped) continue;
+                const dur = ph.durationMs;
+                if (dur != null) cum += dur;
+                const hint = ph.hint
+                    ? `<div class="bsr-split-hint">${escapeHtml(ph.hint)}</div>`
+                    : '';
+                rows +=
+                    `<tr><td><strong>${escapeHtml(ph.label)}</strong>${hint}</td>` +
+                    `<td>${dur != null ? coastal.formatDurationMs(dur) : '—'}</td>` +
+                    `<td>${dur != null ? coastal.formatDurationMs(cum) : '—'}</td></tr>`;
+            }
+            return (
+                `<table class="bsr-phase-table bsr-phase-table--full"><thead><tr>` +
+                `<th>Split (B1–B3 gates)</th><th>${escapeHtml(labels[0] || a.name)}</th><th>Cumulative</th>` +
+                `</tr></thead><tbody>${rows}</tbody></table>`
+            );
+        }
+
+        const cmp = coastal.compareRaceAnalyses(valid[0], valid[1]);
+        if (!cmp.valid) return `<p class="bsr-note">${escapeHtml(cmp.reason || '')}</p>`;
+
+        let cumA = 0;
+        let cumB = 0;
+        let rows = '';
+        for (const p of cmp.phaseCompare) {
+            if (p.pa?.skipped && p.pb?.skipped) continue;
+            const durA = p.pa?.durationMs;
+            const durB = p.pb?.durationMs;
+            if (durA != null) cumA += durA;
+            if (durB != null) cumB += durB;
+            const splitLeader = p.leader;
+            const cumLeader =
+                cumA < cumB ? 'a' : cumB < cumA ? 'b' : Number.isFinite(cumA) && Number.isFinite(cumB) ? 'tie' : null;
+            const hint = p.def.hint ? `<div class="bsr-split-hint">${escapeHtml(p.def.hint)}</div>` : '';
+            rows +=
+                `<tr>` +
+                `<td><strong>${escapeHtml(p.def.label)}</strong>${hint}</td>` +
+                `<td class="${splitWinnerClass(splitLeader, 'a')}">${durA != null ? coastal.formatDurationMs(durA) : '—'}</td>` +
+                `<td class="${splitWinnerClass(splitLeader, 'b')}">${durB != null ? coastal.formatDurationMs(durB) : '—'}</td>` +
+                `<td class="${splitWinnerClass(cumLeader, 'a')}">${Number.isFinite(cumA) ? coastal.formatDurationMs(cumA) : '—'}</td>` +
+                `<td class="${splitWinnerClass(cumLeader, 'b')}">${Number.isFinite(cumB) ? coastal.formatDurationMs(cumB) : '—'}</td>` +
+                `<td>${p.gap != null ? coastal.formatGapMs(p.gap) : '—'}</td></tr>`;
+        }
+        return (
+            `<table class="bsr-phase-table bsr-phase-table--full"><thead><tr>` +
+            `<th>Split</th><th>${escapeHtml(labels[0])}</th><th>${escapeHtml(labels[1])}</th>` +
+            `<th>Cum. ${escapeHtml(labels[0])}</th><th>Cum. ${escapeHtml(labels[1])}</th><th>Gap</th>` +
+            `</tr></thead><tbody>${rows}</tbody></table>`
+        );
+    }
+
+    function renderCompareAnalysis(analyses, labels) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!coastal || !analyses?.length) return '';
+        const valid = analyses.filter((a) => a?.valid);
+        if (!valid.length) return '<p class="bsr-note">No valid GPS race analysis.</p>';
+
+        const table = renderGpsSplitsTable(valid, labels);
+        let headline = '';
+        if (valid.length >= 2) {
+            const cmp = coastal.compareRaceAnalyses(valid[0], valid[1]);
+            if (cmp.valid) {
+                const winner =
+                    cmp.totalLeader === 'a'
+                        ? labels[0]
+                        : cmp.totalLeader === 'b'
+                          ? labels[1]
+                          : 'Dead heat';
+                headline =
+                    `<p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong> ahead overall</p>` +
+                    `<p class="bsr-gps-stat">Race ${coastal.formatDurationMs(valid[0].totalMs)} vs ${coastal.formatDurationMs(valid[1].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)} vs ${coastal.formatDurationMs(valid[1].turnTimeMs)}</p>`;
+            }
+        } else {
+            headline =
+                `<p class="bsr-card-lead"><strong>${escapeHtml(labels[0] || valid[0].name)}</strong></p>` +
+                `<p class="bsr-gps-stat">Race ${coastal.formatDurationMs(valid[0].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)}</p>`;
+        }
+        return (
+            `<div class="bsr-compare-block">${headline}${table}` +
+            `<p class="bsr-note bsr-split-legend-note"><span class="bsr-split-winner bsr-split-winner--sample">Green</span> = faster on that split or cumulative.</p></div>`
+        );
+    }
+
     function renderMiniMap(traces) {
         const el = document.getElementById('bsrRaceMap');
         if (!el || typeof L === 'undefined') return;
@@ -2008,13 +2159,15 @@
         );
         const routeLayer = L.layerGroup().addTo(state.miniMap);
         state.miniMapLayers = [routeLayer];
-        const markerColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const buoyLayer = renderCourseBuoysLayer(state.miniMap);
+        if (buoyLayer) state.miniMapLayers.push(buoyLayer);
         const bounds = [];
 
         (traces || []).forEach((t, traceIdx) => {
             const sorted = sortGpsPoints(t.points);
             if (sorted.length < 2) return;
             const decimated = decimateGpsPoints(sorted, 500);
+            const mkColor = boatTheme(traceIdx).color;
             for (let i = 1; i < decimated.length; i++) {
                 const prev = decimated[i - 1];
                 const p = decimated[i];
@@ -2023,9 +2176,9 @@
                     [p.latitude, p.longitude],
                 ];
                 L.polyline(seg, {
-                    color: speedColorForPoint(p),
+                    color: speedColorForPoint(p, traceIdx),
                     weight: 4,
-                    opacity: 0.9,
+                    opacity: 0.92,
                     lineCap: 'round',
                     lineJoin: 'round',
                 }).addTo(routeLayer);
@@ -2033,7 +2186,6 @@
             }
             const start = decimated[0];
             const end = decimated[decimated.length - 1];
-            const mkColor = markerColors[traceIdx % markerColors.length];
             L.circleMarker([start.latitude, start.longitude], {
                 radius: 6,
                 color: '#fff',
@@ -2054,32 +2206,15 @@
                 .addTo(routeLayer);
         });
 
-        if (bounds.length) state.miniMap.fitBounds(bounds, { padding: [24, 24] });
+        const coastal = window.BeachSprintsCoastal;
+        if (coastal?.getCourseBuoys) {
+            for (const b of coastal.getCourseBuoys()) {
+                bounds.push([b.lat, b.lng]);
+            }
+        }
+        if (bounds.length) state.miniMap.fitBounds(bounds, { padding: [28, 28] });
         else state.miniMap.setView([-36.592, 174.703], 16);
         requestAnimationFrame(() => state.miniMap?.invalidateSize());
-    }
-
-    function renderCompareAnalysis(analyses, labels) {
-        const coastal = window.BeachSprintsCoastal;
-        if (!coastal || analyses.length < 2) return '';
-        const cmp = coastal.compareRaceAnalyses(analyses[0], analyses[1]);
-        if (!cmp.valid) return `<p class="bsr-note">${escapeHtml(cmp.reason || '')}</p>`;
-        const winner =
-            cmp.totalLeader === 'a' ? labels[0] : cmp.totalLeader === 'b' ? labels[1] : 'Dead heat';
-        let phaseRows = '';
-        for (const p of cmp.phaseCompare) {
-            if (p.pa?.skipped && p.pb?.skipped) continue;
-            phaseRows +=
-                `<tr><td><strong>${escapeHtml(p.def.label)}</strong></td>` +
-                `<td>${p.pa?.durationMs != null ? coastal.formatDurationMs(p.pa.durationMs) : '—'}</td>` +
-                `<td>${p.pb?.durationMs != null ? coastal.formatDurationMs(p.pb.durationMs) : '—'}</td>` +
-                `<td>${p.gap != null ? coastal.formatGapMs(p.gap) : '—'}</td></tr>`;
-        }
-        return (
-            `<div class="bsr-compare-block"><p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong></p>` +
-            `<p class="bsr-gps-stat">${coastal.formatDurationMs(analyses[0].totalMs)} vs ${coastal.formatDurationMs(analyses[1].totalMs)} · Turn ${coastal.formatDurationMs(analyses[0].turnTimeMs)} vs ${coastal.formatDurationMs(analyses[1].turnTimeMs)}</p>` +
-            `<table class="bsr-phase-table"><thead><tr><th>Leg</th><th>${escapeHtml(labels[0])}</th><th>${escapeHtml(labels[1])}</th><th>Gap</th></tr></thead><tbody>${phaseRows}</tbody></table></div>`
-        );
     }
 
     function renderRaceList() {
@@ -2247,7 +2382,7 @@
             `<div id="bsrCompareAnalysis"></div>` +
             `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
             `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
-            `<p class="bsr-speed-legend-note">Trace colour = speed (slow → fast). Coloured dots mark start/end per boat.</p></div>` +
+            `<p class="bsr-speed-legend-note">Each boat trace uses its lane colour (darker = slower, brighter = faster). Yellow dashed lines = timing gates; labelled markers = buoys B1–B3.</p></div>` +
             `<div class="bsr-gps-charts-grid">` +
             `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
@@ -2598,13 +2733,10 @@
             `</p>` +
             `<p class="bsr-note">Window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min).</p>`;
         const compareEl = document.getElementById('bsrCompareAnalysis');
-        if (compareEl && analyses.length >= 2) {
-            compareEl.innerHTML = renderCompareAnalysis(analyses.slice(0, 2), labels.slice(0, 2));
-        } else if (compareEl) {
-            compareEl.innerHTML =
-                analyses.length === 1
-                    ? '<p class="bsr-note">Map two lanes to devices for head-to-head comparison.</p>'
-                    : '';
+        if (compareEl) {
+            compareEl.innerHTML = analyses.length
+                ? renderCompareAnalysis(analyses.slice(0, 2), labels.slice(0, 2))
+                : '';
         }
         renderMiniMap(traces);
         renderBsrSpeedChart(traces);

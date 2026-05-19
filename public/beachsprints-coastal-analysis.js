@@ -23,11 +23,11 @@
     ];
 
     const RACE_PHASES = [
-        { id: 'launch', label: 'Launch', hint: 'Start → L1–R1', from: 'start', to: 'line1' },
-        { id: 'slalom1', label: 'Slalom 1', hint: 'L1–R1 → L2–R2', from: 'line1', to: 'line2' },
-        { id: 'toTop', label: 'To top buoy', hint: 'L2–R2 → R3–L3', from: 'line2', to: 'line3First' },
-        { id: 'turn', label: 'Turn at top', hint: 'Around L3', from: 'line3First', to: 'line3Second', needsTurn: true },
-        { id: 'return', label: 'Return to beach', hint: 'Top → stop', from: 'line3Second', to: 'end' },
+        { id: 'launch', label: 'Start → B1', hint: 'Start → L1–R1 gate', from: 'start', to: 'line1' },
+        { id: 'slalom1', label: 'B1 → B2', hint: 'L1–R1 → L2–R2', from: 'line1', to: 'line2' },
+        { id: 'toTop', label: 'B2 → B3', hint: 'L2–R2 → R3–L3 (1st cross)', from: 'line2', to: 'line3First' },
+        { id: 'turn', label: 'Turn @ B3', hint: 'Around top buoy L3', from: 'line3First', to: 'line3Second', needsTurn: true },
+        { id: 'return', label: 'B3 → Finish', hint: 'R3–L3 → beach', from: 'line3Second', to: 'end' },
     ];
 
     let courseBuoys = [];
@@ -342,6 +342,11 @@
         };
     }
 
+    function getCourseBuoys() {
+        loadCourseBuoys();
+        return courseBuoys.map((b) => ({ ...b }));
+    }
+
     loadCourseBuoys();
 
     global.BeachSprintsCoastal = {
@@ -353,6 +358,9 @@
         formatDurationMs,
         formatGapMs,
         loadCourseBuoys,
+        getCourseBuoys,
         RACE_PHASES,
+        TIMING_LINES,
+        DEFAULT_BEACH_BUOYS,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
