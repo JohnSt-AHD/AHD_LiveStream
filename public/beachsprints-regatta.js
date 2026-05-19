@@ -716,6 +716,46 @@
         return map[r.toLowerCase()] || r;
     }
 
+    function finalDivisionRank(race) {
+        const div = String(
+            race?.division ?? state.results.get(race?.raceNum)?.division ?? '',
+        ).trim();
+        const num = parseInt(div, 10);
+        if (Number.isFinite(num) && num >= 1 && num <= 9) return num;
+        const lower = div.toLowerCase();
+        if (lower === 'a' || /^a\s*final/.test(lower)) return 1;
+        if (lower === 'b' || /^b\s*final/.test(lower)) return 2;
+        if (lower === 'c' || /^c\s*final/.test(lower)) return 3;
+        return 99;
+    }
+
+    function finalLabelForRace(race) {
+        const rank = finalDivisionRank(race);
+        if (rank === 1) return 'A Final';
+        if (rank === 2) return 'B Final';
+        if (rank === 3) return 'C Final';
+        return 'Final';
+    }
+
+    function sortFinalRaces(races) {
+        return [...(races || [])].sort((a, b) => {
+            const da = finalDivisionRank(a);
+            const db = finalDivisionRank(b);
+            if (da !== db) return da - db;
+            const ta = a.startAt ? a.startAt.getTime() : a.raceNum;
+            const tb = b.startAt ? b.startAt.getTime() : b.raceNum;
+            return ta - tb;
+        });
+    }
+
+    function formatRoundLabel(race) {
+        if (race && classifyRound(race.round) === 'final') {
+            const lbl = finalLabelForRace(race);
+            if (lbl !== 'Final') return lbl;
+        }
+        return expandRoundLabel(race?.round);
+    }
+
     function eventKey(race) {
         return String(race?.eventNum ?? '').trim();
     }
@@ -1481,7 +1521,8 @@
     }
 
     function renderTreeChampion(finRaces) {
-        const primary = finRaces[0];
+        const sorted = sortFinalRaces(finRaces);
+        const primary = sorted.find((r) => finalDivisionRank(r) === 1) || sorted[0];
         if (!primary) {
             return '<p class="bsr-note">—</p>';
         }
@@ -1524,16 +1565,15 @@
         const rep = (byKind.get('rep') || []).sort((a, b) => a.raceNum - b.raceNum);
         const qf = (byKind.get('qf') || []).sort((a, b) => a.raceNum - b.raceNum);
         const sf = (byKind.get('sf') || []).sort((a, b) => a.raceNum - b.raceNum);
-        const fin = (byKind.get('final') || []).sort((a, b) => a.raceNum - b.raceNum);
+        const fin = sortFinalRaces(byKind.get('final') || []);
 
         const toMatch = (races, prefix) => races.map((r, i) => ({ raceNum: r.raceNum, label: `${prefix}${i + 1}` }));
 
         const repFeeders = chunkBracketPairs(toMatch(rep, 'R')).map((pair) => renderTreeFeeder(pair)).join('');
         const qfFeeders = chunkBracketPairs(toMatch(qf, 'Q')).map((pair) => renderTreeFeeder(pair)).join('');
         const sfFeeders = chunkBracketPairs(toMatch(sf, 'S')).map((pair) => renderTreeFeeder(pair)).join('');
-        const finLabels = ['A Final', 'B Final', 'C Final'];
         const finFeeders = chunkBracketPairs(
-            fin.map((r, i) => ({ raceNum: r.raceNum, label: finLabels[i] || `Final ${i + 1}` })),
+            fin.map((r) => ({ raceNum: r.raceNum, label: finalLabelForRace(r) })),
         )
             .map((pair) => renderTreeFeeder(pair))
             .join('');
@@ -1614,7 +1654,7 @@
                 `<tr class="bsr-schedule-row${current ? ' bsr-schedule-row--current' : ''}" data-race-num="${race.raceNum}" tabindex="0" role="button">` +
                 `<td>R${escapeHtml(race.race)}</td>` +
                 `<td>${race.startAt ? escapeHtml(formatRaceTime(race.startAt)) : '—'}</td>` +
-                `<td>${escapeHtml(ROUND_LABELS[kind] || expandRoundLabel(race.round))}</td>` +
+                `<td>${escapeHtml(ROUND_LABELS[kind] || formatRoundLabel(race))}</td>` +
                 `<td>${crews || '—'}</td></tr>`;
         }
         html += '</tbody></table>';
@@ -2576,7 +2616,7 @@
             `<div class="bsr-race-hero">` +
             `<h2>Race ${escapeHtml(race.race)}</h2>` +
             `<span class="bsr-pill">${escapeHtml(formatRaceTime(race.startAt))}</span>` +
-            `<span class="bsr-pill">${escapeHtml(expandRoundLabel(race.round))}</span>` +
+            `<span class="bsr-pill">${escapeHtml(formatRoundLabel(race))}</span>` +
             (race.course
                 ? `<span class="bsr-pill bsr-pill--course">${escapeHtml(COURSE_LABELS[race.course] || race.course)}</span>`
                 : '') +
@@ -3078,7 +3118,7 @@
         if (analysisEl) analysisEl.hidden = !race;
         const titleEl = document.getElementById('bsrRaceAnalysisTitle');
         if (titleEl && race) {
-            titleEl.textContent = `Race ${race.race} · ${expandRoundLabel(race.round)}`;
+            titleEl.textContent = `Race ${race.race} · ${formatRoundLabel(race)}`;
         }
         renderRaceDetail();
         const url = new URL(location.href);
