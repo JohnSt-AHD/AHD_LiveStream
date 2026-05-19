@@ -317,28 +317,36 @@
         const plotW = w - margin.l - margin.r;
         const plotH = h - margin.t - margin.b;
 
-        let maxY = C + 3 * B + 20;
-        let minX = -A / 2 - 15;
-        let maxX = A / 2 + 15;
-        const minY = -15;
+        const maxY = C + 3 * B + 20;
+        const minX = -A / 2 - 15;
+        const maxX = A / 2 + 15;
+        const minY = -Math.max(12, C * 0.35);
 
         const sx = plotW / (maxX - minX);
         const sy = plotH / (maxY - minY);
         const scale = Math.min(sx, sy);
 
+        /** Course y: 0 = start/finish, +y seaward. Canvas: +y up on screen = sea. */
         const toPx = (x, y) => ({
             px: margin.l + (x - minX) * scale,
             py: margin.t + plotH - (y - minY) * scale,
         });
 
-        const sandGrad = ctx.createLinearGradient(0, margin.t, 0, h);
-        sandGrad.addColorStop(0, 'rgba(253, 230, 138, 0.25)');
-        sandGrad.addColorStop(0.35, 'rgba(8, 47, 66, 0.15)');
-        sandGrad.addColorStop(1, 'rgba(12, 74, 110, 0.55)');
-        ctx.fillStyle = sandGrad;
-        ctx.fillRect(margin.l, margin.t, plotW, plotH);
-
+        const plotTop = margin.t;
+        const plotBottom = margin.t + plotH;
         const tideY = toPx(0, C).py;
+
+        const beachGrad = ctx.createLinearGradient(0, tideY, 0, plotBottom);
+        beachGrad.addColorStop(0, 'rgba(253, 230, 138, 0.18)');
+        beachGrad.addColorStop(1, 'rgba(253, 230, 138, 0.42)');
+        ctx.fillStyle = beachGrad;
+        ctx.fillRect(margin.l, tideY, plotW, plotBottom - tideY);
+
+        const seaGrad = ctx.createLinearGradient(0, plotTop, 0, tideY);
+        seaGrad.addColorStop(0, 'rgba(12, 74, 110, 0.7)');
+        seaGrad.addColorStop(1, 'rgba(8, 47, 66, 0.25)');
+        ctx.fillStyle = seaGrad;
+        ctx.fillRect(margin.l, plotTop, plotW, tideY - plotTop);
         ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
         ctx.setLineDash([8, 6]);
         ctx.lineWidth = 2;
@@ -349,7 +357,7 @@
         ctx.setLineDash([]);
         ctx.fillStyle = '#7dd3fc';
         ctx.font = '10px system-ui,sans-serif';
-        ctx.fillText(`Tide y = C (${C} m)`, margin.l + 4, tideY - 4);
+        ctx.fillText(`Tide y = C (${C} m)`, margin.l + 4, tideY + 14);
 
         const sf = toPx(0, 0);
         ctx.fillStyle = '#f8fafc';
@@ -394,9 +402,10 @@
 
         ctx.fillStyle = '#94a3b8';
         ctx.font = '10px system-ui,sans-serif';
-        ctx.fillText('← sand', margin.l, h - 10);
+        ctx.fillText('y ↑ sea', margin.l + 2, plotTop + 12);
+        ctx.fillText('y < C beach', margin.l + 2, plotBottom - 6);
         ctx.textAlign = 'right';
-        ctx.fillText('sea →', w - margin.r, h - 10);
+        ctx.fillText(`SF y=0`, w - margin.r, toPx(0, 0).py + 4);
         ctx.textAlign = 'left';
     }
 
