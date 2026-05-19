@@ -8,6 +8,13 @@
     const LOCAL_REGATTA_CSV = {
         cnzb2026: { results: 'data/cnzb2026-results.csv' },
     };
+    const REGATTA_META = {
+        cnzb2026: {
+            name: 'NZ Coastal Beach Sprint Champs 2026',
+            location: 'Titahi Bay, Wellington',
+            venue: 'Titahi Bay',
+        },
+    };
     const LS_REGATTA = 'bsrRegattaCode_v1';
     const LS_GPS_OFFSET = 'bsrGpsOffsetMin_v1';
     const LS_DEVICE_ALIASES = 'bsrDeviceAliases_v1';
@@ -57,6 +64,10 @@
         progressionView: 'linear',
         filterDay: '',
         filterEvent: '',
+        selectedEventKey: '',
+        gpsDayStatus: new Map(),
+        miniMap: null,
+        miniMapLayers: [],
         loading: false,
     };
 
@@ -702,6 +713,99 @@
         return `${race.eventNum}|${race.eventName}|${race.division}`;
     }
 
+    function getRegattaMeta(code) {
+        const c = normalizeRegattaCode(code);
+        return (
+            REGATTA_META[c] || {
+                name: c.toUpperCase(),
+                location: '',
+                venue: '',
+            }
+        );
+    }
+
+    function parseRaceTimeMs(timeStr) {
+        const s = String(timeStr || '').trim();
+        if (!s) return NaN;
+        const parts = s.split(':');
+        if (parts.length === 2) {
+            const m = parseInt(parts[0], 10);
+            const sec = parseFloat(parts[1]);
+            if (Number.isFinite(m) && Number.isFinite(sec)) return (m * 60 + sec) * 1000;
+        }
+        const sec = parseFloat(s);
+        return Number.isFinite(sec) ? sec * 1000 : NaN;
+    }
+
+    function countUniqueCompetitors() {
+        const crews = new Set();
+        for (const race of state.races) {
+            for (const lane of race.lanes) {
+                if (lane.crew) crews.add(normalizeClubKey(lane.crew));
+            }
+        }
+        for (const res of state.results.values()) {
+            for (const p of res.placings || []) {
+                if (p.competitor) crews.add(normalizeClubKey(p.competitor));
+            }
+        }
+        crews.delete('');
+        return crews.size;
+    }
+
+    function getRegattaDateRange() {
+        const dates = state.races.map((r) => r.startAt).filter(Boolean);
+        if (!dates.length) return null;
+        const min = new Date(Math.min(...dates.map((d) => d.getTime())));
+        const max = new Date(Math.max(...dates.map((d) => d.getTime())));
+        return { min, max };
+    }
+
+    function getEventGroup(key) {
+        return buildEventGroups().find((g) => g.key === key) || null;
+    }
+
+    function inferProgressionCutoff(group) {
+        const meta = eventMetaForRace({ eventNum: group.eventNum, division: group.division });
+        const draw = parseInt(meta?.drawSize, 10);
+        if (draw >= 16) return 8;
+        if (draw >= 8) return 4;
+        const n = buildQualifyingStandings(group).length;
+        if (n >= 12) return 8;
+        if (n >= 6) return 4;
+        return Math.max(2, Math.ceil(n / 2));
+    }
+
+    function buildQualifyingStandings(group) {
+        const byCrew = new Map();
+        const hasTt = group.races.some((r) => classifyRound(r.round) === 'tt');
+        const targetRounds = hasTt ? new Set(['tt']) : new Set(['heat', 'e']);
+
+        for (const [, res] of state.results) {
+            if (String(res.eventNum) !== String(group.eventNum)) continue;
+            if (group.division && res.division && res.division !== group.division) continue;
+            const rk = classifyRound(res.round);
+            if (!targetRounds.has(rk)) continue;
+            for (const p of res.placings || []) {
+                if (!p.time || p.place >= 99) continue;
+                const key = normalizeClubKey(p.competitor);
+                const ms = parseRaceTimeMs(p.time);
+                if (!Number.isFinite(ms)) continue;
+                const prev = byCrew.get(key);
+                if (!prev || ms < prev.timeMs) {
+                    byCrew.set(key, {
+                        crew: p.competitor,
+                        time: p.time,
+                        timeMs: ms,
+                        raceNum: null,
+                        place: p.place,
+                    });
+                }
+            }
+        }
+        return [...byCrew.values()].sort((a, b) => a.timeMs - b.timeMs);
+    }
+
     function buildEventGroups() {
         const groups = new Map();
         for (const race of state.races) {
@@ -898,6 +1002,219 @@
         return `beachsprints-map.html?${params.toString()}`;
     }
 
+    function renderStatsOverview() {
+        const root = document.getElementById('bsrStats');
+        if (!root) return;
+        if (!state.races.length) {
+            root.hidden = true;
+            return;
+        }
+        const meta = getRegattaMeta(state.regattaCode);
+        const range = getRegattaDateRange();
+        const dateLabel = range
+            ? range.min.toDateString() === range.max.toDateString()
+                ? range.min.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+                : `${range.min.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${range.max.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+            : '—';
+        const eventCount = buildEventGroups().length;
+        const competitorCount = countUniqueCompetitors();
+        const days = [...new Set(state.races.map((r) => r.dayLabel).filter(Boolean))];
+        const gpsHtml = state.gpsDayStatus.size
+            ? days
+                  .map((d) => {
+                      const st = state.gpsDayStatus.get(d);
+                      return `${escapeHtml(d.split(':').pop()?.trim() || d)}: ${st?.available ? 'GPS ✓' : '—'}`;
+                  })
+                  .join(' · ')
+            : 'Checking Traccar…';
+        root.innerHTML =
+            `<article class="bsr-stat-card"><span class="bsr-stat-label">Regatta</span><div class="bsr-stat-value">${escapeHtml(meta.name)}</div><p class="bsr-stat-sub">${escapeHtml(meta.location || meta.venue)}</p></article>` +
+            `<article class="bsr-stat-card"><span class="bsr-stat-label">Dates</span><div class="bsr-stat-value">${escapeHtml(dateLabel)}</div></article>` +
+            `<article class="bsr-stat-card"><span class="bsr-stat-label">Competitors</span><div class="bsr-stat-value">${competitorCount}</div></article>` +
+            `<article class="bsr-stat-card"><span class="bsr-stat-label">Events</span><div class="bsr-stat-value">${eventCount}</div><p class="bsr-stat-sub">${state.races.length} races</p></article>` +
+            `<article class="bsr-stat-card bsr-stat-card--gps-yes"><span class="bsr-stat-label">GPS data</span><div class="bsr-stat-value">${state.devices.length ? 'Traccar' : '—'}</div><p class="bsr-stat-sub">${gpsHtml}</p></article>`;
+        root.hidden = false;
+    }
+
+    async function probeGpsForDays() {
+        state.gpsDayStatus = new Map();
+        const days = [...new Set(state.races.map((r) => r.dayLabel).filter(Boolean))];
+        if (!days.length) {
+            renderStatsOverview();
+            return;
+        }
+        await resolveDevices();
+        const deviceId =
+            state.deviceAliases.boat_1 ||
+            state.deviceAliases.boat_2 ||
+            state.devices[0]?.id;
+        for (const dayLabel of days) {
+            const sample = state.races.find((r) => r.dayLabel === dayLabel);
+            if (!sample?.startAt || !deviceId) {
+                state.gpsDayStatus.set(dayLabel, { available: false });
+                continue;
+            }
+            const d = sample.startAt;
+            const from = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6, 0, 0);
+            const to = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 20, 0, 0);
+            try {
+                const pts = await fetchRoute(deviceId, from, to);
+                state.gpsDayStatus.set(dayLabel, { available: pts.length > 20, pointCount: pts.length });
+            } catch {
+                state.gpsDayStatus.set(dayLabel, { available: false });
+            }
+        }
+        renderStatsOverview();
+    }
+
+    function selectEvent(key) {
+        state.selectedEventKey = key || '';
+        state.filterEvent = key || '';
+        const sel = document.getElementById('bsrFilterEvent');
+        if (sel) sel.value = state.filterEvent;
+        const ws = document.getElementById('bsrEventWorkspace');
+        if (ws) ws.hidden = !key;
+        if (key) {
+            renderTimeTrialPanel();
+            renderKnockoutTree();
+        }
+    }
+
+    function renderTimeTrialPanel() {
+        const root = document.getElementById('bsrTimeTrial');
+        const lead = document.getElementById('bsrTtLead');
+        if (!root) return;
+        const group = getEventGroup(state.selectedEventKey);
+        if (!group) {
+            root.innerHTML = '<p class="bsr-empty">Select an event.</p>';
+            return;
+        }
+        const standings = buildQualifyingStandings(group);
+        const cutoff = inferProgressionCutoff(group);
+        if (lead) {
+            lead.textContent =
+                standings.length > 0
+                    ? `Top ${cutoff} advance to knockouts (${standings.length} crews with times).`
+                    : 'No qualifying times yet.';
+        }
+        if (!standings.length) {
+            root.innerHTML = '<p class="bsr-note">No qualifying times in results for this event yet.</p>';
+            return;
+        }
+        let html =
+            '<table class="bsr-tt-table"><thead><tr><th></th><th>Crew</th><th>Time</th></tr></thead><tbody>';
+        standings.forEach((row, i) => {
+            const rank = i + 1;
+            const info = clubInfo(row.crew);
+            html +=
+                `<tr class="${rank === cutoff ? 'bsr-tt-cutoff' : ''}${rank <= cutoff ? ' bsr-tt-advance' : ''}">` +
+                `<td class="bsr-tt-rank">${rank}</td>` +
+                `<td>${info.logoUrl ? `<img class="bsr-tt-logo" src="${escapeHtml(info.logoUrl)}" alt="">` : ''}${escapeHtml(info.name)} <span class="bsr-note">(${escapeHtml(row.crew)})</span></td>` +
+                `<td>${escapeHtml(row.time)}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        root.innerHTML = html;
+    }
+
+    function renderKnockoutTree() {
+        const root = document.getElementById('bsrKnockoutTree');
+        if (!root) return;
+        const group = getEventGroup(state.selectedEventKey);
+        if (!group) {
+            root.innerHTML = '';
+            return;
+        }
+        const knockoutRounds = ['heat', 'rep', 'qf', 'sf', 'final'];
+        const byRound = new Map();
+        for (const r of group.races) {
+            const kind = classifyRound(r.round);
+            if (kind === 'tt') continue;
+            if (!byRound.has(kind)) byRound.set(kind, []);
+            byRound.get(kind).push(r);
+        }
+        const cols = knockoutRounds.filter((k) => byRound.has(k));
+        if (!cols.length) {
+            root.innerHTML = '<p class="bsr-note">No knockout races for this event yet.</p>';
+            return;
+        }
+        let html = '<div class="bsr-knockout-tree">';
+        for (const kind of cols) {
+            html += `<div class="bsr-knockout-col"><div class="bsr-knockout-col-head">${escapeHtml(ROUND_LABELS[kind])}</div>`;
+            for (const race of byRound.get(kind) || []) {
+                const win = winnerForRace(race.raceNum);
+                const winLabel = win ? clubInfo(win.competitor).name : '';
+                const current = race.raceNum === state.selectedRaceNum;
+                html +=
+                    `<button type="button" class="bsr-bracket-node${current ? ' bsr-bracket-node--current' : ''}" data-race-num="${race.raceNum}">` +
+                    `<span class="bsr-round-label">R${escapeHtml(race.race)}</span>` +
+                    `<span>${escapeHtml(expandRoundLabel(race.round))}</span>` +
+                    `<span>${escapeHtml(formatRaceTime(race.startAt))}</span>` +
+                    (winLabel ? `<span class="bsr-round-winner">${escapeHtml(winLabel)}</span>` : '') +
+                    `</button>`;
+            }
+            html += '</div>';
+        }
+        html += '</div>';
+        root.innerHTML = html;
+        root.querySelectorAll('[data-race-num]').forEach((btn) => {
+            btn.addEventListener('click', () => selectRace(parseInt(btn.dataset.raceNum, 10)));
+        });
+    }
+
+    function destroyMiniMap() {
+        if (state.miniMap) {
+            state.miniMap.remove();
+            state.miniMap = null;
+        }
+    }
+
+    function renderMiniMap(traces) {
+        const el = document.getElementById('bsrRaceMap');
+        if (!el || typeof L === 'undefined') return;
+        destroyMiniMap();
+        state.miniMap = L.map(el, { zoomControl: true, attributionControl: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(
+            state.miniMap,
+        );
+        const colors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const bounds = [];
+        traces.forEach((t, i) => {
+            if (!t.points?.length) return;
+            const latlngs = t.points
+                .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
+                .map((p) => [p.latitude, p.longitude]);
+            if (latlngs.length < 2) return;
+            L.polyline(latlngs, { color: colors[i % colors.length], weight: 3 }).addTo(state.miniMap);
+            latlngs.forEach((ll) => bounds.push(ll));
+        });
+        if (bounds.length) state.miniMap.fitBounds(bounds, { padding: [24, 24] });
+        else state.miniMap.setView([-36.592, 174.703], 16);
+        requestAnimationFrame(() => state.miniMap?.invalidateSize());
+    }
+
+    function renderCompareAnalysis(analyses, labels) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!coastal || analyses.length < 2) return '';
+        const cmp = coastal.compareRaceAnalyses(analyses[0], analyses[1]);
+        if (!cmp.valid) return `<p class="bsr-note">${escapeHtml(cmp.reason || '')}</p>`;
+        const winner =
+            cmp.totalLeader === 'a' ? labels[0] : cmp.totalLeader === 'b' ? labels[1] : 'Dead heat';
+        let phaseRows = '';
+        for (const p of cmp.phaseCompare) {
+            if (p.pa?.skipped && p.pb?.skipped) continue;
+            phaseRows +=
+                `<tr><td><strong>${escapeHtml(p.def.label)}</strong></td>` +
+                `<td>${p.pa?.durationMs != null ? coastal.formatDurationMs(p.pa.durationMs) : '—'}</td>` +
+                `<td>${p.pb?.durationMs != null ? coastal.formatDurationMs(p.pb.durationMs) : '—'}</td>` +
+                `<td>${p.gap != null ? coastal.formatGapMs(p.gap) : '—'}</td></tr>`;
+        }
+        return (
+            `<div class="bsr-compare-block"><p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong></p>` +
+            `<p class="bsr-gps-stat">${coastal.formatDurationMs(analyses[0].totalMs)} vs ${coastal.formatDurationMs(analyses[1].totalMs)} · Turn ${coastal.formatDurationMs(analyses[0].turnTimeMs)} vs ${coastal.formatDurationMs(analyses[1].turnTimeMs)}</p>` +
+            `<table class="bsr-phase-table"><thead><tr><th>Leg</th><th>${escapeHtml(labels[0])}</th><th>${escapeHtml(labels[1])}</th><th>Gap</th></tr></thead><tbody>${phaseRows}</tbody></table></div>`
+        );
+    }
+
     function renderRaceList() {
         const list = document.getElementById('bsrRaceList');
         if (!list) return;
@@ -1059,7 +1376,10 @@
             `<section class="bsr-card"><h3>Lanes</h3><div class="bsr-lane-grid">${lanesHtml || '<p class="bsr-note">No lanes drawn.</p>'}</div></section>` +
             (names ? `<section class="bsr-card"><h3>Crew names</h3><p>${escapeHtml(names)}</p></section>` : '') +
             `<section class="bsr-card"><h3>Official results</h3>${resultsHtml}</section>` +
-            `<section class="bsr-card" id="bsrGpsSection"><h3>GPS analysis</h3><p class="bsr-card-lead">Traccar devices mapped per lane. Scheduled start vs GPS may differ — adjust offset if needed.</p><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div></section>`;
+            `<section class="bsr-card" id="bsrGpsSection"><h3>GPS analysis</h3><p class="bsr-card-lead">Splits, turn time, speed vs time, and trace map (same engine as the Beach Sprints map).</p>` +
+            `<div id="bsrCompareAnalysis"></div>` +
+            `<div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
+            `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div></div></section>`;
 
         renderEventsPanel(race);
         loadGpsForRace(race);
@@ -1179,16 +1499,26 @@
 
         const groups = buildEventGroups();
         eventSel.innerHTML =
-            '<option value="">All events</option>' +
+            '<option value="">— Choose event —</option>' +
             groups
                 .map(
                     (g) =>
-                        `<option value="${escapeHtml(g.key)}">${escapeHtml(g.eventNum)} · ${escapeHtml(g.eventName)}</option>`,
+                        `<option value="${escapeHtml(g.key)}">${escapeHtml(g.eventNum)} · ${escapeHtml(expandEventName(g.eventName))}</option>`,
                 )
                 .join('');
 
+        const datalist = document.getElementById('bsrEventList');
+        if (datalist) {
+            datalist.innerHTML = groups
+                .map(
+                    (g) =>
+                        `<option value="${escapeHtml(g.eventNum)} · ${escapeHtml(expandEventName(g.eventName))}"></option>`,
+                )
+                .join('');
+        }
+
         daySel.value = state.filterDay;
-        eventSel.value = state.filterEvent;
+        eventSel.value = state.filterEvent || state.selectedEventKey;
     }
 
     async function resolveDevices() {
@@ -1334,6 +1664,10 @@
         }
 
         const cards = [];
+        const traces = [];
+        const analyses = [];
+        const labels = [];
+        const coastal = window.BeachSprintsCoastal;
         for (const lane of lanesToLoad) {
             const alias = state.laneDevices[lane.lane];
             const deviceId = alias ? state.deviceAliases[alias] : '';
@@ -1346,6 +1680,16 @@
             }
             try {
                 const points = await fetchRoute(deviceId, win.from, win.to);
+                const info = clubInfo(lane.crew);
+                const label = `${info.name} (L${lane.lane})`;
+                traces.push({ points, label });
+                if (coastal && points.length) {
+                    const analysis = coastal.analyzeCoastalRace(points, label);
+                    if (analysis.valid) {
+                        analyses.push(analysis);
+                        labels.push(label);
+                    }
+                }
                 const stats = routeStats(points, win.center);
                 const dev = state.devices.find((d) => String(d.id) === String(deviceId));
                 const laneMapUrl = buildMapDeepLink(
@@ -1387,12 +1731,33 @@
                 : '') +
             `</p>` +
             `<p class="bsr-note">Window: ${formatDateTime(win.from)} – ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min).</p>`;
+        const compareEl = document.getElementById('bsrCompareAnalysis');
+        if (compareEl && analyses.length >= 2) {
+            compareEl.innerHTML = renderCompareAnalysis(analyses.slice(0, 2), labels.slice(0, 2));
+        } else if (compareEl) {
+            compareEl.innerHTML =
+                analyses.length === 1
+                    ? '<p class="bsr-note">Map two lanes to devices for head-to-head comparison.</p>'
+                    : '';
+        }
+        renderMiniMap(traces);
     }
 
     function selectRace(raceNum) {
         state.selectedRaceNum = raceNum;
+        const race = findRace(raceNum);
+        if (race) {
+            const key = eventKey(race);
+            if (state.selectedEventKey !== key) selectEvent(key);
+        }
         renderRaceList();
-        renderProgression();
+        renderKnockoutTree();
+        const analysisEl = document.getElementById('bsrRaceAnalysis');
+        if (analysisEl) analysisEl.hidden = !race;
+        const titleEl = document.getElementById('bsrRaceAnalysisTitle');
+        if (titleEl && race) {
+            titleEl.textContent = `Race ${race.race} · ${expandRoundLabel(race.round)}`;
+        }
         renderRaceDetail();
         const url = new URL(location.href);
         url.searchParams.set('race', String(raceNum));
@@ -1436,11 +1801,20 @@
                 statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
             }
             setStatus(statusMsg);
+            renderStatsOverview();
             renderFilters();
             renderRaceList();
-            renderProgression();
             renderDeviceConfig();
-            renderRaceDetail();
+            const groups = buildEventGroups();
+            if (groups.length && !state.selectedEventKey) {
+                const urlEvent = new URLSearchParams(location.search).get('event');
+                const pick = urlEvent && groups.some((g) => g.key === urlEvent) ? urlEvent : groups[0].key;
+                selectEvent(pick);
+            }
+            if (state.selectedRaceNum) {
+                selectRace(state.selectedRaceNum);
+            }
+            probeGpsForDays();
         } catch (err) {
             setStatus(`Failed to load: ${err.message}`, true);
         } finally {
@@ -1478,10 +1852,28 @@
         });
 
         eventSel?.addEventListener('change', () => {
-            state.filterEvent = eventSel.value;
-            renderRaceList();
-            renderProgression();
+            selectEvent(eventSel.value);
         });
+
+        const eventSearch = document.getElementById('bsrEventSearch');
+        eventSearch?.addEventListener('change', () => {
+            const q = eventSearch.value.trim().toLowerCase();
+            if (!q) return;
+            const match = buildEventGroups().find((g) => {
+                const label = `${g.eventNum} · ${expandEventName(g.eventName)}`.toLowerCase();
+                return label.includes(q) || String(g.eventNum) === q;
+            });
+            if (match) {
+                selectEvent(match.key);
+                eventSearch.value = `${match.eventNum} · ${expandEventName(match.eventName)}`;
+            }
+        });
+
+        const regattaParam = new URLSearchParams(location.search).get('regatta');
+        if (regattaParam && codeInput) {
+            codeInput.value = normalizeRegattaCode(regattaParam);
+            state.regattaCode = codeInput.value;
+        }
 
         document.getElementById('bsrViewLinear')?.addEventListener('click', () => {
             state.progressionView = 'linear';

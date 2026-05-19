@@ -1,18 +1,21 @@
-/* Beach Sprints regatta race-by-race dashboard */
+/* Beach Sprints NZ regatta dashboard — themed from beachsprintsnz.co.nz */
 :root {
-    --bsr-bg: #0c1218;
-    --bsr-panel: #141c26;
-    --bsr-border: #243040;
-    --bsr-text: #e8eef4;
-    --bsr-muted: #8fa3b8;
-    --bsr-accent: #2eb8e8;
-    --bsr-accent-dim: #1a6d8a;
-    --bsr-win: #3dd68c;
-    --bsr-lose: #f07178;
-    --bsr-gold: #f5c542;
-    --bsr-silver: #b8c4ce;
-    --bsr-bronze: #c98a5a;
-    --bsr-blue: #0060bf;
+    --bsr-bg: #082f42;
+    --bsr-bg-deep: #061e2a;
+    --bsr-panel: rgba(6, 40, 58, 0.94);
+    --bsr-border: rgba(45, 212, 191, 0.35);
+    --bsr-text: #e8f4fc;
+    --bsr-muted: #9ec4d8;
+    --bsr-accent: #f97316;
+    --bsr-accent-dim: #c2410c;
+    --bsr-sand: #fde68a;
+    --bsr-teal: #2dd4bf;
+    --bsr-win: #34d399;
+    --bsr-lose: #fb7185;
+    --bsr-gold: #fbbf24;
+    --bsr-silver: #cbd5e1;
+    --bsr-bronze: #d97706;
+    --bsr-cutoff: rgba(251, 191, 36, 0.55);
 }
 
 * {
@@ -23,14 +26,256 @@ body.bsr-page {
     margin: 0;
     min-height: 100vh;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    background: var(--bsr-bg);
+    background: linear-gradient(165deg, var(--bsr-bg-deep) 0%, var(--bsr-bg) 45%, #0a3d52 100%);
     color: var(--bsr-text);
+    display: flex;
+    flex-direction: column;
 }
 
 .bsr-header {
-    padding: 16px 20px;
+    padding: 14px 20px;
+    border-bottom: 3px solid var(--bsr-border);
+    background: var(--bsr-panel);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.bsr-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.bsr-logo {
+    height: 44px;
+    width: auto;
+    object-fit: contain;
+}
+
+.bsr-brand-kicker {
+    margin: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--bsr-sand);
+}
+
+.bsr-main-wrap {
+    flex: 1;
+    max-width: 1680px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 16px 24px;
+}
+
+.bsr-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.bsr-stat-card {
+    background: var(--bsr-panel);
+    border: 1px solid var(--bsr-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border-top: 3px solid var(--bsr-accent);
+}
+
+.bsr-stat-card--gps-yes {
+    border-top-color: var(--bsr-teal);
+}
+
+.bsr-stat-card--gps-no {
+    border-top-color: var(--bsr-muted);
+}
+
+.bsr-stat-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--bsr-muted);
+}
+
+.bsr-stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--bsr-sand);
+    margin-top: 4px;
+}
+
+.bsr-stat-sub {
+    font-size: 0.78rem;
+    color: var(--bsr-muted);
+    margin-top: 4px;
+}
+
+.bsr-event-picker {
+    margin-bottom: 16px;
+}
+
+.bsr-event-picker-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    align-items: flex-end;
+}
+
+.bsr-field--grow {
+    flex: 1;
+    min-width: 200px;
+}
+
+.bsr-event-split {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr);
+    gap: 16px;
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .bsr-event-split {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bsr-tt-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.bsr-tt-table th,
+.bsr-tt-table td {
+    padding: 8px 6px;
     border-bottom: 1px solid var(--bsr-border);
-    background: linear-gradient(180deg, #101820 0%, var(--bsr-bg) 100%);
+    text-align: left;
+}
+
+.bsr-tt-table tr.bsr-tt-cutoff td {
+    border-bottom: 3px solid var(--bsr-cutoff);
+    box-shadow: 0 3px 0 var(--bsr-gold);
+}
+
+.bsr-tt-table tr.bsr-tt-advance {
+    background: rgba(45, 212, 191, 0.06);
+}
+
+.bsr-tt-rank {
+    width: 2rem;
+    color: var(--bsr-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.bsr-tt-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+.bsr-knockout-tree {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.bsr-knockout-col {
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.bsr-knockout-col-head {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bsr-sand);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--bsr-accent);
+}
+
+.bsr-race-analysis {
+    margin-top: 16px;
+}
+
+.bsr-analysis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 900px) {
+    .bsr-analysis-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bsr-race-map {
+    height: 280px;
+    border-radius: 8px;
+    border: 1px solid var(--bsr-border);
+    margin-top: 12px;
+}
+
+.bsr-compare-block {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--bsr-border);
+}
+
+.bsr-phase-table {
+    width: 100%;
+    font-size: 0.82rem;
+    border-collapse: collapse;
+}
+
+.bsr-phase-table th,
+.bsr-phase-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--bsr-border);
+}
+
+.bsr-phase-gap--a {
+    color: var(--bsr-teal);
+}
+
+.bsr-phase-gap--b {
+    color: var(--bsr-accent);
+}
+
+.bsr-footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 0.8rem;
+    color: var(--bsr-muted);
+    border-top: 1px solid var(--bsr-border);
+}
+
+.bsr-footer a {
+    color: var(--bsr-sand);
+}
+
+.bsr-btn--primary {
+    background: var(--bsr-accent);
+    border-color: var(--bsr-accent);
+    color: #1a0a02;
+    font-weight: 600;
+}
+
+.bsr-btn--primary:hover {
+    background: #fb923c;
+    color: #1a0a02;
+}
+
+.bsr-settings-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--bsr-sand);
 }
 
 .bsr-header-inner {
@@ -94,7 +339,7 @@ body.bsr-page {
 }
 
 .bsr-btn:hover {
-    background: var(--bsr-accent);
+    background: var(--bsr-teal);
     color: #041018;
 }
 

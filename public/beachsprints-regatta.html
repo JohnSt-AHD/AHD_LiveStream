@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Beach Sprints · Regatta dashboard</title>
+    <title>Beach Sprints NZ · Regatta dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="beachsprints-regatta.css">
 </head>
 <body class="bsr-page">
     <header class="bsr-header">
         <div class="bsr-header-inner">
             <div class="bsr-brand">
-                <h1>Beach Sprints regatta dashboard</h1>
-                <p>Race-by-race insight — RowIT CSV, progression, school logos, and Traccar GPS (boat_1 / boat_2).</p>
+                <img
+                    class="bsr-logo"
+                    src="https://images.squarespace-cdn.com/content/v1/67c6287e40489132c8ca70ef/d22a5976-37f2-4e56-b827-73c735dd3f58/Beach+Sprints_NZ_Logo_Orange.png"
+                    alt="Beach Sprints NZ"
+                    width="120"
+                    height="48"
+                >
+                <div>
+                    <p class="bsr-brand-kicker">Coastal rowing · regatta dashboard</p>
+                    <h1>Beach Sprints NZ</h1>
+                </div>
             </div>
             <div class="bsr-toolbar">
                 <div class="bsr-field">
@@ -22,7 +32,7 @@
                     <label for="bsrGpsOffset">GPS offset (min)</label>
                     <input type="number" id="bsrGpsOffset" value="0" step="1" title="Add to scheduled start when matching GPS">
                 </div>
-                <button type="button" class="bsr-btn" id="bsrLoadBtn">Load regatta</button>
+                <button type="button" class="bsr-btn bsr-btn--primary" id="bsrLoadBtn">Load regatta</button>
                 <a class="bsr-btn bsr-btn--ghost" href="beachsprints-map.html">GPS map</a>
                 <a class="bsr-btn bsr-btn--ghost" href="index.html">Hub</a>
             </div>
@@ -31,54 +41,69 @@
 
     <p class="bsr-status" id="bsrStatus">Ready — default regatta CNZB 2026 (25–27 Apr, Titahi Bay).</p>
 
-    <section class="bsr-card" style="max-width:1600px;margin:0 auto 0;padding:12px 20px">
-        <h2 style="margin:0 0 8px;font-size:0.95rem">GPS device mapping</h2>
-        <p class="bsr-card-lead">Map <code>boat_1</code> / <code>boat_2</code> to the lanes that have crews (Main: lanes 1–2, North: lanes 4–5; lane 3 is always empty). Race list follows <strong>schedule time</strong>, not race number (e.g. 1, 76, 2, 77…). Save a preset per regatta code.</p>
-        <div id="bsrDeviceConfig"></div>
-        <p class="bsr-note">Keys: <strong>n</strong> / <strong>p</strong> step through the schedule in <strong>time order</strong> (not consecutive race numbers).</p>
-    </section>
+    <main class="bsr-main-wrap">
+        <section class="bsr-stats" id="bsrStats" hidden aria-label="Regatta overview"></section>
 
-    <div class="bsr-layout">
-        <aside class="bsr-sidebar">
-            <div class="bsr-sidebar-head">
-                <h2>Races</h2>
-                <div class="bsr-filters">
-                    <div class="bsr-field">
-                        <label for="bsrFilterDay">Day</label>
-                        <select id="bsrFilterDay"></select>
-                    </div>
-                    <div class="bsr-field">
-                        <label for="bsrFilterEvent">Event</label>
-                        <select id="bsrFilterEvent"></select>
-                    </div>
+        <section class="bsr-card bsr-event-picker">
+            <div class="bsr-event-picker-row">
+                <div class="bsr-field bsr-field--grow">
+                    <label for="bsrEventSearch">Event</label>
+                    <input
+                        type="search"
+                        id="bsrEventSearch"
+                        placeholder="Search events by name or number…"
+                        autocomplete="off"
+                        list="bsrEventList"
+                    >
+                    <datalist id="bsrEventList"></datalist>
+                </div>
+                <div class="bsr-field">
+                    <label for="bsrFilterEvent">Or select</label>
+                    <select id="bsrFilterEvent"><option value="">— Choose event —</option></select>
+                </div>
+                <div class="bsr-field">
+                    <label for="bsrFilterDay">Day</label>
+                    <select id="bsrFilterDay"><option value="">All days</option></select>
                 </div>
             </div>
-            <ul class="bsr-race-list" id="bsrRaceList"></ul>
-        </aside>
+        </section>
 
-        <main class="bsr-main">
-            <section class="bsr-card">
-                <div class="bsr-progression-head">
-                    <h2>Event progression</h2>
-                    <div class="bsr-view-toggle" role="group" aria-label="Progression view">
-                        <button type="button" class="bsr-btn bsr-btn--small" id="bsrViewLinear" aria-pressed="true">Timeline</button>
-                        <button type="button" class="bsr-btn bsr-btn--small" id="bsrViewBracket" aria-pressed="false">Bracket</button>
-                    </div>
-                </div>
-                <p class="bsr-card-lead">
-                    Time trials → heats → knockouts (QF / SF / F). Beach sprints use timed qualifying then head-to-head lanes.
-                    Click a round to open race detail. School names from the draw are matched to club codes for logos and results.
-                </p>
-                <div id="bsrProgression"></div>
-            </section>
-
-            <div id="bsrRaceDetail">
-                <p class="bsr-empty">Select a race from the list or progression tree.</p>
+        <section class="bsr-event-workspace" id="bsrEventWorkspace" hidden>
+            <div class="bsr-event-split">
+                <section class="bsr-card bsr-tt-panel">
+                    <h2>Qualifying / time trial</h2>
+                    <p class="bsr-card-lead" id="bsrTtLead">Fastest times per crew — progression cutoff shown below.</p>
+                    <div id="bsrTimeTrial"></div>
+                </section>
+                <section class="bsr-card bsr-bracket-panel">
+                    <h2>Knockout progression</h2>
+                    <p class="bsr-card-lead">Heats → quarter-finals → semi-finals → final. Click a race for analysis.</p>
+                    <div id="bsrKnockoutTree"></div>
+                </section>
             </div>
-        </main>
-    </div>
+        </section>
 
+        <section class="bsr-card bsr-race-analysis" id="bsrRaceAnalysis" hidden>
+            <h2 id="bsrRaceAnalysisTitle">Race analysis</h2>
+            <div id="bsrRaceDetail"></div>
+        </section>
+
+        <details class="bsr-card bsr-settings-details">
+            <summary>GPS device mapping &amp; presets</summary>
+            <p class="bsr-card-lead">Map <code>boat_1</code> / <code>boat_2</code> to lanes (Main: 1–2, North: 4–5). Keys <strong>n</strong> / <strong>p</strong> step races in schedule order.</p>
+            <div id="bsrDeviceConfig"></div>
+        </details>
+    </main>
+
+    <footer class="bsr-footer">
+        <a href="https://www.beachsprintsnz.co.nz/" target="_blank" rel="noopener noreferrer">beachsprintsnz.co.nz</a>
+        <span>·</span>
+        <span>RowIT CSV + Traccar GPS</span>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="hub-csv.js"></script>
+    <script src="beachsprints-coastal-analysis.js"></script>
     <script src="beachsprints-regatta.js"></script>
 </body>
 </html>
