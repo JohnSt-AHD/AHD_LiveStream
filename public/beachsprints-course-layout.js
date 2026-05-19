@@ -27,8 +27,28 @@
         return window.BspMapApi;
     }
 
-    function loadLayoutParams() {
+    function venues() {
+        return window.BspVenuePresets;
+    }
+
+    function defaultLayoutParams() {
         const c = coastal();
+        const orewa = venues()?.getDefaultVenue?.()?.layout;
+        if (orewa) return { ...orewa };
+        const buoys = api()?.getCourseBuoys?.() || c?.DEFAULT_BEACH_BUOYS || [];
+        return (
+            c?.defaultCourseLayoutParams?.(buoys) || {
+                originLat: -36.59205,
+                originLng: 174.70355,
+                headingDeg: 45,
+                laneSpacingA: 25,
+                buoySpacingB: 85,
+                tideLineC: 50,
+            }
+        );
+    }
+
+    function loadLayoutParams() {
         try {
             const raw = localStorage.getItem(LS_LAYOUT);
             if (raw) {
@@ -41,15 +61,7 @@
         } catch {
             /* ignore */
         }
-        const buoys = api()?.getCourseBuoys?.() || c?.DEFAULT_BEACH_BUOYS || [];
-        layoutParams = c?.defaultCourseLayoutParams?.(buoys) || {
-            originLat: -36.59205,
-            originLng: 174.70355,
-            headingDeg: 45,
-            laneSpacingA: 18,
-            buoySpacingB: 85,
-            tideLineC: 25,
-        };
+        layoutParams = defaultLayoutParams();
     }
 
     function saveLayoutParams() {
@@ -248,6 +260,119 @@
         if (p && Number.isFinite(p.originLat) && Number.isFinite(p.originLng)) {
             api()?.centerMapOnCourseOrigin?.(p.originLat, p.originLng);
         }
+    }
+
+    function populateVenueSelect() {
+        const sel = document.getElementById('bspVenueSelect');
+        const vp = venues();
+        if (!sel || !vp) return;
+        const active = vp.getActiveId() || vp.DEFAULT_VENUE_ID;
+        sel.innerHTML = vp
+            .listVenues()
+            .map((v) => {
+                const tag = v.builtin ? '' : ' · saved';
+                const selected = v.id === active ? ' selected' : '';
+                return `<option value="${escapeHtml(v.id)}"${selected}>${escapeHtml(v.name)}${tag}</option>`;
+            })
+            .join('');
+    }
+
+    function applyVenue(venue, options = {}) {
+        const vp = venues();
+        const c = coastal();
+        if (!venue?.layout) {
+            setLayoutStatus('Venue not found.');
+            return false;
+        }
+        layoutParams = { ...venue.layout };
+        fillFormFromParams(layoutParams);
+        saveLayoutParams();
+
+        let ok = false;
+        if (venue.buoys?.length) {
+            api()?.setCourseBuoys?.(venue.buoys.map((b) => ({ ...b })));
+            if (venue.flags?.length) {
+                courseFlags = venue.flags.map((f) => ({ ...f }));
+            } else {
+                const appliedFlags = c?.applyCourseLayout?.(layoutParams);
+                if (appliedFlags?.ok) courseFlags = appliedFlags.flags.map((f) => ({ ...f }));
+            }
+            saveCourseFlags();
+            api()?.syncBuoysToMap?.();
+            syncFlagsToMap();
+            api()?.renderBuoysList?.();
+            renderFlagsList();
+            const applied = c?.applyCourseLayout?.(layoutParams);
+            if (applied?.ok) syncGuideLayer(applied.tideLine, applied.startFinish);
+            api()?.onBuoysOrTimingGeometryChanged?.();
+            drawCourseChart();
+            centerMapOnOrigin();
+            ok = true;
+        } else {
+            ok = applyAutoCourseLayout(options.showStatus !== false);
+        }
+
+        if (vp && venue.id) {
+            vp.setActiveId(venue.id);
+            const nameEl = document.getElementById('bspVenueName');
+            if (nameEl) nameEl.value = venue.name || '';
+        }
+        populateVenueSelect();
+        if (ok && options.showStatus !== false) {
+            setLayoutStatus(`Loaded venue: ${venue.name}.`);
+        }
+        return ok;
+    }
+
+    function loadSelectedVenue() {
+        const sel = document.getElementById('bspVenueSelect');
+        const id = sel?.value;
+        if (!id) return;
+        const venue = venues()?.getVenue(id);
+        if (venue) applyVenue(venue);
+    }
+
+    function saveCurrentVenue() {
+        const vp = venues();
+        if (!vp) return;
+        const nameEl = document.getElementById('bspVenueName');
+        const name = (nameEl?.value || '').trim() || selVenueName() || 'Saved venue';
+        layoutParams = readParamsFromForm();
+        const id = vp.saveVenueFromCurrent(name, {
+            layout: layoutParams,
+            buoys: api()?.getCourseBuoys?.() || [],
+            flags: courseFlags.map((f) => ({ ...f })),
+        });
+        if (nameEl) nameEl.value = vp.getVenue(id)?.name || name;
+        populateVenueSelect();
+        const sel = document.getElementById('bspVenueSelect');
+        if (sel) sel.value = id;
+        setLayoutStatus(`Saved venue “${name}”.`);
+    }
+
+    function selVenueName() {
+        const sel = document.getElementById('bspVenueSelect');
+        const id = sel?.value;
+        return venues()?.getVenue(id)?.name || '';
+    }
+
+    function deleteSelectedVenue() {
+        const vp = venues();
+        const sel = document.getElementById('bspVenueSelect');
+        const id = sel?.value;
+        if (!vp || !id) return;
+        if (vp.isBuiltin(id)) {
+            setLayoutStatus('Built-in venues cannot be deleted.');
+            return;
+        }
+        if (!vp.deleteUserVenue(id)) {
+            setLayoutStatus('Could not delete venue.');
+            return;
+        }
+        populateVenueSelect();
+        setLayoutStatus('Venue deleted.');
+        const def = vp.getDefaultVenue();
+        if (def) applyVenue(def);
     }
 
     function applyAutoCourseLayout(showStatus) {
@@ -499,6 +624,34 @@
             chartRedrawBound = true;
             window.addEventListener('resize', () => drawCourseChart());
         }
+
+        const venueSel = document.getElementById('bspVenueSelect');
+        if (venueSel && venueSel.dataset.bound !== '1') {
+            venueSel.dataset.bound = '1';
+            venueSel.addEventListener('change', () => {
+                const v = venues()?.getVenue(venueSel.value);
+                const nameEl = document.getElementById('bspVenueName');
+                if (nameEl && v) nameEl.value = v.name || '';
+            });
+        }
+
+        const loadVenueBtn = document.getElementById('bspVenueLoad');
+        if (loadVenueBtn && loadVenueBtn.dataset.bound !== '1') {
+            loadVenueBtn.dataset.bound = '1';
+            loadVenueBtn.addEventListener('click', loadSelectedVenue);
+        }
+
+        const saveVenueBtn = document.getElementById('bspVenueSave');
+        if (saveVenueBtn && saveVenueBtn.dataset.bound !== '1') {
+            saveVenueBtn.dataset.bound = '1';
+            saveVenueBtn.addEventListener('click', saveCurrentVenue);
+        }
+
+        const delVenueBtn = document.getElementById('bspVenueDelete');
+        if (delVenueBtn && delVenueBtn.dataset.bound !== '1') {
+            delVenueBtn.dataset.bound = '1';
+            delVenueBtn.addEventListener('click', deleteSelectedVenue);
+        }
     }
 
     function escapeHtml(value) {
@@ -510,24 +663,49 @@
     }
 
     function init() {
-        loadLayoutParams();
+        const vp = venues();
+        const hadLayout = !!localStorage.getItem(LS_LAYOUT);
+        const activeId = vp?.getActiveId?.();
+
         loadCourseFlags();
-        fillFormFromParams(layoutParams);
         wireCourseLayoutPanel();
+        populateVenueSelect();
         renderFlagsList();
+
+        if (activeId && vp?.getVenue(activeId)) {
+            applyVenue(vp.getVenue(activeId), { showStatus: false });
+            return;
+        }
+
+        if (!hadLayout && vp?.getDefaultVenue()) {
+            applyVenue(vp.getDefaultVenue(), { showStatus: false });
+            return;
+        }
+
+        loadLayoutParams();
+        fillFormFromParams(layoutParams);
 
         const c = coastal();
         const applied = c?.applyCourseLayout?.(layoutParams);
         if (applied?.ok) {
+            layoutParams = { ...applied.params };
+            saveLayoutParams();
+            api()?.setCourseBuoys?.(applied.buoys);
             syncGuideLayer(applied.tideLine, applied.startFinish);
             if (courseFlags.length === 0) {
                 courseFlags = applied.flags;
                 saveCourseFlags();
             }
+            api()?.syncBuoysToMap?.();
         }
         syncFlagsToMap();
         drawCourseChart();
         centerMapOnOrigin();
+
+        const nameEl = document.getElementById('bspVenueName');
+        if (nameEl && vp && !nameEl.value) {
+            nameEl.value = vp.getVenue(vp.DEFAULT_VENUE_ID)?.name || '';
+        }
     }
 
     function onDragToggleChanged() {
@@ -541,6 +719,7 @@
     window.BspCourseLayout = {
         init,
         applyAutoCourseLayout,
+        applyVenue,
         drawCourseChart,
         syncFlagsToMap,
         syncGuideLayer,

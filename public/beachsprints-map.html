@@ -37,6 +37,23 @@
                         <button type="button" class="bsp-btn bsp-btn--primary" id="bspAutoSetCourse">Auto set course</button>
                         <button type="button" class="bsp-btn bsp-btn--ghost" id="bspPickOriginMap">Pick origin on map</button>
                     </div>
+                    <section class="bsp-venue-section" aria-label="Venue presets">
+                        <h3 class="bsp-buoys-subtitle">Venue</h3>
+                        <p class="bsp-micro-hint">Save and recall course layouts for different beaches. Built-in <strong>Orewa</strong> is the default (A=25&nbsp;m, B=85&nbsp;m, C=50&nbsp;m).</p>
+                        <label class="bsp-field bsp-field--block">
+                            <span class="bsp-field-label">Saved venues</span>
+                            <select id="bspVenueSelect" aria-label="Saved venues"></select>
+                        </label>
+                        <label class="bsp-field bsp-field--block">
+                            <span class="bsp-field-label">Venue name</span>
+                            <input type="text" id="bspVenueName" placeholder="e.g. Orewa Beach" spellcheck="false" autocomplete="off">
+                        </label>
+                        <div class="bsp-course-actions">
+                            <button type="button" class="bsp-btn bsp-btn--ghost" id="bspVenueLoad">Load venue</button>
+                            <button type="button" class="bsp-btn bsp-btn--primary" id="bspVenueSave">Save venue</button>
+                            <button type="button" class="bsp-btn bsp-btn--ghost" id="bspVenueDelete" title="Remove a user-saved venue">Delete</button>
+                        </div>
+                    </section>
                     <p class="bsp-status" id="bspCourseLayoutStatus"></p>
                     <p class="bsp-micro-hint">L1/R1 y=C+3B, L2/R2 y=C+2B, L3/R3 y=C+B. LF/RF at y=C/2.</p>
                     <div class="bsp-course-ref-gallery" aria-label="World Rowing beach sprint course reference">
@@ -225,6 +242,7 @@
     <script src="traccar-snapshot-bus.js"></script>
     <script src="speed-color-scale.js"></script>
     <script src="beachsprints-coastal-analysis.js"></script>
+    <script src="beachsprints-venue-presets.js"></script>
     <script src="beachsprints-map.js"></script>
     <script src="beachsprints-course-layout.js"></script>
     <script src="beachsprints-race-compare.js"></script>

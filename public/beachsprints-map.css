@@ -130,6 +130,25 @@ body.bsp-buoys-panel-expanded .bsp-map-area {
     margin-bottom: 8px;
 }
 
+.bsp-venue-section {
+    margin: 12px 0 10px;
+    padding: 10px 0 0;
+    border-top: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.bsp-venue-section .bsp-buoys-subtitle {
+    margin-bottom: 6px;
+}
+
+.bsp-field--block {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.bsp-field--block select {
+    width: 100%;
+}
+
 .bsp-course-ref-gallery {
     display: none;
     grid-template-columns: 1fr 1fr;

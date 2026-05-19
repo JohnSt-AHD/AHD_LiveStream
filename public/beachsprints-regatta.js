@@ -1,6 +1,6 @@
 ﻿/**
  * Beach Sprints regatta dashboard — race-by-race insight from RowIT CSV + Traccar GPS.
- * Default regatta: cnzb2026 (NZ Coastal Beach Sprint Champs, Titahi Bay Apr 2026).
+ * Default regatta: cnzb2026 (NZ Coastal Beach Sprint Champs, Orewa Auckland Apr 2026).
  */
 (function () {
     const DEFAULT_REGATTA = 'cnzb2026';
@@ -11,8 +11,8 @@
     const REGATTA_META = {
         cnzb2026: {
             name: 'NZ Coastal Beach Sprint Champs 2026',
-            location: 'Titahi Bay, Wellington',
-            venue: 'Titahi Bay',
+            location: 'Orewa, Auckland',
+            venue: 'Orewa Beach',
         },
     };
     const LS_REGATTA = 'bsrRegattaCode_v1';

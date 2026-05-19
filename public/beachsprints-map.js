@@ -74,7 +74,10 @@ function centerMapOnCourseOrigin(lat, lng, zoom = MAP_COURSE_ZOOM) {
 }
 
 function initMap() {
-    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-36.59205, 174.70355], MAP_COURSE_ZOOM);
+    const orewa = window.BspVenuePresets?.getDefaultVenue?.()?.layout;
+    const mapLat = orewa?.originLat ?? -36.59205;
+    const mapLng = orewa?.originLng ?? 174.70355;
+    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([mapLat, mapLng], MAP_COURSE_ZOOM);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
