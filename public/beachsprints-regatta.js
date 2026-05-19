@@ -969,8 +969,16 @@
 
     function collectKnockoutRaces(group) {
         const races = getRacesForEvent(group);
-        const knockoutKinds = ['qf', 'sf', 'final', 'rep'];
+        const knockoutKinds = ['qf', 'sf', 'final'];
         return races.filter((r) => knockoutKinds.includes(classifyRound(r.round)));
+    }
+
+    function chunkBracketPairs(items) {
+        const pairs = [];
+        for (let i = 0; i < items.length; i += 2) {
+            pairs.push(items.slice(i, i + 2));
+        }
+        return pairs;
     }
 
     function winnerForRace(raceNum) {
@@ -1283,42 +1291,73 @@
         );
     }
 
-    function renderBracketSlot(slot) {
+    function renderTreeCrewLine(slot) {
         if (!slot) {
-            return '<div class="bsr-bracket-slot bsr-bracket-slot--empty"><span class="bsr-bracket-avatar"></span><span class="bsr-bracket-name">TBD</span></div>';
+            return '<span class="bsr-tree-crew bsr-tree-crew--empty">TBD</span>';
         }
         const win = slot.place === 1;
         return (
-            `<div class="bsr-bracket-slot${win ? ' bsr-bracket-slot--winner' : ''}">` +
+            `<span class="bsr-tree-crew${win ? ' bsr-tree-crew--winner' : ''}">` +
             (slot.info.logoUrl
-                ? `<img class="bsr-bracket-avatar" src="${escapeHtml(slot.info.logoUrl)}" alt="">`
-                : '<span class="bsr-bracket-avatar bsr-bracket-avatar--empty"></span>') +
-            `<span class="bsr-bracket-name">${escapeHtml(slot.info.name)}</span>` +
-            (slot.time ? `<span class="bsr-bracket-time">${escapeHtml(slot.time)}</span>` : '') +
-            `</div>`
+                ? `<img class="bsr-tree-crew-logo" src="${escapeHtml(slot.info.logoUrl)}" alt="">`
+                : '') +
+            `<span class="bsr-tree-crew-name">${escapeHtml(slot.info.name)}</span>` +
+            (slot.time ? `<span class="bsr-tree-crew-time">${escapeHtml(slot.time)}</span>` : '') +
+            `</span>`
         );
     }
 
-    function renderBracketMatchCard(raceNum, label) {
+    function renderTreeMatch(raceNum, label) {
         const m = getRaceMatchData(raceNum);
         const current = raceNum === state.selectedRaceNum;
         const timeLabel = m.startAt ? formatRaceTime(m.startAt) : '';
         return (
-            `<button type="button" class="bsr-bracket-match${current ? ' bsr-bracket-match--current' : ''}" data-race-num="${raceNum}">` +
-            `<span class="bsr-bracket-match-label">${escapeHtml(label || expandRoundLabel(m.round))} · Race ${escapeHtml(m.race?.race || raceNum)}</span>` +
-            (timeLabel ? `<span class="bsr-bracket-schedule">${escapeHtml(timeLabel)}</span>` : '') +
-            renderBracketSlot(m.slots[0]) +
-            `<span class="bsr-bracket-vs">VS</span>` +
-            renderBracketSlot(m.slots[1]) +
+            `<button type="button" class="bsr-tree-match${current ? ' bsr-tree-match--current' : ''}" data-race-num="${raceNum}" title="Race ${escapeHtml(m.race?.race || raceNum)}">` +
+            `<span class="bsr-tree-match-meta">${escapeHtml(label || expandRoundLabel(m.round))}` +
+            (timeLabel ? ` · ${escapeHtml(timeLabel)}` : '') +
+            `</span>` +
+            renderTreeCrewLine(m.slots[0]) +
+            renderTreeCrewLine(m.slots[1]) +
             `</button>`
         );
     }
 
-    function renderBracketRoundColumn(roundLabel, matches) {
-        if (!matches.length) return '';
+    function renderTreeFeeder(matches) {
+        const rows = matches
+            .map((m) => `<div class="bsr-tree-match-row">${renderTreeMatch(m.raceNum, m.label)}</div>`)
+            .join('');
+        const pairClass = matches.length > 1 ? ' bsr-tree-feeder--pair' : '';
+        return `<div class="bsr-tree-feeder${pairClass}">${rows}</div>`;
+    }
+
+    function renderTreeColumn(title, feedersHtml, extraClass) {
+        if (!feedersHtml) return '';
         return (
-            `<div class="bsr-bracket-round"><div class="bsr-bracket-round-head">${escapeHtml(roundLabel)}</div>` +
-            `<div class="bsr-bracket-round-matches">${matches.map((m) => renderBracketMatchCard(m.raceNum, m.label)).join('')}</div></div>`
+            `<div class="bsr-tree-col${extraClass ? ` ${extraClass}` : ''}">` +
+            `<h3 class="bsr-tree-col-title">${escapeHtml(title)}</h3>` +
+            `<div class="bsr-tree-col-body">${feedersHtml}</div>` +
+            `</div>`
+        );
+    }
+
+    function renderTreeChampion(finRaces) {
+        const primary = finRaces[0];
+        if (!primary) {
+            return '<p class="bsr-note">—</p>';
+        }
+        const win = winnerForRace(primary.raceNum);
+        if (!win) {
+            return '<p class="bsr-note">Pending</p>';
+        }
+        const info = clubInfo(win.competitor);
+        return (
+            `<div class="bsr-tree-champion">` +
+            (info.logoUrl
+                ? `<img class="bsr-tree-champion-logo" src="${escapeHtml(info.logoUrl)}" alt="">`
+                : '<span class="bsr-tree-champion-logo bsr-tree-champion-logo--empty"></span>') +
+            `<span class="bsr-tree-champion-name">${escapeHtml(info.name)}</span>` +
+            (win.time ? `<span class="bsr-tree-champion-time">${escapeHtml(win.time)}</span>` : '') +
+            `</div>`
         );
     }
 
@@ -1345,33 +1384,31 @@
         const qf = (byKind.get('qf') || []).sort((a, b) => a.raceNum - b.raceNum);
         const sf = (byKind.get('sf') || []).sort((a, b) => a.raceNum - b.raceNum);
         const fin = (byKind.get('final') || []).sort((a, b) => a.raceNum - b.raceNum);
-        const rep = (byKind.get('rep') || []).sort((a, b) => a.raceNum - b.raceNum);
-        const qfL = qf.slice(0, Math.ceil(qf.length / 2));
-        const qfR = qf.slice(Math.ceil(qf.length / 2));
-        const sfL = sf.slice(0, Math.ceil(sf.length / 2));
-        const sfR = sf.slice(Math.ceil(sf.length / 2));
-        const mapMatches = (races, prefix) =>
-            races.map((r, i) => ({ raceNum: r.raceNum, label: `${prefix}${i + 1}` }));
-        let html = '<div class="bsr-bracket-arena">';
-        html += '<div class="bsr-bracket-wing bsr-bracket-wing--left">';
-        if (rep.length) html += renderBracketRoundColumn('Repechage', mapMatches(rep, 'R'));
-        html += renderBracketRoundColumn('Quarter-finals', mapMatches(qfL, 'Q'));
-        html += renderBracketRoundColumn('Semi-finals', mapMatches(sfL, 'S'));
-        html += '</div>';
-        html += '<div class="bsr-bracket-center">';
-        html += '<div class="bsr-bracket-round-head bsr-bracket-round-head--final">Finals</div>';
-        if (fin.length) {
-            fin.forEach((r, i) => {
-                html += renderBracketMatchCard(r.raceNum, i === 0 ? 'A Final' : 'B Final');
-            });
-        } else {
-            html += '<p class="bsr-note">Final not yet scheduled</p>';
+
+        const toMatch = (races, prefix) => races.map((r, i) => ({ raceNum: r.raceNum, label: `${prefix}${i + 1}` }));
+
+        const qfFeeders = chunkBracketPairs(toMatch(qf, 'Q')).map((pair) => renderTreeFeeder(pair)).join('');
+        const sfFeeders = chunkBracketPairs(toMatch(sf, 'S')).map((pair) => renderTreeFeeder(pair)).join('');
+        const finLabels = ['A Final', 'B Final', 'C Final'];
+        const finFeeders = chunkBracketPairs(
+            fin.map((r, i) => ({ raceNum: r.raceNum, label: finLabels[i] || `Final ${i + 1}` })),
+        )
+            .map((pair) => renderTreeFeeder(pair))
+            .join('');
+
+        let html = '<div class="bsr-knockout-tree">';
+        if (qf.length) {
+            html += renderTreeColumn('Quarter-finals', qfFeeders, 'bsr-tree-col--qf');
         }
+        if (sf.length) {
+            html += renderTreeColumn('Semi-finals', sfFeeders, 'bsr-tree-col--sf');
+        }
+        if (fin.length) {
+            html += renderTreeColumn('Final', finFeeders, 'bsr-tree-col--final');
+        }
+        html += renderTreeColumn('Winner', renderTreeChampion(fin), 'bsr-tree-col--winner');
         html += '</div>';
-        html += '<div class="bsr-bracket-wing bsr-bracket-wing--right">';
-        html += renderBracketRoundColumn('Semi-finals', mapMatches(sfR, 'S'));
-        html += renderBracketRoundColumn('Quarter-finals', mapMatches(qfR, 'Q'));
-        html += '</div></div>';
+
         root.innerHTML = html;
         root.querySelectorAll('[data-race-num]').forEach((btn) => {
             btn.addEventListener('click', () => selectRace(parseInt(btn.dataset.raceNum, 10)));
