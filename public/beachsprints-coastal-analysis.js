@@ -7,6 +7,13 @@
     const TIMING_LINE_EXTENSION_M = 50;
     const RACE_MOVE_THRESHOLD_MS = 2;
 
+    /** World Rowing Appendix 23 — gate spacing from water edge (metres). */
+    const WR_COURSE_SPEC = {
+        gateOffsetsM: [85, 170, 250],
+        totalWaterM: 250,
+        defaultLaneHalfWidthM: 9,
+    };
+
     const DEFAULT_BEACH_BUOYS = [
         { id: 'buoy_L1', label: 'L1', lat: -36.5922, lng: 174.7027 },
         { id: 'buoy_L2', label: 'L2', lat: -36.592, lng: 174.7035 },
@@ -32,19 +39,23 @@
 
     let courseBuoys = [];
 
+    const LS_BEACH_BUOYS_MAP = 'altitudeHdBeachSprintsBuoys_v1';
+
     function loadCourseBuoys() {
-        try {
-            const raw = localStorage.getItem(LS_BEACH_BUOYS);
-            if (raw) {
+        const keys = [LS_BEACH_BUOYS, LS_BEACH_BUOYS_MAP];
+        for (const key of keys) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length) {
                     const byId = new Map(parsed.map((b) => [b.id, b]));
                     courseBuoys = DEFAULT_BEACH_BUOYS.map((def) => byId.get(def.id) || { ...def });
                     return;
                 }
+            } catch {
+                /* ignore */
             }
-        } catch {
-            /* ignore */
         }
         courseBuoys = DEFAULT_BEACH_BUOYS.map((b) => ({ ...b }));
     }
@@ -256,8 +267,236 @@
         });
     }
 
-    function analyzeCoastalRace(points, deviceName) {
-        loadCourseBuoys();
+    function withCourseBuoys(buoys, fn) {
+        const prev = courseBuoys;
+        if (buoys?.length) {
+            courseBuoys = buoys.map((b) => ({ ...b }));
+        } else {
+            loadCourseBuoys();
+        }
+        try {
+            return fn();
+        } finally {
+            courseBuoys = prev;
+        }
+    }
+
+    function inferCourseBuoysFromGps(traceInputs) {
+        const traces = (traceInputs || [])
+            .map((tr, idx) => ({
+                lane: tr.lane,
+                idx,
+                sorted: sortRoutePoints(tr.points),
+            }))
+            .filter((tr) => tr.sorted.length >= 15);
+        if (!traces.length) {
+            return { ok: false, reason: 'Need at least 15 GPS points on a trace to fit buoys.' };
+        }
+
+        let refLat = 0;
+        let refLng = 0;
+        let n = 0;
+        for (const tr of traces) {
+            for (const p of tr.sorted) {
+                refLat += p.latitude;
+                refLng += p.longitude;
+                n++;
+            }
+        }
+        refLat /= n;
+        refLng /= n;
+
+        const paths = traces.map((tr) => ({
+            lane: tr.lane,
+            idx: tr.idx,
+            pts: tr.sorted.map((p) => {
+                const m = latLngToLocalMeters(p.latitude, p.longitude, refLat, refLng);
+                return {
+                    x: m.x,
+                    y: m.y,
+                    lat: p.latitude,
+                    lng: p.longitude,
+                    t: positionTimeMs(p),
+                    speed: pointSpeedMps(p),
+                };
+            }),
+        }));
+
+        const allTimes = paths
+            .flatMap((p) => p.pts.map((pt) => pt.t))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b);
+        if (allTimes.length < 2) {
+            return { ok: false, reason: 'GPS timestamps missing on trace.' };
+        }
+
+        const tRaceStart = allTimes[0];
+        const tRaceEnd = allTimes[allTimes.length - 1];
+        const tStartWindow = tRaceStart + (tRaceEnd - tRaceStart) * 0.12;
+        const startPts = paths.flatMap((p) => p.pts.filter((pt) => pt.t <= tStartWindow));
+        if (!startPts.length) {
+            return { ok: false, reason: 'Could not locate the beach start on the trace.' };
+        }
+
+        const beachX = startPts.reduce((s, p) => s + p.x, 0) / startPts.length;
+        const beachY = startPts.reduce((s, p) => s + p.y, 0) / startPts.length;
+
+        const dists = paths
+            .flatMap((p) => p.pts.map((pt) => Math.hypot(pt.x - beachX, pt.y - beachY)))
+            .sort((a, b) => a - b);
+        const topDist = dists[Math.floor(dists.length * 0.94)] || dists[dists.length - 1] || 200;
+
+        let topX = beachX;
+        let topY = beachY + topDist;
+        outer: for (const p of paths) {
+            for (const pt of p.pts) {
+                const d = Math.hypot(pt.x - beachX, pt.y - beachY);
+                if (d >= topDist * 0.9) {
+                    topX = pt.x;
+                    topY = pt.y;
+                    break outer;
+                }
+            }
+        }
+
+        const axisLen = Math.hypot(topX - beachX, topY - beachY);
+        if (axisLen < 40) {
+            return { ok: false, reason: 'Trace too short to fit a full beach sprint course.' };
+        }
+        const ux = (topX - beachX) / axisLen;
+        const uy = (topY - beachY) / axisLen;
+        const px = -uy;
+        const py = ux;
+
+        function projectXY(x, y) {
+            const dx = x - beachX;
+            const dy = y - beachY;
+            return { s: dx * ux + dy * uy, t: dx * px + dy * py };
+        }
+
+        let waterEdgeS = Infinity;
+        const tMid = tRaceStart + (tRaceEnd - tRaceStart) * 0.55;
+        for (const p of paths) {
+            for (const pt of p.pts) {
+                if (pt.t > tMid) continue;
+                if (pt.speed < RACE_MOVE_THRESHOLD_MS) continue;
+                const { s } = projectXY(pt.x, pt.y);
+                if (s < waterEdgeS) waterEdgeS = s;
+            }
+        }
+        if (!Number.isFinite(waterEdgeS)) {
+            waterEdgeS = Math.min(...paths.flatMap((p) => p.pts.map((pt) => projectXY(pt.x, pt.y).s)));
+        }
+
+        let maxS = -Infinity;
+        for (const p of paths) {
+            for (const pt of p.pts) {
+                const { s } = projectXY(pt.x, pt.y);
+                if (s > maxS) maxS = s;
+            }
+        }
+        const outboundM = Math.max(60, maxS - waterEdgeS);
+        const scale =
+            outboundM >= WR_COURSE_SPEC.totalWaterM - 15
+                ? 1
+                : Math.max(0.55, outboundM / WR_COURSE_SPEC.totalWaterM);
+        const gateS = WR_COURSE_SPEC.gateOffsetsM.map((off) => waterEdgeS + off * scale);
+
+        function sampleAtGate(path, targetS) {
+            let turnS = -Infinity;
+            for (const pt of path.pts) {
+                const { s } = projectXY(pt.x, pt.y);
+                if (s > turnS) turnS = s;
+            }
+            const outboundLimit = turnS - 8;
+            let best = null;
+            let bestErr = Infinity;
+            for (const pt of path.pts) {
+                const pr = projectXY(pt.x, pt.y);
+                if (pr.s > outboundLimit) continue;
+                const err = Math.abs(pr.s - targetS);
+                if (err < bestErr) {
+                    bestErr = err;
+                    best = { ...pt, sideT: pr.t, err };
+                }
+            }
+            return best;
+        }
+
+        const gateSamples = gateS.map((gs) => paths.map((p) => sampleAtGate(p, gs)));
+
+        let leftIdx = 0;
+        let rightIdx = paths.length > 1 ? 1 : 0;
+        if (paths.length >= 2) {
+            const mid = gateSamples[1];
+            const t0 = mid[0]?.sideT ?? 0;
+            const t1 = mid[1]?.sideT ?? 0;
+            if (t0 > t1) {
+                leftIdx = 1;
+                rightIdx = 0;
+            }
+        } else if (paths[0].lane != null) {
+            const lane = paths[0].lane;
+            leftIdx = 0;
+            rightIdx = 0;
+        }
+
+        const halfW = WR_COURSE_SPEC.defaultLaneHalfWidthM;
+
+        function buoyPosition(gateIdx, side) {
+            const samples = gateSamples[gateIdx];
+            if (paths.length >= 2) {
+                const trIdx = side === 'L' ? leftIdx : rightIdx;
+                const hit = samples[trIdx];
+                if (hit && hit.err < 45) return { lat: hit.lat, lng: hit.lng };
+            }
+            const center = samples[0];
+            if (!center) return null;
+            const sign = side === 'L' ? -1 : 1;
+            const x = center.x + px * halfW * sign;
+            const y = center.y + py * halfW * sign;
+            return localMetersToLatLng(x, y, refLat, refLng);
+        }
+
+        const labelByGate = [
+            { L: 'L1', R: 'R1' },
+            { L: 'L2', R: 'R2' },
+            { L: 'L3', R: 'R3' },
+        ];
+        const buoys = [];
+        for (let gi = 0; gi < 3; gi++) {
+            for (const side of ['L', 'R']) {
+                const label = labelByGate[gi][side];
+                const def = DEFAULT_BEACH_BUOYS.find((b) => b.label === label);
+                const pos = buoyPosition(gi, side);
+                if (!def || !pos) continue;
+                buoys.push({ id: def.id, label, lat: pos.lat, lng: pos.lng });
+            }
+        }
+        if (buoys.length < 6) {
+            return { ok: false, reason: 'Could not place all six buoys along the GPS trace.' };
+        }
+
+        const avgErr =
+            gateSamples.flat().reduce((s, g) => s + (g?.err ?? 50), 0) /
+            Math.max(1, gateSamples.flat().filter(Boolean).length);
+        const confidence = avgErr < 22 && scale > 0.85 ? 'high' : 'low';
+
+        return {
+            ok: true,
+            buoys,
+            confidence,
+            scale,
+            outboundM,
+            note:
+                confidence === 'high'
+                    ? `Buoys fitted from GPS using World Rowing gate spacing (85 / 170 / 250 m), scaled ${Math.round(scale * 100)}%.`
+                    : `Buoys approximated from GPS (spacing scaled to ${Math.round(scale * 100)}% of WR course — check map).`,
+        };
+    }
+
+    function analyzeCoastalRace(points, deviceName, options) {
+        return withCourseBuoys(options?.buoys, () => {
         const sorted = sortRoutePoints(points);
         const raceWindow = findRaceWindow(sorted);
         if (!raceWindow) {
@@ -280,6 +519,7 @@
             turnTimeMs: timing.turnTimeMs,
             points: sorted,
         };
+        });
     }
 
     function formatDurationMs(ms) {
@@ -342,7 +582,10 @@
         };
     }
 
-    function getCourseBuoys() {
+    function getCourseBuoys(options) {
+        if (options?.buoys?.length) {
+            return options.buoys.map((b) => ({ ...b }));
+        }
         loadCourseBuoys();
         return courseBuoys.map((b) => ({ ...b }));
     }
@@ -353,14 +596,17 @@
         analyzeCoastalRace,
         compareRaceAnalyses,
         analyzeDeviceTiming,
+        inferCourseBuoysFromGps,
         sortRoutePoints,
         positionTimeMs,
         formatDurationMs,
         formatGapMs,
         loadCourseBuoys,
         getCourseBuoys,
+        withCourseBuoys,
         RACE_PHASES,
         TIMING_LINES,
+        WR_COURSE_SPEC,
         DEFAULT_BEACH_BUOYS,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

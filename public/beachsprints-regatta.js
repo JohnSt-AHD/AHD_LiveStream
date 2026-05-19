@@ -21,6 +21,7 @@
     const LS_LANE_DEVICES = 'bsrLaneDevices_v1';
     const LS_REGATTA_PRESETS = 'bsrRegattaPresets_v1';
     const LS_PROGRESSION_VIEW = 'bsrProgressionView_v1';
+    const LS_BUOY_SOURCE = 'bsrBuoySource_v1';
 
     const BOAT_ALIASES = ['boat_1', 'boat_2', 'boat_3', 'boat_4', 'boat_5', 'boat_6'];
     const ROUND_ORDER = ['tt', 'heat', 'rep', 'qf', 'sf', 'final', 'other'];
@@ -72,6 +73,8 @@
         turnChart: null,
         cumulativeChart: null,
         miniMapLayers: [],
+        buoySource: 'gps',
+        lastBuoyFitNote: '',
         loading: false,
     };
 
@@ -1150,6 +1153,7 @@
             state.gpsOffsetMin = parseInt(localStorage.getItem(LS_GPS_OFFSET) || '0', 10) || 0;
             state.progressionView =
                 localStorage.getItem(LS_PROGRESSION_VIEW) === 'bracket' ? 'bracket' : 'linear';
+            state.buoySource = localStorage.getItem(LS_BUOY_SOURCE) === 'stored' ? 'stored' : 'gps';
 
             const aliases = JSON.parse(localStorage.getItem(LS_DEVICE_ALIASES) || '{}');
             state.deviceAliases = typeof aliases === 'object' && aliases ? { ...aliases } : {};
@@ -1177,6 +1181,7 @@
             localStorage.setItem(LS_DEVICE_ALIASES, JSON.stringify(state.deviceAliases));
             localStorage.setItem(LS_LANE_DEVICES, JSON.stringify(state.laneDevices));
             localStorage.setItem(LS_PROGRESSION_VIEW, state.progressionView);
+            localStorage.setItem(LS_BUOY_SOURCE, state.buoySource);
 
             const presets = loadRegattaPresets();
             presets[state.regattaCode] = {
@@ -2012,12 +2017,39 @@
         });
     }
 
-    function renderCourseBuoysLayer(map) {
+    function resolveRaceCourseBuoys(traces) {
+        const coastal = window.BeachSprintsCoastal;
+        if (!coastal) return { buoys: null, note: '' };
+        if (state.buoySource === 'stored') {
+            return {
+                buoys: coastal.getCourseBuoys(),
+                note: 'Using saved course buoys (Beach Sprints map / browser storage).',
+            };
+        }
+        const traceInputs = (traces || [])
+            .filter((t) => t.points?.length)
+            .map((t, i) => ({
+                points: t.points,
+                lane: t.lane,
+            }));
+        const fit = coastal.inferCourseBuoysFromGps(traceInputs);
+        if (fit?.ok && fit.buoys?.length) {
+            return { buoys: fit.buoys, note: fit.note || 'Buoys fitted from GPS trace.' };
+        }
+        return {
+            buoys: coastal.getCourseBuoys(),
+            note: fit?.reason
+                ? `${fit.reason} Using saved course buoys instead.`
+                : 'Using saved course buoys.',
+        };
+    }
+
+    function renderCourseBuoysLayer(map, buoys) {
         const coastal = window.BeachSprintsCoastal;
         if (!coastal?.getCourseBuoys || typeof L === 'undefined') return null;
         const buoyLayer = L.layerGroup().addTo(map);
-        const buoys = coastal.getCourseBuoys();
-        const byLabel = new Map(buoys.map((b) => [b.label, b]));
+        const buoyList = buoys?.length ? buoys : coastal.getCourseBuoys();
+        const byLabel = new Map(buoyList.map((b) => [b.label, b]));
 
         for (const def of coastal.TIMING_LINES || []) {
             const a = byLabel.get(def.buoyA);
@@ -2037,7 +2069,7 @@
             ).addTo(buoyLayer);
         }
 
-        for (const b of buoys) {
+        for (const b of buoyList) {
             const icon = L.divIcon({
                 className: 'bsr-buoy-icon',
                 html: `<span class="bsr-buoy-icon-label">${escapeHtml(b.label)}</span>`,
@@ -2149,7 +2181,7 @@
         );
     }
 
-    function renderMiniMap(traces) {
+    function renderMiniMap(traces, courseBuoys) {
         const el = document.getElementById('bsrRaceMap');
         if (!el || typeof L === 'undefined') return;
         destroyMiniMap();
@@ -2159,7 +2191,7 @@
         );
         const routeLayer = L.layerGroup().addTo(state.miniMap);
         state.miniMapLayers = [routeLayer];
-        const buoyLayer = renderCourseBuoysLayer(state.miniMap);
+        const buoyLayer = renderCourseBuoysLayer(state.miniMap, courseBuoys);
         if (buoyLayer) state.miniMapLayers.push(buoyLayer);
         const bounds = [];
 
@@ -2206,11 +2238,11 @@
                 .addTo(routeLayer);
         });
 
-        const coastal = window.BeachSprintsCoastal;
-        if (coastal?.getCourseBuoys) {
-            for (const b of coastal.getCourseBuoys()) {
-                bounds.push([b.lat, b.lng]);
-            }
+        const buoyBounds = courseBuoys?.length
+            ? courseBuoys
+            : window.BeachSprintsCoastal?.getCourseBuoys?.() || [];
+        for (const b of buoyBounds) {
+            bounds.push([b.lat, b.lng]);
         }
         if (bounds.length) state.miniMap.fitBounds(bounds, { padding: [28, 28] });
         else state.miniMap.setView([-36.592, 174.703], 16);
@@ -2379,6 +2411,10 @@
             (names ? `<section class="bsr-card"><h3>Crew names</h3><p>${escapeHtml(names)}</p></section>` : '') +
             `<section class="bsr-card"><h3>Official results</h3>${resultsHtml}</section>` +
             `<section class="bsr-card" id="bsrGpsSection"><h3>GPS analysis</h3><p class="bsr-card-lead">Splits, turn time, speed vs time, and trace map (same engine as the Beach Sprints map).</p>` +
+            `<div class="bsr-buoy-toolbar" id="bsrBuoyToolbar">` +
+            `<label class="bsr-toggle"><input type="radio" name="bsrBuoySource" value="gps"${state.buoySource === 'gps' ? ' checked' : ''}> Fit buoys from GPS trace</label>` +
+            `<label class="bsr-toggle"><input type="radio" name="bsrBuoySource" value="stored"${state.buoySource === 'stored' ? ' checked' : ''}> Saved course buoys</label>` +
+            `<p class="bsr-note" id="bsrBuoyFitNote">${escapeHtml(state.lastBuoyFitNote || 'Buoys follow World Rowing gate spacing (85 / 170 / 250 m) when fitted from trace.')}</p></div>` +
             `<div id="bsrCompareAnalysis"></div>` +
             `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
             `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
@@ -2669,6 +2705,7 @@
         const analyses = [];
         const labels = [];
         const coastal = window.BeachSprintsCoastal;
+        let courseBuoys = null;
         for (const lane of lanesToLoad) {
             const alias = state.laneDevices[lane.lane];
             const deviceId = alias ? state.deviceAliases[alias] : '';
@@ -2683,14 +2720,7 @@
                 const points = await fetchRoute(deviceId, win.from, win.to);
                 const info = clubInfo(lane.crew);
                 const label = `${info.name} (L${lane.lane})`;
-                traces.push({ points, label });
-                if (coastal && points.length) {
-                    const analysis = coastal.analyzeCoastalRace(points, label);
-                    if (analysis.valid) {
-                        analyses.push(analysis);
-                        labels.push(label);
-                    }
-                }
+                traces.push({ points, label, lane: lane.lane });
                 const stats = routeStats(points, win.center);
                 const dev = state.devices.find((d) => String(d.id) === String(deviceId));
                 const laneMapUrl = buildMapDeepLink(
@@ -2721,6 +2751,22 @@
             }
         }
 
+        const buoyResolve = resolveRaceCourseBuoys(traces);
+        courseBuoys = buoyResolve.buoys;
+        state.lastBuoyFitNote = buoyResolve.note || '';
+        if (coastal && traces.length) {
+            analyses.length = 0;
+            labels.length = 0;
+            for (const tr of traces) {
+                if (!tr.points?.length) continue;
+                const analysis = coastal.analyzeCoastalRace(tr.points, tr.label, { buoys: courseBuoys });
+                if (analysis.valid) {
+                    analyses.push(analysis);
+                    labels.push(tr.label);
+                }
+            }
+        }
+
         const mapAllUrl = buildMapDeepLink(race, { compare: false });
         const mapCompareUrl = buildMapDeepLink(race, { compare: true });
         container.innerHTML =
@@ -2738,7 +2784,9 @@
                 ? renderCompareAnalysis(analyses.slice(0, 2), labels.slice(0, 2))
                 : '';
         }
-        renderMiniMap(traces);
+        const buoyNoteEl = document.getElementById('bsrBuoyFitNote');
+        if (buoyNoteEl) buoyNoteEl.textContent = state.lastBuoyFitNote;
+        renderMiniMap(traces, courseBuoys);
         renderBsrSpeedChart(traces);
         renderBsrAnalysisCharts(analyses, labels);
     }
@@ -2875,6 +2923,15 @@
             state.progressionView = 'bracket';
             saveSettings();
             renderProgression();
+        });
+
+        document.addEventListener('change', (e) => {
+            const input = e.target.closest('#bsrGpsSection input[name="bsrBuoySource"]');
+            if (!input) return;
+            state.buoySource = input.value === 'stored' ? 'stored' : 'gps';
+            saveSettings();
+            const race = findRace(state.selectedRaceNum);
+            if (race) loadGpsForRace(race);
         });
 
         document.addEventListener('keydown', (e) => {
