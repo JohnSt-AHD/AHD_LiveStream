@@ -1656,6 +1656,31 @@
             .sort((a, b) => gpsChartTimeMs(a) - gpsChartTimeMs(b));
     }
 
+    const MIN_TRACE_DISPLAY_MPS = 1;
+
+    function gpsPointSpeedMps(p) {
+        const s = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+        return Math.max(0, s);
+    }
+
+    function gpsSegmentsAboveSpeed(points, minMps = MIN_TRACE_DISPLAY_MPS) {
+        const sorted = sortGpsPoints(points);
+        const segments = [];
+        let current = [];
+        for (const p of sorted) {
+            if (gpsPointSpeedMps(p) > minMps) {
+                current.push(p);
+            } else if (current.length >= 2) {
+                segments.push(current);
+                current = [];
+            } else {
+                current = [];
+            }
+        }
+        if (current.length >= 2) segments.push(current);
+        return segments;
+    }
+
     const BOAT_TRACE_THEME = [
         { color: '#2dd4bf', hue: 168, sat: 72 },
         { color: '#f97316', hue: 24, sat: 92 },
@@ -1761,7 +1786,8 @@
 
     function gpsChartPoint(p) {
         const t = gpsChartTimeMs(p);
-        const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+        const rawSpeed = gpsPointSpeedMps(p);
+        if (rawSpeed <= MIN_TRACE_DISPLAY_MPS) return null;
         const y = rawSpeed * 3.6;
         if (!Number.isFinite(t) || !Number.isFinite(y)) return null;
         return { x: t, y };
@@ -2324,28 +2350,32 @@
         if (buoyLayer) state.miniMapLayers.push(buoyLayer);
 
         (traces || []).forEach((t, traceIdx) => {
-            const sorted = sortGpsPoints(t.points);
-            if (sorted.length < 2) return;
-            const decimated = decimateGpsPoints(sorted, 500);
+            const segments = gpsSegmentsAboveSpeed(t.points, MIN_TRACE_DISPLAY_MPS);
+            if (!segments.length) return;
             const mkColor = boatTheme(traceIdx).color;
-            for (let i = 1; i < decimated.length; i++) {
-                const prev = decimated[i - 1];
-                const p = decimated[i];
-                const seg = [
-                    [prev.latitude, prev.longitude],
-                    [p.latitude, p.longitude],
-                ];
-                L.polyline(seg, {
-                    color: speedColorForPoint(p, traceIdx),
-                    weight: 4,
-                    opacity: 0.92,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                }).addTo(routeLayer);
-                bounds.push(seg[0], seg[1]);
+            for (const segPts of segments) {
+                const decimated = decimateGpsPoints(segPts, 250);
+                for (let i = 1; i < decimated.length; i++) {
+                    const prev = decimated[i - 1];
+                    const p = decimated[i];
+                    const line = [
+                        [prev.latitude, prev.longitude],
+                        [p.latitude, p.longitude],
+                    ];
+                    L.polyline(line, {
+                        color: speedColorForPoint(p, traceIdx),
+                        weight: 4,
+                        opacity: 0.92,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                    }).addTo(routeLayer);
+                    bounds.push(line[0], line[1]);
+                }
             }
-            const start = decimated[0];
-            const end = decimated[decimated.length - 1];
+            const firstSeg = segments[0];
+            const lastSeg = segments[segments.length - 1];
+            const start = firstSeg[0];
+            const end = lastSeg[lastSeg.length - 1];
             L.circleMarker([start.latitude, start.longitude], {
                 radius: 6,
                 color: '#fff',
@@ -2353,7 +2383,7 @@
                 fillColor: mkColor,
                 fillOpacity: 1,
             })
-                .bindPopup(`<strong>${escapeHtml(t.label || 'Start')}</strong><br>Start`)
+                .bindPopup(`<strong>${escapeHtml(t.label || 'Start')}</strong><br>Start (>${MIN_TRACE_DISPLAY_MPS} m/s)`)
                 .addTo(routeLayer);
             L.circleMarker([end.latitude, end.longitude], {
                 radius: 5,
@@ -2362,7 +2392,7 @@
                 fillColor: mkColor,
                 fillOpacity: 0.85,
             })
-                .bindPopup(`<strong>${escapeHtml(t.label || 'Finish')}</strong><br>End`)
+                .bindPopup(`<strong>${escapeHtml(t.label || 'Finish')}</strong><br>End (>${MIN_TRACE_DISPLAY_MPS} m/s)`)
                 .addTo(routeLayer);
         });
 
@@ -2546,7 +2576,7 @@
             `<div id="bsrCompareAnalysis"></div>` +
             `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
             `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
-            `<p class="bsr-speed-legend-note">Boat trace = lane colour. Yellow = water gates · blue dashed = tide (10 m beachward of boats) · white = shared START/FINISH · red flags on sand · black dots = boats · dashed lines = run paths.</p></div>` +
+            `<p class="bsr-speed-legend-note">Boat trace = lane colour, only points &gt; 1 m/s. Yellow = water gates · blue dashed = tide · white = START/FINISH · L3/R3 on GPS turn · dashed lines = run paths.</p></div>` +
             `<div class="bsr-gps-charts-grid">` +
             `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +

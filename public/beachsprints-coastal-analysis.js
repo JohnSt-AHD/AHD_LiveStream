@@ -12,8 +12,8 @@
         gateOffsetsM: [85, 170, 250],
         totalWaterM: 250,
         defaultLaneHalfWidthM: 9,
-        /** Nudge top buoys offshore when GPS sits inside the turn (metres). */
-        topBuoySeawardNudgeM: 8,
+        /** Shift top buoys slightly landward so GPS traces pass around them (metres). */
+        topBuoyLandwardM: 3,
         /** Do not shift the beach gate further offshore than this (metres). */
         maxBeachGateShorewardM: 30,
         /** WR beach run: start/finish line to boat at water (10–50 m; default 25). */
@@ -399,16 +399,54 @@
         }
 
         function findPathTurn(path) {
-            let best = null;
-            let bestS = -Infinity;
-            for (const pt of path.pts) {
-                const pr = projectXY(pt.x, pt.y);
-                if (pr.s > bestS) {
-                    bestS = pr.s;
-                    best = { ...pt, s: pr.s, t: pr.t };
+            const projected = path.pts.map((pt) => ({
+                pt,
+                pr: projectXY(pt.x, pt.y),
+            }));
+            if (!projected.length) return null;
+
+            let peakIdx = 0;
+            let peakS = projected[0].pr.s;
+            for (let i = 1; i < projected.length; i++) {
+                if (projected[i].pr.s > peakS) {
+                    peakS = projected[i].pr.s;
+                    peakIdx = i;
                 }
             }
-            return best;
+
+            const lo = Math.max(0, peakIdx - 12);
+            const hi = Math.min(projected.length - 1, peakIdx + 12);
+            let best = projected[peakIdx];
+            let bestScore = -Infinity;
+            for (let i = lo; i <= hi; i++) {
+                const p = projected[i];
+                const prev = projected[i - 1];
+                const next = projected[i + 1];
+                let curvature = 0;
+                if (prev && next) {
+                    const v1x = p.pt.x - prev.pt.x;
+                    const v1y = p.pt.y - prev.pt.y;
+                    const v2x = next.pt.x - p.pt.x;
+                    const v2y = next.pt.y - p.pt.y;
+                    const l1 = Math.hypot(v1x, v1y) || 1;
+                    const l2 = Math.hypot(v2x, v2y) || 1;
+                    const dot = (v1x * v2x + v1y * v2y) / (l1 * l2);
+                    curvature = 1 - Math.max(-1, Math.min(1, dot));
+                }
+                const score = p.pr.s + curvature * 8;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = p;
+                }
+            }
+
+            return {
+                ...best.pt,
+                x: best.pt.x,
+                y: best.pt.y,
+                s: best.pr.s,
+                t: best.pr.t,
+            };
         }
 
         let turns = paths.map((p) => findPathTurn(p)).filter(Boolean);
@@ -428,14 +466,14 @@
 
         const allS = paths.flatMap((p) => p.pts.map((pt) => projectXY(pt.x, pt.y).s));
         const minS = Math.min(...allS);
-        const gate3S = Math.max(...turns.map((t) => t.s));
-        const outboundM = Math.max(60, gate3S - minS);
+        const turnS = Math.min(...turns.map((t) => t.s));
+        const outboundM = Math.max(60, turnS - minS);
         const scale =
             outboundM >= WR_COURSE_SPEC.totalWaterM - 15
                 ? 1
                 : Math.max(0.55, outboundM / WR_COURSE_SPEC.totalWaterM);
 
-        let waterEdgeS = gate3S - WR_COURSE_SPEC.totalWaterM * scale;
+        let waterEdgeS = turnS - WR_COURSE_SPEC.totalWaterM * scale;
         const tMid = tRaceStart + (tRaceEnd - tRaceStart) * 0.55;
         let beachActivityS = Infinity;
         for (const p of paths) {
@@ -455,25 +493,27 @@
         const gateS = [
             waterEdgeS + WR_COURSE_SPEC.gateOffsetsM[0] * scale,
             waterEdgeS + WR_COURSE_SPEC.gateOffsetsM[1] * scale,
-            gate3S,
+            turnS,
         ];
 
-        const seawardNudge = WR_COURSE_SPEC.topBuoySeawardNudgeM * (0.5 + scale * 0.5);
+        const landward = WR_COURSE_SPEC.topBuoyLandwardM;
 
-        function nudgeTopBuoySeaward(pt) {
-            const x = pt.x + ux * seawardNudge;
-            const y = pt.y + uy * seawardNudge;
+        function topBuoyLatLng(pt) {
+            const x = pt.x - ux * landward;
+            const y = pt.y - uy * landward;
             return localMetersToLatLng(x, y, refLat, refLng);
         }
 
         function sampleAtGate(path, targetS) {
-            const turnS = findPathTurn(path)?.s ?? gate3S;
-            const outboundLimit = turnS - 6;
+            const pathTurn = findPathTurn(path);
+            const outboundLimit = pathTurn?.s ?? turnS;
             let best = null;
             let bestErr = Infinity;
             for (const pt of path.pts) {
+                if (pathTurn?.t != null && pt.t > pathTurn.t + 400) continue;
                 const pr = projectXY(pt.x, pt.y);
-                if (pr.s > outboundLimit) continue;
+                if (pr.s > outboundLimit + 8) continue;
+                if (pt.speed != null && pt.speed < 1) continue;
                 const err = Math.abs(pr.s - targetS);
                 if (err < bestErr) {
                     bestErr = err;
@@ -503,14 +543,14 @@
                 if (paths.length >= 2) {
                     const trIdx = side === 'L' ? leftIdx : rightIdx;
                     const turn = turns[trIdx];
-                    if (turn) return nudgeTopBuoySeaward(turn);
+                    if (turn) return topBuoyLatLng(turn);
                 }
                 const center = turns[0];
                 if (!center) return null;
                 const sign = side === 'L' ? -1 : 1;
                 const x = center.x + px * halfW * sign;
                 const y = center.y + py * halfW * sign;
-                return nudgeTopBuoySeaward({ x, y });
+                return topBuoyLatLng({ x, y });
             }
             const samples = gateSamples[gateIdx];
             if (paths.length >= 2) {
@@ -561,8 +601,8 @@
             outboundM,
             note:
                 confidence === 'high'
-                    ? `Course anchored at top turn (L3/R3 on GPS), shifted seaward with WR gate spacing (85 / 170 / 250 m), scaled ${Math.round(scale * 100)}%.`
-                    : `Course anchored at top turn; B1–B2 scaled to ${Math.round(scale * 100)}% of WR spacing — check map.`,
+                    ? `L3/R3 on GPS turn (${landward} m landward so traces pass around); B1–B2 on trace, WR spacing scaled ${Math.round(scale * 100)}%.`
+                    : `L3/R3 on GPS turn; B1–B2 scaled to ${Math.round(scale * 100)}% of WR spacing — check map.`,
         };
     }
 
