@@ -438,27 +438,116 @@
         return index;
     }
 
+    function levenshtein(a, b) {
+        const m = a.length;
+        const n = b.length;
+        if (!m) return n;
+        if (!n) return m;
+        let prev = new Array(n + 1);
+        let curr = new Array(n + 1);
+        for (let j = 0; j <= n; j++) prev[j] = j;
+        for (let i = 1; i <= m; i++) {
+            curr[0] = i;
+            for (let j = 1; j <= n; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+            }
+            const swap = prev;
+            prev = curr;
+            curr = swap;
+        }
+        return prev[n];
+    }
+
+    function rankClubIdForCode(code, id) {
+        const typeRank = { s: 0, c: 1, t: 2, '': 3, x: 9 };
+        const club = state.lookup?.clubs?.[id];
+        const tr = typeRank[club?.type] ?? 5;
+        const lenDiff = id.length - code.length;
+        return [tr, lenDiff, id];
+    }
+
+    /** RowIT composite crews use CODE* — map to nearest club/school in lookup. */
+    function findClosestClubByCode(code) {
+        const clubs = state.lookup?.clubs || {};
+        const c = String(code || '').toLowerCase();
+        if (!c) return { clubId: '', match: 'none' };
+
+        const starId = `${c}*`;
+        if (clubs[starId]) return { clubId: starId, match: 'composite-star' };
+        if (clubs[c]) return { clubId: c, match: 'code' };
+
+        const prefixHits = Object.keys(clubs)
+            .filter((id) => id !== 'comp' && id.startsWith(c))
+            .sort((a, b) => {
+                const ra = rankClubIdForCode(c, a);
+                const rb = rankClubIdForCode(c, b);
+                return ra[0] - rb[0] || ra[1] - rb[1] || ra[2].localeCompare(rb[2]);
+            });
+        if (prefixHits.length) return { clubId: prefixHits[0], match: 'composite-prefix' };
+
+        const head = c.slice(0, 2);
+        const fuzzyHits = Object.keys(clubs)
+            .filter((id) => id !== 'comp' && id.length >= c.length && id.startsWith(head))
+            .map((id) => ({
+                id,
+                dist: levenshtein(c, id.slice(0, c.length)),
+                len: id.length,
+            }))
+            .filter((x) => x.dist <= 1)
+            .sort((a, b) => a.dist - b.dist || a.len - b.len || a.id.localeCompare(b.id));
+        if (fuzzyHits.length) return { clubId: fuzzyHits[0].id, match: 'composite-fuzzy' };
+
+        if (clubs.comp) return { clubId: 'comp', match: 'composite-generic' };
+        return { clubId: '', match: 'none' };
+    }
+
     function parseClubFromCrew(crew) {
         const s = String(crew || '').trim();
-        if (!s) return { id: '', label: '', crewNum: '' };
-        const m = s.match(/^([A-Za-z]{2,5})(?:\s+(\d+))?$/);
+        if (!s) return { id: '', label: '', crewNum: '', isComposite: false };
+        const m = s.match(/^([A-Za-z]{2,5})(\*?)(?:\s+(\d+))?$/);
         if (m) {
-            return { id: m[1].toLowerCase(), label: s, crewNum: m[2] || '' };
+            return {
+                id: m[1].toLowerCase(),
+                label: s,
+                crewNum: m[3] || '',
+                isComposite: m[2] === '*',
+            };
         }
-        return { id: '', label: s, crewNum: '' };
+        return { id: '', label: s, crewNum: '', isComposite: s.includes('*') };
     }
 
     function resolveClubFromCrew(crew) {
         const parsed = parseClubFromCrew(crew);
+
+        if (parsed.isComposite && parsed.id) {
+            const nearest = findClosestClubByCode(parsed.id);
+            if (nearest.clubId) {
+                return {
+                    clubId: nearest.clubId,
+                    label: parsed.label,
+                    match: nearest.match,
+                    isComposite: true,
+                    baseCode: parsed.id,
+                };
+            }
+        }
+
         if (parsed.id && state.lookup?.clubs?.[parsed.id]) {
-            return { clubId: parsed.id, label: parsed.label, match: 'code' };
+            return { clubId: parsed.id, label: parsed.label, match: 'code', isComposite: false };
         }
 
         const key = normalizeClubKey(crew);
         if (!key) return { clubId: '', label: parsed.label || crew, match: 'none' };
 
         if (state.clubIndex.has(key)) {
-            return { clubId: state.clubIndex.get(key), label: parsed.label || crew, match: 'exact' };
+            return {
+                clubId: state.clubIndex.get(key),
+                label: parsed.label || crew,
+                match: 'exact',
+                isComposite: parsed.isComposite,
+                baseCode: parsed.id,
+            };
         }
 
         let bestId = '';
@@ -483,16 +572,31 @@
             }
         }
         if (bestId && bestScore >= 0.45) {
-            return { clubId: bestId, label: parsed.label || crew, match: 'fuzzy' };
+            return {
+                clubId: bestId,
+                label: parsed.label || crew,
+                match: 'fuzzy',
+                isComposite: parsed.isComposite,
+                baseCode: parsed.id,
+            };
         }
-        return { clubId: parsed.id || '', label: parsed.label || crew, match: 'none' };
+        return {
+            clubId: parsed.id || '',
+            label: parsed.label || crew,
+            match: 'none',
+            isComposite: parsed.isComposite,
+            baseCode: parsed.id,
+        };
     }
 
     function clubInfo(clubIdOrCrew) {
-        const resolved =
-            typeof clubIdOrCrew === 'string' && clubIdOrCrew.length > 6
-                ? resolveClubFromCrew(clubIdOrCrew)
-                : { clubId: clubIdOrCrew };
+        const isDirectId =
+            typeof clubIdOrCrew === 'string' &&
+            state.lookup?.clubs?.[clubIdOrCrew] &&
+            !clubIdOrCrew.includes('*');
+        const resolved = isDirectId
+            ? { clubId: clubIdOrCrew, match: 'code' }
+            : resolveClubFromCrew(clubIdOrCrew);
         const clubId = resolved.clubId || clubIdOrCrew;
         if (!clubId || !state.lookup?.clubs) {
             return {
@@ -516,6 +620,8 @@
             logoUrl: c.logo ? `assets/school-logos/${encodeURIComponent(c.logo)}` : null,
             clubId,
             match: resolved.match,
+            isComposite: resolved.isComposite,
+            baseCode: resolved.baseCode,
         };
     }
 
@@ -753,6 +859,7 @@
 
     function matchingPlacing(crew, placings) {
         if (!placings?.length) return null;
+        const parsed = parseClubFromCrew(crew);
         const resolved = resolveClubFromCrew(crew);
         const crewKey = normalizeClubKey(crew);
 
@@ -763,6 +870,7 @@
                 if (normalizeClubKey(p.competitor) === crewKey) return true;
                 const pc = parseClubFromCrew(p.competitor);
                 if (resolved.clubId && pc.id && resolved.clubId === pc.id) return true;
+                if (parsed.id && pc.id && parsed.id === pc.id) return true;
                 return false;
             }) || null
         );
@@ -878,10 +986,17 @@
             const placing = matchingPlacing(lane.crew, res?.placings);
             const isWinner = placing?.place === 1;
             const alias = state.laneDevices[lane.lane] || '';
-            const matchHint =
-                resolved.match === 'fuzzy'
-                    ? ' <span class="bsr-match-tag" title="Matched school name to club code">matched</span>'
-                    : '';
+            let matchHint = '';
+            if (resolved.isComposite) {
+                const codeHint = resolved.baseCode
+                    ? `${resolved.baseCode.toUpperCase()}*`
+                    : 'composite';
+                matchHint =
+                    ` <span class="bsr-match-tag bsr-match-tag--composite" title="Composite crew (${escapeHtml(codeHint)}) — nearest club/school in lookup">composite</span>`;
+            } else if (resolved.match === 'fuzzy') {
+                matchHint =
+                    ' <span class="bsr-match-tag" title="Matched school name to club code">matched</span>';
+            }
             lanesHtml +=
                 `<div class="bsr-lane-row${isWinner ? ' bsr-lane-row--winner' : ''}">` +
                 `<span class="bsr-lane-n">${lane.lane}</span>` +
