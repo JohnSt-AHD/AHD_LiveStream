@@ -23,6 +23,12 @@
         other: 'Other',
     };
 
+    const COURSE_LABELS = {
+        main: 'Main Course (lanes 1–2)',
+        north: 'North Course (lanes 4–5)',
+        both: 'Both courses',
+    };
+
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2, april: 3, apr: 3,
         may: 4, june: 5, jun: 5, july: 6, jul: 6, august: 7, aug: 7,
@@ -179,15 +185,17 @@
             const startAt = parseTimeOnDay(cols[1], dayDate);
             if (!startAt) continue;
             const lanes = parseLanes(cols, headerCols);
+            const round = cols[4].trim();
             races.push({
                 raceNum: info.raceNum,
                 race: info.label,
                 startAt,
                 eventNum: cols[2].trim(),
                 eventName: cols[3].trim(),
-                round: cols[4].trim(),
+                round,
                 division: cols[5] ? cols[5].trim() : '',
                 lanes,
+                course: inferCourseFromLanes(lanes),
                 progression: headerCols ? '' : cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
                 dayLabel,
             });
@@ -485,6 +493,20 @@
         return '';
     }
 
+    function inferCourseFromLanes(lanes) {
+        const nums = new Set((lanes || []).map((l) => l.lane));
+        const main = nums.has(1) || nums.has(2);
+        const north = nums.has(4) || nums.has(5);
+        if (main && north) return 'both';
+        if (north) return 'north';
+        if (main) return 'main';
+        return '';
+    }
+
+    function isTimeTrialRace(race) {
+        return classifyRound(race.round) === 'tt';
+    }
+
     function classifyRound(round) {
         const r = String(round || '').toLowerCase();
         if (/time\s*trial|\btt\b/.test(r)) return 'tt';
@@ -712,7 +734,7 @@
             btn.setAttribute('aria-current', race.raceNum === state.selectedRaceNum ? 'true' : 'false');
             btn.innerHTML =
                 `<span class="bsr-race-num">Race ${escapeHtml(race.race)}</span>` +
-                `<div class="bsr-race-meta">${escapeHtml(formatRaceTime(race.startAt))} · ${escapeHtml(race.round)}</div>` +
+                `<div class="bsr-race-meta">${escapeHtml(formatRaceTime(race.startAt))} · ${escapeHtml(race.round)}${race.course ? escapeHtml(` · ${COURSE_LABELS[race.course] || race.course}`) : ''}</div>` +
                 `<div class="bsr-race-meta">${escapeHtml(race.eventName)}</div>`;
             btn.addEventListener('click', () => selectRace(race.raceNum));
             li.appendChild(btn);
@@ -820,9 +842,18 @@
             `<h2>Race ${escapeHtml(race.race)}</h2>` +
             `<span class="bsr-pill">${escapeHtml(formatRaceTime(race.startAt))}</span>` +
             `<span class="bsr-pill">${escapeHtml(race.round)}</span>` +
+            (race.course
+                ? `<span class="bsr-pill bsr-pill--course">${escapeHtml(COURSE_LABELS[race.course] || race.course)}</span>`
+                : '') +
             `<span class="bsr-pill">${escapeHtml(race.division || 'Open')}</span>` +
             `</div>` +
             `<p class="bsr-card-lead"><strong>${escapeHtml(expandEventName(race.eventName))}</strong> · Event ${escapeHtml(race.eventNum)}</p>` +
+            (isTimeTrialRace(race) && !race.lanes.length
+                ? `<p class="bsr-note bsr-note--warn">Time trial slot — draw and results are often not attached to this schedule row in RowIT, so they may not appear in results.csv or live results.</p>`
+                : '') +
+            (isTimeTrialRace(race) && race.lanes.length
+                ? `<p class="bsr-note">Time trial — results may be in RowIT but not exported to results.csv for this race number.</p>`
+                : '') +
             (race.progression
                 ? `<p class="bsr-note"><strong>Progression:</strong> ${escapeHtml(race.progression)}</p>`
                 : '') +

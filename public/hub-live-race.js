@@ -175,8 +175,9 @@ function parseDaysheetForLiveRace(text) {
         if (!dayDate || /^Race,/i.test(trimmed)) continue;
         const cols = parseLine(trimmed);
         const raw = cols[0].trim();
-        const rm = raw.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-        if (!rm) continue;
+        const withLetter = raw.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
+        const plain = raw.match(/^(\d+)$/);
+        if (!withLetter && !plain) continue;
         const tm = (cols[1] || '').trim().match(/^(\d{1,2}):(\d{2})$/);
         if (!tm) continue;
         const startAt = new Date(
@@ -188,14 +189,19 @@ function parseDaysheetForLiveRace(text) {
             0,
             0,
         );
+        const raceNum = parseInt(withLetter ? withLetter[1] : plain[1], 10);
+        const race = withLetter
+            ? `${withLetter[1]} (${withLetter[2].toUpperCase()})`
+            : plain[1];
         races.push({
-            raceNum: parseInt(rm[1], 10),
-            race: `${rm[1]} (${rm[2].toUpperCase()})`,
+            raceNum,
+            race,
             eventType: cols[3] ? cols[3].trim() : '',
             round: cols[4] ? cols[4].trim() : '',
             startAt,
         });
     }
+    races.sort((a, b) => a.startAt - b.startAt);
     return races;
 }
 

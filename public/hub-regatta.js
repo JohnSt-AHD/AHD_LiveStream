@@ -77,13 +77,24 @@ function parseDayHeader(line) {
 }
 
 function parseRaceLabel(raw) {
-    const m = String(raw || '').trim().match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-    if (!m) return { raceNum: null, label: String(raw || '').trim() };
-    return {
-        raceNum: parseInt(m[1], 10),
-        raceLetter: m[2].toUpperCase(),
-        label: `${m[1]} (${m[2].toUpperCase()})`,
-    };
+    const s = String(raw || '').trim();
+    const withLetter = s.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
+    if (withLetter) {
+        return {
+            raceNum: parseInt(withLetter[1], 10),
+            raceLetter: withLetter[2].toUpperCase(),
+            label: `${withLetter[1]} (${withLetter[2].toUpperCase()})`,
+        };
+    }
+    const plain = s.match(/^(\d+)$/);
+    if (plain) {
+        return {
+            raceNum: parseInt(plain[1], 10),
+            raceLetter: '',
+            label: plain[1],
+        };
+    }
+    return { raceNum: null, label: s };
 }
 
 function parseTimeOnDay(timeStr, dayDate) {
@@ -130,6 +141,7 @@ function parseDaysheetCsv(text) {
     const races = [];
     let dayDate = null;
     let dayLabel = '';
+    let headerCols = null;
 
     for (const line of lines) {
         const trimmed = line.trim();
@@ -138,11 +150,15 @@ function parseDaysheetCsv(text) {
         if (/^DAY\s+\d+:/i.test(trimmed)) {
             dayLabel = trimmed;
             dayDate = parseDayHeader(trimmed);
+            headerCols = null;
             continue;
         }
 
         if (!dayDate) continue;
-        if (/^Race,/i.test(trimmed)) continue;
+        if (/^Race,/i.test(trimmed)) {
+            headerCols = parseCsvLine(trimmed);
+            continue;
+        }
 
         const cols = parseCsvLine(trimmed);
         if (cols.length < 5) continue;
@@ -161,7 +177,7 @@ function parseDaysheetCsv(text) {
             eventName: cols[3].trim(),
             round: cols[4].trim(),
             division: cols[5] ? cols[5].trim() : '',
-            lanes: parseLanes(cols),
+            lanes: parseLanes(cols, headerCols),
             dayLabel,
         });
     }
@@ -170,15 +186,33 @@ function parseDaysheetCsv(text) {
     return races;
 }
 
-function parseLanes(cols) {
+function isCrewCell(raw) {
+    const s = String(raw || '').trim();
+    if (!s || s === '-' || /^-+\s*$/.test(s)) return false;
+    if (/cancelled/i.test(s)) return false;
+    return true;
+}
+
+function parseLanes(cols, headerCols) {
+    if (headerCols?.length) {
+        const lanes = [];
+        for (let i = 0; i < headerCols.length; i++) {
+            const h = (headerCols[i] || '').trim().toLowerCase();
+            const m = h.match(/^lane[_\s-]?(\d+)$/);
+            if (!m) continue;
+            const crew = (cols[i] || '').trim();
+            if (!isCrewCell(crew)) continue;
+            lanes.push({ lane: parseInt(m[1], 10), crew });
+        }
+        lanes.sort((a, b) => a.lane - b.lane);
+        if (lanes.length) return lanes;
+    }
     const lanes = [];
     for (let lane = 1; lane <= 9; lane++) {
         const idx = 5 + lane;
         if (idx >= cols.length) break;
-        lanes.push({
-            lane,
-            crew: (cols[idx] || '').trim() || null,
-        });
+        const crew = (cols[idx] || '').trim();
+        lanes.push({ lane, crew: isCrewCell(crew) ? crew : null });
     }
     let lastUsed = 0;
     for (const l of lanes) {

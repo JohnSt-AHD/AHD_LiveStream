@@ -249,6 +249,16 @@ body.bsr-page {
     border: 1px solid var(--bsr-accent-dim);
 }
 
+.bsr-pill--course {
+    background: rgba(0, 96, 191, 0.2);
+    color: #7ec8ff;
+    border-color: #0060bf;
+}
+
+.bsr-note--warn {
+    color: #f5c542;
+}
+
 .bsr-lane-grid {
     display: grid;
     gap: 8px;

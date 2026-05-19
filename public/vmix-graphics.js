@@ -116,12 +116,24 @@ function vgParseDayHeader(line) {
 }
 
 function vgParseRaceLabel(raw) {
-    const m = String(raw || '').trim().match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-    if (!m) return { raceNum: null, label: String(raw || '').trim() };
-    return {
-        raceNum: parseInt(m[1], 10),
-        label: `${m[1]} (${m[2].toUpperCase()})`,
-    };
+    const s = String(raw || '').trim();
+    const withLetter = s.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
+    if (withLetter) {
+        return {
+            raceNum: parseInt(withLetter[1], 10),
+            label: `${withLetter[1]} (${withLetter[2].toUpperCase()})`,
+        };
+    }
+    const plain = s.match(/^(\d+)$/);
+    if (plain) return { raceNum: parseInt(plain[1], 10), label: plain[1] };
+    return { raceNum: null, label: s };
+}
+
+function vgIsCrewCell(raw) {
+    const t = String(raw || '').trim();
+    if (!t || t === '-' || /^-+\s*$/.test(t)) return false;
+    if (/cancelled/i.test(t)) return false;
+    return true;
 }
 
 function vgParseTimeOnDay(timeStr, dayDate) {
@@ -138,15 +150,26 @@ function vgParseTimeOnDay(timeStr, dayDate) {
     );
 }
 
-function vgParseLanes(cols) {
+function vgParseLanes(cols, headerCols) {
+    if (headerCols?.length) {
+        const lanes = [];
+        for (let i = 0; i < headerCols.length; i++) {
+            const h = (headerCols[i] || '').trim().toLowerCase();
+            const m = h.match(/^lane[_\s-]?(\d+)$/);
+            if (!m) continue;
+            const code = (cols[i] || '').trim();
+            if (!vgIsCrewCell(code)) continue;
+            lanes.push({ lane: parseInt(m[1], 10), code });
+        }
+        lanes.sort((a, b) => a.lane - b.lane);
+        if (lanes.length) return lanes;
+    }
     const lanes = [];
     for (let lane = 1; lane <= 9; lane++) {
         const idx = 5 + lane;
         if (idx >= cols.length - 1) break;
-        lanes.push({
-            lane,
-            code: (cols[idx] || '').trim() || null,
-        });
+        const code = (cols[idx] || '').trim();
+        lanes.push({ lane, code: vgIsCrewCell(code) ? code : null });
     }
     let lastUsed = 0;
     for (const l of lanes) if (l.code) lastUsed = l.lane;
@@ -157,6 +180,7 @@ function vgParseDaysheet(text) {
     const races = [];
     let dayDate = null;
     let dayLabel = '';
+    let headerCols = null;
     for (const line of text.split(/\r?\n/)) {
         const trimmed = line.trim();
         if (!trimmed) continue;
@@ -164,9 +188,14 @@ function vgParseDaysheet(text) {
             const day = vgParseDayHeader(trimmed);
             dayDate = day.date;
             dayLabel = day.label;
+            headerCols = null;
             continue;
         }
-        if (!dayDate || /^Race,/i.test(trimmed)) continue;
+        if (!dayDate) continue;
+        if (/^Race,/i.test(trimmed)) {
+            headerCols = vgParseCsvLine(trimmed);
+            continue;
+        }
         const cols = vgParseCsvLine(trimmed);
         const info = vgParseRaceLabel(cols[0]);
         if (!info.raceNum) continue;
@@ -180,11 +209,12 @@ function vgParseDaysheet(text) {
             eventType: cols[3].trim(),
             round: cols[4].trim(),
             division: cols[5] ? cols[5].trim() : '',
-            lanes: vgParseLanes(cols),
-            progression: cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
+            lanes: vgParseLanes(cols, headerCols),
+            progression: headerCols ? '' : cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
             dayLabel,
         });
     }
+    races.sort((a, b) => a.startAt - b.startAt);
     return races;
 }
 
