@@ -68,6 +68,9 @@
         gpsDayStatus: new Map(),
         miniMap: null,
         speedChart: null,
+        splitsChart: null,
+        turnChart: null,
+        cumulativeChart: null,
         miniMapLayers: [],
         loading: false,
     };
@@ -1625,10 +1628,105 @@
 
 
     function destroyMiniMap() {
+        state.miniMapLayers = [];
         if (state.miniMap) {
             state.miniMap.remove();
             state.miniMap = null;
         }
+    }
+
+    function decimateGpsPoints(points, maxPts) {
+        if (!points?.length || points.length <= maxPts) return points || [];
+        const step = Math.ceil(points.length / maxPts);
+        const out = [];
+        for (let i = 0; i < points.length; i += step) out.push(points[i]);
+        const last = points[points.length - 1];
+        if (out[out.length - 1] !== last) out.push(last);
+        return out;
+    }
+
+    function sortGpsPoints(points) {
+        return [...(points || [])]
+            .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
+            .sort((a, b) => gpsChartTimeMs(a) - gpsChartTimeMs(b));
+    }
+
+    function speedColorForPoint(p) {
+        const sc = window.AltitudeHdSpeedColor;
+        if (!sc) return '#2dd4bf';
+        const spd = sc.speedMpsForColor(typeof p.speed === 'number' ? p.speed : 0);
+        return sc.speedToRainbowColor(spd);
+    }
+
+    function bsrChartTheme() {
+        return {
+            grid: 'rgba(255, 255, 255, 0.06)',
+            tick: '#9ec4d8',
+            title: '#9ec4d8',
+            legend: '#e8f4fc',
+        };
+    }
+
+    function getChartCtor() {
+        return typeof Chart !== 'undefined' ? Chart : null;
+    }
+
+    function destroyChartOnCanvas(canvasId, stateKey) {
+        const canvas = document.getElementById(canvasId);
+        const chartCtor = getChartCtor();
+        if (canvas && chartCtor?.getChart) {
+            const ch = chartCtor.getChart(canvas);
+            if (ch) ch.destroy();
+        }
+        if (stateKey) state[stateKey] = null;
+    }
+
+    function destroyBsrGpsCharts() {
+        destroyChartOnCanvas('bsrSpeedChart', 'speedChart');
+        destroyChartOnCanvas('bsrSplitsChart', 'splitsChart');
+        destroyChartOnCanvas('bsrTurnChart', 'turnChart');
+        destroyChartOnCanvas('bsrCumulativeChart', 'cumulativeChart');
+        const wrapIds = ['bsrSpeedChartWrap', 'bsrSplitsChartWrap', 'bsrTurnChartWrap', 'bsrCumulativeChartWrap'];
+        for (const id of wrapIds) {
+            const el = document.getElementById(id);
+            if (el) el.hidden = true;
+        }
+    }
+
+    function phaseChartData(analysis) {
+        const aligned = buildAlignedPhaseChartSeries([analysis]);
+        return {
+            labels: aligned.labels,
+            splits: aligned.series[0]?.splits || [],
+            cumulative: aligned.series[0]?.cumulative || [],
+        };
+    }
+
+    function buildAlignedPhaseChartSeries(analyses) {
+        const phaseDefs = window.BeachSprintsCoastal?.RACE_PHASES || [];
+        const valid = (analyses || []).filter((a) => a?.valid);
+        const activeDefs = phaseDefs.filter((def) =>
+            valid.some((a) => {
+                const ph = (a.phases || []).find((p) => p.id === def.id);
+                return ph && !ph.skipped && Number.isFinite(ph.durationMs);
+            }),
+        );
+        const labels = activeDefs.map((d) => d.label);
+        const series = valid.map((a) => {
+            const byId = new Map((a.phases || []).map((p) => [p.id, p]));
+            const splits = [];
+            const cumulative = [];
+            let cum = 0;
+            for (const def of activeDefs) {
+                const ph = byId.get(def.id);
+                const sec = ph && Number.isFinite(ph.durationMs) ? ph.durationMs / 1000 : null;
+                splits.push(sec);
+                if (sec != null) cum += sec;
+                cumulative.push(sec != null ? cum : null);
+            }
+            return { splits, cumulative };
+        });
+        return { labels, series };
     }
 
     function gpsChartTimeMs(p) {
@@ -1646,23 +1744,11 @@
         return { x: t, y };
     }
 
-    function destroyBsrSpeedChart() {
-        const canvas = document.getElementById('bsrSpeedChart');
-        const chartCtor = typeof Chart !== 'undefined' ? Chart : null;
-        if (canvas && chartCtor?.getChart) {
-            const ch = chartCtor.getChart(canvas);
-            if (ch) ch.destroy();
-        }
-        state.speedChart = null;
-        const wrap = document.getElementById('bsrSpeedChartWrap');
-        if (wrap) wrap.hidden = true;
-    }
-
     function renderBsrSpeedChart(traces) {
         const wrap = document.getElementById('bsrSpeedChartWrap');
         const canvas = document.getElementById('bsrSpeedChart');
-        const chartCtor = typeof Chart !== 'undefined' ? Chart : null;
-        destroyBsrSpeedChart();
+        const chartCtor = getChartCtor();
+        destroyChartOnCanvas('bsrSpeedChart', 'speedChart');
         if (!wrap || !canvas || !chartCtor) return;
 
         const colors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
@@ -1744,6 +1830,174 @@
         requestAnimationFrame(() => state.speedChart?.resize());
     }
 
+    function renderBsrSplitsChart(analyses, labels) {
+        const wrap = document.getElementById('bsrSplitsChartWrap');
+        const canvas = document.getElementById('bsrSplitsChart');
+        const chartCtor = getChartCtor();
+        destroyChartOnCanvas('bsrSplitsChart', 'splitsChart');
+        const valid = (analyses || []).filter((a) => a?.valid);
+        if (!wrap || !canvas || !chartCtor || !valid.length) return;
+
+        const theme = bsrChartTheme();
+        const traceColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const aligned = buildAlignedPhaseChartSeries(valid);
+        if (!aligned.labels.length) return;
+
+        const datasets = valid.map((a, i) => {
+            const splits = aligned.series[i]?.splits || [];
+            return {
+                label: labels[i] || a.name || `Boat ${i + 1}`,
+                data: splits,
+                backgroundColor: traceColors[i % traceColors.length],
+                borderColor: traceColors[i % traceColors.length],
+                borderWidth: 1,
+            };
+        });
+
+        wrap.hidden = false;
+        state.splitsChart = new chartCtor(canvas, {
+            type: 'bar',
+            data: { labels: aligned.labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: datasets.length > 1, labels: { color: theme.legend } },
+                    title: { display: false },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: theme.tick, maxRotation: 45, minRotation: 0 },
+                        grid: { color: theme.grid },
+                    },
+                    y: {
+                        title: { display: true, text: 'Seconds', color: theme.title },
+                        ticks: { color: theme.tick },
+                        grid: { color: theme.grid },
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+
+    function renderBsrTurnChart(analyses, labels) {
+        const wrap = document.getElementById('bsrTurnChartWrap');
+        const canvas = document.getElementById('bsrTurnChart');
+        const chartCtor = getChartCtor();
+        destroyChartOnCanvas('bsrTurnChart', 'turnChart');
+        const valid = (analyses || []).filter((a) => a?.valid && Number.isFinite(a.turnTimeMs));
+        if (!wrap || !canvas || !chartCtor || !valid.length) return;
+
+        const theme = bsrChartTheme();
+        const traceColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const data = valid.map((a) => a.turnTimeMs / 1000);
+        const chartLabels = valid.map((a, i) => labels[i] || a.name || `Boat ${i + 1}`);
+
+        wrap.hidden = false;
+        state.turnChart = new chartCtor(canvas, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Turn at top (s)',
+                        data,
+                        backgroundColor: valid.map((_, i) => traceColors[i % traceColors.length]),
+                        borderColor: valid.map((_, i) => traceColors[i % traceColors.length]),
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: valid.length > 2 ? 'y' : 'x',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        ticks: { color: theme.tick },
+                        grid: { color: theme.grid },
+                        beginAtZero: true,
+                        title: valid.length <= 2 ? { display: true, text: 'Seconds', color: theme.title } : undefined,
+                    },
+                    y: {
+                        ticks: { color: theme.tick },
+                        grid: { color: theme.grid },
+                        beginAtZero: valid.length > 2,
+                        title: valid.length > 2 ? { display: true, text: 'Seconds', color: theme.title } : undefined,
+                    },
+                },
+            },
+        });
+    }
+
+    function renderBsrCumulativeChart(analyses, labels) {
+        const wrap = document.getElementById('bsrCumulativeChartWrap');
+        const canvas = document.getElementById('bsrCumulativeChart');
+        const chartCtor = getChartCtor();
+        destroyChartOnCanvas('bsrCumulativeChart', 'cumulativeChart');
+        const valid = (analyses || []).filter((a) => a?.valid);
+        if (!wrap || !canvas || !chartCtor || !valid.length) return;
+
+        const theme = bsrChartTheme();
+        const traceColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const aligned = buildAlignedPhaseChartSeries(valid);
+        if (!aligned.labels.length) return;
+
+        const datasets = valid.map((a, i) => {
+            const cumulative = aligned.series[i]?.cumulative || [];
+            return {
+                label: labels[i] || a.name || `Boat ${i + 1}`,
+                data: cumulative,
+                borderColor: traceColors[i % traceColors.length],
+                backgroundColor: traceColors[i % traceColors.length],
+                fill: false,
+                tension: 0.15,
+                pointRadius: 4,
+                borderWidth: 2,
+            };
+        });
+
+        wrap.hidden = false;
+        state.cumulativeChart = new chartCtor(canvas, {
+            type: 'line',
+            data: { labels: aligned.labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: datasets.length > 1, labels: { color: theme.legend } },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: theme.tick, maxRotation: 45, minRotation: 0 },
+                        grid: { color: theme.grid },
+                    },
+                    y: {
+                        title: { display: true, text: 'Cumulative time (s)', color: theme.title },
+                        ticks: { color: theme.tick },
+                        grid: { color: theme.grid },
+                        beginAtZero: true,
+                    },
+                },
+            },
+        });
+    }
+
+    function renderBsrAnalysisCharts(analyses, labels) {
+        const valid = (analyses || []).filter((a) => a?.valid);
+        if (!valid.length) return;
+        renderBsrSplitsChart(analyses, labels);
+        renderBsrTurnChart(analyses, labels);
+        renderBsrCumulativeChart(analyses, labels);
+        requestAnimationFrame(() => {
+            state.splitsChart?.resize();
+            state.turnChart?.resize();
+            state.cumulativeChart?.resize();
+        });
+    }
+
     function renderMiniMap(traces) {
         const el = document.getElementById('bsrRaceMap');
         if (!el || typeof L === 'undefined') return;
@@ -1752,17 +2006,54 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(
             state.miniMap,
         );
-        const colors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const routeLayer = L.layerGroup().addTo(state.miniMap);
+        state.miniMapLayers = [routeLayer];
+        const markerColors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
         const bounds = [];
-        traces.forEach((t, i) => {
-            if (!t.points?.length) return;
-            const latlngs = t.points
-                .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
-                .map((p) => [p.latitude, p.longitude]);
-            if (latlngs.length < 2) return;
-            L.polyline(latlngs, { color: colors[i % colors.length], weight: 3 }).addTo(state.miniMap);
-            latlngs.forEach((ll) => bounds.push(ll));
+
+        (traces || []).forEach((t, traceIdx) => {
+            const sorted = sortGpsPoints(t.points);
+            if (sorted.length < 2) return;
+            const decimated = decimateGpsPoints(sorted, 500);
+            for (let i = 1; i < decimated.length; i++) {
+                const prev = decimated[i - 1];
+                const p = decimated[i];
+                const seg = [
+                    [prev.latitude, prev.longitude],
+                    [p.latitude, p.longitude],
+                ];
+                L.polyline(seg, {
+                    color: speedColorForPoint(p),
+                    weight: 4,
+                    opacity: 0.9,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                }).addTo(routeLayer);
+                bounds.push(seg[0], seg[1]);
+            }
+            const start = decimated[0];
+            const end = decimated[decimated.length - 1];
+            const mkColor = markerColors[traceIdx % markerColors.length];
+            L.circleMarker([start.latitude, start.longitude], {
+                radius: 6,
+                color: '#fff',
+                weight: 2,
+                fillColor: mkColor,
+                fillOpacity: 1,
+            })
+                .bindPopup(`<strong>${escapeHtml(t.label || 'Start')}</strong><br>Start`)
+                .addTo(routeLayer);
+            L.circleMarker([end.latitude, end.longitude], {
+                radius: 5,
+                color: '#1a1a1a',
+                weight: 1,
+                fillColor: mkColor,
+                fillOpacity: 0.85,
+            })
+                .bindPopup(`<strong>${escapeHtml(t.label || 'Finish')}</strong><br>End`)
+                .addTo(routeLayer);
         });
+
         if (bounds.length) state.miniMap.fitBounds(bounds, { padding: [24, 24] });
         else state.miniMap.setView([-36.592, 174.703], 16);
         requestAnimationFrame(() => state.miniMap?.invalidateSize());
@@ -1955,10 +2246,21 @@
             `<section class="bsr-card" id="bsrGpsSection"><h3>GPS analysis</h3><p class="bsr-card-lead">Splits, turn time, speed vs time, and trace map (same engine as the Beach Sprints map).</p>` +
             `<div id="bsrCompareAnalysis"></div>` +
             `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
-            `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div></div>` +
-            `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap" hidden>` +
+            `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
+            `<p class="bsr-speed-legend-note">Trace colour = speed (slow → fast). Coloured dots mark start/end per boat.</p></div>` +
+            `<div class="bsr-gps-charts-grid">` +
+            `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
-            `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSpeedChart" aria-label="Speed versus time chart"></canvas></div>` +
+            `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSpeedChart" aria-label="Speed versus time chart"></canvas></div></div>` +
+            `<div id="bsrSplitsChartWrap" class="bsr-speed-chart-wrap" hidden>` +
+            `<h4 class="bsr-speed-chart-title">Leg splits</h4>` +
+            `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSplitsChart" aria-label="Leg split durations"></canvas></div></div>` +
+            `<div id="bsrTurnChartWrap" class="bsr-speed-chart-wrap" hidden>` +
+            `<h4 class="bsr-speed-chart-title">Turn at top</h4>` +
+            `<div class="bsr-speed-chart-canvas-box bsr-speed-chart-canvas-box--compact"><canvas id="bsrTurnChart" aria-label="Turn time comparison"></canvas></div></div>` +
+            `<div id="bsrCumulativeChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
+            `<h4 class="bsr-speed-chart-title">Cumulative time by leg</h4>` +
+            `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrCumulativeChart" aria-label="Cumulative race time"></canvas></div></div>` +
             `</div></div></section>`;
 
         renderEventsPanel(race);
@@ -2215,7 +2517,7 @@
     }
 
     async function loadGpsForRace(race) {
-        destroyBsrSpeedChart();
+        destroyBsrGpsCharts();
         const container = document.getElementById('bsrGpsContent');
         if (!container) return;
         const win = gpsWindowForRace(race);
@@ -2306,6 +2608,7 @@
         }
         renderMiniMap(traces);
         renderBsrSpeedChart(traces);
+        renderBsrAnalysisCharts(analyses, labels);
     }
 
     function selectRace(raceNum) {

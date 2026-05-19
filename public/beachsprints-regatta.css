@@ -642,8 +642,38 @@ body.bsr-page {
     height: 100% !important;
 }
 
+.bsr-speed-chart-canvas-box--compact {
+    height: 180px;
+}
+
+.bsr-speed-chart-wrap--wide {
+    grid-column: 1 / -1;
+}
+
+.bsr-gps-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.bsr-speed-legend-note {
+    margin: 0;
+    padding: 6px 4px 0;
+    font-size: 0.75rem;
+    color: var(--bsr-muted);
+    grid-column: 1 / -1;
+}
+
+.bsr-analysis-grid .bsr-speed-legend-note {
+    grid-column: 1 / -1;
+}
+
 @media (max-width: 900px) {
     .bsr-analysis-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bsr-gps-charts-grid {
         grid-template-columns: 1fr;
     }
 }
