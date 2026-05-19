@@ -67,6 +67,7 @@
         selectedEventKey: '',
         gpsDayStatus: new Map(),
         miniMap: null,
+        speedChart: null,
         miniMapLayers: [],
         loading: false,
     };
@@ -780,6 +781,93 @@
         return Math.max(2, Math.ceil(n / 2));
     }
 
+    function inferRepCutoff(group) {
+        const standings = buildQualifyingStandings(group);
+        const direct = inferProgressionCutoff(group);
+        const meta = eventMetaForRace({ eventNum: group.eventNum, division: group.division });
+        const draw = parseInt(meta?.drawSize, 10);
+        if (draw >= 16) return Math.min(standings.length, 16);
+        const repRaceCount = [...state.results.values()].filter(
+            (r) => eventMatchesNum(r, group.eventNum) && classifyRound(r.round) === 'rep',
+        ).length;
+        if (repRaceCount > 0) return Math.min(standings.length, direct + repRaceCount * 2);
+        return standings.length;
+    }
+
+    function inferTt2AdvanceCutoff(group) {
+        const repRaceCount = [...state.results.values()].filter(
+            (r) => eventMatchesNum(r, group.eventNum) && classifyRound(r.round) === 'rep',
+        ).length;
+        return repRaceCount > 0 ? repRaceCount : 4;
+    }
+
+    function crewsInKnockoutRound(group, kind) {
+        const set = new Set();
+        for (const res of state.results.values()) {
+            if (!eventMatchesNum(res, group.eventNum)) continue;
+            if (classifyRound(res.round) !== kind) continue;
+            for (const p of res.placings || []) {
+                if (p.competitor) set.add(normalizeClubKey(p.competitor));
+            }
+        }
+        return set;
+    }
+
+    function crewWasWinnerInRound(crewKey, group, kind) {
+        for (const res of state.results.values()) {
+            if (!eventMatchesNum(res, group.eventNum)) continue;
+            if (classifyRound(res.round) !== kind) continue;
+            const win = res.placings?.find((p) => p.place === 1);
+            if (win && normalizeClubKey(win.competitor) === crewKey) return true;
+        }
+        return false;
+    }
+
+    function tt1StandingsRankMap(group) {
+        const map = new Map();
+        buildQualifyingStandings(group).forEach((row, i) => {
+            map.set(normalizeClubKey(row.crew), i + 1);
+        });
+        return map;
+    }
+
+    function resolveProgressionLabel(crewKey, group, ctx) {
+        const { column, tt1Rank, tt2Rank, directCutoff, repCutoff, tt2AdvanceCutoff } = ctx;
+        const inFin = crewsInKnockoutRound(group, 'final');
+        const inSf = crewsInKnockoutRound(group, 'sf');
+        const inQf = crewsInKnockoutRound(group, 'qf');
+        const inRep = crewsInKnockoutRound(group, 'rep');
+
+        if (inFin.has(crewKey)) return { label: 'Final', cls: 'bsr-tt-prog--final' };
+        if (inSf.has(crewKey)) return { label: 'SF', cls: 'bsr-tt-prog--sf' };
+        if (inQf.has(crewKey)) return { label: 'QF', cls: 'bsr-tt-prog--qf' };
+
+        if (column === 'tt2') {
+            if (inRep.has(crewKey)) {
+                return crewWasWinnerInRound(crewKey, group, 'rep')
+                    ? { label: 'QF', cls: 'bsr-tt-prog--qf' }
+                    : { label: 'Out', cls: 'bsr-tt-prog--out' };
+            }
+            if (tt2Rank && tt2Rank <= tt2AdvanceCutoff) {
+                return { label: 'QF', cls: 'bsr-tt-prog--qf' };
+            }
+            return { label: 'Out', cls: 'bsr-tt-prog--out' };
+        }
+
+        const rank = tt1Rank || 999;
+        if (rank > repCutoff) return { label: 'Out', cls: 'bsr-tt-prog--out' };
+        if (rank > directCutoff) {
+            if (inRep.has(crewKey)) {
+                return crewWasWinnerInRound(crewKey, group, 'rep')
+                    ? { label: 'QF', cls: 'bsr-tt-prog--qf' }
+                    : { label: 'Rep', cls: 'bsr-tt-prog--rep' };
+            }
+            return { label: 'TT2', cls: 'bsr-tt-prog--tt2' };
+        }
+        if (rank <= directCutoff) return { label: 'QF', cls: 'bsr-tt-prog--qf' };
+        return { label: '—', cls: '' };
+    }
+
     function collectQualifyingTimes(group, roundKinds) {
         const entries = [];
         const seen = new Set();
@@ -1249,41 +1337,89 @@
             return;
         }
         const tt1All = collectQualifyingTimes(group, new Set(['heat', 'e', 'tt']));
+        const tt2All = collectQualifyingTimes(group, new Set(['rep']));
         const standings = buildQualifyingStandings(group);
-        const cutoff = inferProgressionCutoff(group);
+        const directCutoff = inferProgressionCutoff(group);
+        const repCutoff = inferRepCutoff(group);
+        const tt2AdvanceCutoff = inferTt2AdvanceCutoff(group);
+        const tt1Ranks = tt1StandingsRankMap(group);
+        const progCtx = { directCutoff, repCutoff, tt2AdvanceCutoff };
+
         if (lead) {
             lead.textContent =
                 standings.length > 0
-                    ? `${tt1All.length} qualifying times · top ${cutoff} advance to repechage or knockouts.`
+                    ? `${tt1All.length} heat times · top ${directCutoff} direct to knockouts · ranks ${directCutoff + 1}–${repCutoff} to repechage (TT2).`
                     : 'Qualifying times will appear when heat results are posted.';
         }
-        if (!tt1All.length) {
+        if (!tt1All.length && !tt2All.length) {
             root.innerHTML = '<p class="bsr-note">No qualifying times in results for this event yet.</p>';
             return;
         }
-        root.innerHTML = renderQualifyingColumn('Time trial / heats (TT1)', tt1All, cutoff, 'TT1');
+        let html = '';
+        if (tt1All.length) {
+            html += renderQualifyingColumn('Time trial / heats (TT1)', tt1All, {
+                seedPrefix: 'TT1',
+                column: 'tt1',
+                directCutoff,
+                repCutoff,
+                getStandingsRank: (row) => tt1Ranks.get(normalizeClubKey(row.crew)) || 0,
+                getProgression: (row, standingsRank) =>
+                    resolveProgressionLabel(normalizeClubKey(row.crew), group, {
+                        ...progCtx,
+                        column: 'tt1',
+                        tt1Rank: standingsRank,
+                    }),
+            });
+        }
+        if (tt2All.length) {
+            html += renderQualifyingColumn('Repechage (TT2)', tt2All, {
+                seedPrefix: 'TT2',
+                column: 'tt2',
+                directCutoff: tt2AdvanceCutoff,
+                repCutoff: tt2AdvanceCutoff,
+                getStandingsRank: (_row, listRank) => listRank,
+                getProgression: (row, listRank) =>
+                    resolveProgressionLabel(normalizeClubKey(row.crew), group, {
+                        ...progCtx,
+                        column: 'tt2',
+                        tt2Rank: listRank,
+                    }),
+            });
+        }
+        root.innerHTML = html;
     }
 
-    function renderQualifyingColumn(title, entries, cutoff, seedPrefix) {
+    function renderQualifyingColumn(title, entries, options) {
         if (!entries.length) {
             return `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">${escapeHtml(title)}</h3><p class="bsr-note">No times yet.</p></div>`;
         }
+        const { seedPrefix, column, directCutoff, repCutoff, getStandingsRank, getProgression } = options;
         let rows = '';
         entries.forEach((row, i) => {
-            const rank = i + 1;
+            const listRank = i + 1;
+            const standingsRank = getStandingsRank ? getStandingsRank(row, listRank) : listRank;
             const info = clubInfo(row.crew);
-            const seed = seedPrefix ? `${rank}.${seedPrefix}` : String(rank);
+            const seed = seedPrefix ? `${listRank}.${seedPrefix}` : String(listRank);
+            const prog = getProgression ? getProgression(row, standingsRank) : { label: '—', cls: '' };
+            let rowClass = '';
+            if (column === 'tt1' && standingsRank) {
+                if (standingsRank === directCutoff) rowClass += ' bsr-tt-cutoff';
+                if (standingsRank === repCutoff) rowClass += ' bsr-tt-cutoff-rep';
+                if (standingsRank <= directCutoff) rowClass += ' bsr-tt-advance';
+            }
+            if (column === 'tt2' && listRank === directCutoff) rowClass += ' bsr-tt-cutoff';
             rows +=
-                `<tr class="${rank === cutoff ? 'bsr-tt-cutoff' : ''}${cutoff && rank <= cutoff ? ' bsr-tt-advance' : ''}">` +
+                `<tr class="${rowClass.trim()}">` +
                 `<td class="bsr-tt-rank">${escapeHtml(seed)}</td>` +
                 `<td>${info.logoUrl ? `<img class="bsr-tt-logo" src="${escapeHtml(info.logoUrl)}" alt="">` : '<span class="bsr-tt-logo--empty"></span>'}` +
                 `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span><span class="bsr-note"> ${escapeHtml(row.crew)}</span></td>` +
                 `<td class="bsr-tt-time">${escapeHtml(row.time)}</td>` +
-                `<td class="bsr-tt-race">R${row.raceNum || '—'}</td></tr>`;
+                `<td class="bsr-tt-race">R${row.raceNum || '—'}</td>` +
+                `<td class="bsr-tt-prog"><span class="bsr-tt-prog-pill ${escapeHtml(prog.cls)}">${escapeHtml(prog.label)}</span></td></tr>`;
         });
         return (
             `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">${escapeHtml(title)}</h3>` +
-            `<table class="bsr-tt-table"><thead><tr><th>Seed</th><th>Crew</th><th>Time</th><th>Race</th></tr></thead><tbody>${rows}</tbody></table></div>`
+            `<table class="bsr-tt-table"><thead><tr><th>Seed</th><th>Crew</th><th>Time</th><th>Race</th><th>Progression</th></tr></thead><tbody>${rows}</tbody></table></div>`
         );
     }
 
@@ -1493,6 +1629,119 @@
             state.miniMap.remove();
             state.miniMap = null;
         }
+    }
+
+    function gpsChartTimeMs(p) {
+        const t = p.fixTime || p.deviceTime;
+        if (!t) return NaN;
+        const ms = new Date(t).getTime();
+        return Number.isFinite(ms) ? ms : NaN;
+    }
+
+    function gpsChartPoint(p) {
+        const t = gpsChartTimeMs(p);
+        const rawSpeed = typeof p.speed === 'number' && !Number.isNaN(p.speed) ? p.speed : 0;
+        const y = rawSpeed * 3.6;
+        if (!Number.isFinite(t) || !Number.isFinite(y)) return null;
+        return { x: t, y };
+    }
+
+    function destroyBsrSpeedChart() {
+        const canvas = document.getElementById('bsrSpeedChart');
+        const chartCtor = typeof Chart !== 'undefined' ? Chart : null;
+        if (canvas && chartCtor?.getChart) {
+            const ch = chartCtor.getChart(canvas);
+            if (ch) ch.destroy();
+        }
+        state.speedChart = null;
+        const wrap = document.getElementById('bsrSpeedChartWrap');
+        if (wrap) wrap.hidden = true;
+    }
+
+    function renderBsrSpeedChart(traces) {
+        const wrap = document.getElementById('bsrSpeedChartWrap');
+        const canvas = document.getElementById('bsrSpeedChart');
+        const chartCtor = typeof Chart !== 'undefined' ? Chart : null;
+        destroyBsrSpeedChart();
+        if (!wrap || !canvas || !chartCtor) return;
+
+        const colors = ['#2dd4bf', '#f97316', '#fde68a', '#fb7185'];
+        const datasets = (traces || [])
+            .map((t, i) => {
+                const data = (t.points || [])
+                    .map(gpsChartPoint)
+                    .filter(Boolean)
+                    .sort((a, b) => a.x - b.x);
+                if (!data.length) return null;
+                const color = colors[i % colors.length];
+                return {
+                    label: t.label || `Lane ${i + 1}`,
+                    data,
+                    borderColor: color,
+                    backgroundColor: color,
+                    fill: false,
+                    tension: 0.12,
+                    pointRadius: data.length <= 2 ? 4 : 0,
+                    pointHitRadius: 5,
+                    borderWidth: 2,
+                };
+            })
+            .filter(Boolean);
+
+        if (!datasets.length) return;
+
+        wrap.hidden = false;
+        state.speedChart = new chartCtor(canvas, {
+            type: 'line',
+            data: { datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                parsing: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Time', color: '#9ec4d8' },
+                        ticks: {
+                            color: '#9ec4d8',
+                            maxTicksLimit: 8,
+                            callback(value) {
+                                const d = new Date(value);
+                                return Number.isNaN(d.getTime())
+                                    ? ''
+                                    : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                            },
+                        },
+                        grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                    },
+                    y: {
+                        title: { display: true, text: 'Speed (km/h)', color: '#9ec4d8' },
+                        ticks: { color: '#9ec4d8' },
+                        grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                    },
+                },
+                plugins: {
+                    legend: {
+                        display: datasets.length > 1,
+                        labels: { color: '#e8f4fc', boxWidth: 12 },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title(items) {
+                                if (!items.length) return '';
+                                const d = new Date(items[0].parsed.x);
+                                return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
+                            },
+                            label(item) {
+                                return `${item.dataset.label}: ${item.formattedValue} km/h`;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        requestAnimationFrame(() => state.speedChart?.resize());
     }
 
     function renderMiniMap(traces) {
@@ -1705,8 +1954,12 @@
             `<section class="bsr-card"><h3>Official results</h3>${resultsHtml}</section>` +
             `<section class="bsr-card" id="bsrGpsSection"><h3>GPS analysis</h3><p class="bsr-card-lead">Splits, turn time, speed vs time, and trace map (same engine as the Beach Sprints map).</p>` +
             `<div id="bsrCompareAnalysis"></div>` +
-            `<div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
-            `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div></div></section>`;
+            `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
+            `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div></div>` +
+            `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap" hidden>` +
+            `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
+            `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSpeedChart" aria-label="Speed versus time chart"></canvas></div>` +
+            `</div></div></section>`;
 
         renderEventsPanel(race);
         loadGpsForRace(race);
@@ -1962,6 +2215,7 @@
     }
 
     async function loadGpsForRace(race) {
+        destroyBsrSpeedChart();
         const container = document.getElementById('bsrGpsContent');
         if (!container) return;
         const win = gpsWindowForRace(race);
@@ -2051,6 +2305,7 @@
                     : '';
         }
         renderMiniMap(traces);
+        renderBsrSpeedChart(traces);
     }
 
     function selectRace(raceNum) {
