@@ -46,41 +46,37 @@
 
         <section class="bsr-card bsr-event-picker">
             <div class="bsr-event-picker-row">
+                <div class="bsr-field bsr-field--event">
+                    <label for="bsrFilterEvent">Event</label>
+                    <select id="bsrFilterEvent"><option value="">— Select event 1–30 —</option></select>
+                </div>
                 <div class="bsr-field bsr-field--grow">
-                    <label for="bsrEventSearch">Event</label>
-                    <input
-                        type="search"
-                        id="bsrEventSearch"
-                        placeholder="Search events by name or number…"
-                        autocomplete="off"
-                        list="bsrEventList"
-                    >
-                    <datalist id="bsrEventList"></datalist>
-                </div>
-                <div class="bsr-field">
-                    <label for="bsrFilterEvent">Or select</label>
-                    <select id="bsrFilterEvent"><option value="">— Choose event —</option></select>
-                </div>
-                <div class="bsr-field">
-                    <label for="bsrFilterDay">Day</label>
-                    <select id="bsrFilterDay"><option value="">All days</option></select>
+                    <label for="bsrEventSearch">Search</label>
+                    <input type="search" id="bsrEventSearch" placeholder="e.g. BU18 or event 1…" autocomplete="off">
                 </div>
             </div>
         </section>
 
         <section class="bsr-event-workspace" id="bsrEventWorkspace" hidden>
-            <div class="bsr-event-split">
-                <section class="bsr-card bsr-tt-panel">
-                    <h2>Qualifying / time trial</h2>
-                    <p class="bsr-card-lead" id="bsrTtLead">Fastest times per crew — progression cutoff shown below.</p>
-                    <div id="bsrTimeTrial"></div>
-                </section>
-                <section class="bsr-card bsr-bracket-panel">
-                    <h2>Knockout progression</h2>
-                    <p class="bsr-card-lead">Heats → quarter-finals → semi-finals → final. Click a race for analysis.</p>
-                    <div id="bsrKnockoutTree"></div>
-                </section>
-            </div>
+            <header class="bsr-card bsr-event-hero" id="bsrEventHero"></header>
+
+            <section class="bsr-card bsr-tt-panel">
+                <h2>Time trial / qualifying</h2>
+                <p class="bsr-card-lead" id="bsrTtLead">All crews and times from heats — ranked with progression cutoff.</p>
+                <div id="bsrTimeTrial" class="bsr-tt-grid"></div>
+            </section>
+
+            <section class="bsr-card bsr-bracket-panel">
+                <h2>Knockout bracket</h2>
+                <p class="bsr-card-lead">Click a match for race analysis, GPS traces, and head-to-head splits.</p>
+                <div id="bsrKnockoutTree" class="bsr-bracket-arena-wrap"></div>
+            </section>
+
+            <section class="bsr-card">
+                <h2>Event schedule &amp; results</h2>
+                <p class="bsr-card-lead">All races for this event from the daysheet and RowIT results.</p>
+                <div id="bsrEventSchedule"></div>
+            </section>
         </section>
 
         <section class="bsr-card bsr-race-analysis" id="bsrRaceAnalysis" hidden>

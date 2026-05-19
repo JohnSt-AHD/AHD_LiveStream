@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Beach Sprints regatta dashboard — race-by-race insight from RowIT CSV + Traccar GPS.
  * Default regatta: cnzb2026 (NZ Coastal Beach Sprint Champs, Titahi Bay Apr 2026).
  */
@@ -710,7 +710,11 @@
     }
 
     function eventKey(race) {
-        return `${race.eventNum}|${race.eventName}|${race.division}`;
+        return String(race?.eventNum ?? '').trim();
+    }
+
+    function eventMatchesNum(raceOrRes, eventNum) {
+        return String(raceOrRes?.eventNum ?? raceOrRes) === String(eventNum);
     }
 
     function getRegattaMeta(code) {
@@ -776,59 +780,197 @@
         return Math.max(2, Math.ceil(n / 2));
     }
 
-    function buildQualifyingStandings(group) {
-        const byCrew = new Map();
-        const hasTt = group.races.some((r) => classifyRound(r.round) === 'tt');
-        const targetRounds = hasTt ? new Set(['tt']) : new Set(['heat', 'e']);
-
-        for (const [, res] of state.results) {
-            if (String(res.eventNum) !== String(group.eventNum)) continue;
-            if (group.division && res.division && res.division !== group.division) continue;
+    function collectQualifyingTimes(group, roundKinds) {
+        const entries = [];
+        const seen = new Set();
+        for (const [raceNum, res] of state.results) {
+            if (!eventMatchesNum(res, group.eventNum)) continue;
             const rk = classifyRound(res.round);
-            if (!targetRounds.has(rk)) continue;
+            if (!roundKinds.has(rk)) continue;
             for (const p of res.placings || []) {
                 if (!p.time || p.place >= 99) continue;
-                const key = normalizeClubKey(p.competitor);
                 const ms = parseRaceTimeMs(p.time);
                 if (!Number.isFinite(ms)) continue;
-                const prev = byCrew.get(key);
-                if (!prev || ms < prev.timeMs) {
-                    byCrew.set(key, {
-                        crew: p.competitor,
-                        time: p.time,
-                        timeMs: ms,
-                        raceNum: null,
-                        place: p.place,
-                    });
-                }
+                const dedupe = `${raceNum}|${normalizeClubKey(p.competitor)}|${p.time}`;
+                if (seen.has(dedupe)) continue;
+                seen.add(dedupe);
+                entries.push({
+                    crew: p.competitor,
+                    time: p.time,
+                    timeMs: ms,
+                    raceNum,
+                    round: res.round,
+                    heat: res.division,
+                    place: p.place,
+                });
+            }
+        }
+        return entries.sort((a, b) => a.timeMs - b.timeMs);
+    }
+
+    function buildQualifyingStandings(group) {
+        const hasTt = [...state.results.values()].some(
+            (r) => eventMatchesNum(r, group.eventNum) && classifyRound(r.round) === 'tt',
+        );
+        const roundKinds = hasTt ? new Set(['tt']) : new Set(['heat', 'e']);
+        const all = collectQualifyingTimes(group, roundKinds);
+        const byCrew = new Map();
+        for (const row of all) {
+            const key = normalizeClubKey(row.crew);
+            const prev = byCrew.get(key);
+            if (!prev || row.timeMs < prev.timeMs) {
+                byCrew.set(key, { ...row });
             }
         }
         return [...byCrew.values()].sort((a, b) => a.timeMs - b.timeMs);
     }
 
+    function enrichEventGroup(g) {
+        const meta =
+            state.eventsByNum.get(g.eventNum) ||
+            state.eventsByNum.get(String(parseInt(g.eventNum, 10))) ||
+            null;
+        if (meta) {
+            g.eventName = meta.displayName || meta.name || g.eventName;
+            g.meta = meta;
+        }
+        if (!g.eventName && g.races.length) {
+            g.eventName = g.races[0].eventName;
+        }
+        g.displayTitle = `Event ${g.eventNum} · ${expandEventName(g.eventName || '—')}`;
+    }
+
     function buildEventGroups() {
         const groups = new Map();
+
+        const ensure = (eventNum) => {
+            const key = String(eventNum).trim();
+            if (!key || groups.has(key)) return groups.get(key);
+            const g = {
+                key,
+                eventNum: key,
+                eventName: '',
+                division: '',
+                races: [],
+                raceNums: new Set(),
+            };
+            groups.set(key, g);
+            return g;
+        };
+
         for (const race of state.races) {
-            const key = eventKey(race);
-            if (!groups.has(key)) {
-                groups.set(key, {
-                    key,
-                    eventNum: race.eventNum,
-                    eventName: race.eventName,
-                    division: race.division,
-                    races: [],
+            const g = ensure(race.eventNum);
+            if (!g) continue;
+            g.races.push(race);
+            g.raceNums.add(race.raceNum);
+            if (!g.eventName && race.eventName) g.eventName = race.eventName;
+        }
+
+        for (const [raceNum, res] of state.results) {
+            const g = ensure(res.eventNum);
+            if (!g) continue;
+            g.raceNums.add(raceNum);
+        }
+
+        for (const ev of state.events) {
+            const g = ensure(ev.eventNum);
+            if (g && !g.eventName) g.eventName = ev.displayName || ev.name;
+        }
+
+        for (const g of groups.values()) {
+            g.races.sort((a, b) => (a.startAt || 0) - (b.startAt || 0));
+            enrichEventGroup(g);
+        }
+
+        return [...groups.values()].sort((a, b) => {
+            const na = parseInt(a.eventNum, 10);
+            const nb = parseInt(b.eventNum, 10);
+            if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+            return String(a.eventNum).localeCompare(String(b.eventNum));
+        });
+    }
+
+    function getRacesForEvent(group) {
+        const byNum = new Map();
+        for (const r of group.races) {
+            byNum.set(r.raceNum, r);
+        }
+        for (const raceNum of group.raceNums) {
+            if (byNum.has(raceNum)) continue;
+            const res = state.results.get(raceNum);
+            if (!res || !eventMatchesNum(res, group.eventNum)) continue;
+            const lanes = (res.placings || []).map((p, i) => ({
+                lane: i + 1,
+                crew: p.competitor,
+            }));
+            byNum.set(raceNum, {
+                raceNum,
+                race: String(raceNum),
+                eventNum: group.eventNum,
+                eventName: group.eventName,
+                round: res.round,
+                division: res.division,
+                lanes,
+                startAt: null,
+                dayLabel: '',
+            });
+        }
+        return [...byNum.values()].sort((a, b) => {
+            const ta = a.startAt ? a.startAt.getTime() : a.raceNum;
+            const tb = b.startAt ? b.startAt.getTime() : b.raceNum;
+            return ta - tb;
+        });
+    }
+
+    function getRaceMatchData(raceNum) {
+        const race =
+            findRace(raceNum) ||
+            getRacesForEvent(getEventGroup(state.selectedEventKey) || { eventNum: '', races: [], raceNums: new Set() }).find(
+                (r) => r.raceNum === raceNum,
+            );
+        const res = state.results.get(raceNum);
+        const slots = [];
+
+        if (race?.lanes?.length) {
+            for (const lane of race.lanes) {
+                const placing = matchingPlacing(lane.crew, res?.placings);
+                slots.push({
+                    crew: lane.crew,
+                    info: clubInfo(lane.crew),
+                    time: placing?.time || '',
+                    place: placing?.place,
+                    lane: lane.lane,
                 });
             }
-            groups.get(key).races.push(race);
+        } else if (res?.placings?.length) {
+            for (const p of res.placings) {
+                slots.push({
+                    crew: p.competitor,
+                    info: clubInfo(p.competitor),
+                    time: p.time || '',
+                    place: p.place,
+                    lane: p.place,
+                });
+            }
         }
-        for (const g of groups.values()) {
-            g.races.sort((a, b) => a.startAt - b.startAt);
-        }
-        return [...groups.values()].sort((a, b) => {
-            const t = (a.races[0]?.startAt || 0) - (b.races[0]?.startAt || 0);
-            if (t !== 0) return t;
-            return String(a.eventName).localeCompare(String(b.eventName));
-        });
+
+        slots.sort((a, b) => (a.place || 99) - (b.place || 99));
+        const winner = slots.find((s) => s.place === 1) || slots[0];
+        return {
+            race,
+            raceNum,
+            res,
+            slots,
+            winner,
+            round: res?.round || race?.round || '',
+            startAt: race?.startAt,
+        };
+    }
+
+    function collectKnockoutRaces(group) {
+        const races = getRacesForEvent(group);
+        const knockoutKinds = ['qf', 'sf', 'final', 'rep'];
+        return races.filter((r) => knockoutKinds.includes(classifyRound(r.round)));
     }
 
     function winnerForRace(raceNum) {
@@ -952,7 +1094,7 @@
     function filteredRaces() {
         return state.races.filter((r) => {
             if (state.filterDay && r.dayLabel !== state.filterDay) return false;
-            if (state.filterEvent && eventKey(r) !== state.filterEvent) return false;
+            if (state.selectedEventKey && eventKey(r) !== state.selectedEventKey) return false;
             return true;
         });
     }
@@ -1014,7 +1156,7 @@
         const dateLabel = range
             ? range.min.toDateString() === range.max.toDateString()
                 ? range.min.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-                : `${range.min.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${range.max.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
+                : `${range.min.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} — ${range.max.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
             : '—';
         const eventCount = buildEventGroups().length;
         const competitorCount = countUniqueCompetitors();
@@ -1072,11 +1214,20 @@
         state.filterEvent = key || '';
         const sel = document.getElementById('bsrFilterEvent');
         if (sel) sel.value = state.filterEvent;
+        const search = document.getElementById('bsrEventSearch');
+        const group = getEventGroup(key);
+        if (search && group) search.value = group.displayTitle || `Event ${group.eventNum}`;
         const ws = document.getElementById('bsrEventWorkspace');
         if (ws) ws.hidden = !key;
+        const url = new URL(location.href);
+        if (key) url.searchParams.set('event', key);
+        else url.searchParams.delete('event');
+        history.replaceState(null, '', url);
         if (key) {
+            renderEventHero();
             renderTimeTrialPanel();
             renderKnockoutTree();
+            renderEventSchedule();
         }
     }
 
@@ -1089,31 +1240,86 @@
             root.innerHTML = '<p class="bsr-empty">Select an event.</p>';
             return;
         }
+        const tt1All = collectQualifyingTimes(group, new Set(['heat', 'e', 'tt']));
+        const tt2All = collectQualifyingTimes(group, new Set(['rep']));
         const standings = buildQualifyingStandings(group);
         const cutoff = inferProgressionCutoff(group);
         if (lead) {
             lead.textContent =
                 standings.length > 0
-                    ? `Top ${cutoff} advance to knockouts (${standings.length} crews with times).`
-                    : 'No qualifying times yet.';
+                    ? `${tt1All.length} qualifying times · top ${cutoff} seeds advance to knockouts.`
+                    : 'Qualifying times will appear when heat results are posted.';
         }
-        if (!standings.length) {
+        if (!tt1All.length && !tt2All.length) {
             root.innerHTML = '<p class="bsr-note">No qualifying times in results for this event yet.</p>';
             return;
         }
-        let html =
-            '<table class="bsr-tt-table"><thead><tr><th></th><th>Crew</th><th>Time</th></tr></thead><tbody>';
-        standings.forEach((row, i) => {
+        root.innerHTML =
+            renderQualifyingColumn('Time trial / heats (TT1)', tt1All, cutoff, 'TT1') +
+            (tt2All.length ? renderQualifyingColumn('Repechage (TT2)', tt2All, null, 'TT2') : '') +
+            renderQualifyingColumn('Seeding (best per crew)', standings, cutoff, '');
+    }
+
+    function renderQualifyingColumn(title, entries, cutoff, seedPrefix) {
+        if (!entries.length) {
+            return `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">${escapeHtml(title)}</h3><p class="bsr-note">No times yet.</p></div>`;
+        }
+        let rows = '';
+        entries.forEach((row, i) => {
             const rank = i + 1;
             const info = clubInfo(row.crew);
-            html +=
-                `<tr class="${rank === cutoff ? 'bsr-tt-cutoff' : ''}${rank <= cutoff ? ' bsr-tt-advance' : ''}">` +
-                `<td class="bsr-tt-rank">${rank}</td>` +
-                `<td>${info.logoUrl ? `<img class="bsr-tt-logo" src="${escapeHtml(info.logoUrl)}" alt="">` : ''}${escapeHtml(info.name)} <span class="bsr-note">(${escapeHtml(row.crew)})</span></td>` +
-                `<td>${escapeHtml(row.time)}</td></tr>`;
+            const seed = seedPrefix ? `${rank}.${seedPrefix}` : String(rank);
+            rows +=
+                `<tr class="${rank === cutoff ? 'bsr-tt-cutoff' : ''}${cutoff && rank <= cutoff ? ' bsr-tt-advance' : ''}">` +
+                `<td class="bsr-tt-rank">${escapeHtml(seed)}</td>` +
+                `<td>${info.logoUrl ? `<img class="bsr-tt-logo" src="${escapeHtml(info.logoUrl)}" alt="">` : '<span class="bsr-tt-logo--empty"></span>'}` +
+                `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span><span class="bsr-note"> ${escapeHtml(row.crew)}</span></td>` +
+                `<td class="bsr-tt-time">${escapeHtml(row.time)}</td>` +
+                `<td class="bsr-tt-race">R${row.raceNum || '—'}</td></tr>`;
         });
-        html += '</tbody></table>';
-        root.innerHTML = html;
+        return (
+            `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">${escapeHtml(title)}</h3>` +
+            `<table class="bsr-tt-table"><thead><tr><th>Seed</th><th>Crew</th><th>Time</th><th>Race</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        );
+    }
+
+    function renderBracketSlot(slot) {
+        if (!slot) {
+            return '<div class="bsr-bracket-slot bsr-bracket-slot--empty"><span class="bsr-bracket-avatar"></span><span class="bsr-bracket-name">TBD</span></div>';
+        }
+        const win = slot.place === 1;
+        return (
+            `<div class="bsr-bracket-slot${win ? ' bsr-bracket-slot--winner' : ''}">` +
+            (slot.info.logoUrl
+                ? `<img class="bsr-bracket-avatar" src="${escapeHtml(slot.info.logoUrl)}" alt="">`
+                : '<span class="bsr-bracket-avatar bsr-bracket-avatar--empty"></span>') +
+            `<span class="bsr-bracket-name">${escapeHtml(slot.info.name)}</span>` +
+            (slot.time ? `<span class="bsr-bracket-time">${escapeHtml(slot.time)}</span>` : '') +
+            `</div>`
+        );
+    }
+
+    function renderBracketMatchCard(raceNum, label) {
+        const m = getRaceMatchData(raceNum);
+        const current = raceNum === state.selectedRaceNum;
+        const timeLabel = m.startAt ? formatRaceTime(m.startAt) : '';
+        return (
+            `<button type="button" class="bsr-bracket-match${current ? ' bsr-bracket-match--current' : ''}" data-race-num="${raceNum}">` +
+            `<span class="bsr-bracket-match-label">${escapeHtml(label || expandRoundLabel(m.round))} · Race ${escapeHtml(m.race?.race || raceNum)}</span>` +
+            (timeLabel ? `<span class="bsr-bracket-schedule">${escapeHtml(timeLabel)}</span>` : '') +
+            renderBracketSlot(m.slots[0]) +
+            `<span class="bsr-bracket-vs">VS</span>` +
+            renderBracketSlot(m.slots[1]) +
+            `</button>`
+        );
+    }
+
+    function renderBracketRoundColumn(roundLabel, matches) {
+        if (!matches.length) return '';
+        return (
+            `<div class="bsr-bracket-round"><div class="bsr-bracket-round-head">${escapeHtml(roundLabel)}</div>` +
+            `<div class="bsr-bracket-round-matches">${matches.map((m) => renderBracketMatchCard(m.raceNum, m.label)).join('')}</div></div>`
+        );
     }
 
     function renderKnockoutTree() {
@@ -1124,42 +1330,125 @@
             root.innerHTML = '';
             return;
         }
-        const knockoutRounds = ['heat', 'rep', 'qf', 'sf', 'final'];
-        const byRound = new Map();
-        for (const r of group.races) {
-            const kind = classifyRound(r.round);
-            if (kind === 'tt') continue;
-            if (!byRound.has(kind)) byRound.set(kind, []);
-            byRound.get(kind).push(r);
-        }
-        const cols = knockoutRounds.filter((k) => byRound.has(k));
-        if (!cols.length) {
-            root.innerHTML = '<p class="bsr-note">No knockout races for this event yet.</p>';
+        const knockout = collectKnockoutRaces(group);
+        if (!knockout.length) {
+            root.innerHTML =
+                '<p class="bsr-note">No knockout races posted yet — quarter-finals, semi-finals and final will appear here.</p>';
             return;
         }
-        let html = '<div class="bsr-knockout-tree">';
-        for (const kind of cols) {
-            html += `<div class="bsr-knockout-col"><div class="bsr-knockout-col-head">${escapeHtml(ROUND_LABELS[kind])}</div>`;
-            for (const race of byRound.get(kind) || []) {
-                const win = winnerForRace(race.raceNum);
-                const winLabel = win ? clubInfo(win.competitor).name : '';
-                const current = race.raceNum === state.selectedRaceNum;
-                html +=
-                    `<button type="button" class="bsr-bracket-node${current ? ' bsr-bracket-node--current' : ''}" data-race-num="${race.raceNum}">` +
-                    `<span class="bsr-round-label">R${escapeHtml(race.race)}</span>` +
-                    `<span>${escapeHtml(expandRoundLabel(race.round))}</span>` +
-                    `<span>${escapeHtml(formatRaceTime(race.startAt))}</span>` +
-                    (winLabel ? `<span class="bsr-round-winner">${escapeHtml(winLabel)}</span>` : '') +
-                    `</button>`;
-            }
-            html += '</div>';
+        const byKind = new Map();
+        for (const r of knockout) {
+            const k = classifyRound(r.round);
+            if (!byKind.has(k)) byKind.set(k, []);
+            byKind.get(k).push(r);
+        }
+        const qf = (byKind.get('qf') || []).sort((a, b) => a.raceNum - b.raceNum);
+        const sf = (byKind.get('sf') || []).sort((a, b) => a.raceNum - b.raceNum);
+        const fin = (byKind.get('final') || []).sort((a, b) => a.raceNum - b.raceNum);
+        const rep = (byKind.get('rep') || []).sort((a, b) => a.raceNum - b.raceNum);
+        const qfL = qf.slice(0, Math.ceil(qf.length / 2));
+        const qfR = qf.slice(Math.ceil(qf.length / 2));
+        const sfL = sf.slice(0, Math.ceil(sf.length / 2));
+        const sfR = sf.slice(Math.ceil(sf.length / 2));
+        const mapMatches = (races, prefix) =>
+            races.map((r, i) => ({ raceNum: r.raceNum, label: `${prefix}${i + 1}` }));
+        let html = '<div class="bsr-bracket-arena">';
+        html += '<div class="bsr-bracket-wing bsr-bracket-wing--left">';
+        if (rep.length) html += renderBracketRoundColumn('Repechage', mapMatches(rep, 'R'));
+        html += renderBracketRoundColumn('Quarter-finals', mapMatches(qfL, 'Q'));
+        html += renderBracketRoundColumn('Semi-finals', mapMatches(sfL, 'S'));
+        html += '</div>';
+        html += '<div class="bsr-bracket-center">';
+        html += '<div class="bsr-bracket-round-head bsr-bracket-round-head--final">Finals</div>';
+        if (fin.length) {
+            fin.forEach((r, i) => {
+                html += renderBracketMatchCard(r.raceNum, i === 0 ? 'A Final' : 'B Final');
+            });
+        } else {
+            html += '<p class="bsr-note">Final not yet scheduled</p>';
         }
         html += '</div>';
+        html += '<div class="bsr-bracket-wing bsr-bracket-wing--right">';
+        html += renderBracketRoundColumn('Semi-finals', mapMatches(sfR, 'S'));
+        html += renderBracketRoundColumn('Quarter-finals', mapMatches(qfR, 'Q'));
+        html += '</div></div>';
         root.innerHTML = html;
         root.querySelectorAll('[data-race-num]').forEach((btn) => {
             btn.addEventListener('click', () => selectRace(parseInt(btn.dataset.raceNum, 10)));
         });
     }
+
+    function renderEventHero() {
+        const root = document.getElementById('bsrEventHero');
+        if (!root) return;
+        const group = getEventGroup(state.selectedEventKey);
+        if (!group) {
+            root.innerHTML = '';
+            return;
+        }
+        const meta = group.meta || eventMetaForRace({ eventNum: group.eventNum });
+        const races = getRacesForEvent(group);
+        const bits = [];
+        if (meta?.classCode) bits.push(expandEventName(meta.classCode));
+        if (meta?.gender) bits.push(expandEventName(meta.gender));
+        if (meta?.boat) bits.push(expandEventName(meta.boat));
+        if (meta?.drawSize) bits.push(`${meta.drawSize} entries`);
+        if (meta?.format) bits.push(meta.format);
+        root.innerHTML =
+            `<h2>${escapeHtml(group.displayTitle)}</h2>` +
+            (bits.length ? `<p class="bsr-card-lead">${escapeHtml(bits.join(' · '))}</p>` : '') +
+            `<p class="bsr-note">${races.length} races in daysheet/results for this event.</p>`;
+    }
+
+    function renderEventSchedule() {
+        const root = document.getElementById('bsrEventSchedule');
+        if (!root) return;
+        const group = getEventGroup(state.selectedEventKey);
+        if (!group) {
+            root.innerHTML = '';
+            return;
+        }
+        const races = getRacesForEvent(group);
+        if (!races.length) {
+            root.innerHTML = '<p class="bsr-note">No races found for this event.</p>';
+            return;
+        }
+        let html =
+            '<table class="bsr-schedule-table"><thead><tr><th>Race</th><th>Time</th><th>Round</th><th>Crews / result</th></tr></thead><tbody>';
+        for (const race of races) {
+            const res = state.results.get(race.raceNum);
+            const kind = classifyRound(race.round);
+            let crews = race.lanes.map((l) => escapeHtml(l.crew)).join(' vs ');
+            if (res?.placings?.length) {
+                crews = res.placings
+                    .map((p) => {
+                        const ci = clubInfo(p.competitor);
+                        return `${p.place}. ${escapeHtml(ci.name)} (${escapeHtml(p.time || '—')})`;
+                    })
+                    .join(' · ');
+            }
+            const current = race.raceNum === state.selectedRaceNum;
+            html +=
+                `<tr class="bsr-schedule-row${current ? ' bsr-schedule-row--current' : ''}" data-race-num="${race.raceNum}" tabindex="0" role="button">` +
+                `<td>R${escapeHtml(race.race)}</td>` +
+                `<td>${race.startAt ? escapeHtml(formatRaceTime(race.startAt)) : '—'}</td>` +
+                `<td>${escapeHtml(ROUND_LABELS[kind] || expandRoundLabel(race.round))}</td>` +
+                `<td>${crews || '—'}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        root.innerHTML = html;
+        root.querySelectorAll('[data-race-num]').forEach((row) => {
+            const go = () => selectRace(parseInt(row.dataset.raceNum, 10));
+            row.addEventListener('click', go);
+            row.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    go();
+                }
+            });
+        });
+    }
+
 
     function destroyMiniMap() {
         if (state.miniMap) {
@@ -1401,7 +1690,7 @@
             html += `<div class="bsr-event-head">${escapeHtml(title)} <span class="bsr-note">(${g.races.length} races)</span></div>`;
             html += '<div class="bsr-event-rounds">';
             g.races.forEach((race, i) => {
-                if (i > 0) html += '<span class="bsr-arrow" aria-hidden="true">→</span>';
+                if (i > 0) html += '<span class="bsr-arrow" aria-hidden="true">â†’</span>';
                 const win = winnerForRace(race.raceNum);
                 const winLabel = win ? clubInfo(win.competitor).name : '—';
                 const current = race.raceNum === state.selectedRaceNum ? 'true' : 'false';
@@ -1488,36 +1777,19 @@
     }
 
     function renderFilters() {
-        const daySel = document.getElementById('bsrFilterDay');
         const eventSel = document.getElementById('bsrFilterEvent');
-        if (!daySel || !eventSel) return;
-
-        const days = [...new Set(state.races.map((r) => r.dayLabel).filter(Boolean))];
-        daySel.innerHTML =
-            '<option value="">All days</option>' +
-            days.map((d) => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+        if (!eventSel) return;
 
         const groups = buildEventGroups();
         eventSel.innerHTML =
-            '<option value="">— Choose event —</option>' +
+            '<option value="">— Select event 1–30 —</option>' +
             groups
                 .map(
                     (g) =>
-                        `<option value="${escapeHtml(g.key)}">${escapeHtml(g.eventNum)} · ${escapeHtml(expandEventName(g.eventName))}</option>`,
+                        `<option value="${escapeHtml(g.key)}">${escapeHtml(g.displayTitle || `Event ${g.eventNum}`)}</option>`,
                 )
                 .join('');
 
-        const datalist = document.getElementById('bsrEventList');
-        if (datalist) {
-            datalist.innerHTML = groups
-                .map(
-                    (g) =>
-                        `<option value="${escapeHtml(g.eventNum)} · ${escapeHtml(expandEventName(g.eventName))}"></option>`,
-                )
-                .join('');
-        }
-
-        daySel.value = state.filterDay;
         eventSel.value = state.filterEvent || state.selectedEventKey;
     }
 
@@ -1574,7 +1846,7 @@
                 )
                 .join('');
             laneHtml +=
-                `<div><label>Lane ${lane} →</label>` +
+                `<div><label>Lane ${lane} â†’</label>` +
                 `<select id="bsrLane${lane}" data-lane="${lane}">${opts}</select></div>`;
         }
 
@@ -1699,8 +1971,8 @@
                 if (!stats) {
                     cards.push(
                         `<div class="bsr-gps-card"><h4>Lane ${lane.lane} · ${escapeHtml(dev?.name || alias)}</h4>` +
-                            `<p class="bsr-note">No GPS points in window (${formatDateTime(win.from)} – ${formatDateTime(win.to)}).</p>` +
-                            `<a href="${escapeHtml(laneMapUrl)}">Open on map →</a></div>`,
+                            `<p class="bsr-note">No GPS points in window (${formatDateTime(win.from)} — ${formatDateTime(win.to)}).</p>` +
+                            `<a href="${escapeHtml(laneMapUrl)}">Open on map â†’</a></div>`,
                     );
                 } else {
                     cards.push(
@@ -1710,7 +1982,7 @@
                             `<p class="bsr-gps-stat"><strong>Duration:</strong> ${stats.durationSec.toFixed(1)} s</p>` +
                             `<p class="bsr-gps-stat"><strong>Max speed:</strong> ${stats.maxSpeedKmh.toFixed(1)} km/h</p>` +
                             `<p class="bsr-gps-stat"><strong>vs schedule:</strong> ${stats.deltaFromScheduleSec >= 0 ? '+' : ''}${stats.deltaFromScheduleSec.toFixed(0)} s</p>` +
-                            `<a href="${escapeHtml(laneMapUrl)}">Open on map →</a></div>`,
+                            `<a href="${escapeHtml(laneMapUrl)}">Open on map â†’</a></div>`,
                     );
                 }
             } catch (err) {
@@ -1730,7 +2002,7 @@
                 ? ` · <a href="${escapeHtml(mapCompareUrl)}">Map + compare first two boats</a>`
                 : '') +
             `</p>` +
-            `<p class="bsr-note">Window: ${formatDateTime(win.from)} – ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min).</p>`;
+            `<p class="bsr-note">Window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min).</p>`;
         const compareEl = document.getElementById('bsrCompareAnalysis');
         if (compareEl && analyses.length >= 2) {
             compareEl.innerHTML = renderCompareAnalysis(analyses.slice(0, 2), labels.slice(0, 2));
@@ -1752,6 +2024,7 @@
         }
         renderRaceList();
         renderKnockoutTree();
+        renderEventSchedule();
         const analysisEl = document.getElementById('bsrRaceAnalysis');
         if (analysisEl) analysisEl.hidden = !race;
         const titleEl = document.getElementById('bsrRaceAnalysisTitle');
@@ -1805,11 +2078,9 @@
             renderFilters();
             renderRaceList();
             renderDeviceConfig();
-            const groups = buildEventGroups();
-            if (groups.length && !state.selectedEventKey) {
-                const urlEvent = new URLSearchParams(location.search).get('event');
-                const pick = urlEvent && groups.some((g) => g.key === urlEvent) ? urlEvent : groups[0].key;
-                selectEvent(pick);
+            const urlEvent = new URLSearchParams(location.search).get('event');
+            if (urlEvent && buildEventGroups().some((g) => g.key === urlEvent)) {
+                selectEvent(urlEvent);
             }
             if (state.selectedRaceNum) {
                 selectRace(state.selectedRaceNum);
@@ -1826,7 +2097,6 @@
         const codeInput = document.getElementById('bsrRegattaCode');
         const loadBtn = document.getElementById('bsrLoadBtn');
         const offsetInput = document.getElementById('bsrGpsOffset');
-        const daySel = document.getElementById('bsrFilterDay');
         const eventSel = document.getElementById('bsrFilterEvent');
 
         if (codeInput) codeInput.value = state.regattaCode;
@@ -1846,11 +2116,6 @@
             if (race) loadGpsForRace(race);
         });
 
-        daySel?.addEventListener('change', () => {
-            state.filterDay = daySel.value;
-            renderRaceList();
-        });
-
         eventSel?.addEventListener('change', () => {
             selectEvent(eventSel.value);
         });
@@ -1860,13 +2125,10 @@
             const q = eventSearch.value.trim().toLowerCase();
             if (!q) return;
             const match = buildEventGroups().find((g) => {
-                const label = `${g.eventNum} · ${expandEventName(g.eventName)}`.toLowerCase();
+                const label = (g.displayTitle || `Event ${g.eventNum}`).toLowerCase();
                 return label.includes(q) || String(g.eventNum) === q;
             });
-            if (match) {
-                selectEvent(match.key);
-                eventSearch.value = `${match.eventNum} · ${expandEventName(match.eventName)}`;
-            }
+            if (match) selectEvent(match.key);
         });
 
         const regattaParam = new URLSearchParams(location.search).get('regatta');
