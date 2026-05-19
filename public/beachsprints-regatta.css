@@ -791,6 +791,24 @@ body.bsr-page {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
+.bsr-run-flag-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.bsr-run-flag-icon-label {
+    display: inline-block;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    border: 1px solid #991b1b;
+}
+
 .bsr-footer {
     text-align: center;
     padding: 16px;

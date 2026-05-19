@@ -2085,6 +2085,80 @@
         return buoyLayer;
     }
 
+    function renderBeachRunOverlayLayer(map, overlay, colorForIdx) {
+        if (!overlay?.ok || typeof L === 'undefined') return null;
+        const layer = L.layerGroup().addTo(map);
+        const coastal = window.BeachSprintsCoastal;
+
+        L.polyline(
+            [
+                [overlay.tideLine.a.lat, overlay.tideLine.a.lng],
+                [overlay.tideLine.b.lat, overlay.tideLine.b.lng],
+            ],
+            {
+                color: '#38bdf8',
+                weight: 3,
+                opacity: 0.85,
+                dashArray: '10 6',
+            },
+        )
+            .bindPopup('<strong>Theoretical tide / water line</strong><br>From GPS boat stops or WR B1 spacing.')
+            .addTo(layer);
+
+        for (const gate of [
+            { seg: overlay.startGate, label: 'Run start gate', cls: 'bsr-start-gate-icon' },
+            { seg: overlay.finishGate, label: 'Run finish line', cls: 'bsr-finish-gate-icon' },
+        ]) {
+            L.polyline(
+                [
+                    [gate.seg.a.lat, gate.seg.a.lng],
+                    [gate.seg.b.lat, gate.seg.b.lng],
+                ],
+                { color: '#f8fafc', weight: 4, opacity: 0.95 },
+            )
+                .bindPopup(`<strong>${gate.label}</strong><br>~${coastal?.WR_COURSE_SPEC?.beachRunDistM || 30} m from water (WR).`)
+                .addTo(layer);
+        }
+
+        for (const f of overlay.runFlags || []) {
+            const icon = L.divIcon({
+                className: 'bsr-run-flag-icon',
+                html: `<span class="bsr-run-flag-icon-label">${escapeHtml(f.label)}</span>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+            });
+            L.marker([f.lat, f.lng], { icon, zIndexOffset: 750 })
+                .bindPopup(`<strong>${escapeHtml(f.label)}</strong><br>Lane ${f.lane} · water's edge`)
+                .addTo(layer);
+        }
+
+        (overlay.runnerPaths || []).forEach((run, idx) => {
+            const color = colorForIdx ? colorForIdx(idx) : '#e2e8f0';
+            const fmt = coastal?.formatDurationMs?.bind(coastal) || ((ms) => `${(ms / 1000).toFixed(1)}s`);
+
+            for (const leg of [
+                { key: 'runOut', title: 'Run out (start → flag)' },
+                { key: 'runIn', title: 'Run in (flag → finish)' },
+            ]) {
+                const seg = run[leg.key];
+                if (!seg?.latlngs?.length) continue;
+                L.polyline(seg.latlngs, {
+                    color,
+                    weight: 5,
+                    opacity: 0.88,
+                    dashArray: leg.key === 'runOut' ? '2 8' : '6 4',
+                    lineCap: 'round',
+                })
+                    .bindPopup(
+                        `<strong>${escapeHtml(run.name)}</strong><br>${leg.title}<br>Est. ${fmt(seg.estMs)}`,
+                    )
+                    .addTo(layer);
+            }
+        });
+
+        return layer;
+    }
+
     function splitWinnerClass(leader, side) {
         return leader === side ? 'bsr-split-winner' : '';
     }
@@ -2181,7 +2255,7 @@
         );
     }
 
-    function renderMiniMap(traces, courseBuoys) {
+    function renderMiniMap(traces, courseBuoys, traceAnalyses) {
         const el = document.getElementById('bsrRaceMap');
         if (!el || typeof L === 'undefined') return;
         destroyMiniMap();
@@ -2189,11 +2263,34 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(
             state.miniMap,
         );
+        state.miniMapLayers = [];
+        const bounds = [];
+
+        const coastal = window.BeachSprintsCoastal;
+        let beachLayer = null;
+        if (coastal?.buildBeachRunOverlay && courseBuoys?.length) {
+            const athletes = (traces || []).map((t, i) => ({
+                lane: t.lane,
+                label: t.label,
+                points: t.points,
+                analysis: traceAnalyses?.[i] ?? null,
+            }));
+            const overlay = coastal.buildBeachRunOverlay({ buoys: courseBuoys, athletes });
+            if (overlay?.ok) {
+                beachLayer = renderBeachRunOverlayLayer(state.miniMap, overlay, (i) =>
+                    boatTheme(i).color,
+                );
+                if (beachLayer) state.miniMapLayers.push(beachLayer);
+                for (const leg of [overlay.tideLine, overlay.startGate]) {
+                    bounds.push([leg.a.lat, leg.a.lng], [leg.b.lat, leg.b.lng]);
+                }
+            }
+        }
+
         const routeLayer = L.layerGroup().addTo(state.miniMap);
-        state.miniMapLayers = [routeLayer];
+        state.miniMapLayers.push(routeLayer);
         const buoyLayer = renderCourseBuoysLayer(state.miniMap, courseBuoys);
         if (buoyLayer) state.miniMapLayers.push(buoyLayer);
-        const bounds = [];
 
         (traces || []).forEach((t, traceIdx) => {
             const sorted = sortGpsPoints(t.points);
@@ -2414,11 +2511,11 @@
             `<div class="bsr-buoy-toolbar" id="bsrBuoyToolbar">` +
             `<label class="bsr-toggle"><input type="radio" name="bsrBuoySource" value="gps"${state.buoySource === 'gps' ? ' checked' : ''}> Fit buoys from GPS trace</label>` +
             `<label class="bsr-toggle"><input type="radio" name="bsrBuoySource" value="stored"${state.buoySource === 'stored' ? ' checked' : ''}> Saved course buoys</label>` +
-            `<p class="bsr-note" id="bsrBuoyFitNote">${escapeHtml(state.lastBuoyFitNote || 'Buoys follow World Rowing gate spacing (85 / 170 / 250 m) when fitted from trace.')}</p></div>` +
+            `<p class="bsr-note" id="bsrBuoyFitNote">${escapeHtml(state.lastBuoyFitNote || 'Course fitted from trace: top turn at L3/R3, gates spaced 85 / 170 / 250 m seaward from the beach.')}</p></div>` +
             `<div id="bsrCompareAnalysis"></div>` +
             `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
             `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
-            `<p class="bsr-speed-legend-note">Each boat trace uses its lane colour (darker = slower, brighter = faster). Yellow dashed lines = timing gates; labelled markers = buoys B1–B3.</p></div>` +
+            `<p class="bsr-speed-legend-note">Boat trace = lane colour (speed gradient). Yellow = water gates · blue dashed = tide line · white = run start/finish · flags = run markers · dashed coloured lines = athlete beach runs (est. time from splits).</p></div>` +
             `<div class="bsr-gps-charts-grid">` +
             `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
@@ -2703,6 +2800,7 @@
         const cards = [];
         const traces = [];
         const analyses = [];
+        const analysisByTrace = [];
         const labels = [];
         const coastal = window.BeachSprintsCoastal;
         let courseBuoys = null;
@@ -2721,6 +2819,7 @@
                 const info = clubInfo(lane.crew);
                 const label = `${info.name} (L${lane.lane})`;
                 traces.push({ points, label, lane: lane.lane });
+                analysisByTrace.push(null);
                 const stats = routeStats(points, win.center);
                 const dev = state.devices.find((d) => String(d.id) === String(deviceId));
                 const laneMapUrl = buildMapDeepLink(
@@ -2757,12 +2856,16 @@
         if (coastal && traces.length) {
             analyses.length = 0;
             labels.length = 0;
-            for (const tr of traces) {
+            let ai = 0;
+            for (let ti = 0; ti < traces.length; ti++) {
+                const tr = traces[ti];
                 if (!tr.points?.length) continue;
                 const analysis = coastal.analyzeCoastalRace(tr.points, tr.label, { buoys: courseBuoys });
+                analysisByTrace[ti] = analysis.valid ? analysis : null;
                 if (analysis.valid) {
                     analyses.push(analysis);
                     labels.push(tr.label);
+                    ai++;
                 }
             }
         }
@@ -2786,7 +2889,7 @@
         }
         const buoyNoteEl = document.getElementById('bsrBuoyFitNote');
         if (buoyNoteEl) buoyNoteEl.textContent = state.lastBuoyFitNote;
-        renderMiniMap(traces, courseBuoys);
+        renderMiniMap(traces, courseBuoys, analysisByTrace);
         renderBsrSpeedChart(traces);
         renderBsrAnalysisCharts(analyses, labels);
     }
