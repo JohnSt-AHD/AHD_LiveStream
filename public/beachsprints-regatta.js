@@ -2990,7 +2990,9 @@
                     analyses.push(analysis);
                     labels.push(tr.label);
                 } else if (coastal.trimToBoatRacingSection) {
-                    const trimmed = coastal.trimToBoatRacingSection(src);
+                    const trimmed = coastal.trimToBoatRacingSection(src, {
+                        useTimingLines: !!courseBuoys?.length,
+                    });
                     if (trimmed.section) {
                         tr.points = trimmed.points;
                         tr.section = trimmed.section;
@@ -3048,7 +3050,7 @@
                 : '') +
             `</p>` +
             `<p class="bsr-note">Fetch window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min). ` +
-            `Splits and map use the boat racing section (7→20 km/h launch/stop, ±5 s padding). Yellow line = approx. 10 m start gate from GPS launch.</p>`;
+            `Splits and map use the boat racing section (7→20 km/h launch, stop near launch beach, ±5 s padding, ~1.5–5 min). Yellow line = approx. start gate on beach side of buoys.</p>`;
         const compareEl = document.getElementById('bsrCompareAnalysis');
         if (compareEl) {
             compareEl.innerHTML = analyses.length
