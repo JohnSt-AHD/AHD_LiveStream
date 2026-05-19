@@ -92,12 +92,19 @@
     }
 
     function parseRaceLabel(raw) {
-        const m = String(raw || '').trim().match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-        if (!m) return { raceNum: null, label: String(raw || '').trim() };
-        return {
-            raceNum: parseInt(m[1], 10),
-            label: `${m[1]} (${m[2].toUpperCase()})`,
-        };
+        const s = String(raw || '').trim();
+        const withLetter = s.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
+        if (withLetter) {
+            return {
+                raceNum: parseInt(withLetter[1], 10),
+                label: `${withLetter[1]} (${withLetter[2].toUpperCase()})`,
+            };
+        }
+        const plain = s.match(/^(\d+)$/);
+        if (plain) {
+            return { raceNum: parseInt(plain[1], 10), label: plain[1] };
+        }
+        return { raceNum: null, label: s };
     }
 
     function parseTimeOnDay(timeStr, dayDate) {
@@ -114,13 +121,33 @@
         );
     }
 
-    function parseLanes(cols) {
+    function isCrewCell(raw) {
+        const s = String(raw || '').trim();
+        if (!s || s === '-' || /^-+\s*$/.test(s)) return false;
+        if (/cancelled/i.test(s)) return false;
+        return true;
+    }
+
+    function parseLanes(cols, headerCols) {
+        if (headerCols?.length) {
+            const lanes = [];
+            for (let i = 0; i < headerCols.length; i++) {
+                const h = (headerCols[i] || '').trim().toLowerCase();
+                const m = h.match(/^lane[_\s-]?(\d+)$/);
+                if (!m) continue;
+                const crew = (cols[i] || '').trim();
+                if (!isCrewCell(crew)) continue;
+                lanes.push({ lane: parseInt(m[1], 10), crew });
+            }
+            lanes.sort((a, b) => a.lane - b.lane);
+            if (lanes.length) return lanes;
+        }
         const lanes = [];
         for (let lane = 1; lane <= 9; lane++) {
             const idx = 5 + lane;
             if (idx >= cols.length) break;
-            const crew = (cols[idx] || '').trim() || null;
-            if (crew) lanes.push({ lane, crew });
+            const crew = (cols[idx] || '').trim();
+            if (isCrewCell(crew)) lanes.push({ lane, crew });
         }
         return lanes;
     }
@@ -129,6 +156,7 @@
         const races = [];
         let dayDate = null;
         let dayLabel = '';
+        let headerCols = null;
         for (const line of text.split(/\r?\n/)) {
             const trimmed = line.trim();
             if (!trimmed) continue;
@@ -136,14 +164,21 @@
                 const day = parseDayHeader(trimmed);
                 dayDate = day?.date;
                 dayLabel = trimmed;
+                headerCols = null;
                 continue;
             }
-            if (!dayDate || /^Race,/i.test(trimmed)) continue;
+            if (!dayDate) continue;
+            if (/^Race,/i.test(trimmed)) {
+                headerCols = parseCsvLine(trimmed);
+                continue;
+            }
             const cols = parseCsvLine(trimmed);
+            if (cols.length < 5) continue;
             const info = parseRaceLabel(cols[0]);
             if (!info.raceNum) continue;
             const startAt = parseTimeOnDay(cols[1], dayDate);
             if (!startAt) continue;
+            const lanes = parseLanes(cols, headerCols);
             races.push({
                 raceNum: info.raceNum,
                 race: info.label,
@@ -152,8 +187,8 @@
                 eventName: cols[3].trim(),
                 round: cols[4].trim(),
                 division: cols[5] ? cols[5].trim() : '',
-                lanes: parseLanes(cols),
-                progression: cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
+                lanes,
+                progression: headerCols ? '' : cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
                 dayLabel,
             });
         }
@@ -1173,9 +1208,14 @@
                     ? parseInt(p, 10)
                     : state.races[Math.floor(state.races.length / 2)]?.raceNum;
             }
-            setStatus(
-                `Loaded ${state.races.length} races · ${state.results.size} results · ${state.events.length} events · ${code}`,
-            );
+            let statusMsg = `Loaded ${state.races.length} races · ${state.results.size} results · ${state.events.length} events · ${code}`;
+            if (state.races.length === 0 && state.events.length > 0) {
+                statusMsg +=
+                    ' — daysheet parsed empty; check daysheet.csv format (race numbers and lane columns).';
+            } else if (state.results.size === 0) {
+                statusMsg += ' — no results file yet (results.csv may not be published).';
+            }
+            setStatus(statusMsg);
             renderFilters();
             renderRaceList();
             renderProgression();
