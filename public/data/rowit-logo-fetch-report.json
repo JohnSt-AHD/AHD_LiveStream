@@ -1,0 +1,1940 @@
+{
+  "fetchedAt": "2026-05-19T21:27:22.047Z",
+  "source": "https://s.rowit.nz/i/o/{id}.png",
+  "dryRun": false,
+  "attempted": 275,
+  "downloadedCount": 267,
+  "alreadyExisted": 0,
+  "notOnRowitCount": 8,
+  "errorCount": 0,
+  "downloaded": [
+    {
+      "id": "acgx",
+      "name": "Churchie",
+      "logo": "Churchie - acgx.png",
+      "bytes": 316,
+      "url": "https://s.rowit.nz/i/o/acgx.png"
+    },
+    {
+      "id": "acul",
+      "name": "Athlete Cell USA",
+      "logo": "Athlete Cell USA - acul.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/acul.png"
+    },
+    {
+      "id": "adlc",
+      "name": "Adelaide Rowing Club",
+      "logo": "Adelaide Rowing Club - adlc.png",
+      "bytes": 276,
+      "url": "https://s.rowit.nz/i/o/adlc.png"
+    },
+    {
+      "id": "aklu",
+      "name": "Auckland University",
+      "logo": "Auckland University - aklu.png",
+      "bytes": 302,
+      "url": "https://s.rowit.nz/i/o/aklu.png"
+    },
+    {
+      "id": "alfr",
+      "name": "Alfriston College",
+      "logo": "Alfriston College - alfr.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/alfr.png"
+    },
+    {
+      "id": "apar",
+      "name": "Aparima College",
+      "logo": "Aparima College - apar.png",
+      "bytes": 391,
+      "url": "https://s.rowit.nz/i/o/apar.png"
+    },
+    {
+      "id": "argc",
+      "name": "Argonaut Rowing Club",
+      "logo": "Argonaut Rowing Club - argc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/argc.png"
+    },
+    {
+      "id": "armc",
+      "name": "Arapawa Maori Rowing Club",
+      "logo": "Arapawa Maori Rowing Club - armc.png",
+      "bytes": 330,
+      "url": "https://s.rowit.nz/i/o/armc.png"
+    },
+    {
+      "id": "arvc",
+      "name": "Alster Rowing Club",
+      "logo": "Alster Rowing Club - arvc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/arvc.png"
+    },
+    {
+      "id": "ashc",
+      "name": "Ashburton Rowing Club",
+      "logo": "Ashburton Rowing Club - ashc.png",
+      "bytes": 267,
+      "url": "https://s.rowit.nz/i/o/ashc.png"
+    },
+    {
+      "id": "ashs",
+      "name": "Albany Senior High School",
+      "logo": "Albany Senior High School - ashs.png",
+      "bytes": 358,
+      "url": "https://s.rowit.nz/i/o/ashs.png"
+    },
+    {
+      "id": "aubc",
+      "name": "Auckland University Boat Club",
+      "logo": "Auckland University Boat Club - aubc.png",
+      "bytes": 315,
+      "url": "https://s.rowit.nz/i/o/aubc.png"
+    },
+    {
+      "id": "autu",
+      "name": "Auckland University of Technology",
+      "logo": "Auckland University of Technology - autu.png",
+      "bytes": 278,
+      "url": "https://s.rowit.nz/i/o/autu.png"
+    },
+    {
+      "id": "avdc",
+      "name": "Avondale College",
+      "logo": "Avondale College - avdc.png",
+      "bytes": 224,
+      "url": "https://s.rowit.nz/i/o/avdc.png"
+    },
+    {
+      "id": "awrc",
+      "name": "Awarua Boating Club",
+      "logo": "Awarua Boating Club - awrc.png",
+      "bytes": 276,
+      "url": "https://s.rowit.nz/i/o/awrc.png"
+    },
+    {
+      "id": "barx",
+      "name": "Barbarians Rowing Club",
+      "logo": "Barbarians Rowing Club - barx.png",
+      "bytes": 325,
+      "url": "https://s.rowit.nz/i/o/barx.png"
+    },
+    {
+      "id": "bbrc",
+      "name": "Burton Beach Rowing Club",
+      "logo": "Burton Beach Rowing Club - bbrc.png",
+      "bytes": 330,
+      "url": "https://s.rowit.nz/i/o/bbrc.png"
+    },
+    {
+      "id": "bccx",
+      "name": "Ballarat Clarendon College",
+      "logo": "Ballarat Clarendon College - bccx.png",
+      "bytes": 259,
+      "url": "https://s.rowit.nz/i/o/bccx.png"
+    },
+    {
+      "id": "bciu",
+      "name": "Building and Construction ITO",
+      "logo": "Building and Construction ITO - bciu.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/bciu.png"
+    },
+    {
+      "id": "bgbx",
+      "name": "Brisbane Grammar School",
+      "logo": "Brisbane Grammar School - bgbx.png",
+      "bytes": 241,
+      "url": "https://s.rowit.nz/i/o/bgbx.png"
+    },
+    {
+      "id": "bgmx",
+      "name": "Brighton Grammar",
+      "logo": "Brighton Grammar - bgmx.png",
+      "bytes": 282,
+      "url": "https://s.rowit.nz/i/o/bgmx.png"
+    },
+    {
+      "id": "bgpc",
+      "name": "Brisbane and GPS Rowing Club",
+      "logo": "Brisbane and GPS Rowing Club - bgpc.png",
+      "bytes": 268,
+      "url": "https://s.rowit.nz/i/o/bgpc.png"
+    },
+    {
+      "id": "birk",
+      "name": "Birkenhead College",
+      "logo": "Birkenhead College - birk.png",
+      "bytes": 243,
+      "url": "https://s.rowit.nz/i/o/birk.png"
+    },
+    {
+      "id": "bmtc",
+      "name": "Black Mountain Rowing Club",
+      "logo": "Black Mountain Rowing Club - bmtc.png",
+      "bytes": 244,
+      "url": "https://s.rowit.nz/i/o/bmtc.png"
+    },
+    {
+      "id": "bnkc",
+      "name": "Banks Rowing Club",
+      "logo": "Banks Rowing Club - bnkc.png",
+      "bytes": 352,
+      "url": "https://s.rowit.nz/i/o/bnkc.png"
+    },
+    {
+      "id": "brea",
+      "name": "Bream Bay College",
+      "logo": "Bream Bay College - brea.png",
+      "bytes": 308,
+      "url": "https://s.rowit.nz/i/o/brea.png"
+    },
+    {
+      "id": "bruc",
+      "name": "Brugge KRB",
+      "logo": "Brugge KRB - bruc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/bruc.png"
+    },
+    {
+      "id": "bull",
+      "name": "Buller High School",
+      "logo": "Buller High School - bull.png",
+      "bytes": 243,
+      "url": "https://s.rowit.nz/i/o/bull.png"
+    },
+    {
+      "id": "bunc",
+      "name": "Bundaberg Rowing Club",
+      "logo": "Bundaberg Rowing Club - bunc.png",
+      "bytes": 251,
+      "url": "https://s.rowit.nz/i/o/bunc.png"
+    },
+    {
+      "id": "bvrc",
+      "name": "Belvoir Rowing Club",
+      "logo": "Belvoir Rowing Club - bvrc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/bvrc.png"
+    },
+    {
+      "id": "camu",
+      "name": "Cambridge University",
+      "logo": "Cambridge University - camu.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/camu.png"
+    },
+    {
+      "id": "canu",
+      "name": "Canterbury University",
+      "logo": "Canterbury University - canu.png",
+      "bytes": 255,
+      "url": "https://s.rowit.nz/i/o/canu.png"
+    },
+    {
+      "id": "cbcc",
+      "name": "Cambridge Boat Club (USA)",
+      "logo": "Cambridge Boat Club (USA) - cbcc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/cbcc.png"
+    },
+    {
+      "id": "ccgx",
+      "name": "Christ Church Grammar School",
+      "logo": "Christ Church Grammar School - ccgx.png",
+      "bytes": 344,
+      "url": "https://s.rowit.nz/i/o/ccgx.png"
+    },
+    {
+      "id": "cfbc",
+      "name": "Craftsbury Sculling Center",
+      "logo": "Craftsbury Sculling Center - cfbc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/cfbc.png"
+    },
+    {
+      "id": "cggx",
+      "name": "Canberra Girls Grammar School",
+      "logo": "Canberra Girls Grammar School - cggx.png",
+      "bytes": 451,
+      "url": "https://s.rowit.nz/i/o/cggx.png"
+    },
+    {
+      "id": "chbc",
+      "name": "Central Hawkes Bay College",
+      "logo": "Central Hawkes Bay College - chbc.png",
+      "bytes": 486,
+      "url": "https://s.rowit.nz/i/o/chbc.png"
+    },
+    {
+      "id": "chcc",
+      "name": "Christ's College Rowing Club",
+      "logo": "Christ's College Rowing Club - chcc.png",
+      "bytes": 250,
+      "url": "https://s.rowit.nz/i/o/chcc.png"
+    },
+    {
+      "id": "chrs",
+      "name": "Christian Renewal School",
+      "logo": "Christian Renewal School - chrs.png",
+      "bytes": 326,
+      "url": "https://s.rowit.nz/i/o/chrs.png"
+    },
+    {
+      "id": "cmlc",
+      "name": "Commercial Rowing Club",
+      "logo": "Commercial Rowing Club - cmlc.png",
+      "bytes": 428,
+      "url": "https://s.rowit.nz/i/o/cmlc.png"
+    },
+    {
+      "id": "cnbc",
+      "name": "Canberra Rowing Club",
+      "logo": "Canberra Rowing Club - cnbc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/cnbc.png"
+    },
+    {
+      "id": "comc",
+      "name": "Counties-Manukau Rowing Club",
+      "logo": "Counties-Manukau Rowing Club - comc.png",
+      "bytes": 231,
+      "url": "https://s.rowit.nz/i/o/comc.png"
+    },
+    {
+      "id": "comp",
+      "name": "Composite School Crew(s)",
+      "logo": "Composite School Crew(s) - comp.png",
+      "bytes": 246,
+      "url": "https://s.rowit.nz/i/o/comp.png"
+    },
+    {
+      "id": "corc",
+      "name": "Corio Bay Rowing Club",
+      "logo": "Corio Bay Rowing Club - corc.png",
+      "bytes": 261,
+      "url": "https://s.rowit.nz/i/o/corc.png"
+    },
+    {
+      "id": "crga",
+      "name": "Crimson Global Academy",
+      "logo": "Crimson Global Academy - crga.png",
+      "bytes": 411,
+      "url": "https://s.rowit.nz/i/o/crga.png"
+    },
+    {
+      "id": "csfc",
+      "name": "Club San Fernando",
+      "logo": "Club San Fernando - csfc.png",
+      "bytes": 371,
+      "url": "https://s.rowit.nz/i/o/csfc.png"
+    },
+    {
+      "id": "cujc",
+      "name": "Chuo University Rowing Club",
+      "logo": "Chuo University Rowing Club - cujc.png",
+      "bytes": 298,
+      "url": "https://s.rowit.nz/i/o/cujc.png"
+    },
+    {
+      "id": "culi",
+      "name": "Cullinane College",
+      "logo": "Cullinane College - culi.png",
+      "bytes": 299,
+      "url": "https://s.rowit.nz/i/o/culi.png"
+    },
+    {
+      "id": "dccx",
+      "name": "Daramalan College",
+      "logo": "Daramalan College - dccx.png",
+      "bytes": 367,
+      "url": "https://s.rowit.nz/i/o/dccx.png"
+    },
+    {
+      "id": "demc",
+      "name": "Demonstration Rowing Club",
+      "logo": "Demonstration Rowing Club - demc.png",
+      "bytes": 510,
+      "url": "https://s.rowit.nz/i/o/demc.png"
+    },
+    {
+      "id": "demo",
+      "name": "Demonstration High School",
+      "logo": "Demonstration High School - demo.png",
+      "bytes": 471,
+      "url": "https://s.rowit.nz/i/o/demo.png"
+    },
+    {
+      "id": "dgnc",
+      "name": "Dragons Rowing Club",
+      "logo": "Dragons Rowing Club - dgnc.png",
+      "bytes": 406,
+      "url": "https://s.rowit.nz/i/o/dgnc.png"
+    },
+    {
+      "id": "dilw",
+      "name": "Dilworth School",
+      "logo": "Dilworth School - dilw.png",
+      "bytes": 241,
+      "url": "https://s.rowit.nz/i/o/dilw.png"
+    },
+    {
+      "id": "dtuc",
+      "name": "Dartmouth Rowing Club",
+      "logo": "Dartmouth Rowing Club - dtuc.png",
+      "bytes": 262,
+      "url": "https://s.rowit.nz/i/o/dtuc.png"
+    },
+    {
+      "id": "ebsc",
+      "name": "Eastern Bay Scullers Club",
+      "logo": "Eastern Bay Scullers Club - ebsc.png",
+      "bytes": 277,
+      "url": "https://s.rowit.nz/i/o/ebsc.png"
+    },
+    {
+      "id": "ecas",
+      "name": "Eden Christian Academy",
+      "logo": "Eden Christian Academy - ecas.png",
+      "bytes": 272,
+      "url": "https://s.rowit.nz/i/o/ecas.png"
+    },
+    {
+      "id": "edbc",
+      "name": "Edgecumbe College",
+      "logo": "Edgecumbe College - edbc.png",
+      "bytes": 237,
+      "url": "https://s.rowit.nz/i/o/edbc.png"
+    },
+    {
+      "id": "edwt",
+      "name": "Edgewater College",
+      "logo": "Edgewater College - edwt.png",
+      "bytes": 299,
+      "url": "https://s.rowit.nz/i/o/edwt.png"
+    },
+    {
+      "id": "elle",
+      "name": "Ellesmere College",
+      "logo": "Ellesmere College - elle.png",
+      "bytes": 332,
+      "url": "https://s.rowit.nz/i/o/elle.png"
+    },
+    {
+      "id": "essc",
+      "name": "Essendon Rowing Club",
+      "logo": "Essendon Rowing Club - essc.png",
+      "bytes": 330,
+      "url": "https://s.rowit.nz/i/o/essc.png"
+    },
+    {
+      "id": "etnc",
+      "name": "ESR Theta",
+      "logo": "ESR Theta - etnc.png",
+      "bytes": 239,
+      "url": "https://s.rowit.nz/i/o/etnc.png"
+    },
+    {
+      "id": "fair",
+      "name": "Fairfield College",
+      "logo": "Fairfield College - fair.png",
+      "bytes": 397,
+      "url": "https://s.rowit.nz/i/o/fair.png"
+    },
+    {
+      "id": "fior",
+      "name": "Fiordland College",
+      "logo": "Fiordland College - fior.png",
+      "bytes": 379,
+      "url": "https://s.rowit.nz/i/o/fior.png"
+    },
+    {
+      "id": "fmmu",
+      "name": "Fourth Military Medical University",
+      "logo": "Fourth Military Medical University - fmmu.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/fmmu.png"
+    },
+    {
+      "id": "fras",
+      "name": "Fraser High School",
+      "logo": "Fraser High School - fras.png",
+      "bytes": 387,
+      "url": "https://s.rowit.nz/i/o/fras.png"
+    },
+    {
+      "id": "ftsc",
+      "name": "Footscray City Rowing Club",
+      "logo": "Footscray City Rowing Club - ftsc.png",
+      "bytes": 265,
+      "url": "https://s.rowit.nz/i/o/ftsc.png"
+    },
+    {
+      "id": "gcmc",
+      "name": "Gold Coast Master Rowers",
+      "logo": "Gold Coast Master Rowers - gcmc.png",
+      "bytes": 307,
+      "url": "https://s.rowit.nz/i/o/gcmc.png"
+    },
+    {
+      "id": "gera",
+      "name": "Geraldine HS",
+      "logo": "Geraldine HS - gera.png",
+      "bytes": 433,
+      "url": "https://s.rowit.nz/i/o/gera.png"
+    },
+    {
+      "id": "glec",
+      "name": "Glebe Rowing Club",
+      "logo": "Glebe Rowing Club - glec.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/glec.png"
+    },
+    {
+      "id": "gore",
+      "name": "Gore High School",
+      "logo": "Gore High School - gore.png",
+      "bytes": 288,
+      "url": "https://s.rowit.nz/i/o/gore.png"
+    },
+    {
+      "id": "gree",
+      "name": "Green Bay High School",
+      "logo": "Green Bay High School - gree.png",
+      "bytes": 326,
+      "url": "https://s.rowit.nz/i/o/gree.png"
+    },
+    {
+      "id": "gusc",
+      "name": "Griffith University Surfers Paradise RC",
+      "logo": "Griffith University Surfers Paradise RC - gusc.png",
+      "bytes": 342,
+      "url": "https://s.rowit.nz/i/o/gusc.png"
+    },
+    {
+      "id": "hacs",
+      "name": "Hastings Christian School",
+      "logo": "Hastings Christian School - hacs.png",
+      "bytes": 378,
+      "url": "https://s.rowit.nz/i/o/hacs.png"
+    },
+    {
+      "id": "hagl",
+      "name": "Hagley Community College",
+      "logo": "Hagley Community College - hagl.png",
+      "bytes": 398,
+      "url": "https://s.rowit.nz/i/o/hagl.png"
+    },
+    {
+      "id": "hasb",
+      "name": "Hastings Boys High School",
+      "logo": "Hastings Boys High School - hasb.png",
+      "bytes": 345,
+      "url": "https://s.rowit.nz/i/o/hasb.png"
+    },
+    {
+      "id": "hasg",
+      "name": "Hastings Girls High School",
+      "logo": "Hastings Girls High School - hasg.png",
+      "bytes": 404,
+      "url": "https://s.rowit.nz/i/o/hasg.png"
+    },
+    {
+      "id": "hbcx",
+      "name": "Haileybury College",
+      "logo": "Haileybury College - hbcx.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/hbcx.png"
+    },
+    {
+      "id": "hilx",
+      "name": "Hilton College",
+      "logo": "Hilton College - hilx.png",
+      "bytes": 245,
+      "url": "https://s.rowit.nz/i/o/hilx.png"
+    },
+    {
+      "id": "hlmt",
+      "name": "Hillmorton HS",
+      "logo": "Hillmorton HS - hlmt.png",
+      "bytes": 554,
+      "url": "https://s.rowit.nz/i/o/hlmt.png"
+    },
+    {
+      "id": "hntc",
+      "name": "Henty Rowing Club",
+      "logo": "Henty Rowing Club - hntc.png",
+      "bytes": 264,
+      "url": "https://s.rowit.nz/i/o/hntc.png"
+    },
+    {
+      "id": "horo",
+      "name": "Horowhenua College",
+      "logo": "Horowhenua College - horo.png",
+      "bytes": 222,
+      "url": "https://s.rowit.nz/i/o/horo.png"
+    },
+    {
+      "id": "hrfc",
+      "name": "Hereford Rowing Club",
+      "logo": "Hereford Rowing Club - hrfc.png",
+      "bytes": 305,
+      "url": "https://s.rowit.nz/i/o/hrfc.png"
+    },
+    {
+      "id": "hsui",
+      "name": "Swiss High Performance Squad",
+      "logo": "Swiss High Performance Squad - hsui.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/hsui.png"
+    },
+    {
+      "id": "htju",
+      "name": "Hitotsubashi University Rowing Club",
+      "logo": "Hitotsubashi University Rowing Club - htju.png",
+      "bytes": 287,
+      "url": "https://s.rowit.nz/i/o/htju.png"
+    },
+    {
+      "id": "huoc",
+      "name": "Huon Rowing Club",
+      "logo": "Huon Rowing Club - huoc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/huoc.png"
+    },
+    {
+      "id": "huru",
+      "name": "Hurunui College",
+      "logo": "Hurunui College - huru.png",
+      "bytes": 345,
+      "url": "https://s.rowit.nz/i/o/huru.png"
+    },
+    {
+      "id": "ingl",
+      "name": "Inglewood High School",
+      "logo": "Inglewood High School - ingl.png",
+      "bytes": 267,
+      "url": "https://s.rowit.nz/i/o/ingl.png"
+    },
+    {
+      "id": "itra",
+      "name": "Travellers",
+      "logo": "Travellers - itra.png",
+      "bytes": 2652,
+      "url": "https://s.rowit.nz/i/o/itra.png"
+    },
+    {
+      "id": "jsrc",
+      "name": "Jiangsu",
+      "logo": "Jiangsu - jsrc.png",
+      "bytes": 262,
+      "url": "https://s.rowit.nz/i/o/jsrc.png"
+    },
+    {
+      "id": "jxcx",
+      "name": "John XXIII College",
+      "logo": "John XXIII College - jxcx.png",
+      "bytes": 304,
+      "url": "https://s.rowit.nz/i/o/jxcx.png"
+    },
+    {
+      "id": "kaia",
+      "name": "Kaiapoi High School",
+      "logo": "Kaiapoi High School - kaia.png",
+      "bytes": 250,
+      "url": "https://s.rowit.nz/i/o/kaia.png"
+    },
+    {
+      "id": "kapi",
+      "name": "Kapiti College",
+      "logo": "Kapiti College - kapi.png",
+      "bytes": 373,
+      "url": "https://s.rowit.nz/i/o/kapi.png"
+    },
+    {
+      "id": "kati",
+      "name": "Katikati College",
+      "logo": "Katikati College - kati.png",
+      "bytes": 300,
+      "url": "https://s.rowit.nz/i/o/kati.png"
+    },
+    {
+      "id": "kbrc",
+      "name": "Kalundborg Rowing Club",
+      "logo": "Kalundborg Rowing Club - kbrc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/kbrc.png"
+    },
+    {
+      "id": "kcbc",
+      "name": "Keble College Boat Club",
+      "logo": "Keble College Boat Club - kcbc.png",
+      "bytes": 314,
+      "url": "https://s.rowit.nz/i/o/kcbc.png"
+    },
+    {
+      "id": "kdhc",
+      "name": "KARZV De Hoop",
+      "logo": "KARZV De Hoop - kdhc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/kdhc.png"
+    },
+    {
+      "id": "kenx",
+      "name": "Kenmore State High School",
+      "logo": "Kenmore State High School - kenx.png",
+      "bytes": 315,
+      "url": "https://s.rowit.nz/i/o/kenx.png"
+    },
+    {
+      "id": "kmju",
+      "name": "Kyoto University School of Medicine",
+      "logo": "Kyoto University School of Medicine - kmju.png",
+      "bytes": 578,
+      "url": "https://s.rowit.nz/i/o/kmju.png"
+    },
+    {
+      "id": "krmu",
+      "name": "Karamu High School",
+      "logo": "Karamu High School - krmu.png",
+      "bytes": 428,
+      "url": "https://s.rowit.nz/i/o/krmu.png"
+    },
+    {
+      "id": "kujc",
+      "name": "Keio University",
+      "logo": "Keio University - kujc.png",
+      "bytes": 258,
+      "url": "https://s.rowit.nz/i/o/kujc.png"
+    },
+    {
+      "id": "kvly",
+      "name": "Kaikorai Valley College",
+      "logo": "Kaikorai Valley College - kvly.png",
+      "bytes": 277,
+      "url": "https://s.rowit.nz/i/o/kvly.png"
+    },
+    {
+      "id": "lezc",
+      "name": "Canottieri La Sportiva Lezzeno",
+      "logo": "Canottieri La Sportiva Lezzeno - lezc.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/lezc.png"
+    },
+    {
+      "id": "lgby",
+      "name": "Long Bay College",
+      "logo": "Long Bay College - lgby.png",
+      "bytes": 223,
+      "url": "https://s.rowit.nz/i/o/lgby.png"
+    },
+    {
+      "id": "lhoc",
+      "name": "Leander Club",
+      "logo": "Leander Club - lhoc.png",
+      "bytes": 302,
+      "url": "https://s.rowit.nz/i/o/lhoc.png"
+    },
+    {
+      "id": "linc",
+      "name": "Lincoln High School",
+      "logo": "Lincoln High School - linc.png",
+      "bytes": 356,
+      "url": "https://s.rowit.nz/i/o/linc.png"
+    },
+    {
+      "id": "linu",
+      "name": "Lincoln University",
+      "logo": "Lincoln University - linu.png",
+      "bytes": 238,
+      "url": "https://s.rowit.nz/i/o/linu.png"
+    },
+    {
+      "id": "list",
+      "name": "Liston College",
+      "logo": "Liston College - list.png",
+      "bytes": 309,
+      "url": "https://s.rowit.nz/i/o/list.png"
+    },
+    {
+      "id": "lkgx",
+      "name": "Loreto Kirirbilli",
+      "logo": "Loreto Kirirbilli - lkgx.png",
+      "bytes": 338,
+      "url": "https://s.rowit.nz/i/o/lkgx.png"
+    },
+    {
+      "id": "loga",
+      "name": "Logan Park High School",
+      "logo": "Logan Park High School - loga.png",
+      "bytes": 300,
+      "url": "https://s.rowit.nz/i/o/loga.png"
+    },
+    {
+      "id": "lonc",
+      "name": "London Rowing Club",
+      "logo": "London Rowing Club - lonc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/lonc.png"
+    },
+    {
+      "id": "lthc",
+      "name": "Lok Tsui Rowing Club",
+      "logo": "Lok Tsui Rowing Club - lthc.png",
+      "bytes": 292,
+      "url": "https://s.rowit.nz/i/o/lthc.png"
+    },
+    {
+      "id": "lytt",
+      "name": "Lytton High School",
+      "logo": "Lytton High School - lytt.png",
+      "bytes": 336,
+      "url": "https://s.rowit.nz/i/o/lytt.png"
+    },
+    {
+      "id": "mack",
+      "name": "Mackenzie College",
+      "logo": "Mackenzie College - mack.png",
+      "bytes": 256,
+      "url": "https://s.rowit.nz/i/o/mack.png"
+    },
+    {
+      "id": "malu",
+      "name": "Massey University (Albany)",
+      "logo": "Massey University (Albany) - malu.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/malu.png"
+    },
+    {
+      "id": "manc",
+      "name": "Mana College",
+      "logo": "Mana College - manc.png",
+      "bytes": 378,
+      "url": "https://s.rowit.nz/i/o/manc.png"
+    },
+    {
+      "id": "manu",
+      "name": "Manurewa High School",
+      "logo": "Manurewa High School - manu.png",
+      "bytes": 358,
+      "url": "https://s.rowit.nz/i/o/manu.png"
+    },
+    {
+      "id": "mars",
+      "name": "Samuel Marsden Whitby",
+      "logo": "Samuel Marsden Whitby - mars.png",
+      "bytes": 311,
+      "url": "https://s.rowit.nz/i/o/mars.png"
+    },
+    {
+      "id": "mart",
+      "name": "Marist College",
+      "logo": "Marist College - mart.png",
+      "bytes": 322,
+      "url": "https://s.rowit.nz/i/o/mart.png"
+    },
+    {
+      "id": "mass",
+      "name": "Massey High School",
+      "logo": "Massey High School - mass.png",
+      "bytes": 317,
+      "url": "https://s.rowit.nz/i/o/mass.png"
+    },
+    {
+      "id": "mata",
+      "name": "Matamata College",
+      "logo": "Matamata College - mata.png",
+      "bytes": 245,
+      "url": "https://s.rowit.nz/i/o/mata.png"
+    },
+    {
+      "id": "mduc",
+      "name": "Murdoch University Rowing Club",
+      "logo": "Murdoch University Rowing Club - mduc.png",
+      "bytes": 421,
+      "url": "https://s.rowit.nz/i/o/mduc.png"
+    },
+    {
+      "id": "melu",
+      "name": "Melbourne University",
+      "logo": "Melbourne University - melu.png",
+      "bytes": 344,
+      "url": "https://s.rowit.nz/i/o/melu.png"
+    },
+    {
+      "id": "mgcx",
+      "name": "Melbourne Girls College",
+      "logo": "Melbourne Girls College - mgcx.png",
+      "bytes": 313,
+      "url": "https://s.rowit.nz/i/o/mgcx.png"
+    },
+    {
+      "id": "mlac",
+      "name": "Melbourne Rowing Club",
+      "logo": "Melbourne Rowing Club - mlac.png",
+      "bytes": 337,
+      "url": "https://s.rowit.nz/i/o/mlac.png"
+    },
+    {
+      "id": "mluc",
+      "name": "Melbourne University Boat Club",
+      "logo": "Melbourne University Boat Club - mluc.png",
+      "bytes": 349,
+      "url": "https://s.rowit.nz/i/o/mluc.png"
+    },
+    {
+      "id": "mmrc",
+      "name": "Mercantile Rowing Club",
+      "logo": "Mercantile Rowing Club - mmrc.png",
+      "bytes": 359,
+      "url": "https://s.rowit.nz/i/o/mmrc.png"
+    },
+    {
+      "id": "mnwt",
+      "name": "Manawatu College",
+      "logo": "Manawatu College - mnwt.png",
+      "bytes": 362,
+      "url": "https://s.rowit.nz/i/o/mnwt.png"
+    },
+    {
+      "id": "motu",
+      "name": "Motueka HS",
+      "logo": "Motueka HS - motu.png",
+      "bytes": 216,
+      "url": "https://s.rowit.nz/i/o/motu.png"
+    },
+    {
+      "id": "mpnu",
+      "name": "Massey University (Palmerston North)",
+      "logo": "Massey University (Palmerston North) - mpnu.png",
+      "bytes": 386,
+      "url": "https://s.rowit.nz/i/o/mpnu.png"
+    },
+    {
+      "id": "msmc",
+      "name": "Mosman Rowing Club",
+      "logo": "Mosman Rowing Club - msmc.png",
+      "bytes": 280,
+      "url": "https://s.rowit.nz/i/o/msmc.png"
+    },
+    {
+      "id": "mssu",
+      "name": "Massey University",
+      "logo": "Massey University - mssu.png",
+      "bytes": 309,
+      "url": "https://s.rowit.nz/i/o/mssu.png"
+    },
+    {
+      "id": "msuc",
+      "name": "Massey University Rowing Club",
+      "logo": "Massey University Rowing Club - msuc.png",
+      "bytes": 401,
+      "url": "https://s.rowit.nz/i/o/msuc.png"
+    },
+    {
+      "id": "mtha",
+      "name": "Mt Hobson Academy",
+      "logo": "Mt Hobson Academy - mtha.png",
+      "bytes": 416,
+      "url": "https://s.rowit.nz/i/o/mtha.png"
+    },
+    {
+      "id": "mtma",
+      "name": "Mt Maunganui College",
+      "logo": "Mt Maunganui College - mtma.png",
+      "bytes": 400,
+      "url": "https://s.rowit.nz/i/o/mtma.png"
+    },
+    {
+      "id": "mtro",
+      "name": "Mount Roskill Grammar School",
+      "logo": "Mount Roskill Grammar School - mtro.png",
+      "bytes": 298,
+      "url": "https://s.rowit.nz/i/o/mtro.png"
+    },
+    {
+      "id": "mtvw",
+      "name": "Mountainview High School",
+      "logo": "Mountainview High School - mtvw.png",
+      "bytes": 263,
+      "url": "https://s.rowit.nz/i/o/mtvw.png"
+    },
+    {
+      "id": "mwlu",
+      "name": "Massey University (Wellington)",
+      "logo": "Massey University (Wellington) - mwlu.png",
+      "bytes": 389,
+      "url": "https://s.rowit.nz/i/o/mwlu.png"
+    },
+    {
+      "id": "nayl",
+      "name": "Nayland College",
+      "logo": "Nayland College - nayl.png",
+      "bytes": 313,
+      "url": "https://s.rowit.nz/i/o/nayl.png"
+    },
+    {
+      "id": "nerc",
+      "name": "ARS Nereus",
+      "logo": "ARS Nereus - nerc.png",
+      "bytes": 300,
+      "url": "https://s.rowit.nz/i/o/nerc.png"
+    },
+    {
+      "id": "ngar",
+      "name": "Ngaruawahia High School",
+      "logo": "Ngaruawahia High School - ngar.png",
+      "bytes": 264,
+      "url": "https://s.rowit.nz/i/o/ngar.png"
+    },
+    {
+      "id": "ngsx",
+      "name": "Newcastle Grammar School",
+      "logo": "Newcastle Grammar School - ngsx.png",
+      "bytes": 298,
+      "url": "https://s.rowit.nz/i/o/ngsx.png"
+    },
+    {
+      "id": "ngta",
+      "name": "Nga Tawa Diocesan School",
+      "logo": "Nga Tawa Diocesan School - ngta.png",
+      "bytes": 309,
+      "url": "https://s.rowit.nz/i/o/ngta.png"
+    },
+    {
+      "id": "ngtw",
+      "name": "Nga Taiatea Wharekura",
+      "logo": "Nga Taiatea Wharekura - ngtw.png",
+      "bytes": 358,
+      "url": "https://s.rowit.nz/i/o/ngtw.png"
+    },
+    {
+      "id": "nswu",
+      "name": "University of New South Wales",
+      "logo": "University of New South Wales - nswu.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/nswu.png"
+    },
+    {
+      "id": "nthc",
+      "name": "Northcote College",
+      "logo": "Northcote College - nthc.png",
+      "bytes": 377,
+      "url": "https://s.rowit.nz/i/o/nthc.png"
+    },
+    {
+      "id": "nykc",
+      "name": "New York Athletic Club",
+      "logo": "New York Athletic Club - nykc.png",
+      "bytes": 336,
+      "url": "https://s.rowit.nz/i/o/nykc.png"
+    },
+    {
+      "id": "obhc",
+      "name": "Otago Boys High Rowing Club",
+      "logo": "Otago Boys High Rowing Club - obhc.png",
+      "bytes": 288,
+      "url": "https://s.rowit.nz/i/o/obhc.png"
+    },
+    {
+      "id": "oguc",
+      "name": "Otago University Rowing Club",
+      "logo": "Otago University Rowing Club - oguc.png",
+      "bytes": 238,
+      "url": "https://s.rowit.nz/i/o/oguc.png"
+    },
+    {
+      "id": "oklc",
+      "name": "Oklahoma City University Rowing Club",
+      "logo": "Oklahoma City University Rowing Club - oklc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/oklc.png"
+    },
+    {
+      "id": "orew",
+      "name": "Orewa College",
+      "logo": "Orewa College - orew.png",
+      "bytes": 265,
+      "url": "https://s.rowit.nz/i/o/orew.png"
+    },
+    {
+      "id": "otau",
+      "name": "Otago University",
+      "logo": "Otago University - otau.png",
+      "bytes": 231,
+      "url": "https://s.rowit.nz/i/o/otau.png"
+    },
+    {
+      "id": "oxfu",
+      "name": "Oxford University",
+      "logo": "Oxford University - oxfu.png",
+      "bytes": 255,
+      "url": "https://s.rowit.nz/i/o/oxfu.png"
+    },
+    {
+      "id": "paec",
+      "name": "Paernu SK",
+      "logo": "Paernu SK - paec.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/paec.png"
+    },
+    {
+      "id": "paku",
+      "name": "Pakuranga College",
+      "logo": "Pakuranga College - paku.png",
+      "bytes": 273,
+      "url": "https://s.rowit.nz/i/o/paku.png"
+    },
+    {
+      "id": "papa",
+      "name": "Papamoa College",
+      "logo": "Papamoa College - papa.png",
+      "bytes": 315,
+      "url": "https://s.rowit.nz/i/o/papa.png"
+    },
+    {
+      "id": "para",
+      "name": "Paraparaumu College",
+      "logo": "Paraparaumu College - para.png",
+      "bytes": 379,
+      "url": "https://s.rowit.nz/i/o/para.png"
+    },
+    {
+      "id": "parn",
+      "name": "ACG Parnell College",
+      "logo": "ACG Parnell College - parn.png",
+      "bytes": 386,
+      "url": "https://s.rowit.nz/i/o/parn.png"
+    },
+    {
+      "id": "pcuc",
+      "name": "Port Chalmers United Rowing Club",
+      "logo": "Port Chalmers United Rowing Club - pcuc.png",
+      "bytes": 263,
+      "url": "https://s.rowit.nz/i/o/pcuc.png"
+    },
+    {
+      "id": "pine",
+      "name": "Pinehurst School Inc.",
+      "logo": "Pinehurst School Inc. - pine.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/pine.png"
+    },
+    {
+      "id": "piop",
+      "name": "Piopio College",
+      "logo": "Piopio College - piop.png",
+      "bytes": 256,
+      "url": "https://s.rowit.nz/i/o/piop.png"
+    },
+    {
+      "id": "pmrb",
+      "name": "Palmerston North Boys High School",
+      "logo": "Palmerston North Boys High School - pmrb.png",
+      "bytes": 399,
+      "url": "https://s.rowit.nz/i/o/pmrb.png"
+    },
+    {
+      "id": "pmrg",
+      "name": "Palmerston North Girls High School",
+      "logo": "Palmerston North Girls High School - pmrg.png",
+      "bytes": 467,
+      "url": "https://s.rowit.nz/i/o/pmrg.png"
+    },
+    {
+      "id": "pnrx",
+      "name": "Penrhos College",
+      "logo": "Penrhos College - pnrx.png",
+      "bytes": 431,
+      "url": "https://s.rowit.nz/i/o/pnrx.png"
+    },
+    {
+      "id": "ppnu",
+      "name": "Papanui High School",
+      "logo": "Papanui High School - ppnu.png",
+      "bytes": 372,
+      "url": "https://s.rowit.nz/i/o/ppnu.png"
+    },
+    {
+      "id": "pukc",
+      "name": "Pukekohe Christian School",
+      "logo": "Pukekohe Christian School - pukc.png",
+      "bytes": 426,
+      "url": "https://s.rowit.nz/i/o/pukc.png"
+    },
+    {
+      "id": "qcha",
+      "name": "Queen Charlotte College",
+      "logo": "Queen Charlotte College - qcha.png",
+      "bytes": 321,
+      "url": "https://s.rowit.nz/i/o/qcha.png"
+    },
+    {
+      "id": "qldu",
+      "name": "University of Queensland",
+      "logo": "University of Queensland - qldu.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/qldu.png"
+    },
+    {
+      "id": "qrcc",
+      "name": "Queens Rowing Club",
+      "logo": "Queens Rowing Club - qrcc.png",
+      "bytes": 245,
+      "url": "https://s.rowit.nz/i/o/qrcc.png"
+    },
+    {
+      "id": "qsgx",
+      "name": "Queenwood",
+      "logo": "Queenwood - qsgx.png",
+      "bytes": 398,
+      "url": "https://s.rowit.nz/i/o/qsgx.png"
+    },
+    {
+      "id": "raph",
+      "name": "Raphael House",
+      "logo": "Raphael House - raph.png",
+      "bytes": 370,
+      "url": "https://s.rowit.nz/i/o/raph.png"
+    },
+    {
+      "id": "rghc",
+      "name": "Ruder Gesellschaft Hansa",
+      "logo": "Ruder Gesellschaft Hansa - rghc.png",
+      "bytes": 313,
+      "url": "https://s.rowit.nz/i/o/rghc.png"
+    },
+    {
+      "id": "rgsx",
+      "name": "Ruyton Girls School",
+      "logo": "Ruyton Girls School - rgsx.png",
+      "bytes": 287,
+      "url": "https://s.rowit.nz/i/o/rgsx.png"
+    },
+    {
+      "id": "ricc",
+      "name": "Riccarton High School",
+      "logo": "Riccarton High School - ricc.png",
+      "bytes": 290,
+      "url": "https://s.rowit.nz/i/o/ricc.png"
+    },
+    {
+      "id": "rmac",
+      "name": "Richmond Rowing Club",
+      "logo": "Richmond Rowing Club - rmac.png",
+      "bytes": 334,
+      "url": "https://s.rowit.nz/i/o/rmac.png"
+    },
+    {
+      "id": "rmbc",
+      "name": "Radley Mariners Boat Club",
+      "logo": "Radley Mariners Boat Club - rmbc.png",
+      "bytes": 367,
+      "url": "https://s.rowit.nz/i/o/rmbc.png"
+    },
+    {
+      "id": "rnzx",
+      "name": "Rowing New Zealand",
+      "logo": "Rowing New Zealand - rnzx.png",
+      "bytes": 322,
+      "url": "https://s.rowit.nz/i/o/rnzx.png"
+    },
+    {
+      "id": "roll",
+      "name": "Rolleston College",
+      "logo": "Rolleston College - roll.png",
+      "bytes": 364,
+      "url": "https://s.rowit.nz/i/o/roll.png"
+    },
+    {
+      "id": "rong",
+      "name": "Rongotai College",
+      "logo": "Rongotai College - rong.png",
+      "bytes": 349,
+      "url": "https://s.rowit.nz/i/o/rong.png"
+    },
+    {
+      "id": "rosm",
+      "name": "Rosmini College",
+      "logo": "Rosmini College - rosm.png",
+      "bytes": 523,
+      "url": "https://s.rowit.nz/i/o/rosm.png"
+    },
+    {
+      "id": "rotb",
+      "name": "Rotorua Boys High School",
+      "logo": "Rotorua Boys High School - rotb.png",
+      "bytes": 265,
+      "url": "https://s.rowit.nz/i/o/rotb.png"
+    },
+    {
+      "id": "rpca",
+      "name": "Auckland RPC",
+      "logo": "Auckland RPC - rpca.png",
+      "bytes": 575,
+      "url": "https://s.rowit.nz/i/o/rpca.png"
+    },
+    {
+      "id": "rpcc",
+      "name": "Central RPC",
+      "logo": "Central RPC - rpcc.png",
+      "bytes": 531,
+      "url": "https://s.rowit.nz/i/o/rpcc.png"
+    },
+    {
+      "id": "rpcs",
+      "name": "Southern RPC",
+      "logo": "Southern RPC - rpcs.png",
+      "bytes": 649,
+      "url": "https://s.rowit.nz/i/o/rpcs.png"
+    },
+    {
+      "id": "rpcw",
+      "name": "Waikato RPC",
+      "logo": "Waikato RPC - rpcw.png",
+      "bytes": 658,
+      "url": "https://s.rowit.nz/i/o/rpcw.png"
+    },
+    {
+      "id": "rphn",
+      "name": "North Island Performance Hub",
+      "logo": "North Island Performance Hub - rphn.png",
+      "bytes": 1075,
+      "url": "https://s.rowit.nz/i/o/rphn.png"
+    },
+    {
+      "id": "rsha",
+      "name": "Taikura Rudolf Steiner School",
+      "logo": "Taikura Rudolf Steiner School - rsha.png",
+      "bytes": 395,
+      "url": "https://s.rowit.nz/i/o/rsha.png"
+    },
+    {
+      "id": "ruth",
+      "name": "Rutherford College",
+      "logo": "Rutherford College - ruth.png",
+      "bytes": 336,
+      "url": "https://s.rowit.nz/i/o/ruth.png"
+    },
+    {
+      "id": "rvwc",
+      "name": "Riverway Rowing Club",
+      "logo": "Riverway Rowing Club - rvwc.png",
+      "bytes": 290,
+      "url": "https://s.rowit.nz/i/o/rvwc.png"
+    },
+    {
+      "id": "sabc",
+      "name": "Sabrina Club",
+      "logo": "Sabrina Club - sabc.png",
+      "bytes": 290,
+      "url": "https://s.rowit.nz/i/o/sabc.png"
+    },
+    {
+      "id": "sgsx",
+      "name": "Sydney Grammar School",
+      "logo": "Sydney Grammar School - sgsx.png",
+      "bytes": 281,
+      "url": "https://s.rowit.nz/i/o/sgsx.png"
+    },
+    {
+      "id": "sgtc",
+      "name": "Saugatuck Rowing Club",
+      "logo": "Saugatuck Rowing Club - sgtc.png",
+      "bytes": 245,
+      "url": "https://s.rowit.nz/i/o/sgtc.png"
+    },
+    {
+      "id": "shac",
+      "name": "Sacred Heart RC",
+      "logo": "Sacred Heart RC - shac.png",
+      "bytes": 357,
+      "url": "https://s.rowit.nz/i/o/shac.png"
+    },
+    {
+      "id": "shax",
+      "name": "Shawnigan Lake School",
+      "logo": "Shawnigan Lake School - shax.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/shax.png"
+    },
+    {
+      "id": "shgn",
+      "name": "Sacred Heart Girls College (NP)",
+      "logo": "Sacred Heart Girls College (NP) - shgn.png",
+      "bytes": 346,
+      "url": "https://s.rowit.nz/i/o/shgn.png"
+    },
+    {
+      "id": "shlh",
+      "name": "Sacred Heart College (Lower Hutt)",
+      "logo": "Sacred Heart College (Lower Hutt) - shlh.png",
+      "bytes": 428,
+      "url": "https://s.rowit.nz/i/o/shlh.png"
+    },
+    {
+      "id": "sigx",
+      "name": "St Ignatius' College",
+      "logo": "St Ignatius' College - sigx.png",
+      "bytes": 352,
+      "url": "https://s.rowit.nz/i/o/sigx.png"
+    },
+    {
+      "id": "sjhs",
+      "name": "St Johns College (Hastings)",
+      "logo": "St Johns College (Hastings) - sjhs.png",
+      "bytes": 255,
+      "url": "https://s.rowit.nz/i/o/sjhs.png"
+    },
+    {
+      "id": "sjhx",
+      "name": "St Joseph's College",
+      "logo": "St Joseph's College - sjhx.png",
+      "bytes": 246,
+      "url": "https://s.rowit.nz/i/o/sjhx.png"
+    },
+    {
+      "id": "sjnx",
+      "name": "St Joseph's Nudgee College",
+      "logo": "St Joseph's Nudgee College - sjnx.png",
+      "bytes": 257,
+      "url": "https://s.rowit.nz/i/o/sjnx.png"
+    },
+    {
+      "id": "skbc",
+      "name": "Skibbereen Rowing Club",
+      "logo": "Skibbereen Rowing Club - skbc.png",
+      "bytes": 317,
+      "url": "https://s.rowit.nz/i/o/skbc.png"
+    },
+    {
+      "id": "sldb",
+      "name": "Southland Boys High School",
+      "logo": "Southland Boys High School - sldb.png",
+      "bytes": 547,
+      "url": "https://s.rowit.nz/i/o/sldb.png"
+    },
+    {
+      "id": "smco",
+      "name": "Sancta Maria College",
+      "logo": "Sancta Maria College - smco.png",
+      "bytes": 324,
+      "url": "https://s.rowit.nz/i/o/smco.png"
+    },
+    {
+      "id": "smju",
+      "name": "Sendai University",
+      "logo": "Sendai University - smju.png",
+      "bytes": 461,
+      "url": "https://s.rowit.nz/i/o/smju.png"
+    },
+    {
+      "id": "snsc",
+      "name": "Sydney North Shore Rowing Club",
+      "logo": "Sydney North Shore Rowing Club - snsc.png",
+      "bytes": 306,
+      "url": "https://s.rowit.nz/i/o/snsc.png"
+    },
+    {
+      "id": "somx",
+      "name": "Somerset",
+      "logo": "Somerset - somx.png",
+      "bytes": 310,
+      "url": "https://s.rowit.nz/i/o/somx.png"
+    },
+    {
+      "id": "spts",
+      "name": "St Patricks College (Silverstream)",
+      "logo": "St Patricks College (Silverstream) - spts.png",
+      "bytes": 391,
+      "url": "https://s.rowit.nz/i/o/spts.png"
+    },
+    {
+      "id": "srpc",
+      "name": "Swan River Rowing Club",
+      "logo": "Swan River Rowing Club - srpc.png",
+      "bytes": 401,
+      "url": "https://s.rowit.nz/i/o/srpc.png"
+    },
+    {
+      "id": "srvc",
+      "name": "Saarbrucken Rowing Club",
+      "logo": "Saarbrucken Rowing Club - srvc.png",
+      "bytes": 346,
+      "url": "https://s.rowit.nz/i/o/srvc.png"
+    },
+    {
+      "id": "ssax",
+      "name": "Shore School",
+      "logo": "Shore School - ssax.png",
+      "bytes": 362,
+      "url": "https://s.rowit.nz/i/o/ssax.png"
+    },
+    {
+      "id": "sscc",
+      "name": "Sunshine Coast Rowing Club",
+      "logo": "Sunshine Coast Rowing Club - sscc.png",
+      "bytes": 368,
+      "url": "https://s.rowit.nz/i/o/sscc.png"
+    },
+    {
+      "id": "stbn",
+      "name": "St Bernard's College",
+      "logo": "St Bernard's College - stbn.png",
+      "bytes": 328,
+      "url": "https://s.rowit.nz/i/o/stbn.png"
+    },
+    {
+      "id": "stca",
+      "name": "St Catherine's College",
+      "logo": "St Catherine's College - stca.png",
+      "bytes": 440,
+      "url": "https://s.rowit.nz/i/o/stca.png"
+    },
+    {
+      "id": "stdo",
+      "name": "St Dominics College (Henderson)",
+      "logo": "St Dominics College (Henderson) - stdo.png",
+      "bytes": 259,
+      "url": "https://s.rowit.nz/i/o/stdo.png"
+    },
+    {
+      "id": "stil",
+      "name": "St Ignatius of Loyola Catholic College",
+      "logo": "St Ignatius of Loyola Catholic College - stil.png",
+      "bytes": 371,
+      "url": "https://s.rowit.nz/i/o/stil.png"
+    },
+    {
+      "id": "stln",
+      "name": "ACG Strathallan",
+      "logo": "ACG Strathallan - stln.png",
+      "bytes": 261,
+      "url": "https://s.rowit.nz/i/o/stln.png"
+    },
+    {
+      "id": "stma",
+      "name": "St Mary's College (Auck)",
+      "logo": "St Mary's College (Auck) - stma.png",
+      "bytes": 314,
+      "url": "https://s.rowit.nz/i/o/stma.png"
+    },
+    {
+      "id": "stmd",
+      "name": "St Marys Diocesan School for Girls",
+      "logo": "St Marys Diocesan School for Girls - stmd.png",
+      "bytes": 257,
+      "url": "https://s.rowit.nz/i/o/stmd.png"
+    },
+    {
+      "id": "stmw",
+      "name": "St Mary's College (Wgtn)",
+      "logo": "St Mary's College (Wgtn) - stmw.png",
+      "bytes": 440,
+      "url": "https://s.rowit.nz/i/o/stmw.png"
+    },
+    {
+      "id": "stra",
+      "name": "Stratford High School",
+      "logo": "Stratford High School - stra.png",
+      "bytes": 398,
+      "url": "https://s.rowit.nz/i/o/stra.png"
+    },
+    {
+      "id": "sund",
+      "name": "ACG Sunderland",
+      "logo": "ACG Sunderland - sund.png",
+      "bytes": 369,
+      "url": "https://s.rowit.nz/i/o/sund.png"
+    },
+    {
+      "id": "sydc",
+      "name": "Sydney Rowing Club",
+      "logo": "Sydney Rowing Club - sydc.png",
+      "bytes": 281,
+      "url": "https://s.rowit.nz/i/o/sydc.png"
+    },
+    {
+      "id": "sydu",
+      "name": "University of Sydney",
+      "logo": "University of Sydney - sydu.png",
+      "bytes": 305,
+      "url": "https://s.rowit.nz/i/o/sydu.png"
+    },
+    {
+      "id": "talc",
+      "name": "Te Aratai College",
+      "logo": "Te Aratai College - talc.png",
+      "bytes": 442,
+      "url": "https://s.rowit.nz/i/o/talc.png"
+    },
+    {
+      "id": "tawa",
+      "name": "Tawa College",
+      "logo": "Tawa College - tawa.png",
+      "bytes": 343,
+      "url": "https://s.rowit.nz/i/o/tawa.png"
+    },
+    {
+      "id": "terx",
+      "name": "Gregory Terrace",
+      "logo": "Gregory Terrace - terx.png",
+      "bytes": 235,
+      "url": "https://s.rowit.nz/i/o/terx.png"
+    },
+    {
+      "id": "tgbc",
+      "name": "Tauranga Boys College Rowing Club",
+      "logo": "Tauranga Boys College Rowing Club - tgbc.png",
+      "bytes": 306,
+      "url": "https://s.rowit.nz/i/o/tgbc.png"
+    },
+    {
+      "id": "tgsc",
+      "name": "Takapuna Grammar Rowing Club",
+      "logo": "Takapuna Grammar Rowing Club - tgsc.png",
+      "bytes": 413,
+      "url": "https://s.rowit.nz/i/o/tgsc.png"
+    },
+    {
+      "id": "thac",
+      "name": "Thames Rowing Club",
+      "logo": "Thames Rowing Club - thac.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/thac.png"
+    },
+    {
+      "id": "tham",
+      "name": "Thames High School",
+      "logo": "Thames High School - tham.png",
+      "bytes": 288,
+      "url": "https://s.rowit.nz/i/o/tham.png"
+    },
+    {
+      "id": "tiki",
+      "name": "Tikipunga High School",
+      "logo": "Tikipunga High School - tiki.png",
+      "bytes": 257,
+      "url": "https://s.rowit.nz/i/o/tiki.png"
+    },
+    {
+      "id": "timc",
+      "name": "Timaru Rowing Club",
+      "logo": "Timaru Rowing Club - timc.png",
+      "bytes": 366,
+      "url": "https://s.rowit.nz/i/o/timc.png"
+    },
+    {
+      "id": "tmth",
+      "name": "Tamatea High School",
+      "logo": "Tamatea High School - tmth.png",
+      "bytes": 406,
+      "url": "https://s.rowit.nz/i/o/tmth.png"
+    },
+    {
+      "id": "tooc",
+      "name": "Toowong Rowing Club",
+      "logo": "Toowong Rowing Club - tooc.png",
+      "bytes": 284,
+      "url": "https://s.rowit.nz/i/o/tooc.png"
+    },
+    {
+      "id": "trvc",
+      "name": "ASD Societa Canottieri Sile Treviso",
+      "logo": "ASD Societa Canottieri Sile Treviso - trvc.png",
+      "bytes": 319,
+      "url": "https://s.rowit.nz/i/o/trvc.png"
+    },
+    {
+      "id": "tscx",
+      "name": "The Scots College",
+      "logo": "The Scots College - tscx.png",
+      "bytes": 312,
+      "url": "https://s.rowit.nz/i/o/tscx.png"
+    },
+    {
+      "id": "tssc",
+      "name": "Tideway Scullers School",
+      "logo": "Tideway Scullers School - tssc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/tssc.png"
+    },
+    {
+      "id": "tssx",
+      "name": "The Southport School",
+      "logo": "The Southport School - tssx.png",
+      "bytes": 298,
+      "url": "https://s.rowit.nz/i/o/tssx.png"
+    },
+    {
+      "id": "ttai",
+      "name": "Taieri College",
+      "logo": "Taieri College - ttai.png",
+      "bytes": 239,
+      "url": "https://s.rowit.nz/i/o/ttai.png"
+    },
+    {
+      "id": "tuak",
+      "name": "Tuakau College",
+      "logo": "Tuakau College - tuak.png",
+      "bytes": 636,
+      "url": "https://s.rowit.nz/i/o/tuak.png"
+    },
+    {
+      "id": "udsc",
+      "name": "Club Sportif Universitaire d'Oran",
+      "logo": "Club Sportif Universitaire d'Oran - udsc.png",
+      "bytes": 264,
+      "url": "https://s.rowit.nz/i/o/udsc.png"
+    },
+    {
+      "id": "umrc",
+      "name": "Club De Remeros Mercedes",
+      "logo": "Club De Remeros Mercedes - umrc.png",
+      "bytes": 449,
+      "url": "https://s.rowit.nz/i/o/umrc.png"
+    },
+    {
+      "id": "uppe",
+      "name": "Upper Hutt College",
+      "logo": "Upper Hutt College - uppe.png",
+      "bytes": 320,
+      "url": "https://s.rowit.nz/i/o/uppe.png"
+    },
+    {
+      "id": "uqbc",
+      "name": "University of Queensland Boat Club",
+      "logo": "University of Queensland Boat Club - uqbc.png",
+      "bytes": 275,
+      "url": "https://s.rowit.nz/i/o/uqbc.png"
+    },
+    {
+      "id": "utsc",
+      "name": "UTS Rowing Club",
+      "logo": "UTS Rowing Club - utsc.png",
+      "bytes": 293,
+      "url": "https://s.rowit.nz/i/o/utsc.png"
+    },
+    {
+      "id": "uwoc",
+      "name": "University of Western Ontario Boat Club",
+      "logo": "University of Western Ontario Boat Club - uwoc.png",
+      "bytes": 368,
+      "url": "https://s.rowit.nz/i/o/uwoc.png"
+    },
+    {
+      "id": "vicu",
+      "name": "Victoria University",
+      "logo": "Victoria University - vicu.png",
+      "bytes": 389,
+      "url": "https://s.rowit.nz/i/o/vicu.png"
+    },
+    {
+      "id": "vilc",
+      "name": "Port Vila",
+      "logo": "Port Vila - vilc.png",
+      "bytes": 293,
+      "url": "https://s.rowit.nz/i/o/vilc.png"
+    },
+    {
+      "id": "viuc",
+      "name": "Victoria University Rowing Club",
+      "logo": "Victoria University Rowing Club - viuc.png",
+      "bytes": 392,
+      "url": "https://s.rowit.nz/i/o/viuc.png"
+    },
+    {
+      "id": "waio",
+      "name": "Waiopehu College",
+      "logo": "Waiopehu College - waio.png",
+      "bytes": 417,
+      "url": "https://s.rowit.nz/i/o/waio.png"
+    },
+    {
+      "id": "waiu",
+      "name": "Waiuku College",
+      "logo": "Waiuku College - waiu.png",
+      "bytes": 249,
+      "url": "https://s.rowit.nz/i/o/waiu.png"
+    },
+    {
+      "id": "wdic",
+      "name": "Waikato Diocesan Rowing Club",
+      "logo": "Waikato Diocesan Rowing Club - wdic.png",
+      "bytes": 261,
+      "url": "https://s.rowit.nz/i/o/wdic.png"
+    },
+    {
+      "id": "wgtc",
+      "name": "Whangateau Sculling Club",
+      "logo": "Whangateau Sculling Club - wgtc.png",
+      "bytes": 278,
+      "url": "https://s.rowit.nz/i/o/wgtc.png"
+    },
+    {
+      "id": "whhs",
+      "name": "Western Heights High School",
+      "logo": "Western Heights High School - whhs.png",
+      "bytes": 360,
+      "url": "https://s.rowit.nz/i/o/whhs.png"
+    },
+    {
+      "id": "whic",
+      "name": "Waihi College",
+      "logo": "Waihi College - whic.png",
+      "bytes": 317,
+      "url": "https://s.rowit.nz/i/o/whic.png"
+    },
+    {
+      "id": "whtc",
+      "name": "Whitby Collegiate",
+      "logo": "Whitby Collegiate - whtc.png",
+      "bytes": 374,
+      "url": "https://s.rowit.nz/i/o/whtc.png"
+    },
+    {
+      "id": "wkou",
+      "name": "Waikato University",
+      "logo": "Waikato University - wkou.png",
+      "bytes": 484,
+      "url": "https://s.rowit.nz/i/o/wkou.png"
+    },
+    {
+      "id": "wkuc",
+      "name": "Waikato University Rowing Club",
+      "logo": "Waikato University Rowing Club - wkuc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/wkuc.png"
+    },
+    {
+      "id": "wlhs",
+      "name": "Wellington High School",
+      "logo": "Wellington High School - wlhs.png",
+      "bytes": 422,
+      "url": "https://s.rowit.nz/i/o/wlhs.png"
+    },
+    {
+      "id": "wncc",
+      "name": "Whanganui City College",
+      "logo": "Whanganui City College - wncc.png",
+      "bytes": 296,
+      "url": "https://s.rowit.nz/i/o/wncc.png"
+    },
+    {
+      "id": "wngc",
+      "name": "Whanganui Girls College",
+      "logo": "Whanganui Girls College - wngc.png",
+      "bytes": 259,
+      "url": "https://s.rowit.nz/i/o/wngc.png"
+    },
+    {
+      "id": "wrbc",
+      "name": "Wannsee RK Berlin",
+      "logo": "Wannsee RK Berlin - wrbc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/wrbc.png"
+    },
+    {
+      "id": "wrkc",
+      "name": "Waiariki Rowing Club",
+      "logo": "Waiariki Rowing Club - wrkc.png",
+      "bytes": 301,
+      "url": "https://s.rowit.nz/i/o/wrkc.png"
+    },
+    {
+      "id": "wroa",
+      "name": "Wairoa College",
+      "logo": "Wairoa College - wroa.png",
+      "bytes": 323,
+      "url": "https://s.rowit.nz/i/o/wroa.png"
+    },
+    {
+      "id": "wtar",
+      "name": "Waitara High School",
+      "logo": "Waitara High School - wtar.png",
+      "bytes": 262,
+      "url": "https://s.rowit.nz/i/o/wtar.png"
+    },
+    {
+      "id": "wtkr",
+      "name": "Waitakere College",
+      "logo": "Waitakere College - wtkr.png",
+      "bytes": 368,
+      "url": "https://s.rowit.nz/i/o/wtkr.png"
+    },
+    {
+      "id": "wtsc",
+      "name": "Western Springs College",
+      "logo": "Western Springs College - wtsc.png",
+      "bytes": 358,
+      "url": "https://s.rowit.nz/i/o/wtsc.png"
+    },
+    {
+      "id": "xaju",
+      "name": "Xi`an Jiaotong University",
+      "logo": "Xi`an Jiaotong University - xaju.png",
+      "bytes": 297,
+      "url": "https://s.rowit.nz/i/o/xaju.png"
+    }
+  ],
+  "notOnRowit": [
+    {
+      "id": "avn*",
+      "name": "Avon Rowing Club",
+      "logo": "Avon Rowing Club - avn*.png",
+      "url": "https://s.rowit.nz/i/o/avn*.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "ctyz",
+      "name": "Canterbury Composite",
+      "logo": "Canterbury Composite - CTYZ.png",
+      "url": "https://s.rowit.nz/i/o/ctyz.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "dta*",
+      "name": "Ever Green Boat Club",
+      "logo": "Ever Green Boat Club - dta*.png",
+      "url": "https://s.rowit.nz/i/o/dta*.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "dua*",
+      "name": "Dunstan Arm*",
+      "logo": "Dunstan Arm* - dua*.png",
+      "url": "https://s.rowit.nz/i/o/dua*.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "petz",
+      "name": "Petone Composite",
+      "logo": "Petone Composite - petz.png",
+      "url": "https://s.rowit.nz/i/o/petz.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "unc*",
+      "name": "Union*",
+      "logo": "Union* - unc*.png",
+      "url": "https://s.rowit.nz/i/o/unc*.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "wel*",
+      "name": "Wellington*",
+      "logo": "Wellington* - wel*.png",
+      "url": "https://s.rowit.nz/i/o/wel*.png",
+      "reason": "HTTP 404"
+    },
+    {
+      "id": "wko*",
+      "name": "Waikato*",
+      "logo": "Waikato* - wko*.png",
+      "url": "https://s.rowit.nz/i/o/wko*.png",
+      "reason": "HTTP 404"
+    }
+  ],
+  "errors": []
+}
