@@ -14,16 +14,59 @@
             <h1 class="bsp-brand-title">Beach Sprints NZ</h1>
         </header>
         <div class="bsp-root">
-        <aside class="bsp-buoys-panel" aria-label="Course buoys">
+                <aside class="bsp-buoys-panel" id="bspBuoysPanel" aria-label="Course layout and buoys">
+            <div class="bsp-buoys-panel-head">
+                <h2 class="bsp-buoys-title">Course layout</h2>
+                <button type="button" class="bsp-btn bsp-btn--small bsp-btn--ghost" id="bspBuoysPanelExpand" aria-pressed="false">Expand to half page</button>
+            </div>
             <div class="bsp-buoys-panel-scroll">
-                <h2 class="bsp-buoys-title">Course buoys</h2>
-                <p class="bsp-buoys-lead">Six course markers (L1–L3, R1–R3). Edit coordinates below or drag on the map when enabled.</p>
+                <section class="bsp-course-layout-section" aria-label="Course schematic">
+                    <p class="bsp-buoys-lead">Start/finish at (0, 0). Use <strong>Auto set course</strong> from spacing inputs, or drag markers when enabled.</p>
+                    <div class="bsp-course-chart-wrap">
+                        <canvas id="bspCourseChart" aria-label="Course layout schematic"></canvas>
+                    </div>
+                    <div class="bsp-course-params">
+                        <label class="bsp-field"><span class="bsp-field-label">Start/finish lat (°)</span><input type="number" step="any" id="bspCourseOriginLat"></label>
+                        <label class="bsp-field"><span class="bsp-field-label">Start/finish lng (°)</span><input type="number" step="any" id="bspCourseOriginLng"></label>
+                        <label class="bsp-field"><span class="bsp-field-label">Course heading (°)</span><input type="number" step="any" id="bspCourseHeading" title="Bearing of seaward axis, 0=north"></label>
+                        <label class="bsp-field"><span class="bsp-field-label">Lane spacing A (m)</span><input type="number" step="any" id="bspCourseLaneA" min="1"></label>
+                        <label class="bsp-field"><span class="bsp-field-label">Buoy spacing B (m)</span><input type="number" step="any" id="bspCourseBuoyB" min="1"></label>
+                        <label class="bsp-field"><span class="bsp-field-label">Tide line C (m)</span><input type="number" step="any" id="bspCourseTideC" min="1" title="y position of tide line from start"></label>
+                    </div>
+                    <div class="bsp-course-actions">
+                        <button type="button" class="bsp-btn bsp-btn--primary" id="bspAutoSetCourse">Auto set course</button>
+                        <button type="button" class="bsp-btn bsp-btn--ghost" id="bspPickOriginMap">Pick origin on map</button>
+                    </div>
+                    <p class="bsp-status" id="bspCourseLayoutStatus"></p>
+                    <p class="bsp-micro-hint">L1/R1 y=C+3B, L2/R2 y=C+2B, L3/R3 y=C+B. LF/RF at y=C/2.</p>
+                    <div class="bsp-course-ref-gallery" aria-label="World Rowing beach sprint course reference">
+                        <p class="bsp-course-ref-kicker">World Rowing · RCB 7</p>
+                        <figure class="bsp-course-ref-fig">
+                            <div class="bsp-course-ref-img-wrap">
+                                <img src="assets/beach-sprints/BS_1.png" width="640" height="480" alt="WR Beach Sprints Option 1: slalom out, straight back — course dimensions" loading="lazy" decoding="async">
+                            </div>
+                            <figcaption><span class="bsp-course-ref-tag">Option 1</span> Slalom out / straight back</figcaption>
+                        </figure>
+                        <figure class="bsp-course-ref-fig">
+                            <div class="bsp-course-ref-img-wrap">
+                                <img src="assets/beach-sprints/BS_2.png" width="640" height="480" alt="WR Beach Sprints Option 2: processional time trial — course dimensions" loading="lazy" decoding="async">
+                            </div>
+                            <figcaption><span class="bsp-course-ref-tag">Option 2</span> Processional time trial</figcaption>
+                        </figure>
+                    </div>
+                </section>
+
+                <h3 class="bsp-buoys-subtitle">Course buoys</h3>
+                <p class="bsp-buoys-lead">Six water gates (L1–L3, R1–R3).</p>
                 <label class="bsp-toggle bsp-toggle--block bsp-buoys-drag-toggle">
                     <input type="checkbox" id="bspBuoysDragToggle">
                     <span>Allow drag on map</span>
                 </label>
                 <div class="bsp-status" id="bspBuoysStatus"></div>
                 <div id="bspBuoysList" class="bsp-buoys-list"></div>
+
+                <h3 class="bsp-buoys-subtitle">Run flags</h3>
+                <div id="bspFlagsList" class="bsp-buoys-list bsp-flags-list"></div>
 
                 <details class="bsp-details bsp-timing-details" id="bspTimingDetails">
                     <summary class="bsp-details-summary">Race timing</summary>
@@ -181,7 +224,9 @@
     <script src="map-refresh-rate.js"></script>
     <script src="traccar-snapshot-bus.js"></script>
     <script src="speed-color-scale.js"></script>
+    <script src="beachsprints-coastal-analysis.js"></script>
     <script src="beachsprints-map.js"></script>
+    <script src="beachsprints-course-layout.js"></script>
     <script src="beachsprints-race-compare.js"></script>
 </body>
 </html>

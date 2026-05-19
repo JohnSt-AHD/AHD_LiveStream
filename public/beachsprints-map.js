@@ -65,8 +65,16 @@ function mergeDevicesFromPositions(deviceList, positionsMap) {
     return list;
 }
 
+const MAP_COURSE_ZOOM = 17;
+
+function centerMapOnCourseOrigin(lat, lng, zoom = MAP_COURSE_ZOOM) {
+    if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    map.setView([lat, lng], zoom);
+    mapInitialFitDone = true;
+}
+
 function initMap() {
-    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-36.5918, 174.7035], 16);
+    map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-36.59205, 174.70355], MAP_COURSE_ZOOM);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -1423,7 +1431,8 @@ function wireBuoysPanel() {
         dragToggle.dataset.bound = '1';
         dragToggle.addEventListener('change', () => {
             syncBuoysToMap();
-            setBuoysStatus(dragToggle.checked ? 'Drag buoys on the map.' : '');
+            window.BspCourseLayout?.onDragToggleChanged?.();
+            setBuoysStatus(dragToggle.checked ? 'Drag buoys, flags, and start/finish on the map.' : '');
         });
     }
 
@@ -1456,7 +1465,26 @@ function initCourseBuoys() {
     syncBuoysToMap();
     renderBuoysList();
     wireBuoysPanel();
+    if (window.BspCourseLayout) {
+        window.BspCourseLayout.init();
+    }
 }
+
+window.BspMapApi = {
+    getMap: () => map,
+    getCourseBuoys: () => courseBuoys,
+    setCourseBuoys: (arr) => {
+        courseBuoys = (arr || []).map((b) => ({ ...b }));
+        saveCourseBuoys();
+    },
+    syncBuoysToMap,
+    renderBuoysList,
+    onBuoysOrTimingGeometryChanged,
+    isBuoysDragEnabled,
+    scheduleMapResize,
+    setBuoysStatus,
+    centerMapOnCourseOrigin,
+};
 
 function initCustomMapPins() {
     loadCustomMapPins();

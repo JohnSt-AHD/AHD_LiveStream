@@ -55,6 +55,206 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    transition: width 0.2s ease;
+}
+
+.bsp-buoys-panel--half {
+    width: min(50vw, 720px);
+}
+
+body.bsp-buoys-panel-expanded .bsp-map-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.bsp-buoys-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 12px 0;
+    flex-shrink: 0;
+}
+
+.bsp-buoys-panel-head .bsp-buoys-title {
+    margin-bottom: 0;
+}
+
+.bsp-buoys-subtitle {
+    margin: 14px 0 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--bsp-sand);
+}
+
+.bsp-course-layout-section {
+    margin-bottom: 4px;
+}
+
+.bsp-course-chart-wrap {
+    position: relative;
+    height: 200px;
+    width: 100%;
+    margin: 8px 0 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    background: rgba(8, 47, 66, 0.65);
+    overflow: hidden;
+}
+
+.bsp-buoys-panel--half .bsp-course-chart-wrap {
+    height: min(42vh, 320px);
+}
+
+.bsp-course-chart-wrap canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.bsp-course-params {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.bsp-buoys-panel--half .bsp-course-params {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.bsp-course-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.bsp-course-ref-gallery {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.bsp-buoys-panel--half .bsp-course-ref-gallery {
+    display: grid;
+}
+
+.bsp-course-ref-kicker {
+    grid-column: 1 / -1;
+    margin: 0 0 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bsp-teal);
+}
+
+.bsp-course-ref-fig {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bsp-course-ref-img-wrap {
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    background: linear-gradient(165deg, rgba(253, 230, 138, 0.12) 0%, rgba(8, 47, 66, 0.85) 42%, rgba(12, 74, 110, 0.9) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(45, 212, 191, 0.2),
+        0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.bsp-course-ref-img-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+.bsp-course-ref-fig figcaption {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: #b8d4e8;
+}
+
+.bsp-course-ref-tag {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0f172a;
+    background: var(--bsp-sand);
+}
+
+@media (max-width: 900px) {
+    .bsp-buoys-panel--half .bsp-course-ref-gallery {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bsp-flag-card-label {
+    color: #f472b6;
+}
+
+.bsp-flag-map-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.bsp-flag-map-icon__pole {
+    position: absolute;
+    left: 4px;
+    bottom: 0;
+    width: 3px;
+    height: 22px;
+    background: #64748b;
+    border-radius: 1px;
+}
+
+.bsp-flag-map-icon__banner {
+    position: absolute;
+    left: 7px;
+    top: 2px;
+    padding: 1px 4px;
+    font-size: 9px;
+    font-weight: 800;
+    color: #0f172a;
+    background: linear-gradient(135deg, #f472b6, #fb7185);
+    border-radius: 2px;
+    line-height: 1.1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.bsp-sf-map-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.bsp-sf-map-icon__label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #0f172a;
+    background: #f8fafc;
+    border: 2px solid #0f172a;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .bsp-buoys-panel-scroll {

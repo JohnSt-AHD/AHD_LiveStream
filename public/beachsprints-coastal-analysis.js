@@ -1100,6 +1100,159 @@
         return { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
     }
 
+    /** Bearing (°) of seaward +y: 0 = north, 90 = east. */
+    function headingUnitVectors(headingDeg) {
+        const rad = (headingDeg * Math.PI) / 180;
+        const sinH = Math.sin(rad);
+        const cosH = Math.cos(rad);
+        return {
+            alongEast: sinH,
+            alongNorth: cosH,
+            crossEast: cosH,
+            crossNorth: -sinH,
+        };
+    }
+
+    /** Course frame: x across lanes (left negative), y seaward from start/finish. */
+    function courseXYToLatLng(courseX, courseY, originLat, originLng, headingDeg) {
+        const u = headingUnitVectors(headingDeg);
+        const eastM = courseX * u.crossEast + courseY * u.alongEast;
+        const northM = courseX * u.crossNorth + courseY * u.alongNorth;
+        return localMetersToLatLng(eastM, northM, originLat, originLng);
+    }
+
+    function latLngToCourseXY(lat, lng, originLat, originLng, headingDeg) {
+        const m = latLngToLocalMeters(lat, lng, originLat, originLng);
+        const u = headingUnitVectors(headingDeg);
+        return {
+            x: m.x * u.crossEast + m.y * u.crossNorth,
+            y: m.x * u.alongEast + m.y * u.alongNorth,
+        };
+    }
+
+    function buildCourseLayoutSpec(params) {
+        const A = Number(params.laneSpacingA);
+        const B = Number(params.buoySpacingB);
+        const C = Number(params.tideLineC);
+        const halfA = A / 2;
+        return {
+            startFinish: { x: 0, y: 0 },
+            tideLineY: C,
+            buoys: [
+                { label: 'L1', x: -halfA, y: C + 3 * B },
+                { label: 'L2', x: -halfA, y: C + 2 * B },
+                { label: 'L3', x: -halfA, y: C + B },
+                { label: 'R1', x: halfA, y: C + 3 * B },
+                { label: 'R2', x: halfA, y: C + 2 * B },
+                { label: 'R3', x: halfA, y: C + B },
+            ],
+            flags: [
+                { label: 'LF', x: -halfA, y: C / 2 },
+                { label: 'RF', x: halfA, y: C / 2 },
+            ],
+        };
+    }
+
+    function estimateHeadingFromBuoys(buoys) {
+        const l1 = buoyByLabel(buoys, 'L1');
+        const r1 = buoyByLabel(buoys, 'R1');
+        const l3 = buoyByLabel(buoys, 'L3');
+        const r3 = buoyByLabel(buoys, 'R3');
+        if (!l1 || !r1) return null;
+        const originLat = (l1.lat + r1.lat) / 2;
+        const originLng = (l1.lng + r1.lng) / 2;
+        const g3 = l3 && r3 ? midpointLatLng(l3, r3) : null;
+        if (!g3) return null;
+        const m = latLngToLocalMeters(g3.lat, g3.lng, originLat, originLng);
+        let deg = (Math.atan2(m.x, m.y) * 180) / Math.PI;
+        if (deg < 0) deg += 360;
+        return deg;
+    }
+
+    function defaultCourseLayoutParams(buoys) {
+        const list = buoys?.length ? buoys : DEFAULT_BEACH_BUOYS;
+        const l1 = buoyByLabel(list, 'L1');
+        const r1 = buoyByLabel(list, 'R1');
+        const originLat = l1 && r1 ? (l1.lat + r1.lat) / 2 : DEFAULT_BEACH_BUOYS[0].lat;
+        const originLng = l1 && r1 ? (l1.lng + r1.lng) / 2 : DEFAULT_BEACH_BUOYS[0].lng;
+        const headingDeg = estimateHeadingFromBuoys(list) ?? 45;
+        return {
+            originLat,
+            originLng,
+            headingDeg,
+            laneSpacingA: WR_COURSE_SPEC.defaultLaneHalfWidthM * 2,
+            buoySpacingB: WR_COURSE_SPEC.gateOffsetsM[0],
+            tideLineC: WR_COURSE_SPEC.beachRunDistM,
+        };
+    }
+
+    function applyCourseLayout(params) {
+        const originLat = Number(params.originLat);
+        const originLng = Number(params.originLng);
+        const headingDeg = Number(params.headingDeg);
+        const laneSpacingA = Number(params.laneSpacingA);
+        const buoySpacingB = Number(params.buoySpacingB);
+        const tideLineC = Number(params.tideLineC);
+        if (!Number.isFinite(originLat) || !Number.isFinite(originLng)) {
+            return { ok: false, reason: 'Set start/finish latitude and longitude.' };
+        }
+        if (!Number.isFinite(headingDeg)) {
+            return { ok: false, reason: 'Enter a valid course heading (degrees).' };
+        }
+        if (
+            !Number.isFinite(laneSpacingA) ||
+            !Number.isFinite(buoySpacingB) ||
+            !Number.isFinite(tideLineC) ||
+            laneSpacingA <= 0 ||
+            buoySpacingB <= 0 ||
+            tideLineC <= 0
+        ) {
+            return {
+                ok: false,
+                reason: 'Lane spacing (A), buoy spacing (B), and tide line (C) must be positive metres.',
+            };
+        }
+        const spec = buildCourseLayoutSpec({
+            laneSpacingA,
+            buoySpacingB,
+            tideLineC,
+        });
+        const buoys = spec.buoys.map((b) => {
+            const def = DEFAULT_BEACH_BUOYS.find((d) => d.label === b.label);
+            const ll = courseXYToLatLng(b.x, b.y, originLat, originLng, headingDeg);
+            return {
+                id: def?.id || `buoy_${b.label}`,
+                label: b.label,
+                lat: ll.lat,
+                lng: ll.lng,
+            };
+        });
+        const flags = spec.flags.map((f) => {
+            const ll = courseXYToLatLng(f.x, f.y, originLat, originLng, headingDeg);
+            return { id: `flag_${f.label}`, label: f.label, lat: ll.lat, lng: ll.lng };
+        });
+        const startFinish = courseXYToLatLng(0, 0, originLat, originLng, headingDeg);
+        const tideSpan = laneSpacingA / 2 + 40;
+        const tideA = courseXYToLatLng(-tideSpan, tideLineC, originLat, originLng, headingDeg);
+        const tideB = courseXYToLatLng(tideSpan, tideLineC, originLat, originLng, headingDeg);
+        return {
+            ok: true,
+            buoys,
+            flags,
+            startFinish,
+            tideLine: { a: tideA, b: tideB },
+            spec,
+            params: {
+                originLat,
+                originLng,
+                headingDeg,
+                laneSpacingA,
+                buoySpacingB,
+                tideLineC,
+            },
+        };
+    }
+
     function courseFrameFromBuoys(buoys) {
         const l1 = buoyByLabel(buoys, 'L1');
         const r1 = buoyByLabel(buoys, 'R1');
@@ -1431,5 +1584,13 @@
         TIMING_LINES,
         WR_COURSE_SPEC,
         DEFAULT_BEACH_BUOYS,
+        courseXYToLatLng,
+        latLngToCourseXY,
+        buildCourseLayoutSpec,
+        applyCourseLayout,
+        defaultCourseLayoutParams,
+        estimateHeadingFromBuoys,
+        latLngToLocalMeters,
+        localMetersToLatLng,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
