@@ -4,6 +4,10 @@
  */
 (function () {
     const DEFAULT_REGATTA = 'cnzb2026';
+    const ROWIT_CSV_BASES = ['https://l.rowit.nz/altitude', 'https://rowit.nz/altitude'];
+    const LOCAL_REGATTA_CSV = {
+        cnzb2026: { results: 'data/cnzb2026-results.csv' },
+    };
     const LS_REGATTA = 'bsrRegattaCode_v1';
     const LS_GPS_OFFSET = 'bsrGpsOffsetMin_v1';
     const LS_DEVICE_ALIASES = 'bsrDeviceAliases_v1';
@@ -204,6 +208,42 @@
         return races;
     }
 
+    function parseResultPlacings(cols) {
+        const placings = [];
+        for (let i = 6; i + 2 < cols.length; i += 3) {
+            const place = parseInt(cols[i], 10);
+            const competitor = cols[i + 1].trim();
+            const time = cols[i + 2].trim();
+            if (!Number.isFinite(place) || place < 1 || !competitor) continue;
+            placings.push({ place, competitor, time });
+        }
+        return placings;
+    }
+
+    function mergeResultPlacings(existing, incoming) {
+        const byComp = new Map();
+        for (const p of [...existing, ...incoming]) {
+            const key = p.competitor.toLowerCase();
+            const cur = byComp.get(key);
+            const rank = (place) => (place >= 90 ? 999 : place);
+            if (!cur || rank(p.place) < rank(cur.place)) {
+                byComp.set(key, p);
+            } else if (
+                cur &&
+                rank(p.place) === rank(cur.place) &&
+                p.time &&
+                (!cur.time || cur.time.length < p.time.length)
+            ) {
+                byComp.set(key, p);
+            }
+        }
+        return [...byComp.values()].sort((a, b) => {
+            const ra = a.place >= 90 ? 999 : a.place;
+            const rb = b.place >= 90 ? 999 : b.place;
+            return ra - rb;
+        });
+    }
+
     function parseResults(text) {
         const map = new Map();
         for (const line of text.split(/\r?\n/)) {
@@ -212,22 +252,21 @@
             const cols = parseCsvLine(trimmed);
             const raceNum = parseInt(cols[0], 10);
             if (!Number.isFinite(raceNum)) continue;
-            const placings = [];
-            for (let i = 6; i + 2 < cols.length; i += 3) {
-                const place = parseInt(cols[i], 10);
-                const competitor = cols[i + 1].trim();
-                const time = cols[i + 2].trim();
-                if (!Number.isFinite(place) || place < 1 || !competitor) continue;
-                placings.push({ place, competitor, time });
-            }
-            placings.sort((a, b) => a.place - b.place);
-            map.set(raceNum, {
-                status: cols[5].trim(),
-                eventNum: cols[1]?.trim(),
-                round: cols[2]?.trim(),
-                division: cols[3]?.trim(),
+            const placings = parseResultPlacings(cols);
+            const row = {
+                status: cols[5]?.trim() || '',
+                eventNum: cols[1]?.trim() || '',
+                round: cols[2]?.trim() || '',
+                division: cols[3]?.trim() || '',
                 placings,
-            });
+            };
+            if (map.has(raceNum)) {
+                const prev = map.get(raceNum);
+                prev.placings = mergeResultPlacings(prev.placings, placings);
+                if (!prev.status && row.status) prev.status = row.status;
+            } else {
+                map.set(raceNum, row);
+            }
         }
         return map;
     }
@@ -319,12 +358,16 @@
         );
     }
 
-    function csvUrl(code, file) {
+    function csvUrlCandidates(code, file) {
         const c = normalizeRegattaCode(code);
-        if (window.AltitudeHdHub?.buildCsvUrl) {
-            return window.AltitudeHdHub.buildCsvUrl(c, file);
+        if (window.AltitudeHdHub?.buildCsvUrlCandidates) {
+            return window.AltitudeHdHub.buildCsvUrlCandidates(c, file);
         }
-        return `https://l.rowit.nz/altitude/${c}/${file}.csv`;
+        return ROWIT_CSV_BASES.map((base) => `${base}/${c}/${file}.csv`);
+    }
+
+    function csvUrl(code, file) {
+        return csvUrlCandidates(code, file)[0];
     }
 
     async function fetchCsvText(url) {
@@ -339,6 +382,24 @@
         const res = await fetch(trimmed);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.text();
+    }
+
+    async function fetchRegattaCsv(code, file) {
+        const candidates = csvUrlCandidates(code, file);
+        let lastErr = null;
+        for (const url of candidates) {
+            try {
+                return await fetchCsvText(url);
+            } catch (err) {
+                lastErr = err;
+            }
+        }
+        const localPath = LOCAL_REGATTA_CSV[normalizeRegattaCode(code)]?.[file];
+        if (localPath) {
+            const res = await fetch(localPath);
+            if (res.ok) return res.text();
+        }
+        throw lastErr || new Error(`Could not load ${file}.csv`);
     }
 
     function normalizeClubKey(s) {
@@ -510,12 +571,25 @@
     function classifyRound(round) {
         const r = String(round || '').toLowerCase();
         if (/time\s*trial|\btt\b/.test(r)) return 'tt';
-        if (/rep/.test(r)) return 'rep';
-        if (/quarter|\bqf\b/.test(r)) return 'qf';
-        if (/semi|\bsf\b/.test(r)) return 'sf';
-        if (/final|\bf\b/.test(r)) return 'final';
-        if (/heat/.test(r)) return 'heat';
+        if (r === 'r' || /rep/.test(r)) return 'rep';
+        if (r === 'q' || /quarter|\bqf\b/.test(r)) return 'qf';
+        if (r === 's' || /semi|\bsf\b/.test(r)) return 'sf';
+        if (r === 'f' || /final|\bf\b/.test(r)) return 'final';
+        if (r === 'h' || /heat/.test(r)) return 'heat';
         return 'other';
+    }
+
+    function expandRoundLabel(round) {
+        const r = String(round || '').trim();
+        const map = {
+            h: 'Heat',
+            q: 'Quarter-final',
+            s: 'Semi-final',
+            f: 'Final',
+            r: 'Repechage',
+            e: 'Exhibition',
+        };
+        return map[r.toLowerCase()] || r;
     }
 
     function eventKey(race) {
@@ -841,7 +915,7 @@
             `<div class="bsr-race-hero">` +
             `<h2>Race ${escapeHtml(race.race)}</h2>` +
             `<span class="bsr-pill">${escapeHtml(formatRaceTime(race.startAt))}</span>` +
-            `<span class="bsr-pill">${escapeHtml(race.round)}</span>` +
+            `<span class="bsr-pill">${escapeHtml(expandRoundLabel(race.round))}</span>` +
             (race.course
                 ? `<span class="bsr-pill bsr-pill--course">${escapeHtml(COURSE_LABELS[race.course] || race.course)}</span>`
                 : '') +
@@ -1216,10 +1290,10 @@
         const code = state.regattaCode;
         try {
             const [daysheet, results, competitors, events, lookup] = await Promise.all([
-                fetchCsvText(csvUrl(code, 'daysheet')),
-                fetchCsvText(csvUrl(code, 'results')).catch(() => ''),
-                fetchCsvText(csvUrl(code, 'competitors')).catch(() => ''),
-                fetchCsvText(csvUrl(code, 'events')).catch(() => ''),
+                fetchRegattaCsv(code, 'daysheet'),
+                fetchRegattaCsv(code, 'results').catch(() => ''),
+                fetchRegattaCsv(code, 'competitors').catch(() => ''),
+                fetchRegattaCsv(code, 'events').catch(() => ''),
                 fetch('data/ahd-lookup.json').then((r) => r.json()),
             ]);
             state.races = parseDaysheet(daysheet);
@@ -1244,7 +1318,7 @@
                 statusMsg +=
                     ' — daysheet parsed empty; check daysheet.csv format (race numbers and lane columns).';
             } else if (state.results.size === 0) {
-                statusMsg += ' — no results file yet (results.csv may not be published).';
+                statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
             }
             setStatus(statusMsg);
             renderFilters();

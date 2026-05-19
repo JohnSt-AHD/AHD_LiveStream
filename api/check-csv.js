@@ -1,4 +1,9 @@
-const ALLOWED_HOSTS = new Set(['l.rowit.nz', 'www.l.rowit.nz']);
+const ALLOWED_HOSTS = new Set([
+    'l.rowit.nz',
+    'www.l.rowit.nz',
+    'rowit.nz',
+    'www.rowit.nz',
+]);
 
 function isAllowedUrl(raw) {
     try {

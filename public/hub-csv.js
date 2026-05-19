@@ -4,6 +4,10 @@
 const LS_REGATTA_CODE = 'altitudeHdRegattaCode_v1';
 const LS_CSV_URLS = 'altitudeHdCsvUrls_v1';
 const ROWIT_ALTITUDE_BASE = 'https://l.rowit.nz/altitude';
+const ROWIT_ALTITUDE_BASES = [
+    'https://l.rowit.nz/altitude',
+    'https://rowit.nz/altitude',
+];
 const DEFAULT_REGATTA_CODE = 'mads2026';
 
 const CSV_FIELDS = [
@@ -28,6 +32,12 @@ function extractCodeFromUrl(url) {
 function buildCsvUrl(code, fileId) {
     const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
     return `${ROWIT_ALTITUDE_BASE}/${c}/${fileId}.csv`;
+}
+
+/** Try l.rowit.nz first, then rowit.nz (some regattas e.g. cnzb2026 publish results there). */
+function buildCsvUrlCandidates(code, fileId) {
+    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    return ROWIT_ALTITUDE_BASES.map((base) => `${base}/${c}/${fileId}.csv`);
 }
 
 function urlsFromRegattaCode(code) {
@@ -199,6 +209,8 @@ window.AltitudeHdHub = {
     ROWIT_ALTITUDE_BASE,
     normalizeRegattaCode,
     buildCsvUrl,
+    buildCsvUrlCandidates,
+    ROWIT_ALTITUDE_BASES,
     urlsFromRegattaCode,
     getRegattaCode,
     getCsvUrls: collectValues,
