@@ -2365,17 +2365,23 @@
                     runA != null && runB != null
                         ? ` · Beach run (CSV−GPS) ${coastal.formatDurationMs(runA)} vs ${coastal.formatDurationMs(runB)}`
                         : '';
+                const totA = valid[0].officialTimeMs ?? valid[0].totalMs;
+                const totB = valid[1].officialTimeMs ?? valid[1].totalMs;
+                const boatA = valid[0].boatWaterMs ?? valid[0].totalMs;
+                const boatB = valid[1].boatWaterMs ?? valid[1].totalMs;
                 headline =
-                    `<p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong> ahead on GPS boat section</p>` +
-                    `<p class="bsr-gps-stat">Boat ${coastal.formatDurationMs(valid[0].totalMs)} vs ${coastal.formatDurationMs(valid[1].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)} vs ${coastal.formatDurationMs(valid[1].turnTimeMs)}${runNote}</p>`;
+                    `<p class="bsr-card-lead"><strong>${escapeHtml(winner)}</strong> ahead on official time</p>` +
+                    `<p class="bsr-gps-stat">Total ${coastal.formatDurationMs(totA)} vs ${coastal.formatDurationMs(totB)} · Boat ${coastal.formatDurationMs(boatA)} vs ${coastal.formatDurationMs(boatB)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)} vs ${coastal.formatDurationMs(valid[1].turnTimeMs)}${runNote}</p>`;
             }
         } else {
             const runMs = valid[0].runTiming?.runTotalMs;
             const runNote =
                 runMs != null ? ` · Beach run (CSV−GPS) ${coastal.formatDurationMs(runMs)}` : '';
+            const tot = valid[0].officialTimeMs ?? valid[0].totalMs;
+            const boat = valid[0].boatWaterMs ?? valid[0].totalMs;
             headline =
                 `<p class="bsr-card-lead"><strong>${escapeHtml(labels[0] || valid[0].name)}</strong></p>` +
-                `<p class="bsr-gps-stat">Boat ${coastal.formatDurationMs(valid[0].totalMs)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)}${runNote}</p>`;
+                `<p class="bsr-gps-stat">Total ${coastal.formatDurationMs(tot)} · Boat ${coastal.formatDurationMs(boat)} · Turn ${coastal.formatDurationMs(valid[0].turnTimeMs)}${runNote}</p>`;
         }
         return (
             `<div class="bsr-compare-block">${headline}${table}` +
@@ -2930,13 +2936,17 @@
         const csvMs = Number.isFinite(officialTimeMs)
             ? officialTimeMs
             : analysis.officialTimeMs;
+        const boatWaterMs =
+            analysis.boatWaterMs ?? analysis.section?.boatWaterMs ?? null;
         const runMs =
             analysis.runTiming?.runTotalMs ??
-            (Number.isFinite(csvMs) && csvMs > analysis.totalMs ? csvMs - analysis.totalMs : null);
+            (Number.isFinite(csvMs) && Number.isFinite(boatWaterMs) && csvMs > boatWaterMs
+                ? csvMs - boatWaterMs
+                : null);
         return {
             gpsLaunchMs: analysis.section.accelMs,
             gpsStopMs: analysis.section.decelMs,
-            boatWaterMs: analysis.totalMs,
+            boatWaterMs,
             deltaLaunchSec: Number.isFinite(schedMs)
                 ? (analysis.section.accelMs - schedMs) / 1000
                 : null,
@@ -3063,7 +3073,7 @@
             if (boat) {
                 const d = boat.deltaLaunchSec;
                 body +=
-                    `<p class="bsr-gps-stat"><strong>GPS launch (7→20 km/h):</strong> ${formatDateTime(new Date(boat.gpsLaunchMs))}</p>` +
+                    `<p class="bsr-gps-stat"><strong>Boat launch GPS (~20 km/h):</strong> ${formatDateTime(new Date(boat.gpsLaunchMs))}</p>` +
                     `<p class="bsr-gps-stat"><strong>vs daysheet:</strong> ${d != null ? `${d >= 0 ? '+' : ''}${d.toFixed(0)} s` : '—'}</p>` +
                     `<p class="bsr-gps-stat"><strong>Boat on water (GPS):</strong> ${boat.fmt(boat.boatWaterMs)}</p>`;
                 if (boat.officialTimeMs != null) {
@@ -3072,7 +3082,15 @@
                 if (boat.runMs != null) {
                     body += `<p class="bsr-gps-stat"><strong>Beach run (CSV − GPS boat):</strong> ${boat.fmt(boat.runMs)}</p>`;
                 }
-                body += `<p class="bsr-note">Trace trimmed ±5 s around launch/stop; map shows boat racing section only.</p>`;
+                if (
+                    boat.officialTimeMs != null &&
+                    boat.boatWaterMs != null &&
+                    boat.runMs != null
+                ) {
+                    body += `<p class="bsr-gps-stat"><strong>Check (run + boat):</strong> ${boat.fmt(boat.runMs + boat.boatWaterMs)} · matches CSV</p>`;
+                }
+                body +=
+                    '<p class="bsr-note">Official CSV = run (start gate → boat) + boat on water (GPS ~20 km/h launch, ~15→7 km/h stop at beach) + run in. Map trace is boat section only (±5 s padding).</p>';
             } else if (analysis && !analysis.valid) {
                 body += `<p class="bsr-note">${escapeHtml(analysis.reason || 'Could not detect boat racing section.')}</p>`;
             }
@@ -3090,7 +3108,7 @@
                 : '') +
             `</p>` +
             `<p class="bsr-note">Fetch window: ${formatDateTime(win.from)} — ${formatDateTime(win.to)} (offset ${state.gpsOffsetMin} min). ` +
-            `Splits and map use the boat racing section (7→20 km/h launch, stop near launch beach, ±5 s padding, ~1.5–5 min). Yellow line = approx. start gate on beach side of buoys.</p>`;
+            `Official CSV = beach runs + GPS boat time. Boat GPS: launch ~20 km/h from rest, return stop ~15→7 km/h at beach after top buoy. Yellow line = shared start/finish gate.</p>`;
         const compareEl = document.getElementById('bsrCompareAnalysis');
         if (compareEl) {
             compareEl.innerHTML = analyses.length

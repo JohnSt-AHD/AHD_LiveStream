@@ -26,11 +26,19 @@
         runnerSprintMps: 7.5,
         /** Water return leg before beach run (approx. metres, for time split). */
         waterReturnBeforeBeachM: 80,
-        /** Detect launch when speed crosses above this (km/h). */
-        raceAccelFromKmh: 7,
-        /** Detect launch when speed reaches ~this (km/h). */
-        raceAccelToKmh: 20,
-        /** Padding before launch accel / after stop decel (ms). */
+        /** Boat at rest on beach (km/h). */
+        boatRestKmh: 5,
+        /** Boat has launched when speed reaches ~this from rest (km/h). */
+        boatLaunchKmh: 20,
+        /** Typical peak boat speed on course (km/h). */
+        boatPeakKmh: 30,
+        /** Return decel: crossing down through this from race speed (km/h). */
+        boatStopFromKmh: 15,
+        /** Boat stopped at beach below this (km/h). */
+        boatStopToKmh: 7,
+        /** Top turn speed dip is ~10–30% below peak; do not treat above this as stop. */
+        turnSpeedMinFraction: 0.68,
+        /** Padding for map trace trim only (not used in timing maths). */
         raceSectionPadMs: 5000,
         /** Approximate GPS start gate width (metres), perpendicular to course. */
         startGateWidthM: 10,
@@ -323,17 +331,69 @@
         return Math.hypot(b.x - a.x, b.y - a.y);
     }
 
-    function detectDecelNearLaunch(sorted, accelMs, launchM, opts) {
-        const lowMps = opts.lowMps;
-        const midMps = opts.midMps;
-        const returnRadiusM = opts.returnRadiusM;
-        const minEndMs = opts.minEndMs;
-        const maxEndMs = opts.maxEndMs;
-        const afterMs = opts.afterMs;
+    function detectBoatLaunchMs(sorted) {
+        const restMps = kmhToMps(WR_COURSE_SPEC.boatRestKmh);
+        const launchMps = kmhToMps(WR_COURSE_SPEC.boatLaunchKmh);
+        const peakMps = kmhToMps(WR_COURSE_SPEC.boatPeakKmh);
+
+        for (let i = 1; i < sorted.length; i++) {
+            const s0 = pointSpeedMps(sorted[i - 1]);
+            const s1 = pointSpeedMps(sorted[i]);
+            if (s0 <= restMps && s1 >= launchMps) {
+                return interpCrossingTimeMs(sorted, i, s0, s1, launchMps);
+            }
+        }
+        for (let i = 1; i < sorted.length; i++) {
+            const s0 = pointSpeedMps(sorted[i - 1]);
+            const s1 = pointSpeedMps(sorted[i]);
+            if (s0 < launchMps * 0.6 && s1 >= launchMps * 0.9) {
+                return interpCrossingTimeMs(sorted, i, s0, s1, launchMps);
+            }
+        }
+        for (let i = 0; i < sorted.length; i++) {
+            if (pointSpeedMps(sorted[i]) >= peakMps * 0.75) {
+                return positionTimeMs(sorted[i]);
+            }
+        }
+        return null;
+    }
+
+    function findReturnLegStartMs(sorted, accelMs, timing, launchM) {
+        if (timing?.line3Second?.timeMs) {
+            return timing.line3Second.timeMs;
+        }
+        if (timing?.line3First?.timeMs) {
+            return timing.line3First.timeMs + 6000;
+        }
+
         const refLat = sorted[0].latitude;
         const refLng = sorted[0].longitude;
+        let maxD = 0;
+        let maxT = accelMs;
+        for (const p of sorted) {
+            const t = positionTimeMs(p);
+            if (t < accelMs) continue;
+            const m = latLngToLocalMeters(p.latitude, p.longitude, refLat, refLng);
+            const d = Math.hypot(m.x - launchM.x, m.y - launchM.y);
+            if (d > maxD) {
+                maxD = d;
+                maxT = t;
+            }
+        }
+        return maxT + 8000;
+    }
 
-        function nearLaunch(t) {
+    function detectBoatStopMs(sorted, accelMs, launchM, timing) {
+        const returnRadiusM = WR_COURSE_SPEC.returnToLaunchRadiusM;
+        const raceMinMs = WR_COURSE_SPEC.raceMinMs;
+        const raceMaxMs = WR_COURSE_SPEC.raceMaxMs;
+        const stopHighMps = kmhToMps(WR_COURSE_SPEC.boatStopFromKmh);
+        const stopLowMps = kmhToMps(WR_COURSE_SPEC.boatStopToKmh);
+        const afterMs = findReturnLegStartMs(sorted, accelMs, timing, launchM);
+        const minEndMs = accelMs + raceMinMs;
+        const maxEndMs = accelMs + raceMaxMs;
+        const lastT = positionTimeMs(sorted[sorted.length - 1]);
+        function nearBeachStop(t) {
             const m = localMetersAtTime(sorted, t);
             if (!m) return false;
             return Math.hypot(m.x - launchM.x, m.y - launchM.y) <= returnRadiusM;
@@ -342,14 +402,18 @@
         let decelMs = null;
         for (let i = sorted.length - 1; i >= 1; i--) {
             const t1 = positionTimeMs(sorted[i]);
-            if (t1 < afterMs || t1 < minEndMs) continue;
-            if (t1 > maxEndMs) continue;
-            if (!nearLaunch(t1)) continue;
+            if (t1 < afterMs || t1 < minEndMs || t1 > maxEndMs) continue;
+            if (!nearBeachStop(t1)) continue;
             const s0 = pointSpeedMps(sorted[i - 1]);
             const s1 = pointSpeedMps(sorted[i]);
-            if (s0 >= midMps && s1 < lowMps) {
-                const cand = interpCrossingTimeMs(sorted, i, s0, s1, lowMps);
-                if (cand >= afterMs && cand >= minEndMs && cand <= maxEndMs && nearLaunch(cand)) {
+            if (s0 >= stopHighMps && s1 <= stopLowMps) {
+                const cand = interpCrossingTimeMs(sorted, i, s0, s1, stopLowMps);
+                if (
+                    cand >= afterMs &&
+                    cand >= minEndMs &&
+                    cand <= maxEndMs &&
+                    nearBeachStop(cand)
+                ) {
                     decelMs = cand;
                     break;
                 }
@@ -360,8 +424,9 @@
             for (let i = sorted.length - 1; i >= 0; i--) {
                 const t = positionTimeMs(sorted[i]);
                 if (t < afterMs || t < minEndMs || t > maxEndMs) continue;
-                if (!nearLaunch(t)) continue;
-                if (pointSpeedMps(sorted[i]) < lowMps) {
+                if (!nearBeachStop(t)) continue;
+                const s = pointSpeedMps(sorted[i]);
+                if (s <= stopLowMps) {
                     decelMs = t;
                     break;
                 }
@@ -371,6 +436,8 @@
         if (!Number.isFinite(decelMs)) {
             let bestT = null;
             let bestD = Infinity;
+            const refLat = sorted[0].latitude;
+            const refLng = sorted[0].longitude;
             for (let i = sorted.length - 1; i >= 0; i--) {
                 const t = positionTimeMs(sorted[i]);
                 if (t < afterMs || t < minEndMs || t > maxEndMs) continue;
@@ -389,88 +456,52 @@
             decelMs = bestT;
         }
 
+        if (Number.isFinite(decelMs) && decelMs - accelMs > raceMaxMs) {
+            decelMs = accelMs + raceMaxMs;
+        }
         return decelMs;
+    }
+
+    function buildOfficialRaceTiming(officialTimeMs, boatWaterMs) {
+        if (!Number.isFinite(officialTimeMs) || officialTimeMs <= 0) return null;
+        const boat = Number.isFinite(boatWaterMs) && boatWaterMs > 0 ? boatWaterMs : 0;
+        const runTotalMs = Math.max(0, officialTimeMs - boat);
+        const beach = WR_COURSE_SPEC.beachRunDistM;
+        const runOutMs = runTotalMs * (beach / (beach * 2));
+        const runInMs = runTotalMs - runOutMs;
+        return {
+            fromCsv: true,
+            officialTimeMs,
+            boatWaterMs: boat,
+            runTotalMs,
+            runOutMs,
+            runInMs,
+        };
     }
 
     function detectBoatRacingSection(points, options) {
         const sorted = sortRoutePoints(points);
         if (sorted.length < 4) return null;
 
-        const lowMps = kmhToMps(WR_COURSE_SPEC.raceAccelFromKmh);
-        const highMps = kmhToMps(WR_COURSE_SPEC.raceAccelToKmh);
-        const midMps = (lowMps + highMps) / 2;
         const padMs = WR_COURSE_SPEC.raceSectionPadMs;
-        const raceMinMs = WR_COURSE_SPEC.raceMinMs;
         const raceMaxMs = WR_COURSE_SPEC.raceMaxMs;
-        const returnRadiusM = WR_COURSE_SPEC.returnToLaunchRadiusM;
 
-        let accelMs = null;
-        for (let i = 1; i < sorted.length; i++) {
-            const s0 = pointSpeedMps(sorted[i - 1]);
-            const s1 = pointSpeedMps(sorted[i]);
-            if (s0 < lowMps && s1 >= midMps) {
-                accelMs = interpCrossingTimeMs(sorted, i, s0, s1, midMps);
-                break;
-            }
-        }
-        if (!Number.isFinite(accelMs)) {
-            for (let i = 0; i < sorted.length; i++) {
-                if (pointSpeedMps(sorted[i]) >= highMps * 0.88) {
-                    accelMs = positionTimeMs(sorted[i]);
-                    break;
-                }
-            }
-        }
+        const accelMs = detectBoatLaunchMs(sorted);
         if (!Number.isFinite(accelMs)) return null;
 
         const launchM = localMetersAtTime(sorted, accelMs);
         if (!launchM) return null;
 
         const timing = options?.useTimingLines !== false ? analyzeDeviceTiming(sorted) : null;
-        let afterMs = accelMs + raceMinMs * 0.5;
-        if (timing?.line3Second?.timeMs) {
-            afterMs = Math.max(afterMs, timing.line3Second.timeMs);
-        } else if (timing?.line3First?.timeMs) {
-            afterMs = Math.max(afterMs, timing.line3First.timeMs + 8000);
-        } else {
-            let maxD = 0;
-            let maxT = accelMs;
-            for (const p of sorted) {
-                const t = positionTimeMs(p);
-                if (t < accelMs) continue;
-                const m = latLngToLocalMeters(p.latitude, p.longitude, sorted[0].latitude, sorted[0].longitude);
-                const d = Math.hypot(m.x - launchM.x, m.y - launchM.y);
-                if (d > maxD) {
-                    maxD = d;
-                    maxT = t;
-                }
-            }
-            afterMs = Math.max(afterMs, maxT + 10000);
-        }
-
-        const minEndMs = accelMs + raceMinMs;
-        const maxEndMs = accelMs + raceMaxMs;
-
-        let decelMs = detectDecelNearLaunch(sorted, accelMs, launchM, {
-            lowMps,
-            midMps,
-            returnRadiusM,
-            minEndMs,
-            maxEndMs,
-            afterMs,
-        });
-
-        if (Number.isFinite(decelMs) && decelMs - accelMs > raceMaxMs) {
-            decelMs = accelMs + raceMaxMs;
-        }
+        const decelMs = detectBoatStopMs(sorted, accelMs, launchM, timing);
 
         const firstT = positionTimeMs(sorted[0]);
         const lastT = positionTimeMs(sorted[sorted.length - 1]);
+        const gpsEndMs = Number.isFinite(decelMs) ? decelMs : Math.min(lastT, accelMs + raceMaxMs);
         const boatStartMs = Math.max(firstT, accelMs - padMs);
         const boatEndMs = Number.isFinite(decelMs)
             ? Math.min(lastT, decelMs + padMs)
-            : Math.min(lastT, maxEndMs + padMs);
-        const gpsEndMs = Number.isFinite(decelMs) ? decelMs : Math.min(lastT, maxEndMs);
+            : Math.min(lastT, gpsEndMs + padMs);
 
         return {
             accelMs,
@@ -482,6 +513,7 @@
             boatWaterMs: gpsEndMs - accelMs,
             launchLat: interpolatePointAtTime(sorted, accelMs)?.latitude,
             launchLng: interpolatePointAtTime(sorted, accelMs)?.longitude,
+            timing,
         };
     }
 
@@ -901,7 +933,7 @@
             return {
                 valid: false,
                 name: deviceName,
-                reason: 'No boat racing section detected (7→20 km/h launch / stop not found).',
+                reason: 'No boat racing section detected (launch ~20 km/h / beach stop not found).',
             };
         }
         const raceWindow = findRaceWindow(sorted, section);
@@ -909,30 +941,20 @@
             return { valid: false, name: deviceName, reason: 'Could not analyse boat racing window.' };
         }
         const { startMs, endMs, timing } = raceWindow;
-        const totalMs = endMs - startMs;
-        if (!Number.isFinite(totalMs) || totalMs <= 0) {
-            return { valid: false, name: deviceName, reason: 'Race window too short to analyse.' };
+        const boatWaterMs = section.boatWaterMs;
+        if (!Number.isFinite(boatWaterMs) || boatWaterMs <= 0) {
+            return { valid: false, name: deviceName, reason: 'Boat on-water window too short to analyse.' };
         }
         const officialTimeMs = options?.officialTimeMs;
-        let runTiming = null;
-        if (Number.isFinite(officialTimeMs) && officialTimeMs > totalMs) {
-            const runTotalMs = officialTimeMs - totalMs;
-            const half = runTotalMs / 2;
-            runTiming = {
-                fromCsv: true,
-                officialTimeMs,
-                boatWaterMs: totalMs,
-                runTotalMs,
-                runOutMs: half,
-                runInMs: half,
-            };
-        }
+        const runTiming = buildOfficialRaceTiming(officialTimeMs, boatWaterMs);
+        const totalMs = Number.isFinite(officialTimeMs) ? officialTimeMs : boatWaterMs;
         return {
             valid: true,
             name: deviceName,
             startMs,
             endMs,
             totalMs,
+            boatWaterMs,
             timing,
             section,
             runTiming,
@@ -940,7 +962,7 @@
             phases: buildRacePhases(sorted, raceWindow),
             raceSpeed: speedStatsBetween(sorted, startMs, endMs),
             turnTimeMs: timing.turnTimeMs,
-            points: sorted,
+            points: trimmed.points,
         };
         });
     }
@@ -1156,11 +1178,10 @@
             };
         }
         const csvMs = officialTimeMs ?? analysis?.officialTimeMs;
-        const boatMs = analysis?.totalMs;
-        if (Number.isFinite(csvMs) && Number.isFinite(boatMs) && csvMs > boatMs) {
-            const runTotalMs = csvMs - boatMs;
-            const half = runTotalMs / 2;
-            return { outMs: half, inMs: half, fromCsv: true };
+        const boatMs = analysis?.boatWaterMs ?? analysis?.section?.boatWaterMs;
+        const built = buildOfficialRaceTiming(csvMs, boatMs);
+        if (built) {
+            return { outMs: built.runOutMs, inMs: built.runInMs, fromCsv: true };
         }
         const launch = analysis?.phases?.find((p) => p.id === 'launch');
         const ret = analysis?.phases?.find((p) => p.id === 'return');
