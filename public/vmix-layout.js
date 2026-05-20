@@ -71,7 +71,7 @@
         /* Positions from Milford GT templates (1920×1080) in gt-templates/extracted/ */
         'rnz-milford': {
             draw: {
-                'draw-head': { left: '140px', top: '134px', width: '812px' },
+                'draw-head': { left: '140px', top: '154px', width: '812px' },
                 'draw-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
                 'draw-logo': { width: '37px', height: '39px' },
                 'draw-crew': {},

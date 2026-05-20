@@ -69,10 +69,11 @@ body {
     animation: vg-fade-out 0.65s ease forwards;
 }
 
-/* Milford / Beach Sprints: text fades out on o while video continues */
-[data-vmix-theme='rnz-milford'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out,
-[data-vmix-theme='beachsprints-milford'] .vg-stage[data-vg-state='outro'] .vg-layer.vg-layer--fade-out {
-    animation: vg-fade-out 0.5s ease forwards;
+/* Milford / Beach Sprints: text fade-out (intro/hold/outro — draw stays in intro while video plays) */
+[data-vmix-theme='rnz-milford'] .vg-layer.vg-layer--visible.vg-layer--fade-out,
+[data-vmix-theme='beachsprints-milford'] .vg-layer.vg-layer--visible.vg-layer--fade-out {
+    animation: vg-fade-out 0.65s ease forwards;
+    pointer-events: none;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-stage[data-vg-state='outro'] .vg-bg--visible .vg-bg-video {
@@ -690,6 +691,10 @@ body {
     width: 812px;
 }
 
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head {
+    top: 154px;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-event {
     margin: 0;
     font-size: 42px;
@@ -703,7 +708,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #c45a12;
+    color: #fff;
     opacity: 1;
 }
 
@@ -728,31 +733,31 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
-    margin-left: 10px;
+    margin-left: 15px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
-    margin-left: 20px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
     margin-left: 30px;
 }
 
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
+    margin-left: 45px;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
-    margin-left: 40px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
-    margin-left: 50px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
     margin-left: 60px;
 }
 
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
+    margin-left: 75px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
+    margin-left: 90px;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
-    margin-left: 70px;
+    margin-left: 105px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane {
@@ -788,6 +793,10 @@ body {
     font-size: 22px;
     color: #1a1a1a;
     line-height: 1.15;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-club {
+    color: #fff;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane-club {

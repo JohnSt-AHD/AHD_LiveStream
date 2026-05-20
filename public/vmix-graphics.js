@@ -653,7 +653,7 @@ function vgGetVideoProfile(graphic) {
         return { textInMs: 1000, pauseAtMs: 3000 };
     }
     if (graphic === 'draw') {
-        return { textInMs: 5000, textOutMs: 23000, playThrough: true };
+        return { textInMs: 4000, textOutMs: 25000, playThrough: true };
     }
     if (graphic === 'results') {
         return { textInMs: 6000, textOutMs: 16000, playThrough: true };
@@ -882,8 +882,14 @@ function vgKriDefersBackgroundFade() {
 }
 
 function vgMilfordFadeTextOut() {
-    vgStartMilfordOutroFade();
-    vgScheduleProfile(VG_MILFORD_FADE_MS, () => vgShowTextLayer(false));
+    const layer = vgGetLayerEl();
+    if (!layer) return;
+    layer.classList.remove('vg-layer--fade-in');
+    layer.classList.add('vg-layer--fade-out');
+    vgScheduleProfile(VG_MILFORD_FADE_MS, () => {
+        vgShowTextLayer(false);
+        layer.classList.remove('vg-layer--fade-out');
+    });
 }
 
 function vgVideoGraphicEnterHold(video, graphic) {
