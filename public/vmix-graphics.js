@@ -653,7 +653,7 @@ function vgGetVideoProfile(graphic) {
         return { textInMs: 1000, pauseAtMs: 3000 };
     }
     if (graphic === 'draw') {
-        return { textInMs: 4000, textOutMs: 27000, playThrough: true };
+        return { textInMs: 4500, textOutMs: 27000, playThrough: true };
     }
     if (graphic === 'results') {
         return { textInMs: 6000, textOutMs: 16000, playThrough: true };
