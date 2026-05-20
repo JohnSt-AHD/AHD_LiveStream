@@ -955,16 +955,14 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-wrap {
     position: absolute;
-    left: 48px;
-    top: 48px;
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-    max-width: 880px;
+    inset: 0;
+    pointer-events: none;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo {
-    flex-shrink: 0;
+    position: absolute;
+    left: 1367.5px;
+    top: 110px;
     width: 67px;
     height: 60px;
     object-fit: contain;
@@ -972,46 +970,75 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo--empty {
+    position: absolute;
+    left: 1367.5px;
+    top: 110px;
+    width: 67px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
     color: #fff;
+    opacity: 0;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo--fade-in {
     animation: vg-fade-in 0.5s ease 1s forwards;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-leader-info {
-    position: relative;
-    min-width: 280px;
-    padding-top: 36px;
-}
-
 [data-vmix-theme='rnz-milford'] .vg-leader-badge {
     position: absolute;
-    top: 0;
-    right: 0;
+    left: 1573px;
+    top: 71px;
+    width: 92px;
+    height: 39px;
     margin: 0;
-    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: #000;
-    background: rgba(255, 255, 255, 0.92);
     white-space: nowrap;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-leader-crew {
+[data-vmix-theme='rnz-milford'] .vg-leader-badge-lane {
+    position: absolute;
+    left: 1690px;
+    top: 71px;
+    width: 126.5px;
+    height: 39px;
     margin: 0;
-    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
     font-weight: 700;
-    line-height: 1.15;
+    line-height: 1;
+    color: #000;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-crew {
+    position: absolute;
+    left: 1456.5px;
+    top: 119px;
+    width: 381px;
+    height: 51px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.1;
     color: #fff;
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* —— Beach Sprints Milford (shared layout with RNZ Milford) —— */

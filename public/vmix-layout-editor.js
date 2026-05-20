@@ -23,10 +23,10 @@
             { id: 'results-crew', label: 'Results — crew text', target: 'results-crew' },
         ],
         leader: [
-            { id: 'leader-wrap', label: 'Leader — logo + crew block' },
+            { id: 'leader-wrap', label: 'Leader — overlay root' },
             { id: 'leader-logo', label: 'Leader — school logo' },
-            { id: 'leader-info', label: 'Leader — crew + badge' },
-            { id: 'leader-badge', label: 'Leader — lane badge' },
+            { id: 'leader-badge', label: 'Leader — “Leader Lane” label' },
+            { id: 'leader-badge-lane', label: 'Leader — lane number' },
             { id: 'leader-crew', label: 'Leader — crew name' },
         ],
     };

@@ -427,6 +427,15 @@
     gap: 8px;
 }
 
+.hub-live-race-controls--leader {
+    margin-top: 4px;
+}
+
+.hub-live-race-input--lane {
+    width: 4.5rem;
+    text-align: center;
+}
+
 .hub-live-race-step {
     width: 44px;
     height: 44px;

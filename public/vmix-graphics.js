@@ -348,8 +348,10 @@ function vgClubInfo(clubId, lookup) {
 }
 
 const VG_LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
+const VG_LS_LEADER_LANE = 'altitudeHdLeaderLane_v1';
 const VG_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
 const VG_LS_SPEED = 'altitudeHdSpeedVmix_v1';
+const VG_DEFAULT_LEADER_LANE = 4;
 
 /** In-page live race (wins over URL ?race= after n/p or hub sync). */
 let vgLiveRaceOverride = null;
@@ -482,18 +484,65 @@ function vgFindDrawLane(race, laneNum) {
     return race.lanes.find((l) => l.lane === laneNum && l.code) || null;
 }
 
-function vgSelectLeaderLane(laneNum) {
-    if (vgPlayback.graphic !== 'leader' || !vgIsMilfordBroadcastTheme()) return;
-    if (vgPlayback.state === 'idle') return;
+function vgClampLeaderLane(value) {
+    const n = parseInt(String(value), 10);
+    if (!Number.isFinite(n)) return VG_DEFAULT_LEADER_LANE;
+    return Math.min(8, Math.max(1, n));
+}
+
+function vgGetLeaderLane() {
+    if (window.AltitudeHdLeaderLane?.getLeaderLane) {
+        return vgClampLeaderLane(window.AltitudeHdLeaderLane.getLeaderLane());
+    }
+    try {
+        const v = localStorage.getItem(VG_LS_LEADER_LANE);
+        if (v != null && String(v).trim() !== '') {
+            return vgClampLeaderLane(v);
+        }
+    } catch {
+        /* ignore */
+    }
+    return VG_DEFAULT_LEADER_LANE;
+}
+
+function vgSetLeaderLane(laneNum) {
+    const lane = vgClampLeaderLane(laneNum);
+    vgLeaderLane = lane;
+    try {
+        localStorage.setItem(VG_LS_LEADER_LANE, String(lane));
+    } catch {
+        /* ignore */
+    }
+    document.dispatchEvent(
+        new CustomEvent('altitudehd:leaderlane', { detail: { lane } }),
+    );
+    if (window.AltitudeHdLeaderLane?.syncLeaderLaneUi) {
+        window.AltitudeHdLeaderLane.syncLeaderLaneUi();
+    }
+}
+
+function vgApplyLeaderLane(laneNum) {
+    if (!vgIsMilfordBroadcastTheme()) return;
     const race = vgFindRace(vgGetRaceParam());
     if (!race) return;
     if (!vgFindDrawLane(race, laneNum)) return;
 
-    vgLeaderLane = laneNum;
+    vgSetLeaderLane(laneNum);
     const layer = vgGetLayerEl();
     if (!layer) return;
     vgRenderLeader(layer, race, laneNum);
     vgSyncLayerVisibility(layer);
+}
+
+function vgSelectLeaderLane(laneNum) {
+    if (vgPlayback.graphic !== 'leader' || !vgIsMilfordBroadcastTheme()) return;
+    if (vgPlayback.state === 'idle') return;
+    vgApplyLeaderLane(laneNum);
+}
+
+function vgShowLeaderForConfiguredLane() {
+    if (!vgIsMilfordBroadcastTheme()) return;
+    vgApplyLeaderLane(vgGetLeaderLane());
 }
 
 function vgRefreshLiveRaceContent() {
@@ -504,6 +553,9 @@ function vgRefreshLiveRaceContent() {
     const layer = vgGetLayerEl();
 
     vgPrepareContent(graphic, vgGetRaceParam());
+    if (graphic === 'leader' && vgLeaderLane != null) {
+        vgShowLeaderForConfiguredLane();
+    }
 
     if (!profile.noText && layer) {
         layer.classList.add('vg-layer--visible', 'vg-layer--fade-in');
@@ -775,7 +827,12 @@ function vgArmVideoEndedReset(video) {
 function vgSyncLayerVisibility(layer) {
     if (!layer) return;
     if (layer.classList.contains('vg-layer--leader')) {
-        if (vgLeaderLane != null && vgPlayback.state !== 'idle') {
+        const hasLeaderContent = !!layer.querySelector('.vg-leader-crew');
+        if (
+            vgLeaderLane != null &&
+            hasLeaderContent &&
+            vgPlayback.state !== 'idle'
+        ) {
             layer.classList.add('vg-layer--visible');
         } else {
             layer.classList.remove(
@@ -1147,9 +1204,6 @@ function vgTriggerIn(graphic) {
     vgSetStageState('intro');
     vgHideMap();
     vgUpdateBgGraphicClass();
-    if (graphic === 'leader') {
-        vgLeaderLane = null;
-    }
 
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgPrepareTrackerContent();
@@ -1165,6 +1219,9 @@ function vgTriggerIn(graphic) {
     }
 
     vgPrepareContent(graphic, vgGetRaceParam());
+    if (graphic === 'leader') {
+        vgShowLeaderForConfiguredLane();
+    }
     const { isVideo, video } = vgLoadBackgroundAsset(graphic);
     vgStartIntroPlayback(isVideo, video);
 }
@@ -1404,17 +1461,15 @@ function vgRenderLeader(layer, race, laneNum) {
         wrap.appendChild(vgEl('span', 'vg-leader-logo vg-leader-logo--empty vg-leader-logo--fade-in', '—'));
     }
 
-    const infoCol = vgEl('div', 'vg-leader-info');
-    infoCol.dataset.vgLayout = 'leader-info';
-    const badge = vgEl('p', 'vg-leader-badge');
+    const badge = vgEl('p', 'vg-leader-badge', 'Leader Lane');
     badge.dataset.vgLayout = 'leader-badge';
-    badge.appendChild(document.createTextNode('Leader Lane '));
-    badge.appendChild(vgEl('span', 'vg-leader-badge-lane', String(laneNum)));
-    infoCol.appendChild(badge);
+    wrap.appendChild(badge);
+    const laneBadge = vgEl('p', 'vg-leader-badge-lane', String(laneNum));
+    laneBadge.dataset.vgLayout = 'leader-badge-lane';
+    wrap.appendChild(laneBadge);
     const crew = vgEl('p', 'vg-leader-crew', info.name);
     crew.dataset.vgLayout = 'leader-crew';
-    infoCol.appendChild(crew);
-    wrap.appendChild(infoCol);
+    wrap.appendChild(crew);
     layer.appendChild(wrap);
 }
 
@@ -1576,6 +1631,14 @@ function vgBindKeyboard() {
     });
 
     window.addEventListener('storage', (e) => {
+        if (e.key === VG_LS_LEADER_LANE) {
+            const lane = vgGetLeaderLane();
+            if (vgPlayback.graphic === 'leader' && vgPlayback.state !== 'idle') {
+                vgApplyLeaderLane(lane);
+            } else {
+                vgLeaderLane = lane;
+            }
+        }
         if (e.key === VG_LS_LIVE_RACE) {
             try {
                 const v = localStorage.getItem(VG_LS_LIVE_RACE);
@@ -1634,6 +1697,7 @@ async function vgReload() {
 
 async function vgInit() {
     vgInitLiveRaceOverride();
+    vgLeaderLane = vgGetLeaderLane();
     vgResetToIdle();
     vgBindKeyboard();
 
@@ -1651,6 +1715,14 @@ async function vgInit() {
     vgBindRemoteTriggers();
 
     document.addEventListener('altitudehd:liverace', () => vgRefreshHoldContent());
+    document.addEventListener('altitudehd:leaderlane', (e) => {
+        const lane = vgClampLeaderLane(e.detail?.lane);
+        if (vgPlayback.graphic === 'leader' && vgPlayback.state !== 'idle') {
+            vgApplyLeaderLane(lane);
+        } else {
+            vgLeaderLane = lane;
+        }
+    });
     document.addEventListener('altitudehd:vmixtrigger', (e) => {
         vgHandleRemoteTrigger(JSON.stringify(e.detail || {}));
     });
@@ -1687,6 +1759,7 @@ function vgDevPreviewHold(graphic) {
         vgPrepareTrackerContent();
     } else if (graphic === 'leader') {
         vgPrepareContent(graphic, vgGetRaceParam());
+        vgShowLeaderForConfiguredLane();
         vgUpdateBgGraphicClass();
     } else {
         vgPrepareContent(graphic, vgGetRaceParam());

@@ -202,7 +202,7 @@
                     <div class="hub-vmix-explainer-body">
                 <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
                     <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
-                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
+                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Leader lane applies when the leader graphic (<code>w</code>) is on air. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
                     <div class="hub-live-race-controls">
                         <button type="button" class="hub-live-race-step" id="hubLiveRaceMinus" aria-label="Previous race">−</button>
                         <label class="hub-live-race-field">
@@ -219,6 +219,22 @@
                         </label>
                         <button type="button" class="hub-live-race-step" id="hubLiveRacePlus" aria-label="Next race">+</button>
                         <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceSync" disabled>Use current race</button>
+                    </div>
+                    <div class="hub-live-race-controls hub-live-race-controls--leader">
+                        <label class="hub-live-race-field">
+                            <span class="hub-live-race-label">Leader lane</span>
+                            <input
+                                type="number"
+                                id="hubLeaderLaneInput"
+                                class="hub-live-race-input hub-live-race-input--lane"
+                                min="1"
+                                max="8"
+                                step="1"
+                                value="4"
+                                inputmode="numeric"
+                                aria-label="Leader lane number 1 to 8"
+                            >
+                        </label>
                     </div>
                     <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
                 </div>

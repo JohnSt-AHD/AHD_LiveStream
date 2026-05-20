@@ -3,7 +3,9 @@
  * Persisted in localStorage; overlays read the same value on the same origin.
  */
 const LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
+const LS_LEADER_LANE = 'altitudeHdLeaderLane_v1';
 const DEFAULT_LIVE_RACE = '12';
+const DEFAULT_LEADER_LANE = 4;
 
 const liveRaceState = {
     races: [],
@@ -32,6 +34,42 @@ function saveLiveRace(value) {
         new CustomEvent('altitudehd:liverace', { detail: { race } }),
     );
     syncLiveRaceUi();
+}
+
+function clampLeaderLane(value) {
+    const n = parseInt(String(value), 10);
+    if (!Number.isFinite(n)) return DEFAULT_LEADER_LANE;
+    return Math.min(8, Math.max(1, n));
+}
+
+function loadLeaderLane() {
+    try {
+        const v = localStorage.getItem(LS_LEADER_LANE);
+        if (v != null && String(v).trim() !== '') {
+            return clampLeaderLane(v);
+        }
+    } catch {
+        /* ignore */
+    }
+    return DEFAULT_LEADER_LANE;
+}
+
+function saveLeaderLane(value) {
+    const lane = clampLeaderLane(value);
+    try {
+        localStorage.setItem(LS_LEADER_LANE, String(lane));
+    } catch {
+        /* ignore */
+    }
+    document.dispatchEvent(
+        new CustomEvent('altitudehd:leaderlane', { detail: { lane } }),
+    );
+    syncLeaderLaneUi();
+}
+
+function syncLeaderLaneUi() {
+    const input = document.getElementById('hubLeaderLaneInput');
+    if (input) input.value = String(loadLeaderLane());
 }
 
 function findRaceIndex(races, param) {
@@ -257,6 +295,20 @@ function bindLiveRaceControls() {
     if (plus) plus.addEventListener('click', () => stepLiveRace(1));
     if (syncBtn) syncBtn.addEventListener('click', useScheduleCurrentRace);
 
+    const leaderLaneInput = document.getElementById('hubLeaderLaneInput');
+    if (leaderLaneInput) {
+        leaderLaneInput.value = String(loadLeaderLane());
+        const applyLeaderLane = () => saveLeaderLane(leaderLaneInput.value);
+        leaderLaneInput.addEventListener('change', applyLeaderLane);
+        leaderLaneInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                leaderLaneInput.blur();
+                applyLeaderLane();
+            }
+        });
+    }
+
     document.addEventListener('altitudehd:urls', () => reloadLiveRaceDaysheet());
     document.addEventListener('altitudehd:schedule', (e) => {
         liveRaceState.scheduleCurrent = e.detail?.currentRace || null;
@@ -268,6 +320,7 @@ function bindLiveRaceControls() {
 
     reloadLiveRaceDaysheet();
     syncLiveRaceUi();
+    syncLeaderLaneUi();
 }
 
 window.AltitudeHdLiveRace = {
@@ -275,6 +328,13 @@ window.AltitudeHdLiveRace = {
     setLiveRace: saveLiveRace,
     stepLiveRace,
     getRaces: () => liveRaceState.races.slice(),
+};
+
+window.AltitudeHdLeaderLane = {
+    getLeaderLane: loadLeaderLane,
+    setLeaderLane: saveLeaderLane,
+    clampLeaderLane,
+    syncLeaderLaneUi,
 };
 
 document.addEventListener('DOMContentLoaded', bindLiveRaceControls);
