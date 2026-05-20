@@ -409,6 +409,13 @@
         return true;
     }
 
+    function courseChartMargins(w) {
+        const narrow = w < 300;
+        return narrow
+            ? { l: 26, r: 10, t: 10, b: 22 }
+            : { l: 32, r: 12, t: 12, b: 26 };
+    }
+
     function drawCourseChart() {
         const canvas = document.getElementById('bspCourseChart');
         if (!canvas) return;
@@ -417,8 +424,9 @@
         if (!c?.buildCourseLayoutSpec) return;
 
         const wrap = canvas.parentElement;
-        const w = Math.max(200, wrap?.clientWidth || 280);
-        const h = Math.max(160, wrap?.clientHeight || 200);
+        const rect = wrap?.getBoundingClientRect();
+        const w = Math.max(160, Math.floor(rect?.width || wrap?.clientWidth || 280));
+        const h = Math.max(180, Math.floor(rect?.height || wrap?.clientHeight || 240));
         const dpr = window.devicePixelRatio || 1;
         canvas.width = Math.floor(w * dpr);
         canvas.height = Math.floor(h * dpr);
@@ -438,31 +446,32 @@
             tideLineC: C,
         });
 
-        const margin = { l: 36, r: 16, t: 16, b: 32 };
+        const margin = courseChartMargins(w);
+        const plotLeft = margin.l;
+        const plotTop = margin.t;
         const plotW = w - margin.l - margin.r;
         const plotH = h - margin.t - margin.b;
+        const plotBottom = plotTop + plotH;
 
-        /** X span = 2× lane spacing (e.g. A=25 m → 50 m across the panel). */
+        /** X span = 2× lane spacing; Y = start → top buoys (fills panel via separate scales). */
         const minX = -A;
         const maxX = A;
-        const minY = -Math.max(8, C * 0.25);
-        const maxY = C + 3 * B + Math.max(8, B * 0.12);
+        const minY = 0;
+        const maxY = C + 3 * B;
 
         const rangeX = maxX - minX;
         const rangeY = maxY - minY;
-        const scale = Math.min(plotW / rangeX, plotH / rangeY);
-        const usedW = rangeX * scale;
-        const usedH = rangeY * scale;
-        const padX = (plotW - usedW) / 2;
-        const padY = (plotH - usedH) / 2;
-        const plotLeft = margin.l + padX;
-        const plotTop = margin.t + padY;
-        const plotBottom = plotTop + usedH;
+        const scaleX = plotW / rangeX;
+        const scaleY = plotH / rangeY;
+        const ui = Math.max(8, Math.min(plotW, plotH) / 24);
+        const buoyR = Math.max(5, ui * 0.55);
+        const labelPx = Math.max(10, Math.round(ui * 0.42));
+        const hintPx = Math.max(9, Math.round(ui * 0.36));
 
         /** Course y: 0 = start/finish, +y seaward. Canvas: +y up on screen = sea. */
         const toPx = (x, y) => ({
-            px: plotLeft + (x - minX) * scale,
-            py: plotTop + usedH - (y - minY) * scale,
+            px: plotLeft + (x - minX) * scaleX,
+            py: plotTop + plotH - (y - minY) * scaleY,
         });
         const tideY = toPx(0, C).py;
 
@@ -470,35 +479,49 @@
         beachGrad.addColorStop(0, 'rgba(253, 230, 138, 0.18)');
         beachGrad.addColorStop(1, 'rgba(253, 230, 138, 0.42)');
         ctx.fillStyle = beachGrad;
-        ctx.fillRect(plotLeft, tideY, usedW, plotBottom - tideY);
+        ctx.fillRect(plotLeft, tideY, plotW, plotBottom - tideY);
 
         const seaGrad = ctx.createLinearGradient(0, plotTop, 0, tideY);
         seaGrad.addColorStop(0, 'rgba(12, 74, 110, 0.7)');
         seaGrad.addColorStop(1, 'rgba(8, 47, 66, 0.25)');
         ctx.fillStyle = seaGrad;
-        ctx.fillRect(plotLeft, plotTop, usedW, tideY - plotTop);
+        ctx.fillRect(plotLeft, plotTop, plotW, tideY - plotTop);
         ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
-        ctx.setLineDash([8, 6]);
-        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 5]);
+        ctx.lineWidth = Math.max(1.5, ui * 0.12);
         ctx.beginPath();
         ctx.moveTo(plotLeft, tideY);
-        ctx.lineTo(plotLeft + usedW, tideY);
+        ctx.lineTo(plotLeft + plotW, tideY);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        const gateYs = [C + B, C + 2 * B, C + 3 * B];
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+        ctx.lineWidth = 1;
+        gateYs.forEach((gy) => {
+            const a = toPx(-A / 2, gy);
+            const b = toPx(A / 2, gy);
+            ctx.beginPath();
+            ctx.moveTo(a.px, a.py);
+            ctx.lineTo(b.px, b.py);
+            ctx.stroke();
+        });
+
         ctx.fillStyle = '#7dd3fc';
-        ctx.font = '10px system-ui,sans-serif';
-        ctx.fillText(`Tide y = C (${C} m)`, plotLeft + 4, tideY + 14);
+        ctx.font = `${hintPx}px system-ui,sans-serif`;
+        ctx.fillText(`Tide C = ${C} m`, plotLeft + 4, Math.min(plotBottom - 4, tideY + hintPx + 4));
 
         const sf = toPx(0, 0);
+        const sfHalf = Math.max(6, ui * 0.45);
         ctx.fillStyle = '#f8fafc';
         ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = Math.max(1.5, ui * 0.1);
         ctx.beginPath();
-        ctx.rect(sf.px - 8, sf.py - 8, 16, 16);
+        ctx.rect(sf.px - sfHalf, sf.py - sfHalf, sfHalf * 2, sfHalf * 2);
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 9px system-ui,sans-serif';
+        ctx.font = `bold ${Math.max(8, hintPx)}px system-ui,sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText('SF', sf.px, sf.py + 3);
         ctx.textAlign = 'left';
@@ -507,38 +530,41 @@
             const { px, py } = toPx(pt.x, pt.y);
             ctx.fillStyle = color;
             if (isFlag) {
-                ctx.fillRect(px - 2, py - 14, 3, 14);
+                const poleH = Math.max(10, ui * 0.9);
+                const banner = Math.max(8, ui * 0.55);
+                ctx.fillRect(px - 2, py - poleH, 3, poleH);
                 ctx.beginPath();
-                ctx.moveTo(px + 1, py - 14);
-                ctx.lineTo(px + 12, py - 10);
-                ctx.lineTo(px + 1, py - 6);
+                ctx.moveTo(px + 1, py - poleH);
+                ctx.lineTo(px + 1 + banner, py - poleH + banner * 0.45);
+                ctx.lineTo(px + 1, py - poleH + banner * 0.9);
                 ctx.closePath();
                 ctx.fill();
             } else {
                 ctx.beginPath();
-                ctx.arc(px, py, 7, 0, Math.PI * 2);
+                ctx.arc(px, py, buoyR, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.strokeStyle = '#0f172a';
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = Math.max(1, ui * 0.08);
                 ctx.stroke();
             }
             ctx.fillStyle = '#e8f4fc';
-            ctx.font = 'bold 10px system-ui,sans-serif';
-            ctx.fillText(pt.label, px + (isFlag ? 14 : 9), py + 4);
+            ctx.font = `bold ${labelPx}px system-ui,sans-serif`;
+            ctx.fillText(pt.label, px + (isFlag ? labelPx + 2 : buoyR + 3), py + 4);
         };
 
         spec.buoys.forEach((b) => drawPoint(b, '#ff7a18', false));
         spec.flags.forEach((f) => drawPoint(f, '#f472b6', true));
 
         ctx.fillStyle = '#94a3b8';
-        ctx.font = '10px system-ui,sans-serif';
-        ctx.fillText('y ↑ sea', plotLeft + 2, plotTop + 12);
-        ctx.fillText('y < C beach', plotLeft + 2, plotBottom - 6);
+        ctx.font = `${hintPx}px system-ui,sans-serif`;
+        ctx.fillText('y ↑ sea', plotLeft + 2, plotTop + hintPx + 2);
+        ctx.fillText('beach', plotLeft + 2, plotBottom - 4);
         ctx.textAlign = 'right';
-        ctx.fillText(`SF y=0`, plotLeft + usedW - 2, toPx(0, 0).py + 4);
-        ctx.textAlign = 'left';
+        ctx.fillText('SF y=0', plotLeft + plotW - 2, toPx(0, 0).py + 4);
+        ctx.textAlign = 'center';
         ctx.fillStyle = '#64748b';
-        ctx.fillText(`${(2 * A).toFixed(0)} m`, plotLeft + usedW / 2 - 12, plotBottom + 18);
+        ctx.fillText(`← ${(2 * A).toFixed(0)} m →`, plotLeft + plotW / 2, plotBottom - 2);
+        ctx.textAlign = 'left';
     }
 
     function togglePanelExpand() {
@@ -630,6 +656,12 @@
         if (!chartRedrawBound) {
             chartRedrawBound = true;
             window.addEventListener('resize', () => drawCourseChart());
+            const chartWrap = document.querySelector('.bsp-course-chart-wrap');
+            if (chartWrap && typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(() => drawCourseChart());
+                ro.observe(chartWrap);
+                chartWrap._bspChartRo = ro;
+            }
         }
 
         const venueSel = document.getElementById('bspVenueSelect');

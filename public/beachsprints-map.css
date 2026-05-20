@@ -93,8 +93,10 @@ body.bsp-buoys-panel-expanded .bsp-map-area {
 
 .bsp-course-chart-wrap {
     position: relative;
-    height: 200px;
     width: 100%;
+    flex: 0 0 auto;
+    height: clamp(240px, 34vh, 400px);
+    min-height: 220px;
     margin: 8px 0 10px;
     border-radius: 8px;
     border: 1px solid rgba(45, 212, 191, 0.35);
@@ -103,7 +105,8 @@ body.bsp-buoys-panel-expanded .bsp-map-area {
 }
 
 .bsp-buoys-panel--half .bsp-course-chart-wrap {
-    height: min(42vh, 320px);
+    height: clamp(300px, 52vh, 560px);
+    min-height: 280px;
 }
 
 .bsp-course-chart-wrap canvas {
