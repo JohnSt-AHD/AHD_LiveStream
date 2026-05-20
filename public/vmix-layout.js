@@ -83,8 +83,20 @@
                 'results-crew': {},
             },
             lower: {
-                'lower-meta': { left: '270px', top: '946px', fontSize: '20px' },
-                'lower-race': { left: '416px', top: '946px', fontSize: '20px' },
+                'lower-meta': {
+                    left: '270px',
+                    top: '946px',
+                    width: '200px',
+                    height: '22px',
+                    fontSize: '20px',
+                },
+                'lower-race': {
+                    left: '476px',
+                    top: '946px',
+                    width: '280px',
+                    height: '22px',
+                    fontSize: '20px',
+                },
                 'lower-event': {
                     left: '287px',
                     top: '996px',
@@ -102,8 +114,20 @@
                 'draw-crew': {},
             },
             lower: {
-                'lower-meta': { left: '270px', top: '946px', fontSize: '20px' },
-                'lower-race': { left: '416px', top: '946px', fontSize: '20px' },
+                'lower-meta': {
+                    left: '270px',
+                    top: '946px',
+                    width: '200px',
+                    height: '22px',
+                    fontSize: '20px',
+                },
+                'lower-race': {
+                    left: '476px',
+                    top: '946px',
+                    width: '280px',
+                    height: '22px',
+                    fontSize: '20px',
+                },
                 'lower-event': {
                     left: '287px',
                     top: '996px',

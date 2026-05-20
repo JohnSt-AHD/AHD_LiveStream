@@ -662,18 +662,38 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lower-meta {
+    box-sizing: border-box;
     margin: 0;
+    left: 270px;
+    top: 946px;
+    width: 200px;
+    height: 22px;
+    display: flex;
+    align-items: center;
     font-size: 20px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: visible;
     color: #111;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lower-race {
+    box-sizing: border-box;
     margin: 0;
+    left: 476px;
+    top: 946px;
+    width: 280px;
+    height: 22px;
+    display: flex;
+    align-items: center;
     font-size: 20px;
     font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: visible;
     color: #111;
 }
 
@@ -912,18 +932,38 @@ body {
 }
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-meta {
+    box-sizing: border-box;
     margin: 0;
+    left: 270px;
+    top: 946px;
+    width: 200px;
+    height: 22px;
+    display: flex;
+    align-items: center;
     font-size: 20px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: visible;
     color: #111;
 }
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race {
+    box-sizing: border-box;
     margin: 0;
+    left: 476px;
+    top: 946px;
+    width: 280px;
+    height: 22px;
+    display: flex;
+    align-items: center;
     font-size: 20px;
     font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: visible;
     color: #111;
 }
 
