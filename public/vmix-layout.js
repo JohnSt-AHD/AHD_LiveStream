@@ -84,15 +84,15 @@
             },
             lower: {
                 'lower-meta': {
-                    left: '292px',
-                    top: '948px',
+                    left: '294px',
+                    top: '950px',
                     width: '200px',
                     height: '22px',
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '446px',
-                    top: '948px',
+                    left: '436px',
+                    top: '950px',
                     width: '280px',
                     height: '22px',
                     fontSize: '20px',
@@ -115,15 +115,15 @@
             },
             lower: {
                 'lower-meta': {
-                    left: '292px',
-                    top: '948px',
+                    left: '294px',
+                    top: '950px',
                     width: '200px',
                     height: '22px',
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '446px',
-                    top: '948px',
+                    left: '436px',
+                    top: '950px',
                     width: '280px',
                     height: '22px',
                     fontSize: '20px',
