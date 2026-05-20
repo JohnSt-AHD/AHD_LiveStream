@@ -94,6 +94,16 @@ body {
     pointer-events: none;
 }
 
+[data-vmix-theme='rnz-milford'] .vg-bg--leader-shot .vg-bg-video {
+    inset: auto;
+    top: 0;
+    right: 0;
+    left: auto;
+    width: 960px;
+    height: 540px;
+    object-fit: fill;
+}
+
 .vg-bg--plain {
     background: linear-gradient(
         135deg,
@@ -934,6 +944,74 @@ body {
     margin: 0;
     font-size: 28px;
     font-weight: 700;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--leader {
+    inset: 0;
+    width: auto;
+    height: auto;
+    pointer-events: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-wrap {
+    position: absolute;
+    left: 48px;
+    top: 48px;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    max-width: 880px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-logo {
+    flex-shrink: 0;
+    width: 67px;
+    height: 60px;
+    object-fit: contain;
+    opacity: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-logo--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-logo--fade-in {
+    animation: vg-fade-in 0.5s ease 1s forwards;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-info {
+    position: relative;
+    min-width: 280px;
+    padding-top: 36px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 4px 12px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #000;
+    background: rgba(255, 255, 255, 0.92);
+    white-space: nowrap;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-leader-crew {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }
 
 /* —— Beach Sprints Milford (shared layout with RNZ Milford) —— */

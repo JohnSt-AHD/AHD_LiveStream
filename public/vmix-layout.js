@@ -105,6 +105,13 @@
                     color: 'rgb(255, 255, 255)',
                 },
             },
+            leader: {
+                'leader-wrap': { left: '48px', top: '48px' },
+                'leader-logo': { width: '67px', height: '60px' },
+                'leader-info': { left: '133px', top: '48px' },
+                'leader-badge': { fontSize: '16px' },
+                'leader-crew': { fontSize: '32px', color: 'rgb(255, 255, 255)' },
+            },
         },
         'beachsprints-milford': {
             draw: {

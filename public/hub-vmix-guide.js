@@ -12,7 +12,7 @@ const VMIX_TRIGGERS = [
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 1.5s; o fades text and finishes video' },
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
-    { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video, no overlay text' },
+    { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video (top-right, half size); 1–8 show draw lane logo + crew' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
@@ -112,6 +112,12 @@ function hubRenderVmixGuide() {
         mapNote.innerHTML =
             '<strong>Tracker (<code>g</code>):</strong> Milford tracker WebM — route dots at 1s, live speed + pause at 3s using the same overlay as the <a href="live-map.html">fleet map</a> speed screen (device + start/finish pins). <code>o</code> clears overlay and finishes video.';
         examples.appendChild(mapNote);
+
+        const leaderNote = document.createElement('p');
+        leaderNote.className = 'hub-vmix-map-note';
+        leaderNote.innerHTML =
+            '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size. Press <code>1</code>–<code>8</code> while on air to show that draw lane’s school logo (fades in after 1s) and crew name; <strong>Leader Lane <em>n</em></strong> updates with the selected lane. Uses the same live race as draw/LT.';
+        examples.appendChild(leaderNote);
 
         const devNote = document.createElement('p');
         devNote.className = 'hub-vmix-map-note';

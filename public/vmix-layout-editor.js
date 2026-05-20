@@ -22,7 +22,13 @@
             { id: 'results-logo', label: 'Results — school logos', target: 'results-logo' },
             { id: 'results-crew', label: 'Results — crew text', target: 'results-crew' },
         ],
-        leader: [],
+        leader: [
+            { id: 'leader-wrap', label: 'Leader — logo + crew block' },
+            { id: 'leader-logo', label: 'Leader — school logo' },
+            { id: 'leader-info', label: 'Leader — crew + badge' },
+            { id: 'leader-badge', label: 'Leader — lane badge' },
+            { id: 'leader-crew', label: 'Leader — crew name' },
+        ],
     };
 
     const editor = {
