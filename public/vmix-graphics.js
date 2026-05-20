@@ -653,7 +653,7 @@ function vgGetVideoProfile(graphic) {
         return { textInMs: 1000, pauseAtMs: 3000 };
     }
     if (graphic === 'draw') {
-        return { textInMs: 4000, textOutMs: 25000, playThrough: true };
+        return { textInMs: 5000, textOutMs: 25000, playThrough: true };
     }
     if (graphic === 'results') {
         return { textInMs: 6000, textOutMs: 16000, playThrough: true };
@@ -1274,7 +1274,19 @@ function vgRenderDraw(layer, race) {
         head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
     } else if (vgIsMilfordBroadcastTheme()) {
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
-        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
+        const meta = vgEl('p', 'vg-draw-meta');
+        meta.appendChild(vgEl('span', 'vg-draw-meta-race', `Race ${race.race}`));
+        if (race.round) {
+            meta.appendChild(document.createTextNode(' · '));
+            meta.appendChild(vgEl('span', 'vg-draw-meta-round', race.round));
+        }
+        if (race.division) {
+            meta.appendChild(document.createTextNode(' · '));
+            meta.appendChild(
+                vgEl('span', 'vg-draw-meta-div', `Div ${race.division}`),
+            );
+        }
+        head.appendChild(meta);
     } else {
         head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));

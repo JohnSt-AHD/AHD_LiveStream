@@ -10,7 +10,7 @@ const VMIX_PAGES = {
 const VMIX_TRIGGERS = [
     { key: 't', graphic: 'Title', desc: 'KRI — title graphic' },
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 3s; o fades text and finishes video' },
-    { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 4s, fades out at 25s; n/p steps race number ±1; o fades text early' },
+    { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video, no overlay text' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },

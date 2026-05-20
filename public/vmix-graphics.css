@@ -703,13 +703,18 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head .vg-draw-meta {
-    margin: 30px 0 0 20px;
+    margin: 50px 0 0 20px;
     font-size: 20px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #fff;
     opacity: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-div {
+    color: #000;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes,
@@ -733,31 +738,31 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
-    margin-left: 13px;
+    margin-left: 12px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
-    margin-left: 26px;
+    margin-left: 24px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
-    margin-left: 39px;
+    margin-left: 36px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
-    margin-left: 52px;
+    margin-left: 48px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
-    margin-left: 65px;
+    margin-left: 60px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
-    margin-left: 78px;
+    margin-left: 72px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
-    margin-left: 91px;
+    margin-left: 84px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane {
