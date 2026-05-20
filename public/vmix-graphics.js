@@ -351,7 +351,36 @@ const VG_LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
 const VG_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
 const VG_LS_SPEED = 'altitudeHdSpeedVmix_v1';
 
+/** In-page live race (wins over URL ?race= after n/p or hub sync). */
+let vgLiveRaceOverride = null;
+
+function vgInitLiveRaceOverride() {
+    const urlRace = new URLSearchParams(location.search).get('race');
+    if (urlRace != null && String(urlRace).trim() !== '') {
+        vgLiveRaceOverride = String(urlRace).trim();
+        return;
+    }
+    if (window.AltitudeHdLiveRace?.getLiveRace) {
+        const hub = window.AltitudeHdLiveRace.getLiveRace();
+        if (hub) {
+            vgLiveRaceOverride = hub;
+            return;
+        }
+    }
+    try {
+        const stored = localStorage.getItem(VG_LS_LIVE_RACE);
+        if (stored != null && String(stored).trim()) {
+            vgLiveRaceOverride = String(stored).trim();
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
 function vgGetRaceParam() {
+    if (vgLiveRaceOverride != null && String(vgLiveRaceOverride).trim() !== '') {
+        return String(vgLiveRaceOverride).trim();
+    }
     const urlRace = new URLSearchParams(location.search).get('race');
     if (urlRace != null && String(urlRace).trim() !== '') {
         return String(urlRace).trim();
@@ -372,6 +401,8 @@ function vgFindRace(raceParam) {
     if (!vgState.races.length) return null;
     const p = String(raceParam || '').trim();
     if (!p) return vgState.races[0];
+    const exact = vgState.races.find((r) => r.race === p);
+    if (exact) return exact;
     const num = parseInt(p, 10);
     const letter = p.match(/\(([A-Za-z])\)/i)?.[1]?.toUpperCase();
     const found = vgState.races.find((r) => {
@@ -382,44 +413,65 @@ function vgFindRace(raceParam) {
     return found || vgState.races.find((r) => r.raceNum === num) || vgState.races[0];
 }
 
-function vgFindRaceIndex(raceParam) {
-    const race = vgFindRace(raceParam);
-    if (!race) return -1;
-    return vgState.races.indexOf(race);
+function vgCurrentRaceNumber(raceParam) {
+    const current = vgFindRace(raceParam);
+    if (current && Number.isFinite(current.raceNum)) return current.raceNum;
+    const num = parseInt(String(raceParam || ''), 10);
+    return Number.isFinite(num) ? num : null;
+}
+
+/** Next/previous race by daysheet race number (+1 / −1), not array index. */
+function vgFindRaceByNumberStep(delta) {
+    const races = vgState.races;
+    if (!races.length) return null;
+    const param = vgGetRaceParam();
+    const num = vgCurrentRaceNumber(param);
+    if (!Number.isFinite(num)) return races[0];
+
+    const targetNum = num + delta;
+    const exact = races.find((r) => r.raceNum === targetNum);
+    if (exact) return exact;
+
+    if (delta > 0) {
+        return races.find((r) => r.raceNum > num) || races[races.length - 1];
+    }
+    for (let i = races.length - 1; i >= 0; i--) {
+        if (races[i].raceNum < num) return races[i];
+    }
+    return races[0];
 }
 
 function vgSetLiveRace(raceLabel) {
     const race = String(raceLabel || '').trim();
     if (!race) return;
-    if (window.AltitudeHdLiveRace?.setLiveRace) {
-        window.AltitudeHdLiveRace.setLiveRace(race);
-        return;
-    }
+    vgLiveRaceOverride = race;
     try {
         localStorage.setItem(VG_LS_LIVE_RACE, race);
+    } catch {
+        /* ignore */
+    }
+    if (window.AltitudeHdLiveRace?.setLiveRace) {
+        window.AltitudeHdLiveRace.setLiveRace(race);
+    }
+    try {
+        document.dispatchEvent(
+            new CustomEvent('altitudehd:liverace', { detail: { race } }),
+        );
     } catch {
         /* ignore */
     }
 }
 
 function vgStepLiveRace(delta) {
-    if (window.AltitudeHdLiveRace?.stepLiveRace) {
-        window.AltitudeHdLiveRace.stepLiveRace(delta);
-        vgRefreshLiveRaceContent();
-        return;
-    }
     const races = vgState.races;
     if (!races.length) {
-        const cur = parseInt(vgGetRaceParam(), 10);
-        const base = Number.isFinite(cur) ? cur : 1;
+        const num = vgCurrentRaceNumber(vgGetRaceParam());
+        const base = Number.isFinite(num) ? num : 1;
         vgSetLiveRace(String(Math.max(1, base + delta)));
-        vgRefreshLiveRaceContent();
-        return;
+    } else {
+        const next = vgFindRaceByNumberStep(delta);
+        if (next) vgSetLiveRace(next.race);
     }
-    let idx = vgFindRaceIndex(vgGetRaceParam());
-    if (idx < 0) idx = 0;
-    idx = Math.max(0, Math.min(races.length - 1, idx + delta));
-    vgSetLiveRace(races[idx].race);
     vgRefreshLiveRaceContent();
 }
 
@@ -659,6 +711,11 @@ function vgStartMilfordOutroFade() {
 
 function vgIsMilfordTheme() {
     return document.body?.dataset?.vmixTheme === 'rnz-milford';
+}
+
+function vgIsMilfordBroadcastTheme() {
+    const t = vgThemeId();
+    return t === 'rnz-milford' || t === 'beachsprints-milford';
 }
 
 function vgArmVideoEndedReset(video) {
@@ -1209,6 +1266,9 @@ function vgRenderDraw(layer, race) {
     if (vgIsKriTheme()) {
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
         head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
+    } else if (vgIsMilfordBroadcastTheme()) {
+        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
     } else {
         head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
@@ -1332,11 +1392,23 @@ function vgBindKeyboard() {
     });
 
     window.addEventListener('storage', (e) => {
-        if (e.key === VG_LS_LIVE_RACE) vgRefreshLiveRaceContent();
+        if (e.key === VG_LS_LIVE_RACE) {
+            try {
+                const v = localStorage.getItem(VG_LS_LIVE_RACE);
+                if (v != null && String(v).trim()) vgLiveRaceOverride = String(v).trim();
+            } catch {
+                /* ignore */
+            }
+            vgRefreshLiveRaceContent();
+        }
         if (e.key === VG_LS_TRIGGER) vgHandleRemoteTrigger(e.newValue);
     });
 
-    document.addEventListener('altitudehd:liverace', () => {
+    document.addEventListener('altitudehd:liverace', (e) => {
+        const race = e.detail?.race;
+        if (race != null && String(race).trim()) {
+            vgLiveRaceOverride = String(race).trim();
+        }
         vgRefreshLiveRaceContent();
     });
 }
@@ -1377,6 +1449,7 @@ async function vgReload() {
 }
 
 async function vgInit() {
+    vgInitLiveRaceOverride();
     vgResetToIdle();
     vgBindKeyboard();
 

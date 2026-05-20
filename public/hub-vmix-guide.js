@@ -10,14 +10,14 @@ const VMIX_PAGES = {
 const VMIX_TRIGGERS = [
     { key: 't', graphic: 'Title', desc: 'KRI — title graphic' },
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 3s; o fades text and finishes video' },
-    { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, text out at 23s; n/p updates copy on air; o fades text early' },
+    { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, text out at 23s; n/p steps race number ±1 on daysheet; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video, no overlay text' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; text at 1s, pause at 3s; o finishes video' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
-    { key: 'n', graphic: 'Next race', desc: 'Step live race number up (daysheet order)' },
-    { key: 'p', graphic: 'Previous race', desc: 'Step live race number down (daysheet order)' },
+    { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },
+    { key: 'p', graphic: 'Previous race', desc: 'Live race number −1 on daysheet (updates draw/LT/results on air)' },
 ];
 
 const VMIX_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';

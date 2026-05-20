@@ -53,6 +53,29 @@ function findRaceIndex(races, param) {
     return races.findIndex((r) => r.raceNum === num);
 }
 
+function findRaceByNumberStep(races, param, delta) {
+    if (!races.length) return null;
+    const idx = findRaceIndex(races, param);
+    const current = idx >= 0 ? races[idx] : null;
+    let num = current?.raceNum;
+    if (!Number.isFinite(num)) {
+        num = parseInt(String(param || ''), 10);
+    }
+    if (!Number.isFinite(num)) return races[0];
+
+    const targetNum = num + delta;
+    const exact = races.find((r) => r.raceNum === targetNum);
+    if (exact) return exact;
+
+    if (delta > 0) {
+        return races.find((r) => r.raceNum > num) || races[races.length - 1];
+    }
+    for (let i = races.length - 1; i >= 0; i--) {
+        if (races[i].raceNum < num) return races[i];
+    }
+    return races[0];
+}
+
 function findRaceMeta(param) {
     const idx = findRaceIndex(liveRaceState.races, param);
     if (idx < 0) return null;
@@ -61,16 +84,15 @@ function findRaceMeta(param) {
 
 function stepLiveRace(delta) {
     const races = liveRaceState.races;
+    const param = loadLiveRace();
     if (!races.length) {
-        const cur = parseInt(loadLiveRace(), 10);
+        const cur = parseInt(param, 10);
         const base = Number.isFinite(cur) ? cur : 1;
         saveLiveRace(String(Math.max(1, base + delta)));
         return;
     }
-    let idx = findRaceIndex(races, loadLiveRace());
-    if (idx < 0) idx = 0;
-    idx = Math.max(0, Math.min(races.length - 1, idx + delta));
-    saveLiveRace(races[idx].race);
+    const next = findRaceByNumberStep(races, param, delta);
+    if (next) saveLiveRace(next.race);
 }
 
 function syncLiveRaceUi() {

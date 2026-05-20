@@ -690,20 +690,21 @@ body {
     width: 812px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-draw-meta {
-    margin: 15px 0 0;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-event {
+    margin: 0;
+    font-size: 42px;
+    line-height: 1.1;
+    color: #fff;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head .vg-draw-meta {
+    margin: 10px 0 0;
     font-size: 20px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #c45a12;
     opacity: 1;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-event {
-    font-size: 42px;
-    line-height: 1.1;
-    color: #fff;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes,
@@ -727,31 +728,31 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
-    margin-left: 5px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
     margin-left: 10px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
-    margin-left: 15px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
     margin-left: 20px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
-    margin-left: 25px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
     margin-left: 30px;
 }
 
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
+    margin-left: 40px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
+    margin-left: 50px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
+    margin-left: 60px;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
-    margin-left: 35px;
+    margin-left: 70px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane {
