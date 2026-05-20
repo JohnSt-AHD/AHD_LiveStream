@@ -521,7 +521,7 @@ function vgSetLeaderLane(laneNum) {
     }
 }
 
-function vgApplyLeaderLane(laneNum) {
+function vgApplyLeaderLane(laneNum, opts = {}) {
     if (!vgIsMilfordBroadcastTheme()) return;
     const race = vgFindRace(vgGetRaceParam());
     if (!race) return;
@@ -530,7 +530,7 @@ function vgApplyLeaderLane(laneNum) {
     vgSetLeaderLane(laneNum);
     const layer = vgGetLayerEl();
     if (!layer) return;
-    vgRenderLeader(layer, race, laneNum);
+    vgRenderLeader(layer, race, laneNum, opts);
     layer.classList.add('vg-layer--visible');
     if (vgPlayback.state !== 'idle') {
         layer.classList.remove('vg-layer--fade-out');
@@ -544,9 +544,9 @@ function vgSelectLeaderLane(laneNum) {
     vgApplyLeaderLane(laneNum);
 }
 
-function vgShowLeaderForConfiguredLane() {
+function vgShowLeaderForConfiguredLane(fadeIn = false) {
     if (!vgIsMilfordBroadcastTheme()) return;
-    vgApplyLeaderLane(vgGetLeaderLane());
+    vgApplyLeaderLane(vgGetLeaderLane(), { fadeIn });
 }
 
 function vgRefreshLiveRaceContent() {
@@ -742,7 +742,7 @@ function vgScheduleProfile(ms, fn) {
 
 function vgGetVideoProfile(graphic) {
     if (graphic === 'leader') {
-        return { pauseAtMs: 2000 };
+        return { pauseAtMs: 4000 };
     }
     if (graphic === 'speed') {
         return { textInMs: 1000, pauseAtMs: 3000 };
@@ -1047,7 +1047,7 @@ function vgStartVideoGraphicIntro(graphic, video) {
     const isLeaderOverlay =
         graphic === 'leader' && vgIsMilfordBroadcastTheme();
     if (isLeaderOverlay) {
-        vgShowLeaderForConfiguredLane();
+        vgShowLeaderForConfiguredLane(true);
     } else {
         vgShowTextLayer(false);
     }
@@ -1233,9 +1233,6 @@ function vgTriggerIn(graphic) {
     }
 
     vgPrepareContent(graphic, vgGetRaceParam());
-    if (graphic === 'leader') {
-        vgShowLeaderForConfiguredLane();
-    }
     const { isVideo, video } = vgLoadBackgroundAsset(graphic);
     vgStartIntroPlayback(isVideo, video);
 }
@@ -1325,12 +1322,7 @@ function vgPrepareContent(graphic, raceParam) {
     else if (graphic === 'draw') vgRenderDraw(layer, race);
     else if (graphic === 'results') vgRenderResults(layer, race);
     else if (graphic === 'leader') {
-        if (vgLeaderLane != null) {
-            vgRenderLeader(layer, race, vgLeaderLane);
-        } else {
-            layer.replaceChildren();
-            vgSetLayerGraphicClass(layer, 'vg-layer--leader');
-        }
+        vgSetLayerGraphicClass(layer, 'vg-layer--leader');
     }
 
     vgSyncLayerVisibility(layer);
@@ -1450,7 +1442,7 @@ function vgBuildLaneRow(entry, lookup, mode) {
     return li;
 }
 
-function vgRenderLeader(layer, race, laneNum) {
+function vgRenderLeader(layer, race, laneNum, opts = {}) {
     vgSetLayerGraphicClass(layer, 'vg-layer--leader');
     layer.dataset.vgLayout = 'leader';
     layer.replaceChildren();
@@ -1463,16 +1455,19 @@ function vgRenderLeader(layer, race, laneNum) {
 
     const wrap = vgEl('div', 'vg-leader-wrap');
     wrap.dataset.vgLayout = 'leader-wrap';
+    if (opts.fadeIn) {
+        wrap.classList.add('vg-leader-wrap--fade-in');
+    }
 
     if (info.logoUrl) {
         const img = document.createElement('img');
-        img.className = 'vg-leader-logo vg-leader-logo--fade-in';
+        img.className = 'vg-leader-logo';
         img.src = info.logoUrl;
         img.alt = '';
         img.dataset.vgLayout = 'leader-logo';
         wrap.appendChild(img);
     } else {
-        wrap.appendChild(vgEl('span', 'vg-leader-logo vg-leader-logo--empty vg-leader-logo--fade-in', '—'));
+        wrap.appendChild(vgEl('span', 'vg-leader-logo vg-leader-logo--empty', '—'));
     }
 
     const badge = vgEl('p', 'vg-leader-badge', 'Leader Lane');

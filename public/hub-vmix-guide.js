@@ -12,7 +12,7 @@ const VMIX_TRIGGERS = [
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 1.5s; o fades text and finishes video' },
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
-    { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video + hub lane text on air; pause at 2s; 1–8 switch lane; o out' },
+    { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video + hub lane text (fade at 1s); pause at 4s; 1–8 switch lane; o out' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
@@ -116,7 +116,7 @@ function hubRenderVmixGuide() {
         const leaderNote = document.createElement('p');
         leaderNote.className = 'hub-vmix-map-note';
         leaderNote.innerHTML =
-            '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size (GT layout). Set <strong>Leader lane</strong> on the hub (default 4); <code>w</code> shows that lane’s text immediately. Video pauses at 2s; <code>o</code> fades text and finishes video. Press <code>1</code>–<code>8</code> on air to switch lane. Logo fades in after 1s.';
+            '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size (GT layout). Set <strong>Leader lane</strong> on the hub (default 4); text fades in 1s after <code>w</code>. Video pauses at 4s; <code>o</code> fades text and finishes video. Press <code>1</code>–<code>8</code> on air to switch lane instantly.';
         examples.appendChild(leaderNote);
 
         const devNote = document.createElement('p');

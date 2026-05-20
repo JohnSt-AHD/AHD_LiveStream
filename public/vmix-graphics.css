@@ -961,18 +961,17 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo {
     position: absolute;
-    left: 1367.5px;
-    top: 110px;
+    left: 1387.5px;
+    top: 90px;
     width: 67px;
     height: 60px;
     object-fit: contain;
-    opacity: 0;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo--empty {
     position: absolute;
-    left: 1367.5px;
-    top: 110px;
+    left: 1387.5px;
+    top: 90px;
     width: 67px;
     height: 60px;
     display: flex;
@@ -980,17 +979,21 @@ body {
     justify-content: center;
     font-size: 24px;
     color: #fff;
-    opacity: 0;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-leader-logo--fade-in {
+[data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-logo,
+[data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-logo--empty,
+[data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-badge,
+[data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-badge-lane,
+[data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-crew {
+    opacity: 0;
     animation: vg-fade-in 0.5s ease 1s forwards;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge {
     position: absolute;
-    left: 1573px;
-    top: 71px;
+    left: 1593px;
+    top: 51px;
     width: 92px;
     height: 39px;
     margin: 0;
@@ -1008,8 +1011,8 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge-lane {
     position: absolute;
-    left: 1690px;
-    top: 71px;
+    left: 1710px;
+    top: 51px;
     width: 126.5px;
     height: 39px;
     margin: 0;
@@ -1024,14 +1027,14 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-crew {
     position: absolute;
-    left: 1456.5px;
-    top: 119px;
+    left: 1476.5px;
+    top: 99px;
     width: 381px;
     height: 51px;
     margin: 0;
     display: flex;
     align-items: center;
-    font-size: 36px;
+    font-size: 27px;
     font-weight: 700;
     line-height: 1.1;
     color: #fff;
