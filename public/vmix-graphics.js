@@ -531,6 +531,10 @@ function vgApplyLeaderLane(laneNum) {
     const layer = vgGetLayerEl();
     if (!layer) return;
     vgRenderLeader(layer, race, laneNum);
+    layer.classList.add('vg-layer--visible');
+    if (vgPlayback.state !== 'idle') {
+        layer.classList.remove('vg-layer--fade-out');
+    }
     vgSyncLayerVisibility(layer);
 }
 
@@ -738,7 +742,7 @@ function vgScheduleProfile(ms, fn) {
 
 function vgGetVideoProfile(graphic) {
     if (graphic === 'leader') {
-        return { playThrough: true };
+        return { pauseAtMs: 2000 };
     }
     if (graphic === 'speed') {
         return { textInMs: 1000, pauseAtMs: 3000 };
@@ -1017,8 +1021,12 @@ function vgVideoGraphicEnterHold(video, graphic) {
     vgClearPlaybackTimers();
     vgPauseVideoAtHoldPoint(video);
     vgSetStageState('hold');
-    vgShowTextLayer(true);
-    vgApplySavedLayout(graphic);
+    if (graphic === 'leader' && vgIsMilfordBroadcastTheme()) {
+        vgShowLeaderForConfiguredLane();
+    } else {
+        vgShowTextLayer(true);
+        vgApplySavedLayout(graphic);
+    }
 }
 
 /** Milford tracker: paused WebM + fleet-map speed/route overlay (speed.html iframe). */
@@ -1036,7 +1044,13 @@ function vgEnterSpeedTrackerHold(video) {
 function vgStartVideoGraphicIntro(graphic, video) {
     const profile = vgGetVideoProfile(graphic);
     vgShowBackground(true);
-    vgShowTextLayer(false);
+    const isLeaderOverlay =
+        graphic === 'leader' && vgIsMilfordBroadcastTheme();
+    if (isLeaderOverlay) {
+        vgShowLeaderForConfiguredLane();
+    } else {
+        vgShowTextLayer(false);
+    }
 
     video.loop = false;
     video.muted = true;
