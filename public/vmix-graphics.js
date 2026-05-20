@@ -554,6 +554,9 @@ function vgBuildSpeedEmbedUrl() {
     const u = new URL('speed.html', location.href);
     u.searchParams.set('vmix', '1');
     u.searchParams.set('transparent', '1');
+    if (vgIsVideoTheme()) {
+        u.searchParams.set('overlayOnly', '1');
+    }
     try {
         const s = JSON.parse(localStorage.getItem(VG_LS_SPEED) || '{}');
         if (s.deviceId) u.searchParams.set('deviceId', String(s.deviceId));
@@ -565,6 +568,24 @@ function vgBuildSpeedEmbedUrl() {
         /* ignore */
     }
     return `speed.html?${u.searchParams.toString()}`;
+}
+
+function vgSendSpeedOverlayPhase(phase) {
+    const frame = vgGetSpeedFrame();
+    if (!frame) return;
+    const send = () => vgPostToSpeedFrame(phase);
+    if (frame.dataset.loaded === '1') {
+        send();
+        return;
+    }
+    frame.addEventListener(
+        'load',
+        () => {
+            frame.dataset.loaded = '1';
+            send();
+        },
+        { once: true },
+    );
 }
 
 function vgGetSpeedFrame() {
@@ -901,6 +922,18 @@ function vgVideoGraphicEnterHold(video, graphic) {
     vgApplySavedLayout(graphic);
 }
 
+/** Milford tracker: paused WebM + fleet-map speed/route overlay (speed.html iframe). */
+function vgEnterSpeedTrackerHold(video) {
+    if (vgPlayback.state !== 'intro') return;
+    vgClearPlaybackTimers();
+    vgPauseVideoAtHoldPoint(video);
+    vgSetStageState('hold');
+    vgShowTextLayer(false);
+    vgLoadSpeedFrame();
+    vgShowMap(true, false);
+    vgSendSpeedOverlayPhase('hold');
+}
+
 function vgStartVideoGraphicIntro(graphic, video) {
     const profile = vgGetVideoProfile(graphic);
     vgShowBackground(true);
@@ -917,6 +950,12 @@ function vgStartVideoGraphicIntro(graphic, video) {
     if (!profile.noText && profile.textInMs != null) {
         vgScheduleProfile(profile.textInMs, () => {
             if (vgPlayback.state !== 'intro') return;
+            if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+                vgLoadSpeedFrame();
+                vgShowMap(true, false);
+                vgSendSpeedOverlayPhase('intro');
+                return;
+            }
             vgShowTextLayer(true, { fadeIn: true });
             vgApplySavedLayout(graphic);
         });
@@ -931,7 +970,11 @@ function vgStartVideoGraphicIntro(graphic, video) {
 
     if (profile.pauseAtMs != null) {
         vgScheduleProfile(profile.pauseAtMs, () => {
-            vgVideoGraphicEnterHold(video, graphic);
+            if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+                vgEnterSpeedTrackerHold(video);
+            } else {
+                vgVideoGraphicEnterHold(video, graphic);
+            }
         });
     }
 
@@ -1017,6 +1060,10 @@ function vgStartOutroPlayback(isVideo, video) {
     }
 
     if (isVideo && video && vgIsVideoTheme()) {
+        if (vgIsSpeedGraphic(graphic)) {
+            vgPostToSpeedFrame('clear');
+            vgHideMap();
+        }
         vgSetStageState('outro');
         vgResumeVideoToEnd(video, done);
         return;
@@ -1058,6 +1105,7 @@ function vgTriggerIn(graphic) {
 
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgPrepareTrackerContent();
+        vgLoadSpeedFrame();
         const { isVideo, video } = vgLoadBackgroundAsset('speed');
         vgStartIntroPlayback(isVideo, video);
         return;
@@ -1087,7 +1135,11 @@ function vgTriggerOut() {
         vgGetVideoProfile(graphic).pauseAtMs != null
     ) {
         vgClearPlaybackTimers();
-        vgVideoGraphicEnterHold(video, graphic);
+        if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+            vgEnterSpeedTrackerHold(video);
+        } else {
+            vgVideoGraphicEnterHold(video, graphic);
+        }
         return;
     }
 
@@ -1117,6 +1169,9 @@ function vgPrepareTrackerContent() {
     if (!layer) return;
     layer.replaceChildren();
     vgSetLayerGraphicClass(layer, 'vg-layer--tracker');
+    if (vgIsVideoTheme()) {
+        return;
+    }
     let label = 'Live tracking';
     try {
         const s = JSON.parse(localStorage.getItem(VG_LS_SPEED) || '{}');
@@ -1530,11 +1585,20 @@ function vgDevPreviewHold(graphic) {
     const { isVideo, video } = vgLoadBackgroundAsset(assetKey);
     vgSetStageState('hold');
     vgShowBackground(true);
-    vgShowTextLayer(true);
+    if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+        vgShowTextLayer(false);
+        vgLoadSpeedFrame();
+        vgShowMap(true, false);
+        vgSendSpeedOverlayPhase('hold');
+    } else {
+        vgShowTextLayer(true);
+    }
     if (isVideo && video) {
         vgPauseVideoAtHoldPoint(video);
     }
-    vgApplySavedLayout(graphic);
+    if (!(vgIsSpeedGraphic(graphic) && vgIsVideoTheme())) {
+        vgApplySavedLayout(graphic);
+    }
 }
 
 window.VmixGraphics = {

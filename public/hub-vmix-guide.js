@@ -14,7 +14,7 @@ const VMIX_TRIGGERS = [
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video, no overlay text' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
-    { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; text at 1s, pause at 3s; o finishes video' },
+    { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
     { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },
     { key: 'p', graphic: 'Previous race', desc: 'Live race number −1 on daysheet (updates draw/LT/results on air)' },
@@ -110,7 +110,7 @@ function hubRenderVmixGuide() {
         const mapNote = document.createElement('p');
         mapNote.className = 'hub-vmix-map-note';
         mapNote.innerHTML =
-            '<strong>Tracker (<code>g</code>):</strong> Milford tracker WebM — text at 1s, pause at 3s; <code>o</code> fades text and plays to the end. Optional device label from the <a href="live-map.html">fleet map</a>.';
+            '<strong>Tracker (<code>g</code>):</strong> Milford tracker WebM — route dots at 1s, live speed + pause at 3s using the same overlay as the <a href="live-map.html">fleet map</a> speed screen (device + start/finish pins). <code>o</code> clears overlay and finishes video.';
         examples.appendChild(mapNote);
 
         const devNote = document.createElement('p');

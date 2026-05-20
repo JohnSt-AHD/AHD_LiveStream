@@ -11,6 +11,7 @@ const deviceId = parseInt(params.get('deviceId'), 10);
 const pollMs = parseNum(params.get('interval'), 1000, 60000, 2500);
 const vmixHost = params.get('vmix') === '1';
 const transparent = vmixHost || params.get('transparent') === '1';
+const overlayOnly = vmixHost && params.get('overlayOnly') === '1';
 
 function parseFloatClamped(v, min, max) {
     const n = parseFloat(v);
@@ -161,6 +162,34 @@ function showError(msg) {
 function initSpeedBackgroundVideo() {
     const vid = document.getElementById('speedBgVideo');
     if (!vid) return;
+
+    if (overlayOnly) {
+        const wrap = document.querySelector('.speed-bg-video-wrap');
+        if (wrap) wrap.hidden = true;
+        if (vmixHost) {
+            window.addEventListener('message', (e) => {
+                if (e.data?.type !== 'altitudehd:vg') return;
+                const phase = e.data.phase;
+                if (phase === 'intro') {
+                    overlayPhase = 'routeVisible';
+                    if (routeCfg) layoutSpeedRouteOverlay();
+                    updateCardVisibility();
+                } else if (phase === 'hold') {
+                    overlayPhase = 'pausedSpeed';
+                    updateCardVisibility();
+                } else if (phase === 'clear') {
+                    overlayPhase = 'idle';
+                    if (routeLayer) {
+                        routeLayer.hidden = true;
+                        routeLayer.setAttribute('aria-hidden', 'true');
+                    }
+                    updateCardVisibility();
+                }
+            });
+        }
+        return;
+    }
+
     vid.muted = true;
     vid.defaultMuted = true;
     vid.loop = false;
@@ -264,6 +293,9 @@ function initSpeedBackgroundVideo() {
 
 if (transparent) {
     document.body.classList.add('speed-transparent');
+}
+if (overlayOnly) {
+    document.body.classList.add('speed-overlay-only');
 }
 
 if (!Number.isFinite(deviceId) || deviceId < 1) {

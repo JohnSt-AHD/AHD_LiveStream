@@ -16,6 +16,10 @@ body.speed-transparent {
     background-color: transparent;
 }
 
+body.speed-overlay-only .speed-bg-video-wrap {
+    display: none !important;
+}
+
 .speed-route-layer {
     position: fixed;
     inset: 0;
