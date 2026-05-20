@@ -424,8 +424,17 @@ function vgStepLiveRace(delta) {
 }
 
 function vgRefreshLiveRaceContent() {
-    if (vgPlayback.graphic && vgPlayback.state !== 'idle') {
-        vgPrepareContent(vgPlayback.graphic, vgGetRaceParam());
+    const graphic = vgPlayback.graphic;
+    if (!graphic || vgPlayback.state === 'idle') return;
+
+    const profile = vgGetVideoProfile(graphic);
+    const layer = vgGetLayerEl();
+
+    vgPrepareContent(graphic, vgGetRaceParam());
+
+    if (!profile.noText && layer) {
+        layer.classList.add('vg-layer--visible', 'vg-layer--fade-in');
+        layer.classList.remove('vg-layer--fade-out');
     }
 }
 
@@ -592,7 +601,7 @@ function vgGetVideoProfile(graphic) {
         return { textInMs: 1000, pauseAtMs: 3000 };
     }
     if (graphic === 'draw') {
-        return { textInMs: 6000, textOutMs: 20000, playThrough: true };
+        return { textInMs: 5000, textOutMs: 23000, playThrough: true };
     }
     if (graphic === 'results') {
         return { textInMs: 6000, textOutMs: 16000, playThrough: true };
@@ -1325,6 +1334,10 @@ function vgBindKeyboard() {
     window.addEventListener('storage', (e) => {
         if (e.key === VG_LS_LIVE_RACE) vgRefreshLiveRaceContent();
         if (e.key === VG_LS_TRIGGER) vgHandleRemoteTrigger(e.newValue);
+    });
+
+    document.addEventListener('altitudehd:liverace', () => {
+        vgRefreshLiveRaceContent();
     });
 }
 
