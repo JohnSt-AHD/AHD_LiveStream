@@ -108,10 +108,10 @@
             leader: {
                 'leader-wrap': {},
                 'leader-logo': {
-                    left: '1472.5px',
+                    left: '1474.5px',
                     top: '80px',
-                    width: '60.3px',
-                    height: '54px',
+                    width: '59.094px',
+                    height: '52.92px',
                 },
                 'leader-crew': {
                     left: '1556.5px',
@@ -122,14 +122,14 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'leader-badge': {
-                    left: '1668px',
+                    left: '1665px',
                     top: '51px',
                     width: '82.8px',
                     height: '35.1px',
                     fontSize: '14.4px',
                 },
                 'leader-badge-lane': {
-                    left: '1730px',
+                    left: '1725px',
                     top: '51px',
                     width: '113.85px',
                     height: '35.1px',

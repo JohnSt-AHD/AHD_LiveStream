@@ -961,23 +961,23 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo {
     position: absolute;
-    left: 1472.5px;
+    left: 1474.5px;
     top: 80px;
-    width: 60.3px;
-    height: 54px;
+    width: 59.094px;
+    height: 52.92px;
     object-fit: contain;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-logo--empty {
     position: absolute;
-    left: 1472.5px;
+    left: 1474.5px;
     top: 80px;
-    width: 60.3px;
-    height: 54px;
+    width: 59.094px;
+    height: 52.92px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 21.6px;
+    font-size: 21.168px;
     color: #fff;
 }
 
@@ -992,7 +992,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge {
     position: absolute;
-    left: 1668px;
+    left: 1665px;
     top: 51px;
     width: 82.8px;
     height: 35.1px;
@@ -1011,7 +1011,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge-lane {
     position: absolute;
-    left: 1730px;
+    left: 1725px;
     top: 51px;
     width: 113.85px;
     height: 35.1px;
