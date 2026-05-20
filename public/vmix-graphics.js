@@ -1191,18 +1191,22 @@ function vgRenderLower(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--lower');
     layer.dataset.vgLayout = 'lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
-    const meta = [race.round, race.progression].filter(Boolean).join(' · ');
-    if (meta) {
-        const metaEl = vgEl('p', 'vg-lower-meta', meta);
-        metaEl.dataset.vgLayout = 'lower-meta';
-        layer.appendChild(metaEl);
+    const raceNumber = `Race ${race.race}`;
+    const metaEl = vgEl('p', 'vg-lower-meta', raceNumber);
+    metaEl.dataset.vgLayout = 'lower-meta';
+    layer.appendChild(metaEl);
+    const raceEl = vgEl('p', 'vg-lower-race');
+    const timeLabel = vgFormatTime(race.startAt);
+    const roundLabel = race.round || '';
+    const progressionLabel = race.progression || '';
+    raceEl.appendChild(vgEl('span', 'vg-lower-race-time', timeLabel));
+    if (roundLabel) {
+        raceEl.appendChild(document.createTextNode(' · '));
+        raceEl.appendChild(vgEl('span', 'vg-lower-race-round', roundLabel));
     }
-    const raceLabel = `Race ${race.race} · ${vgFormatTime(race.startAt)}`;
-    const raceEl = vgEl(
-        'p',
-        'vg-lower-race',
-        vgIsKriTheme() ? vgKriCapitalizeFirst(raceLabel) : raceLabel,
-    );
+    if (progressionLabel) {
+        raceEl.appendChild(vgEl('span', 'vg-lower-race-progression', progressionLabel));
+    }
     raceEl.dataset.vgLayout = 'lower-race';
     layer.appendChild(raceEl);
     const eventEl = vgEl('h2', 'vg-lower-event', fullName);

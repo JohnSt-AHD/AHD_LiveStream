@@ -85,14 +85,14 @@
             lower: {
                 'lower-meta': {
                     left: '294px',
-                    top: '950px',
+                    top: '952px',
                     width: '200px',
                     height: '22px',
                     fontSize: '20px',
                 },
                 'lower-race': {
                     left: '436px',
-                    top: '950px',
+                    top: '952px',
                     width: '280px',
                     height: '22px',
                     fontSize: '20px',
@@ -116,14 +116,14 @@
             lower: {
                 'lower-meta': {
                     left: '294px',
-                    top: '950px',
+                    top: '952px',
                     width: '200px',
                     height: '22px',
                     fontSize: '20px',
                 },
                 'lower-race': {
                     left: '436px',
-                    top: '950px',
+                    top: '952px',
                     width: '280px',
                     height: '22px',
                     fontSize: '20px',
