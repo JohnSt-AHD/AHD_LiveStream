@@ -742,7 +742,7 @@ function vgScheduleProfile(ms, fn) {
 
 function vgGetVideoProfile(graphic) {
     if (graphic === 'leader') {
-        return { pauseAtMs: 4000 };
+        return { pauseAtMs: 5000 };
     }
     if (graphic === 'speed') {
         return { textInMs: 1000, pauseAtMs: 3000 };
