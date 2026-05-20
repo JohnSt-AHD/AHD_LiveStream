@@ -108,7 +108,7 @@
             leader: {
                 'leader-wrap': {},
                 'leader-logo': {
-                    left: '1474.5px',
+                    left: '1476.5px',
                     top: '80px',
                     width: '59.094px',
                     height: '52.92px',
@@ -122,14 +122,14 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'leader-badge': {
-                    left: '1665px',
+                    left: '1662px',
                     top: '51px',
-                    width: '82.8px',
+                    width: '92px',
                     height: '35.1px',
                     fontSize: '14.4px',
                 },
                 'leader-badge-lane': {
-                    left: '1725px',
+                    left: '1720px',
                     top: '51px',
                     width: '113.85px',
                     height: '35.1px',

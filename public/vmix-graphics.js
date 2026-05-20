@@ -1470,7 +1470,7 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
         wrap.appendChild(vgEl('span', 'vg-leader-logo vg-leader-logo--empty', '—'));
     }
 
-    const badge = vgEl('p', 'vg-leader-badge', 'Leader Lane');
+    const badge = vgEl('p', 'vg-leader-badge', 'Leader   Lane');
     badge.dataset.vgLayout = 'leader-badge';
     wrap.appendChild(badge);
     const laneBadge = vgEl('p', 'vg-leader-badge-lane', String(laneNum));
