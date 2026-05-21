@@ -1375,7 +1375,9 @@ function vgRenderLower(layer, race) {
     const progressionLabel = race.progression || '';
     raceEl.appendChild(vgEl('span', 'vg-lower-race-time', timeLabel));
     if (roundLabel) {
-        raceEl.appendChild(document.createTextNode(' · '));
+        if (!vgIsKriTheme()) {
+            raceEl.appendChild(document.createTextNode(' · '));
+        }
         raceEl.appendChild(vgEl('span', 'vg-lower-race-round', roundLabel));
     }
     if (progressionLabel) {

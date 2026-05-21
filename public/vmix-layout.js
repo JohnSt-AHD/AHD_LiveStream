@@ -12,7 +12,7 @@
             draw: {
                 'draw-head': {
                     left: '156px',
-                    top: '191px',
+                    top: '211px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
@@ -37,7 +37,7 @@
                     left: '253px',
                     top: '434px',
                     width: '900px',
-                    gap: '10px',
+                    gap: '0',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-logo': { width: '37px', height: '35px' },
@@ -53,9 +53,9 @@
                     color: '#0060BF',
                 },
                 'lower-race': {
-                    left: '182px',
-                    top: '870px',
-                    width: '100px',
+                    left: '202px',
+                    top: '890px',
+                    width: '280px',
                     height: '28px',
                     fontSize: '20px',
                 },
