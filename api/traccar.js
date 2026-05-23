@@ -97,6 +97,38 @@ function normalizePositionsPayload(data) {
     return Array.isArray(data) ? data : [];
 }
 
+function rowingTrackerBase() {
+    return String(process.env.ROWING_TRACKER_URL || process.env.ROWING_API_URL || '').trim().replace(/\/$/, '');
+}
+
+function rowingAuthHeaders() {
+    const token = String(process.env.ROWING_INGEST_TOKEN || process.env.INGEST_TOKEN || '').trim();
+    const headers = { Accept: 'application/json' };
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+}
+
+async function rowingGetJson(path, query = {}) {
+    const base = rowingTrackerBase();
+    if (!base) {
+        return null;
+    }
+    const url = new URL(path.startsWith('/') ? path : `/${path}`, `${base}/`);
+    for (const [key, value] of Object.entries(query)) {
+        if (value != null && value !== '') {
+            url.searchParams.set(key, String(value));
+        }
+    }
+    const upstream = await fetch(url.toString(), { headers: rowingAuthHeaders() });
+    if (!upstream.ok) {
+        const text = await upstream.text().catch(() => '');
+        throw new Error(`Rowing tracker failed (${path}): ${upstream.status} ${text.slice(0, 200)}`);
+    }
+    return upstream.json();
+}
+
 async function traccarGetJson(traccarUrl, cookie, path) {
     const upstream = await fetch(`${traccarUrl}${path}`, {
         headers: {
@@ -131,8 +163,25 @@ export default async function handler(req, res) {
 
     try {
         if (action === 'auth') {
+            if (rowingTrackerBase()) {
+                res.status(200).json({ token: 'session', ok: true, source: 'rowing' });
+                return;
+            }
             await traccarLogin();
             res.status(200).json({ token: 'session', ok: true });
+            return;
+        }
+
+        if (action === 'snapshot' && rowingTrackerBase()) {
+            const data = await rowingGetJson('/api/snapshot', {
+                onlineSec: req.query.onlineSec || '120',
+            });
+            res.status(200).json({
+                devices: Array.isArray(data.devices) ? data.devices : [],
+                positions: Array.isArray(data.positions) ? data.positions : [],
+                geofences: [],
+                groups: [],
+            });
             return;
         }
 
@@ -168,6 +217,15 @@ export default async function handler(req, res) {
             const to = req.query.to;
             if (deviceId == null || deviceId === '' || !from || !to) {
                 res.status(400).json({ error: 'Missing deviceId, from, or to (use ISO 8601 datetimes)' });
+                return;
+            }
+            if (rowingTrackerBase()) {
+                const data = await rowingGetJson('/api/history', {
+                    deviceId: String(deviceId),
+                    from: String(from),
+                    to: String(to),
+                });
+                res.status(200).json(Array.isArray(data) ? data : []);
                 return;
             }
             const { traccarUrl, cookie } = await traccarLogin();
