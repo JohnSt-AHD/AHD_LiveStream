@@ -2,8 +2,13 @@
  * Shared Traccar snapshot fetch — coalesces concurrent requests and broadcasts one result per page.
  */
 (function (global) {
-    const SNAPSHOT_URL = '/api/traccar?action=snapshot';
     const EVENT_NAME = 'altitudehd:traccar-snapshot';
+
+    function snapshotUrl() {
+        const ts = global.AltitudeHdTrackerSource;
+        const source = ts ? ts.getSource() : 'traccar';
+        return `/api/traccar?action=snapshot&source=${encodeURIComponent(source)}`;
+    }
 
     let inflight = null;
     let lastDetail = null;
@@ -23,7 +28,7 @@
 
         inflight = (async () => {
             try {
-                const res = await fetch(SNAPSHOT_URL);
+                const res = await fetch(snapshotUrl());
                 const data = await res.json().catch(() => ({}));
                 const detail = {
                     ok: res.ok,

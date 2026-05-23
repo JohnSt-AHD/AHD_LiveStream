@@ -45,3 +45,41 @@
     color: var(--ahd-muted);
     line-height: 1.45;
 }
+
+.hub-settings-note[data-ok='0'] {
+    color: #f87171;
+}
+
+.hub-tracker-toggle {
+    display: inline-flex;
+    border-radius: 8px;
+    border: 1px solid var(--ahd-border);
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.hub-tracker-btn {
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: var(--ahd-muted);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.hub-tracker-btn + .hub-tracker-btn {
+    border-left: 1px solid var(--ahd-border);
+}
+
+.hub-tracker-btn--active {
+    background: rgba(13, 148, 136, 0.35);
+    color: var(--ahd-text);
+}
+
+.hub-tracker-btn:focus-visible {
+    outline: 2px solid var(--ahd-accent);
+    outline-offset: -2px;
+}

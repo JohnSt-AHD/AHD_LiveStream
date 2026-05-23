@@ -101,6 +101,18 @@ function rowingTrackerBase() {
     return String(process.env.ROWING_TRACKER_URL || process.env.ROWING_API_URL || '').trim().replace(/\/$/, '');
 }
 
+/** Client toggle: ?source=rowing | ?source=traccar (default traccar). */
+function useRowingSource(req) {
+    const explicit = String(req.query?.source || '').toLowerCase();
+    if (explicit === 'rowing' || explicit === 'rnz') return true;
+    if (explicit === 'traccar') return false;
+    return false;
+}
+
+function canUseRowing() {
+    return Boolean(rowingTrackerBase());
+}
+
 function rowingAuthHeaders() {
     const token = String(process.env.ROWING_INGEST_TOKEN || process.env.INGEST_TOKEN || '').trim();
     const headers = { Accept: 'application/json' };
@@ -163,16 +175,22 @@ export default async function handler(req, res) {
 
     try {
         if (action === 'auth') {
-            if (rowingTrackerBase()) {
+            if (useRowingSource(req) && canUseRowing()) {
                 res.status(200).json({ token: 'session', ok: true, source: 'rowing' });
                 return;
             }
             await traccarLogin();
-            res.status(200).json({ token: 'session', ok: true });
+            res.status(200).json({ token: 'session', ok: true, source: 'traccar' });
             return;
         }
 
-        if (action === 'snapshot' && rowingTrackerBase()) {
+        if (action === 'snapshot' && useRowingSource(req)) {
+            if (!canUseRowing()) {
+                res.status(503).json({
+                    error: 'ROWING_TRACKER_URL is not configured on the server.',
+                });
+                return;
+            }
             const data = await rowingGetJson('/api/snapshot', {
                 onlineSec: req.query.onlineSec || '120',
             });
@@ -181,6 +199,7 @@ export default async function handler(req, res) {
                 positions: Array.isArray(data.positions) ? data.positions : [],
                 geofences: [],
                 groups: [],
+                source: 'rowing',
             });
             return;
         }
@@ -207,7 +226,7 @@ export default async function handler(req, res) {
             const positions = normalizePositionsPayload(positionsRaw);
             const geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
             const groups = Array.isArray(groupsRaw) ? groupsRaw : [];
-            res.status(200).json({ devices, positions, geofences, groups });
+            res.status(200).json({ devices, positions, geofences, groups, source: 'traccar' });
             return;
         }
 
@@ -219,7 +238,13 @@ export default async function handler(req, res) {
                 res.status(400).json({ error: 'Missing deviceId, from, or to (use ISO 8601 datetimes)' });
                 return;
             }
-            if (rowingTrackerBase()) {
+            if (useRowingSource(req)) {
+                if (!canUseRowing()) {
+                    res.status(503).json({
+                        error: 'ROWING_TRACKER_URL is not configured on the server.',
+                    });
+                    return;
+                }
                 const data = await rowingGetJson('/api/history', {
                     deviceId: String(deviceId),
                     from: String(from),

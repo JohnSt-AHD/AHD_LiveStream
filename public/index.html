@@ -328,6 +328,33 @@
         <section class="hub-settings-bar" aria-labelledby="hub-settings-title">
             <h2 id="hub-settings-title" class="hub-settings-title">Settings</h2>
             <div class="hub-settings-row">
+                <span class="hub-settings-label" id="hubTrackerSourceLabel">Position data source</span>
+                <div
+                    class="hub-tracker-toggle"
+                    id="hubTrackerSourceToggle"
+                    role="group"
+                    aria-labelledby="hubTrackerSourceLabel"
+                >
+                    <button
+                        type="button"
+                        class="hub-tracker-btn"
+                        data-tracker-source="traccar"
+                        aria-pressed="true"
+                    >
+                        Traccar
+                    </button>
+                    <button
+                        type="button"
+                        class="hub-tracker-btn"
+                        data-tracker-source="rowing"
+                        aria-pressed="false"
+                    >
+                        RNZ recorder
+                    </button>
+                </div>
+            </div>
+            <p id="hubTrackerSourceStatus" class="hub-settings-note" data-ok="1">Using Traccar for live map and history.</p>
+            <div class="hub-settings-row">
                 <label class="hub-settings-label" for="hubMapRefreshSelect">Map refresh rate</label>
                 <select id="hubMapRefreshSelect" class="hub-settings-select" aria-describedby="hubMapRefreshNote"></select>
             </div>
@@ -339,6 +366,7 @@
         </footer>
     </div>
     <script src="map-refresh-rate.js"></script>
+    <script src="tracker-source.js"></script>
     <script src="traccar-snapshot-bus.js"></script>
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
@@ -351,5 +379,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="hub-fleet-map.js"></script>
     <script src="hub-map-refresh.js"></script>
+    <script src="hub-tracker-source.js"></script>
 </body>
 </html>

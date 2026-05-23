@@ -172,6 +172,9 @@ async function hubStatsLoadDistanceToday(devices) {
                 from: fromIso,
                 to: toIso,
             });
+            if (window.AltitudeHdTrackerSource) {
+                window.AltitudeHdTrackerSource.applySource(params);
+            }
             const res = await fetch(`${HUB_STATS_API}?${params.toString()}`);
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -218,7 +221,10 @@ function hubStatsIsSnapshotConsumerOnly() {
 function hubStatsSnapshotFetch() {
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot();
-    return fetch(`${HUB_STATS_API}?action=snapshot`)
+    const url = window.AltitudeHdTrackerSource
+        ? window.AltitudeHdTrackerSource.buildTraccarUrl({ action: 'snapshot' })
+        : `${HUB_STATS_API}?action=snapshot`;
+    return fetch(url)
         .then(async (res) => {
             const data = await res.json().catch(() => ({}));
             return {
@@ -319,6 +325,13 @@ window.addEventListener('altitudehd:map-refresh-rate', () => {
 if (document.body?.classList.contains('rnz-page')) {
     window.addEventListener('altitudehd:traccar-snapshot', hubStatsOnTraccarSnapshot);
 }
+
+window.hubStatsRefresh = hubStatsRefresh;
+
+window.addEventListener('altitudehd:tracker-source', () => {
+    if (!document.getElementById('hubStatsBar') || hubStatsIsSnapshotConsumerOnly()) return;
+    hubStatsRefresh();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubStatsBar')) return;

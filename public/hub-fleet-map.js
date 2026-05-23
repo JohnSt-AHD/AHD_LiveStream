@@ -237,6 +237,9 @@ async function hubFleetLoadTodayTraces(devices) {
                     from: fromIso,
                     to: toIso,
                 });
+                if (window.AltitudeHdTrackerSource) {
+                    window.AltitudeHdTrackerSource.applySource(params);
+                }
                 const res = await fetch(`${HUB_MAP_API}?${params.toString()}`);
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) {
@@ -374,7 +377,10 @@ function hubFleetIsSnapshotConsumerOnly() {
 function hubFleetSnapshotFetch() {
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot();
-    return fetch(`${HUB_MAP_API}?action=snapshot`)
+    const url = window.AltitudeHdTrackerSource
+        ? window.AltitudeHdTrackerSource.buildTraccarUrl({ action: 'snapshot' })
+        : `${HUB_MAP_API}?action=snapshot`;
+    return fetch(url)
         .then(async (res) => {
             const data = await res.json().catch(() => ({}));
             return {
@@ -471,6 +477,16 @@ window.addEventListener('altitudehd:map-refresh-rate', () => {
 if (document.getElementById('hubStatsBar')) {
     window.addEventListener('altitudehd:traccar-snapshot', hubFleetOnTraccarSnapshot);
 }
+
+window.hubFleetRefresh = hubFleetRefresh;
+
+window.addEventListener('altitudehd:tracker-source', () => {
+    if (!document.getElementById('hubFleetMap')) return;
+    hubFleetRefresh();
+    if (hubFleetTracesEnabled() && hubFleetLastDevices.length) {
+        hubFleetLoadTodayTraces(hubFleetLastDevices);
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubFleetMap')) return;
