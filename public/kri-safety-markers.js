@@ -3,13 +3,14 @@
  * Max size at REF_ZOOM; scales down when zoomed out to reduce overlap.
  */
 (function (global) {
-    const SHELL_W = 14;
-    const SHELL_H = 38;
-    const SAFETY_W = 24;
-    const SAFETY_H = 34;
+    const SHELL_W = 7;
+    const SHELL_H = 19;
+    const SAFETY_W = 12;
+    const SAFETY_H = 17;
     const REF_ZOOM = 14;
     const MIN_BOAT_SCALE = 0.4;
     const MIN_LABEL_SCALE = 0.45;
+    const LABEL_SIZE_FACTOR = 0.5;
     const LABEL_HIDE_BELOW_ZOOM = 11;
 
     function escapeHtml(value) {
@@ -35,7 +36,7 @@
     function getLabelZoomScale(zoom) {
         if (!Number.isFinite(zoom)) return 1;
         if (zoom < LABEL_HIDE_BELOW_ZOOM) return 0;
-        return clampScale(Math.pow(2, zoom - REF_ZOOM), MIN_LABEL_SCALE);
+        return clampScale(Math.pow(2, zoom - REF_ZOOM), MIN_LABEL_SCALE) * LABEL_SIZE_FACTOR;
     }
 
     /** Narrow rowing shell — bow at top of viewBox (north). */
@@ -81,8 +82,8 @@
                 : 1;
         const baseW = kind === 'safety' ? SAFETY_W : SHELL_W;
         const baseH = kind === 'safety' ? SAFETY_H : SHELL_H;
-        const w = Math.max(4, Math.round(baseW * scale));
-        const h = Math.max(10, Math.round(baseH * scale));
+        const w = Math.max(2, Math.round(baseW * scale));
+        const h = Math.max(5, Math.round(baseH * scale));
         const inner = kind === 'safety' ? safetySvg(fill, stroke, w, h) : shellSvg(fill, stroke, w, h);
         const capsizeClass = capsize ? ' rnz-marker-capsize' : '';
         const html =
@@ -111,6 +112,7 @@
         REF_ZOOM,
         MIN_BOAT_SCALE,
         MIN_LABEL_SCALE,
+        LABEL_SIZE_FACTOR,
         LABEL_HIDE_BELOW_ZOOM,
         SHELL_W,
         SHELL_H,
