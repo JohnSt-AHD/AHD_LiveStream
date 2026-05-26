@@ -32,12 +32,9 @@
         if (!name || typeof name !== 'string') return 'other';
         const n = name.toLowerCase();
         if (n.includes('course')) return 'hidden';
-        if ((n.includes('warm up') || n.includes('warmup')) && n.includes('zone')) {
-            return 'hidden';
-        }
+        if (n.includes('warm up') || n.includes('warmup')) return 'hidden';
         if (n.includes('marshal')) return 'marshal';
         if (n.includes('dam') || n.includes('weed')) return 'hazard';
-        if (n.includes('warm up') || n.includes('warmup')) return 'warmupline';
         if (matchesKriGeofenceName(name)) return 'boundary';
         return 'other';
     }
