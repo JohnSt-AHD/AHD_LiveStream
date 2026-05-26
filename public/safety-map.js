@@ -438,6 +438,34 @@ function initMap() {
     window.addEventListener('resize', () => {
         if (map) map.invalidateSize();
     });
+
+    if (document.body.classList.contains('kri-page')) {
+        map.on('zoomend', syncKriOverlayZoom);
+        let kriZoomRaf = null;
+        map.on('zoom', () => {
+            if (kriZoomRaf) return;
+            kriZoomRaf = requestAnimationFrame(() => {
+                kriZoomRaf = null;
+                syncKriOverlayZoom();
+            });
+        });
+        syncKriOverlayZoom();
+    }
+}
+
+function syncKriOverlayZoom() {
+    if (!document.body.classList.contains('kri-page') || !map) return;
+    const markersApi = window.KriSafetyMarkers;
+    const zoom = map.getZoom();
+    const labelScale = markersApi?.getLabelZoomScale?.(zoom) ?? 1;
+    const mapEl = document.getElementById('map');
+    if (mapEl) {
+        mapEl.style.setProperty('--kri-label-scale', String(labelScale));
+        mapEl.classList.toggle('kri-map--labels-hidden', labelScale <= 0);
+    }
+    if (markersByDeviceId.size > 0 || isKriDemoMode()) {
+        updateMapMarkers();
+    }
 }
 
 function isLiveUpdatesEnabled() {
@@ -811,12 +839,14 @@ function updateKriDemoBoatMarker(device, position, latlng, fill, stroke, capsize
         typeof position.courseHeading === 'number' && Number.isFinite(position.courseHeading)
             ? position.courseHeading
             : 0;
+    const scale = markersApi.getZoomScale?.(map?.getZoom()) ?? 1;
     const icon = markersApi.createIcon({
         kind: device.demoMarkerKind === 'safety' ? 'safety' : 'shell',
         fill,
         stroke,
         heading,
         capsize: capsizeAlert,
+        scale,
     });
     if (!icon) return null;
 

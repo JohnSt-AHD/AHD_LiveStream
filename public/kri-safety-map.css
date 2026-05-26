@@ -669,7 +669,12 @@ body.kri-page .rnz-onwater-crew {
     position: relative;
     left: 0;
     top: 0;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(var(--kri-label-scale, 1));
+    transform-origin: center center;
+}
+
+#map.kri-map--labels-hidden .kri-course-label__text {
+    visibility: hidden;
 }
 
 .kri-course-label--lane .kri-course-label__text,
