@@ -6,6 +6,9 @@
     const BOAT_COUNT = 8;
     const SPEED_MIN_MPS = 3;
     const SPEED_MAX_MPS = 10;
+    const SPEED_TARGET_MIN_MS = 600;
+    const SPEED_TARGET_MAX_MS = 1600;
+    const SPEED_BLEND_RATE = 2.2;
     const HOLD_MS = 10_000;
     const DEVICE_ID_BASE = 9001;
     const DEVICE_ID_SAFETY = 9009;
@@ -29,18 +32,51 @@
     /** @type {number[]} */
     let laneSpeedMps = [];
     /** @type {number[]} */
+    let laneSpeedTargetMps = [];
+    /** @type {number[]} */
+    let laneNextSpeedChangeAt = [];
+    /** @type {number[]} */
     let laneRaceDistanceM = [];
     /** @type {Array<{ departAt: number, distanceM: number, totalM: number, done: boolean, lane: number }>} */
     let returnLegs = [];
     let lastNow = 0;
 
-    function buildLaneSpeeds() {
-        const speeds = [];
-        for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
-            const t = BOAT_COUNT > 1 ? (lane - 1) / (BOAT_COUNT - 1) : 0;
-            speeds.push(SPEED_MIN_MPS + t * (SPEED_MAX_MPS - SPEED_MIN_MPS));
+    function clampSpeed(speed) {
+        return Math.min(SPEED_MAX_MPS, Math.max(SPEED_MIN_MPS, speed));
+    }
+
+    function randomSpeedInRange() {
+        return SPEED_MIN_MPS + Math.random() * (SPEED_MAX_MPS - SPEED_MIN_MPS);
+    }
+
+    function initLaneSpeedState(now) {
+        laneSpeedMps = [];
+        laneSpeedTargetMps = [];
+        laneNextSpeedChangeAt = [];
+        for (let lane = 0; lane < BOAT_COUNT; lane += 1) {
+            const spd = randomSpeedInRange();
+            laneSpeedMps.push(spd);
+            laneSpeedTargetMps.push(spd);
+            laneNextSpeedChangeAt.push(
+                now + SPEED_TARGET_MIN_MS + Math.random() * (SPEED_TARGET_MAX_MS - SPEED_TARGET_MIN_MS),
+            );
         }
-        return speeds;
+    }
+
+    function pickNewSpeedTarget(laneIndex, now) {
+        laneSpeedTargetMps[laneIndex] = randomSpeedInRange();
+        laneNextSpeedChangeAt[laneIndex] =
+            now + SPEED_TARGET_MIN_MS + Math.random() * (SPEED_TARGET_MAX_MS - SPEED_TARGET_MIN_MS);
+    }
+
+    function updateLaneSpeeds(now, dt) {
+        for (let i = 0; i < BOAT_COUNT; i += 1) {
+            if (now >= laneNextSpeedChangeAt[i]) {
+                pickNewSpeedTarget(i, now);
+            }
+            const blend = Math.min(1, dt * SPEED_BLEND_RATE);
+            laneSpeedMps[i] = clampSpeed(laneSpeedMps[i] + (laneSpeedTargetMps[i] - laneSpeedMps[i]) * blend);
+        }
     }
 
     function laneSpeed(lane) {
@@ -211,8 +247,8 @@
     function resetSimulation() {
         phase = PHASE.START_HOLD;
         phaseStartedAt = performance.now();
-        laneSpeedMps = buildLaneSpeeds();
         laneRaceDistanceM = new Array(BOAT_COUNT).fill(0);
+        initLaneSpeedState(phaseStartedAt);
         returnLegs = [];
         lastNow = phaseStartedAt;
         clearDemoCapsizeAcks();
@@ -254,8 +290,10 @@
             if (elapsedPhase >= HOLD_MS) {
                 phase = PHASE.RACING;
                 phaseStartedAt = now;
+                initLaneSpeedState(now);
             }
         } else if (phase === PHASE.RACING) {
+            updateLaneSpeeds(now, dt);
             let allFinished = true;
             for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
                 const idx = lane - 1;
@@ -283,6 +321,7 @@
                 beginReturnPhase(now);
             }
         } else if (phase === PHASE.RETURNING) {
+            updateLaneSpeeds(now, dt);
             let allDone = returnLegs.length === BOAT_COUNT;
             for (const leg of returnLegs) {
                 if (leg.done) continue;
