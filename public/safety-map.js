@@ -33,6 +33,7 @@ let map = null;
 const markersByDeviceId = new Map();
 let mapInitialFitDone = false;
 let pollTimer = null;
+let demoAnimTimer = null;
 let geofenceLayer = null;
 let courseOverlayLayer = null;
 
@@ -184,6 +185,16 @@ function geofenceDrawStyle(g, isMatch) {
             const fill = SAFETY_THEME.geofenceHazardFill || '#ef4444';
             return { color, weight: 3, fillColor: fill, fillOpacity: 0.32 };
         }
+        if (kind === 'marshal') {
+            const color = SAFETY_THEME.geofenceMarshalColor || '#b45309';
+            const fill = SAFETY_THEME.geofenceMarshalFill || '#fbbf24';
+            return { color, weight: 3, fillColor: fill, fillOpacity: 0.28 };
+        }
+        if (kind === 'warmupline') {
+            const color = SAFETY_THEME.geofenceWarmupLineColor || '#ea580c';
+            const fill = SAFETY_THEME.geofenceWarmupLineFill || '#fb923c';
+            return { color, weight: 3, fillColor: fill, fillOpacity: 0.22 };
+        }
         if (kind === 'boundary' || isMatch) {
             const matchColor = SAFETY_THEME.geofenceMatchColor || '#0f766e';
             const matchFill = SAFETY_THEME.geofenceMatchFill || '#14b8a6';
@@ -220,9 +231,13 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
         const popupTag =
             kind === 'hazard'
                 ? 'Hazard area'
-                : kind === 'boundary' || isMatch
-                  ? boundaryTag
-                  : 'Other';
+                : kind === 'marshal'
+                  ? 'Marshal zone'
+                  : kind === 'warmupline'
+                    ? 'Warm-up area'
+                    : kind === 'boundary' || isMatch
+                      ? boundaryTag
+                      : 'Other';
 
         if (parsed.type === 'circle') {
             L.circle([parsed.lat, parsed.lon], {
@@ -239,12 +254,22 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
             const lineColor =
                 kind === 'hazard'
                     ? SAFETY_THEME.geofenceHazardColor || '#dc2626'
-                    : '#64748b';
+                    : kind === 'marshal'
+                      ? SAFETY_THEME.geofenceMarshalColor || '#b45309'
+                      : kind === 'warmupline'
+                        ? SAFETY_THEME.geofenceWarmupLineColor || '#ea580c'
+                        : '#64748b';
+            const lineWeight =
+                kind === 'hazard' || kind === 'marshal' || kind === 'warmupline' ? 3 : 2;
+            const lineDash =
+                kind === 'hazard' || kind === 'marshal' || kind === 'warmupline'
+                    ? undefined
+                    : '6 4';
             L.polyline(parsed.points, {
                 color: lineColor,
-                weight: kind === 'hazard' ? 3 : 2,
-                dashArray: kind === 'hazard' ? undefined : '6 4',
-                opacity: 0.9,
+                weight: lineWeight,
+                dashArray: lineDash,
+                opacity: 0.92,
             })
                 .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (line)`)
                 .addTo(geofenceLayer);
@@ -361,11 +386,93 @@ function isLiveUpdatesEnabled() {
     return el ? el.checked : true;
 }
 
+function isKriDemoMode() {
+    return (
+        SAFETY_THEME.enableDemoMode &&
+        window.KriSafetyDemo &&
+        typeof window.KriSafetyDemo.isEnabled === 'function' &&
+        window.KriSafetyDemo.isEnabled()
+    );
+}
+
+function stopDemoAnimation() {
+    if (demoAnimTimer) {
+        clearInterval(demoAnimTimer);
+        demoAnimTimer = null;
+    }
+}
+
+function applyDemoSnapshotToUi() {
+    if (!window.KriSafetyDemo) return;
+    window.KriSafetyDemo.setGeofences(geofences);
+    window.KriSafetyDemo.tick(performance.now());
+    const snap = window.KriSafetyDemo.getSnapshot();
+    devices = snap.devices;
+    positions = snap.positions;
+
+    const { geofences: matched } = getMatchedGeofences(geofences);
+    const parts = boundaryPartsFromGeofences(matched);
+    const stoppedState = updateStoppedTracking(parts);
+
+    lastFenceParts = parts;
+    lastStoppedState = stoppedState;
+
+    drawGeofencesOnMap(geofences, matched);
+    renderFenceAndLists(parts, stoppedState);
+    clearSnapshotError();
+    renderFleetDevices();
+    renderOnWaterBoats(parts);
+    updateMapMarkers();
+    deviceLiveTrails.clear();
+    redrawLiveTrail();
+
+    const ts = document.getElementById('lastUpdate');
+    if (ts) ts.textContent = `Last updated: demo (${snap.phase.replace(/_/g, ' ')})`;
+}
+
+function startDemoAnimation() {
+    stopDemoAnimation();
+    if (!isKriDemoMode()) return;
+    demoAnimTimer = setInterval(() => {
+        if (!isKriDemoMode()) return;
+        applyDemoSnapshotToUi();
+    }, 200);
+}
+
+async function loadGeofencesSnapshot() {
+    const result = await rowsafeSnapshotFetch();
+    if (!result.ok) {
+        showError(result.error || `Request failed: ${result.status}`);
+        return false;
+    }
+    const data = result.data;
+    geofences = Array.isArray(data.geofences) ? data.geofences : [];
+    groups = Array.isArray(data.groups) ? data.groups : [];
+    groupLookup = buildGroupLookup(groups);
+    return true;
+}
+
+async function bootstrapMapData() {
+    if (isKriDemoMode()) {
+        stopPolling();
+        const ok = await loadGeofencesSnapshot();
+        if (!ok) return;
+        window.KriSafetyDemo?.reset?.();
+        applyDemoSnapshotToUi();
+        startDemoAnimation();
+        return;
+    }
+    stopDemoAnimation();
+    await updateData();
+    startPolling();
+}
+
 function startPolling() {
     if (pollTimer) {
         clearInterval(pollTimer);
         pollTimer = null;
     }
+    if (isKriDemoMode()) return;
     if (!isLiveUpdatesEnabled()) return;
     pollTimer = setInterval(updateData, mapRefreshMs());
 }
@@ -383,6 +490,7 @@ function wireLiveToggle() {
     const toggle = document.getElementById('liveUpdatesToggle');
     if (!toggle) return;
     toggle.addEventListener('change', () => {
+        if (isKriDemoMode()) return;
         if (isLiveUpdatesEnabled()) {
             startPolling();
             updateData();
@@ -582,8 +690,12 @@ function updateMapMarkers() {
         const latlng = [position.latitude, position.longitude];
         const online = isPositionRecent(position.fixTime);
         const critical = isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
-        const fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
-        const stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
+        let fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
+        let stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
+        if (isKriDemoMode()) {
+            fill = '#60a5fa';
+            stroke = '#1e40af';
+        }
         const radius = critical ? 14 : 11;
         const weight = critical ? 3 : 2;
 
@@ -690,6 +802,7 @@ function renderFenceAndLists(parts, stoppedState) {
 }
 
 function renderCapsizeAlerts() {
+    if (isKriDemoMode()) return;
     if (!SAFETY_THEME.enableCapsize || !window.AltitudeHdCapsizeAlarm) return;
     const listEl = document.getElementById('safetyCapsizeList');
     const alerts = window.AltitudeHdCapsizeAlarm.updateCapsizeAlerts(devices, positions);
@@ -720,6 +833,10 @@ function rowsafeSnapshotFetch() {
 }
 
 async function updateData() {
+    if (isKriDemoMode()) {
+        applyDemoSnapshotToUi();
+        return;
+    }
     try {
         const result = await rowsafeSnapshotFetch();
         if (!result.ok) {
@@ -983,7 +1100,12 @@ window.addEventListener('altitudehd:speed-color-range', () => {
 });
 
 window.addEventListener('altitudehd:map-refresh-rate', () => {
+    if (isKriDemoMode()) return;
     if (isLiveUpdatesEnabled()) startPolling();
+});
+
+window.addEventListener('kri-demo-changed', () => {
+    bootstrapMapData();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -992,6 +1114,5 @@ document.addEventListener('DOMContentLoaded', () => {
     wireFleetDockResize();
     wireRnzMapFullscreen();
     wireDeviceNameFlyTo();
-    updateData();
-    startPolling();
+    bootstrapMapData();
 });

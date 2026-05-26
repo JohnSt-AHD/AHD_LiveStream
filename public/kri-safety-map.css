@@ -293,6 +293,31 @@ body.kri-page .kri-header .rnz-header-inner {
     color: #1d4ed8;
 }
 
+.kri-demo-bar {
+    flex-shrink: 0;
+    padding: 12px clamp(16px, 4vw, 32px);
+    background: #ffffff;
+    border-top: 1px solid rgba(0, 121, 209, 0.18);
+    box-shadow: 0 -1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.kri-demo-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: 920px;
+    margin: 0 auto;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #334155;
+    cursor: pointer;
+}
+
+.kri-demo-toggle input {
+    margin-top: 3px;
+    accent-color: var(--kri-brand-blue);
+}
+
 .rnz-panel-details--capsize:not([hidden]) {
     border-color: #dc2626;
     box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);

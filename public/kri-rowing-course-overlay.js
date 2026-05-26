@@ -124,6 +124,22 @@
         return { start, finish };
     }
 
+    function buildCourseFrame() {
+        const { start, finish } = loadStartFinish();
+        const bearing = bearingDeg(start.lat, start.lng, finish.lat, finish.lng);
+        const lengthM = haversineM(start.lat, start.lng, finish.lat, finish.lng);
+        return { start, finish, bearing, lengthM };
+    }
+
+    function lanePointAtDistance(frame, lane, distanceM) {
+        const { start, finish, bearing, lengthM } = frame;
+        const d = Math.max(0, Math.min(lengthM, distanceM));
+        const t = lengthM > 0 ? d / lengthM : 0;
+        const lat = start.lat + (finish.lat - start.lat) * t;
+        const lng = start.lng + (finish.lng - start.lng) * t;
+        return offsetPerpendicular(lat, lng, bearing, laneCenterOffsetM(lane));
+    }
+
     function latLngPair(pt) {
         return [pt.lat, pt.lng];
     }
@@ -289,8 +305,17 @@
         mount,
         renderCourse,
         loadStartFinish,
+        buildCourseFrame,
+        lanePointAtDistance,
         COURSE_LENGTH_M,
         LANE_COUNT,
         LANE_SPACING_M,
+        geo: {
+            destination,
+            bearingDeg,
+            offsetPerpendicular,
+            haversineM,
+            laneCenterOffsetM,
+        },
     };
 })(typeof window !== 'undefined' ? window : globalThis);
