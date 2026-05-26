@@ -51,13 +51,13 @@
                         </div>
                     </details>
 
-                    <details class="rnz-panel-details rnz-panel-details--warnings" id="rnzWarningBox" hidden>
-                        <summary class="rnz-panel-summary">Warnings — outside boundary 30+ min</summary>
-                        <div class="rnz-panel-inner rnz-panel-inner--critical">
-                            <p class="rnz-block-hint">Outside the Lake Karāpiro / KRI boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name in the list to fly the map there.</p>
-                            <div id="rnzWarningsList"></div>
+                    <section class="kri-race-panel kri-race-panel--left" id="kriRacePanel" aria-labelledby="kriRacePanelTitle">
+                        <div class="kri-race-panel-head">
+                            <h2 id="kriRacePanelTitle" class="kri-race-panel-title">Current race</h2>
+                            <p class="kri-race-panel-status" id="kriRacePanelStatus" aria-live="polite">Loading schedule…</p>
                         </div>
-                    </details>
+                        <div class="kri-race-panel-body" id="kriRacePanelBody"></div>
+                    </section>
                 </div>
             </aside>
 
@@ -67,13 +67,13 @@
                 <button type="button" id="rnzMapMobileExpandBtn" class="rnz-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
             </div>
 
-            <section class="kri-race-panel" id="kriRacePanel" aria-labelledby="kriRacePanelTitle">
-                <div class="kri-race-panel-head">
-                    <h2 id="kriRacePanelTitle" class="kri-race-panel-title">Current race</h2>
-                    <p class="kri-race-panel-status" id="kriRacePanelStatus" aria-live="polite">Loading schedule…</p>
+            <details class="rnz-panel-details rnz-panel-details--warnings kri-warnings-panel" id="rnzWarningBox" hidden>
+                <summary class="rnz-panel-summary">Warnings — outside boundary 30+ min</summary>
+                <div class="rnz-panel-inner rnz-panel-inner--critical">
+                    <p class="rnz-block-hint">Outside the Lake Karāpiro / KRI boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name in the list to fly the map there.</p>
+                    <div id="rnzWarningsList"></div>
                 </div>
-                <div class="kri-race-panel-body" id="kriRacePanelBody"></div>
-            </section>
+            </details>
             </div>
 
             <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
@@ -198,7 +198,7 @@
     <section class="kri-demo-bar" aria-label="Demo mode">
         <label class="kri-demo-toggle">
             <input type="checkbox" id="kriDemoToggle" checked>
-            <span>Demo mode — eight boats (A1–A8) race the course at 4 m/s, then return via the warm-up zone</span>
+            <span>Demo mode — eight boats (A1–A8) race the course at 4 m/s, plus safety boat and X1 in the dam zone</span>
         </label>
     </section>
 

@@ -17,6 +17,9 @@ const LS_STOPPED = SAFETY_THEME.lsStopped || 'rnzRowsafeStoppedOutside';
 const LIVE_TRAIL_TTL_MS = 2 * 60 * 1000;
 const LIVE_TRAIL_DEDUPE_MOVE_M = 4;
 const LIVE_TRAIL_DEDUPE_MS = 8000;
+const KRI_DEMO_TRAIL_TTL_MS = 60 * 1000;
+const KRI_DEMO_TRAIL_DEDUPE_MS = 400;
+const KRI_DEMO_TRAIL_DEDUPE_MOVE_M = 2;
 let liveTrailLayer = null;
 const deviceLiveTrails = new Map();
 
@@ -474,8 +477,9 @@ function applyDemoSnapshotToUi() {
     renderFleetDevices();
     renderOnWaterBoats(parts);
     updateMapMarkers();
-    deviceLiveTrails.clear();
+    recordLiveTrailSamples();
     redrawLiveTrail();
+    renderCapsizeAlerts();
 
     const ts = document.getElementById('lastUpdate');
     if (ts) ts.textContent = `Last updated: demo (${snap.phase.replace(/_/g, ' ')})`;
@@ -623,6 +627,23 @@ function isMovingRecently(pos, maxFixAgeMinutes, minSpeedMps) {
     return pos.speed >= minSpeedMps;
 }
 
+function liveTrailSettings() {
+    if (isKriDemoMode()) {
+        return {
+            ttlMs: KRI_DEMO_TRAIL_TTL_MS,
+            dedupeMoveM: KRI_DEMO_TRAIL_DEDUPE_MOVE_M,
+            dedupeMs: KRI_DEMO_TRAIL_DEDUPE_MS,
+            skipRecentCheck: true,
+        };
+    }
+    return {
+        ttlMs: LIVE_TRAIL_TTL_MS,
+        dedupeMoveM: LIVE_TRAIL_DEDUPE_MOVE_M,
+        dedupeMs: LIVE_TRAIL_DEDUPE_MS,
+        skipRecentCheck: false,
+    };
+}
+
 function speedMpsForTrailColor(speed) {
     return window.AltitudeHdSpeedColor.speedMpsForColor(speed);
 }
@@ -632,7 +653,8 @@ function trailSpeedToColor(speedMps) {
 }
 
 function recordLiveTrailSamples() {
-    if (!isLiveUpdatesEnabled()) return;
+    if (!isLiveUpdatesEnabled() && !isKriDemoMode()) return;
+    const { ttlMs, dedupeMoveM, dedupeMs, skipRecentCheck } = liveTrailSettings();
     const now = Date.now();
     const deviceIdSet = new Set(devices.map((d) => d.id));
 
@@ -641,7 +663,7 @@ function recordLiveTrailSamples() {
             deviceLiveTrails.delete(id);
             continue;
         }
-        const pruned = deviceLiveTrails.get(id).filter((p) => now - p.addedAt <= LIVE_TRAIL_TTL_MS);
+        const pruned = deviceLiveTrails.get(id).filter((p) => now - p.addedAt <= ttlMs);
         if (pruned.length === 0) {
             deviceLiveTrails.delete(id);
         } else {
@@ -657,7 +679,7 @@ function recordLiveTrailSamples() {
             typeof pos.longitude !== 'number' ||
             Number.isNaN(pos.latitude) ||
             Number.isNaN(pos.longitude) ||
-            !isPositionRecent(pos.fixTime)
+            (!skipRecentCheck && !isPositionRecent(pos.fixTime))
         ) {
             continue;
         }
@@ -667,13 +689,13 @@ function recordLiveTrailSamples() {
             arr = [];
             deviceLiveTrails.set(d.id, arr);
         }
-        arr = arr.filter((p) => now - p.addedAt <= LIVE_TRAIL_TTL_MS);
+        arr = arr.filter((p) => now - p.addedAt <= ttlMs);
 
         const last = arr[arr.length - 1];
         if (
             last &&
-            haversineM(last.lat, last.lng, pos.latitude, pos.longitude) < LIVE_TRAIL_DEDUPE_MOVE_M &&
-            now - last.addedAt < LIVE_TRAIL_DEDUPE_MS
+            haversineM(last.lat, last.lng, pos.latitude, pos.longitude) < dedupeMoveM &&
+            now - last.addedAt < dedupeMs
         ) {
             deviceLiveTrails.set(d.id, arr);
             continue;
@@ -688,11 +710,12 @@ function recordLiveTrailSamples() {
 function redrawLiveTrail() {
     if (!liveTrailLayer || !map) return;
     liveTrailLayer.clearLayers();
+    const { ttlMs } = liveTrailSettings();
     const now = Date.now();
 
     for (const arr of deviceLiveTrails.values()) {
         for (const p of arr) {
-            if (now - p.addedAt > LIVE_TRAIL_TTL_MS) continue;
+            if (now - p.addedAt > ttlMs) continue;
             const color = trailSpeedToColor(speedMpsForTrailColor(p.speed));
             L.circleMarker([p.lat, p.lng], {
                 radius: 4,
@@ -744,8 +767,13 @@ function updateMapMarkers() {
         let fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
         let stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
         if (isKriDemoMode()) {
-            fill = '#60a5fa';
-            stroke = '#1e40af';
+            if (device.demoMarkerFill) {
+                fill = device.demoMarkerFill;
+                stroke = device.demoMarkerStroke || device.demoMarkerFill;
+            } else {
+                fill = '#60a5fa';
+                stroke = '#1e40af';
+            }
         }
         const radius = critical ? 14 : 11;
         const weight = critical ? 3 : 2;
@@ -822,6 +850,16 @@ function renderFenceAndLists(parts, stoppedState) {
         }
     }
 
+    if (isKriDemoMode()) {
+        for (const d of devices) {
+            if (!d.demoBoundaryWarning) continue;
+            const pos = positions[d.id];
+            if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+            if (warnings.some((w) => w.device.id === d.id)) continue;
+            warnings.push({ device: d, pos, detail: 'Stationary in dam zone (demo)' });
+        }
+    }
+
     if (warnEl && warnBox) {
         if (warnings.length === 0) {
             if (SAFETY_THEME.warningsEmptyVisible) {
@@ -863,7 +901,6 @@ function renderFenceAndLists(parts, stoppedState) {
 }
 
 function renderCapsizeAlerts() {
-    if (isKriDemoMode()) return;
     if (!SAFETY_THEME.enableCapsize || !window.AltitudeHdCapsizeAlarm) return;
     const listEl = document.getElementById('safetyCapsizeList');
     const alerts = window.AltitudeHdCapsizeAlarm.updateCapsizeAlerts(devices, positions);

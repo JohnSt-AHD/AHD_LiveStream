@@ -8,6 +8,10 @@
     const HOLD_MS = 10_000;
     const RETURN_STAGGER_MS = 7_000;
     const DEVICE_ID_BASE = 9001;
+    const DEVICE_ID_SAFETY = 9009;
+    const DEVICE_ID_X1 = 9010;
+    const FOLLOW_LANE = 4;
+    const SAFETY_FOLLOW_BEHIND_M = 40;
 
     const PHASE = {
         START_HOLD: 'start_hold',
@@ -72,15 +76,28 @@
         return null;
     }
 
-    function warmupCenter(frame) {
+    function geofenceCentroidByName(matchFn) {
         for (const g of geofences || []) {
-            const n = String(g?.name || '').toLowerCase();
-            if (!((n.includes('warm up') || n.includes('warmup')) && n.includes('zone'))) {
-                continue;
-            }
+            if (!matchFn(String(g?.name || ''))) continue;
             const c = parseGeofenceCentroid(g.area);
             if (c) return c;
         }
+        return null;
+    }
+
+    function damCenter() {
+        return geofenceCentroidByName((name) => {
+            const n = name.toLowerCase();
+            return n.includes('dam') || n.includes('weed');
+        });
+    }
+
+    function warmupCenter(frame) {
+        const c = geofenceCentroidByName((name) => {
+            const n = name.toLowerCase();
+            return (n.includes('warm up') || n.includes('warmup')) && n.includes('zone');
+        });
+        if (c) return c;
         const geo = courseApi()?.geo;
         if (geo?.destination) {
             return geo.destination(frame.start.lat, frame.start.lng, frame.bearing + 180, 420);
@@ -121,12 +138,26 @@
         return geo.destination(path.warm.lat, path.warm.lng, brg, d2);
     }
 
+    function clearDemoCapsizeAcks() {
+        try {
+            const raw = global.localStorage.getItem('altitudeHdCapsizeAck_v1');
+            if (!raw) return;
+            const ack = JSON.parse(raw);
+            delete ack[`${DEVICE_ID_X1}:alarm`];
+            delete ack[`${DEVICE_ID_X1}:stop`];
+            global.localStorage.setItem('altitudeHdCapsizeAck_v1', JSON.stringify(ack));
+        } catch {
+            /* ignore */
+        }
+    }
+
     function resetSimulation() {
         phase = PHASE.START_HOLD;
         phaseStartedAt = performance.now();
         raceDistanceM = 0;
         returnLegs = [];
         lastNow = phaseStartedAt;
+        clearDemoCapsizeAcks();
     }
 
     function beginReturnPhase(now) {
@@ -172,6 +203,7 @@
                 raceDistanceM = frame.lengthM;
                 phase = PHASE.FINISH_HOLD;
                 phaseStartedAt = now;
+                clearDemoCapsizeAcks();
             }
         } else if (phase === PHASE.FINISH_HOLD) {
             raceDistanceM = frame.lengthM;
@@ -234,11 +266,64 @@
         return { lat: pt.lat, lng: pt.lng, speed: SPEED_MPS };
     }
 
+    function safetyBoatPosition() {
+        const api = courseApi();
+        const frame = api?.buildCourseFrame?.();
+        if (!frame || !api.lanePointAtDistance) {
+            return { lat: -37.936, lng: 175.427, speed: 0 };
+        }
+
+        if (phase === PHASE.RACING || phase === PHASE.FINISH_HOLD) {
+            const d = Math.max(0, raceDistanceM - SAFETY_FOLLOW_BEHIND_M);
+            const pt = api.lanePointAtDistance(frame, FOLLOW_LANE, d);
+            const speed = phase === PHASE.RACING ? SPEED_MPS : 0;
+            return { lat: pt.lat, lng: pt.lng, speed };
+        }
+
+        if (phase === PHASE.START_HOLD) {
+            const pt = api.lanePointAtDistance(frame, FOLLOW_LANE, 0);
+            return { lat: pt.lat, lng: pt.lng, speed: 0 };
+        }
+
+        const leg = returnLegs.find((l) => l.lane === FOLLOW_LANE);
+        if (!leg || !leg.path) {
+            const pt = api.lanePointAtDistance(frame, FOLLOW_LANE, 0);
+            return { lat: pt.lat, lng: pt.lng, speed: 0 };
+        }
+        if (lastNow < leg.departAt) {
+            const d = Math.max(0, frame.lengthM - SAFETY_FOLLOW_BEHIND_M);
+            const pt = api.lanePointAtDistance(frame, FOLLOW_LANE, d);
+            return { lat: pt.lat, lng: pt.lng, speed: 0 };
+        }
+        if (leg.done) {
+            const pt = api.lanePointAtDistance(frame, FOLLOW_LANE, 0);
+            return { lat: pt.lat, lng: pt.lng, speed: 0 };
+        }
+        const d = Math.max(0, leg.distanceM - SAFETY_FOLLOW_BEHIND_M);
+        const pt = pointOnReturn(leg.path, d);
+        return { lat: pt.lat, lng: pt.lng, speed: SPEED_MPS };
+    }
+
+    function x1Position() {
+        const center = damCenter();
+        if (center) return { lat: center.lat, lng: center.lng, speed: 0 };
+        const frame = courseApi()?.buildCourseFrame?.();
+        if (frame?.finish) {
+            return { lat: frame.finish.lat, lng: frame.finish.lng, speed: 0 };
+        }
+        return { lat: -37.936, lng: 175.427, speed: 0 };
+    }
+
+    function isFinishHoldPhase() {
+        return phase === PHASE.FINISH_HOLD;
+    }
+
     function getSnapshot() {
         const nowIso = new Date().toISOString();
         const panel = global.KriSafetyRegattaPanel;
         const devices = [];
         const positions = {};
+
         for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
             const id = DEVICE_ID_BASE + lane - 1;
             const name = `A${lane}`;
@@ -263,6 +348,44 @@
                     : `Demo · lane ${lane}`,
             };
         }
+
+        const safetyPos = safetyBoatPosition();
+        devices.push({
+            id: DEVICE_ID_SAFETY,
+            name: 'Safety boat',
+            groupId: null,
+            demoMarkerFill: '#22c55e',
+            demoMarkerStroke: '#15803d',
+        });
+        positions[DEVICE_ID_SAFETY] = {
+            deviceId: DEVICE_ID_SAFETY,
+            latitude: safetyPos.lat,
+            longitude: safetyPos.lng,
+            speed: safetyPos.speed,
+            fixTime: nowIso,
+            address: 'Demo · following A4',
+        };
+
+        const x1Pos = x1Position();
+        const x1Capsize = isFinishHoldPhase();
+        devices.push({
+            id: DEVICE_ID_X1,
+            name: 'X1',
+            groupId: null,
+            demoBoundaryWarning: true,
+            demoMarkerFill: x1Capsize ? '#fecaca' : '#f97316',
+            demoMarkerStroke: x1Capsize ? '#b91c1c' : '#c2410c',
+        });
+        positions[DEVICE_ID_X1] = {
+            deviceId: DEVICE_ID_X1,
+            latitude: x1Pos.lat,
+            longitude: x1Pos.lng,
+            speed: 0,
+            fixTime: nowIso,
+            address: 'Demo · dam zone',
+            attributes: x1Capsize ? { alarm: 'capsize' } : undefined,
+        };
+
         return { devices, positions, phase };
     }
 
@@ -305,6 +428,8 @@
         reset: resetSimulation,
         getSnapshot,
         SPEED_MPS,
+        DEVICE_ID_SAFETY,
+        DEVICE_ID_X1,
     };
 
     if (document.readyState === 'loading') {

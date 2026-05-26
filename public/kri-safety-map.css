@@ -122,6 +122,32 @@ body.kri-page .kri-header .rnz-header-inner {
     width: 100%;
 }
 
+.kri-race-panel--left {
+    margin: 0;
+    padding: 8px 4px 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.kri-warnings-panel {
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(220, 38, 38, 0.28);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.kri-warnings-panel .rnz-panel-summary {
+    background: linear-gradient(90deg, #991b1b, #dc2626);
+}
+
+.kri-warnings-panel[open] .rnz-panel-inner {
+    border-top-color: rgba(220, 38, 38, 0.2);
+}
+
 .kri-race-panel {
     margin: 10px 0 0;
     padding: 8px 10px 6px;
@@ -331,6 +357,10 @@ body.kri-page .rnz-onwater-crew {
 
     .kri-lane-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.kri-page .rnz-left-column:has(#rnzWarningBox[hidden]) {
+        display: flex;
     }
 }
 
