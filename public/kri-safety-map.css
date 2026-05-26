@@ -10,6 +10,7 @@ body.kri-page {
     --rnz-teal-dark: #1d4ed8;
     --rnz-cream: #eef4fb;
     --rnz-warn: #b45309;
+    --kri-brand-blue: #0079d1;
     background-color: var(--rnz-cream);
     background-image:
         linear-gradient(180deg, rgba(238, 244, 251, 0.92) 0%, rgba(238, 244, 251, 0.85) 100%),
@@ -23,12 +24,74 @@ body.kri-page::before {
 }
 
 .kri-header {
-    background:
-        linear-gradient(135deg, var(--rnz-navy-deep) 0%, var(--rnz-navy) 55%, #12325c 100%);
+    background: #ffffff;
+    color: var(--kri-brand-blue);
+    box-shadow: 0 1px 0 rgba(0, 121, 209, 0.12);
 }
 
 .kri-header::after {
-    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.35), transparent);
+    display: none;
+}
+
+body.kri-page .kri-header .rnz-logo-mark {
+    color: var(--kri-brand-blue);
+    border-color: rgba(0, 121, 209, 0.35);
+}
+
+body.kri-page .kri-header .rnz-logo-mark:hover {
+    background: rgba(0, 121, 209, 0.08);
+}
+
+body.kri-page .kri-header .rnz-kicker,
+body.kri-page .kri-header .rnz-header-title h1 {
+    color: var(--kri-brand-blue);
+}
+
+.kri-external {
+    color: var(--kri-brand-blue);
+    border-color: rgba(0, 121, 209, 0.45);
+}
+
+.kri-external:hover {
+    background: rgba(0, 121, 209, 0.1);
+    border-color: var(--kri-brand-blue);
+    color: #005bb3;
+}
+
+.hub-stats-bar--kri {
+    background:
+        linear-gradient(135deg, var(--rnz-navy-deep) 0%, var(--rnz-navy) 55%, #12325c 100%);
+    color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.35);
+    box-shadow: none;
+}
+
+.hub-stats-bar--kri .hub-stats-item {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.hub-stats-bar--kri .hub-stats-item--warn {
+    color: #fdba74;
+}
+
+.hub-stats-bar--kri .hub-stats-item--warn:hover {
+    color: #fed7aa;
+}
+
+.hub-stats-bar--kri .hub-stats-item--warn[data-level='alert'] {
+    color: #fca5a5;
+}
+
+.hub-stats-bar--kri .hub-stats-item--event {
+    color: #93c5fd;
+}
+
+.hub-stats-bar--kri .hub-stats-item--event:hover {
+    color: #bfdbfe;
+}
+
+.hub-stats-bar--kri .hub-stats-sep {
+    color: rgba(255, 255, 255, 0.45);
 }
 
 .kri-logo-header {
@@ -47,17 +110,178 @@ body.kri-page .kri-header .rnz-header-inner {
     padding-bottom: 16px;
 }
 
-.kri-external {
-    border-color: rgba(147, 197, 253, 0.45);
+.kri-race-panel {
+    margin: 0 0 16px;
+    padding: 16px 18px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 121, 209, 0.22);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
-.kri-external:hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #93c5fd;
+.kri-race-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 12px;
 }
 
-.hub-stats-bar--kri .hub-stats-item--warn {
-    color: var(--rnz-warn);
+.kri-race-panel-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--kri-brand-blue);
+    margin: 0;
+}
+
+.kri-race-panel-status {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+
+.kri-race-panel-foot {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.kri-race-panel-foot a {
+    color: var(--kri-brand-blue);
+}
+
+.kri-race-card {
+    border: 1px solid rgba(0, 121, 209, 0.18);
+    border-radius: 8px;
+    background: #f8fbff;
+    padding: 14px 16px;
+}
+
+.kri-race-card-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 14px;
+    align-items: start;
+    margin-bottom: 12px;
+}
+
+.kri-race-time {
+    grid-row: 1 / span 3;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--kri-brand-blue);
+    line-height: 1.1;
+    padding-top: 2px;
+}
+
+.kri-race-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.kri-race-event {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.kri-race-meta {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.kri-race-result-badge {
+    grid-column: 1 / -1;
+    display: inline-block;
+    margin-top: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(0, 121, 209, 0.12);
+    color: var(--kri-brand-blue);
+    width: fit-content;
+}
+
+.kri-race-empty-lanes {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.kri-lane-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    gap: 8px;
+}
+
+.kri-lane {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 121, 209, 0.2);
+    background: #fff;
+    min-width: 0;
+}
+
+.kri-lane--empty {
+    opacity: 0.55;
+    border-style: dashed;
+}
+
+.kri-lane-n {
+    flex-shrink: 0;
+    width: 1.25rem;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    color: var(--kri-brand-blue);
+}
+
+.kri-lane-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.kri-lane-logo--placeholder {
+    opacity: 0.35;
+}
+
+.kri-lane-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.kri-lane-club {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kri-lane-code {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
 }
 
 .kri-logo-sidebar {

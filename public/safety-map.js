@@ -175,6 +175,30 @@ function boundaryPartsFromGeofences(list) {
     return parts;
 }
 
+function geofenceDrawStyle(g, isMatch) {
+    if (typeof SAFETY_THEME.classifyGeofenceName === 'function') {
+        const kind = SAFETY_THEME.classifyGeofenceName(g.name);
+        if (kind === 'hidden') return null;
+        if (kind === 'hazard') {
+            const color = SAFETY_THEME.geofenceHazardColor || '#dc2626';
+            const fill = SAFETY_THEME.geofenceHazardFill || '#ef4444';
+            return { color, weight: 3, fillColor: fill, fillOpacity: 0.32 };
+        }
+        if (kind === 'boundary' || isMatch) {
+            const matchColor = SAFETY_THEME.geofenceMatchColor || '#0f766e';
+            const matchFill = SAFETY_THEME.geofenceMatchFill || '#14b8a6';
+            return { color: matchColor, weight: 3, fillColor: matchFill, fillOpacity: 0.18 };
+        }
+        return { color: '#64748b', weight: 2, fillColor: '#94a3b8', fillOpacity: 0.08 };
+    }
+
+    const matchColor = SAFETY_THEME.geofenceMatchColor || '#0f766e';
+    const matchFill = SAFETY_THEME.geofenceMatchFill || '#14b8a6';
+    return isMatch
+        ? { color: matchColor, weight: 3, fillColor: matchFill, fillOpacity: 0.18 }
+        : { color: '#64748b', weight: 2, fillColor: '#94a3b8', fillOpacity: 0.08 };
+}
+
 function drawGeofencesOnMap(allGeofences, matchedList) {
     if (!geofenceLayer || !map) return;
     geofenceLayer.clearLayers();
@@ -184,26 +208,44 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
         const parsed = parseGeofenceArea(g && g.area);
         if (!parsed) continue;
         const isMatch = matchedIds.has(g.id);
-        const matchColor = SAFETY_THEME.geofenceMatchColor || '#0f766e';
-        const matchFill = SAFETY_THEME.geofenceMatchFill || '#14b8a6';
-        const style = isMatch
-            ? { color: matchColor, weight: 3, fillColor: matchFill, fillOpacity: 0.18 }
-            : { color: '#64748b', weight: 2, fillColor: '#94a3b8', fillOpacity: 0.08 };
+        const style = geofenceDrawStyle(g, isMatch);
+        if (!style) continue;
         const boundaryTag = SAFETY_THEME.boundaryPopup || 'Boundary';
+        const kind =
+            typeof SAFETY_THEME.classifyGeofenceName === 'function'
+                ? SAFETY_THEME.classifyGeofenceName(g.name)
+                : isMatch
+                  ? 'boundary'
+                  : 'other';
+        const popupTag =
+            kind === 'hazard'
+                ? 'Hazard area'
+                : kind === 'boundary' || isMatch
+                  ? boundaryTag
+                  : 'Other';
 
         if (parsed.type === 'circle') {
             L.circle([parsed.lat, parsed.lon], {
                 radius: parsed.radiusM,
                 ...style,
             })
-                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${isMatch ? boundaryTag : 'Other'}`)
+                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${popupTag}`)
                 .addTo(geofenceLayer);
         } else if (parsed.type === 'polygon') {
             L.polygon(parsed.ring, style)
-                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${isMatch ? boundaryTag : 'Other'}`)
+                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${popupTag}`)
                 .addTo(geofenceLayer);
         } else if (parsed.type === 'line') {
-            L.polyline(parsed.points, { color: '#64748b', weight: 2, dashArray: '6 4', opacity: 0.85 })
+            const lineColor =
+                kind === 'hazard'
+                    ? SAFETY_THEME.geofenceHazardColor || '#dc2626'
+                    : '#64748b';
+            L.polyline(parsed.points, {
+                color: lineColor,
+                weight: kind === 'hazard' ? 3 : 2,
+                dashArray: kind === 'hazard' ? undefined : '6 4',
+                opacity: 0.9,
+            })
                 .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (line)`)
                 .addTo(geofenceLayer);
         }

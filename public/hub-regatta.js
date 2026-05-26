@@ -712,3 +712,17 @@ function initRegattaBoard() {
 }
 
 document.addEventListener('DOMContentLoaded', initRegattaBoard);
+
+window.AltitudeHdRegattaBoard = {
+    parseDaysheetCsv,
+    parseResultsCsv,
+    getEffectiveNow,
+    loadClockSettings,
+    racesOnDate,
+    findRaceWindow,
+    formatRaceTime,
+    formatClock,
+    formatYmd,
+    fetchCsvText,
+    getCsvUrl,
+};

@@ -101,6 +101,17 @@
             </aside>
         </div>
 
+        <section class="kri-race-panel" id="kriRacePanel" aria-labelledby="kriRacePanelTitle">
+            <div class="kri-race-panel-head">
+                <h2 id="kriRacePanelTitle" class="kri-race-panel-title">Current race</h2>
+                <p class="kri-race-panel-status" id="kriRacePanelStatus" aria-live="polite">Loading schedule…</p>
+            </div>
+            <div class="kri-race-panel-body" id="kriRacePanelBody"></div>
+            <p class="kri-race-panel-foot">
+                Schedule and clock from the <a href="index.html#hub-schedule-title">hub regatta section</a> (same regatta code and clock settings).
+            </p>
+        </section>
+
         <section class="rnz-fleet-dock" aria-label="All devices">
             <details class="rnz-fleet-dock-details" id="rnzFleetDock">
                 <summary class="rnz-fleet-dock-summary">
@@ -194,11 +205,14 @@
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
+    <script src="hub-csv.js"></script>
+    <script src="hub-regatta.js"></script>
     <script src="hub-warning-alerts.js"></script>
     <script src="safety-map-themes.js"></script>
     <script>window.SafetyMapTheme = window.SafetyMapThemes.kri;</script>
     <script src="capsize-alarm.js"></script>
     <script src="kri-rowing-course-overlay.js"></script>
+    <script src="kri-safety-regatta-panel.js"></script>
     <script src="safety-map.js"></script>
 </body>
 </html>

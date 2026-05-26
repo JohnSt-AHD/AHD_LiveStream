@@ -28,6 +28,15 @@
         );
     }
 
+    function classifyKriGeofenceName(name) {
+        if (!name || typeof name !== 'string') return 'other';
+        const n = name.toLowerCase();
+        if (n.includes('course')) return 'hidden';
+        if (n.includes('dam') || n.includes('weed')) return 'hazard';
+        if (matchesKriGeofenceName(name)) return 'boundary';
+        return 'other';
+    }
+
     global.SafetyMapThemes = {
         rnz: {
             id: 'rnz',
@@ -55,6 +64,9 @@
             mapZoom: 14,
             geofenceMatchColor: '#1e40af',
             geofenceMatchFill: '#3b82f6',
+            geofenceHazardColor: '#dc2626',
+            geofenceHazardFill: '#ef4444',
+            classifyGeofenceName: classifyKriGeofenceName,
             enableCapsize: true,
             enableCourseOverlay: true,
         },
