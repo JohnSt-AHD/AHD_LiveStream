@@ -51,16 +51,24 @@
         return global.KriRowingCourseOverlay;
     }
 
-    function parseGeofenceCentroid(areaStr) {
+    function parseGeofenceRing(areaStr) {
         if (!areaStr || typeof areaStr !== 'string') return null;
         const t = areaStr.trim();
-        if (t.startsWith('POLYGON')) {
-            const inner = t.replace(/^POLYGON\s*\(\(/i, '').replace(/\)\)\s*$/, '');
-            const ring = inner.split(',').map((pair) => {
+        if (!t.startsWith('POLYGON')) return null;
+        const inner = t.replace(/^POLYGON\s*\(\(/i, '').replace(/\)\)\s*$/, '');
+        const ring = inner
+            .split(',')
+            .map((pair) => {
                 const [lng, lat] = pair.trim().split(/\s+/).map(Number);
                 return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-            }).filter(Boolean);
-            if (!ring.length) return null;
+            })
+            .filter(Boolean);
+        return ring.length >= 3 ? ring : null;
+    }
+
+    function parseGeofenceCentroid(areaStr) {
+        const ring = parseGeofenceRing(areaStr);
+        if (ring) {
             let lat = 0;
             let lng = 0;
             for (const p of ring) {
@@ -69,6 +77,8 @@
             }
             return { lat: lat / ring.length, lng: lng / ring.length };
         }
+        if (!areaStr || typeof areaStr !== 'string') return null;
+        const t = areaStr.trim();
         if (t.startsWith('CIRCLE')) {
             const m = t.match(/CIRCLE\s*\(\s*([-\d.]+)\s+([-\d.]+)/i);
             if (m) return { lat: Number(m[2]), lng: Number(m[1]) };
@@ -76,9 +86,29 @@
         return null;
     }
 
+    function polygonBBoxCenter(ring) {
+        let minLat = Infinity;
+        let maxLat = -Infinity;
+        let minLng = Infinity;
+        let maxLng = -Infinity;
+        for (const p of ring) {
+            minLat = Math.min(minLat, p.lat);
+            maxLat = Math.max(maxLat, p.lat);
+            minLng = Math.min(minLng, p.lng);
+            maxLng = Math.max(maxLng, p.lng);
+        }
+        if (!Number.isFinite(minLat)) return null;
+        return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 };
+    }
+
     function geofenceCentroidByName(matchFn) {
         for (const g of geofences || []) {
             if (!matchFn(String(g?.name || ''))) continue;
+            const ring = parseGeofenceRing(g.area);
+            if (ring) {
+                const box = polygonBBoxCenter(ring);
+                if (box) return box;
+            }
             const c = parseGeofenceCentroid(g.area);
             if (c) return c;
         }
@@ -86,10 +116,15 @@
     }
 
     function damCenter() {
-        return geofenceCentroidByName((name) => {
+        const isDamName = (name) => {
             const n = name.toLowerCase();
-            return n.includes('dam') || n.includes('weed');
-        });
+            return n.includes('dam') && !n.includes('weed');
+        };
+        let center = geofenceCentroidByName(isDamName);
+        if (!center) {
+            center = geofenceCentroidByName((name) => name.toLowerCase().includes('dam'));
+        }
+        return center;
     }
 
     function warmupCenter(frame) {
@@ -308,8 +343,17 @@
         const center = damCenter();
         if (center) return { lat: center.lat, lng: center.lng, speed: 0 };
         const frame = courseApi()?.buildCourseFrame?.();
-        if (frame?.finish) {
-            return { lat: frame.finish.lat, lng: frame.finish.lng, speed: 0 };
+        if (frame?.start && frame?.finish) {
+            const geo = courseApi()?.geo;
+            if (geo?.destination) {
+                const mid = geo.destination(
+                    frame.start.lat,
+                    frame.start.lng,
+                    frame.bearing,
+                    frame.lengthM * 0.55,
+                );
+                return { lat: mid.lat, lng: mid.lng, speed: 0 };
+            }
         }
         return { lat: -37.936, lng: 175.427, speed: 0 };
     }

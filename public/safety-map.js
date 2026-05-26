@@ -634,6 +634,7 @@ function liveTrailSettings() {
             dedupeMoveM: KRI_DEMO_TRAIL_DEDUPE_MOVE_M,
             dedupeMs: KRI_DEMO_TRAIL_DEDUPE_MS,
             skipRecentCheck: true,
+            useLines: true,
         };
     }
     return {
@@ -641,6 +642,7 @@ function liveTrailSettings() {
         dedupeMoveM: LIVE_TRAIL_DEDUPE_MOVE_M,
         dedupeMs: LIVE_TRAIL_DEDUPE_MS,
         skipRecentCheck: false,
+        useLines: false,
     };
 }
 
@@ -710,12 +712,37 @@ function recordLiveTrailSamples() {
 function redrawLiveTrail() {
     if (!liveTrailLayer || !map) return;
     liveTrailLayer.clearLayers();
-    const { ttlMs } = liveTrailSettings();
+    const { ttlMs, useLines } = liveTrailSettings();
     const now = Date.now();
 
     for (const arr of deviceLiveTrails.values()) {
-        for (const p of arr) {
-            if (now - p.addedAt > ttlMs) continue;
+        const points = arr.filter((p) => now - p.addedAt <= ttlMs);
+        if (points.length === 0) continue;
+
+        if (useLines && points.length >= 2) {
+            for (let i = 1; i < points.length; i += 1) {
+                const a = points[i - 1];
+                const b = points[i];
+                const color = trailSpeedToColor(speedMpsForTrailColor(b.speed));
+                L.polyline(
+                    [
+                        [a.lat, a.lng],
+                        [b.lat, b.lng],
+                    ],
+                    {
+                        color,
+                        weight: 3,
+                        opacity: 0.88,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        interactive: false,
+                    },
+                ).addTo(liveTrailLayer);
+            }
+            continue;
+        }
+
+        for (const p of points) {
             const color = trailSpeedToColor(speedMpsForTrailColor(p.speed));
             L.circleMarker([p.lat, p.lng], {
                 radius: 4,
