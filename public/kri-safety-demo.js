@@ -236,12 +236,21 @@
 
     function getSnapshot() {
         const nowIso = new Date().toISOString();
+        const panel = global.KriSafetyRegattaPanel;
         const devices = [];
         const positions = {};
         for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
             const id = DEVICE_ID_BASE + lane - 1;
             const name = `A${lane}`;
-            devices.push({ id, name, groupId: null });
+            const assignment = panel?.getLaneAssignment?.(lane);
+            devices.push({
+                id,
+                name,
+                groupId: null,
+                demoCrew: assignment?.crew || '',
+                demoClubName: assignment?.clubName || '',
+                demoLogoUrl: assignment?.logoUrl || null,
+            });
             const pos = boatPosition(lane);
             positions[id] = {
                 deviceId: id,
@@ -249,7 +258,9 @@
                 longitude: pos.lng,
                 speed: pos.speed,
                 fixTime: nowIso,
-                address: `Demo · lane ${lane}`,
+                address: assignment?.crew
+                    ? `Demo · lane ${lane} · ${assignment.crew}`
+                    : `Demo · lane ${lane}`,
             };
         }
         return { devices, positions, phase };

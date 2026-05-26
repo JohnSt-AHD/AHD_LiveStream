@@ -176,6 +176,57 @@ function boundaryPartsFromGeofences(list) {
     return parts;
 }
 
+function getOnWaterExcludeParts(allGeofences) {
+    const matcher = SAFETY_THEME.onWaterExcludeGeofenceName;
+    if (typeof matcher !== 'function') return null;
+    const list = (Array.isArray(allGeofences) ? allGeofences : []).filter((g) => g && matcher(g.name));
+    return boundaryPartsFromGeofences(list);
+}
+
+function getOnWaterBoundaryParts(boundaryParts) {
+    const excludeParts = getOnWaterExcludeParts(geofences);
+    if (excludeParts !== null) return excludeParts;
+    return boundaryParts;
+}
+
+function onWaterBoundaryLabel() {
+    return SAFETY_THEME.onWaterExcludeLabel || SAFETY_THEME.boundaryLabel || 'boundary';
+}
+
+function deviceOnWaterCrew(device) {
+    if (!device) return { clubName: '', logoUrl: null };
+    if (device.demoClubName) {
+        return { clubName: device.demoClubName, logoUrl: device.demoLogoUrl || null };
+    }
+    return { clubName: '', logoUrl: null };
+}
+
+function countOnWaterBoats(boundaryParts) {
+    const parts = getOnWaterBoundaryParts(boundaryParts);
+    if (!parts || parts.length === 0) return 0;
+    let n = 0;
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+        if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
+        if (!isMovingRecently(pos, ON_WATER_FIX_MAX_MIN, STOP_SPEED_MPS)) continue;
+        if (isInsideBoundaryParts(pos.latitude, pos.longitude, parts)) continue;
+        n += 1;
+    }
+    return n;
+}
+
+function updateKriHubStatsFromUi(warningCount, onWaterCount) {
+    if (!document.body?.classList.contains('kri-page')) return;
+    const warnEl = document.getElementById('hubStatWarnings');
+    const onWaterEl = document.getElementById('hubStatOnWater');
+    if (onWaterEl) onWaterEl.textContent = `${onWaterCount} on water`;
+    if (warnEl) {
+        warnEl.textContent = `${warningCount} warning${warningCount === 1 ? '' : 's'}`;
+        warnEl.dataset.level = warningCount > 0 ? 'alert' : '';
+    }
+}
+
 function geofenceDrawStyle(g, isMatch) {
     if (typeof SAFETY_THEME.classifyGeofenceName === 'function') {
         const kind = SAFETY_THEME.classifyGeofenceName(g.name);
@@ -773,8 +824,14 @@ function renderFenceAndLists(parts, stoppedState) {
 
     if (warnEl && warnBox) {
         if (warnings.length === 0) {
-            warnBox.hidden = true;
-            warnEl.innerHTML = '';
+            if (SAFETY_THEME.warningsEmptyVisible) {
+                warnBox.hidden = false;
+                if (warnBox.tagName === 'DETAILS') warnBox.open = false;
+                warnEl.innerHTML = `<p class="rnz-list-empty">${escapeHtml(SAFETY_THEME.warningsEmptyMessage || 'No active warnings.')}</p>`;
+            } else {
+                warnBox.hidden = true;
+                warnEl.innerHTML = '';
+            }
         } else {
             warnBox.hidden = false;
             if (warnBox.tagName === 'DETAILS') warnBox.open = true;
@@ -798,6 +855,10 @@ function renderFenceAndLists(parts, stoppedState) {
                     .join('') +
                 '</ul>';
         }
+    }
+
+    if (document.body?.classList.contains('kri-page')) {
+        updateKriHubStatsFromUi(warnings.length, countOnWaterBoats(parts));
     }
 }
 
@@ -933,9 +994,19 @@ function renderFleetDevices() {
     container.innerHTML = html;
 }
 
-function renderOnWaterBoats(parts) {
+function renderOnWaterBoats(boundaryParts) {
     const el = document.getElementById('rnzOnWaterBoatsList');
     if (!el) return;
+
+    const usesExclude = typeof SAFETY_THEME.onWaterExcludeGeofenceName === 'function';
+    const parts = getOnWaterBoundaryParts(boundaryParts);
+    const label = onWaterBoundaryLabel();
+
+    if (usesExclude && (!parts || parts.length === 0)) {
+        el.innerHTML =
+            `<p class="rnz-list-empty">Define a ${escapeHtml(label)} geofence in Traccar to detect boats on the lake.</p>`;
+        return;
+    }
 
     if (!parts || parts.length === 0) {
         el.innerHTML =
@@ -957,19 +1028,34 @@ function renderOnWaterBoats(parts) {
 
     if (boats.length === 0) {
         el.innerHTML =
-            `<p class="rnz-list-empty">No boats match right now (need last fix within 30 min, speed ≥ 0.5 m/s, outside ${escapeHtml(SAFETY_THEME.boundaryLabel || 'boundary')}).</p>`;
+            `<p class="rnz-list-empty">No boats match right now (need last fix within 30 min, speed ≥ 0.5 m/s, outside ${escapeHtml(label)}).</p>`;
         return;
     }
+
+    const placeholderLogo = 'assets/school-logos/placeholder-white.svg';
 
     el.innerHTML = boats
         .map(({ device, pos }) => {
             const kmh = (pos.speed * 3.6).toFixed(1);
             const fix = formatDateTime(pos.fixTime);
+            const crew = deviceOnWaterCrew(device);
+            const logoHtml = crew.logoUrl
+                ? `<img class="rnz-onwater-logo" src="${escapeHtml(crew.logoUrl)}" alt="" loading="lazy">`
+                : crew.clubName
+                  ? `<img class="rnz-onwater-logo rnz-onwater-logo--placeholder" src="${placeholderLogo}" alt="">`
+                  : '';
+            const crewHtml = crew.clubName
+                ? `<span class="rnz-onwater-crew">${escapeHtml(crew.clubName)}</span>`
+                : '';
             return (
                 `<button type="button" class="rnz-onwater-row device-name--fly" ` +
                 `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
                 `title="Show on map">` +
+                `<span class="rnz-onwater-primary">` +
                 `<span class="rnz-onwater-name">${escapeHtml(device.name)}</span>` +
+                logoHtml +
+                crewHtml +
+                `</span>` +
                 `<span class="rnz-onwater-meta">${kmh} km/h · last ${escapeHtml(fix)}</span>` +
                 `</button>`
             );
@@ -1106,6 +1192,10 @@ window.addEventListener('altitudehd:map-refresh-rate', () => {
 
 window.addEventListener('kri-demo-changed', () => {
     bootstrapMapData();
+});
+
+window.addEventListener('kri-race-updated', () => {
+    if (isKriDemoMode()) applyDemoSnapshotToUi();
 });
 
 document.addEventListener('DOMContentLoaded', () => {

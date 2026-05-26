@@ -6,6 +6,7 @@
     let lookup = null;
     let races = [];
     let results = new Map();
+    let currentRace = null;
     let tickTimer = null;
 
     function board() {
@@ -49,6 +50,36 @@
             if (k.toLowerCase() === lower) return v;
         }
         return token;
+    }
+
+    function crewDisplay(crewCode) {
+        if (!crewCode) {
+            return { code: '', name: '—', logoUrl: null };
+        }
+        const club = parseClubCode(crewCode);
+        const info = clubInfo(club.id);
+        return {
+            code: crewCode,
+            name: info.name,
+            logoUrl: info.logoUrl,
+        };
+    }
+
+    function getLaneCrew(laneNum) {
+        if (!currentRace?.lanes?.length) return null;
+        const hit = currentRace.lanes.find((l) => l.lane === laneNum);
+        return hit?.crew || null;
+    }
+
+    function getLaneAssignment(laneNum) {
+        const crew = getLaneCrew(laneNum);
+        const display = crewDisplay(crew);
+        return {
+            lane: laneNum,
+            crew,
+            clubName: display.name,
+            logoUrl: display.logoUrl,
+        };
     }
 
     function expandEventName(eventType) {
@@ -192,22 +223,26 @@
         const dayRaces = board().racesOnDate(races, effectiveNow);
         const { currentIndex } = board().findRaceWindow(dayRaces, effectiveNow);
         const race = currentIndex >= 0 ? dayRaces[currentIndex] : null;
+        currentRace = race;
 
         if (!races.length) {
             body.replaceChildren();
             setStatus('Load the daysheet on the hub (Regatta schedule) to show the current race here.');
+            global.dispatchEvent(new CustomEvent('kri-race-updated', { detail: { race: null } }));
             return;
         }
 
         if (!dayRaces.length) {
             body.replaceChildren();
             setStatus(`No races on ${board().formatYmd(effectiveNow)} for this regatta.`);
+            global.dispatchEvent(new CustomEvent('kri-race-updated', { detail: { race: null } }));
             return;
         }
 
         if (!race) {
             body.replaceChildren();
             setStatus(`Before first race · ${board().formatClock(effectiveNow)}`);
+            global.dispatchEvent(new CustomEvent('kri-race-updated', { detail: { race: null } }));
             return;
         }
 
@@ -220,6 +255,7 @@
             `${board().formatClock(effectiveNow)}${code ? ` · ${code.toUpperCase()}` : ''} · Current race`,
         );
         renderCurrentRace(race, result);
+        global.dispatchEvent(new CustomEvent('kri-race-updated', { detail: { race } }));
     }
 
     async function reloadSchedule() {
@@ -269,7 +305,15 @@
         });
     }
 
-    global.KriSafetyRegattaPanel = { init, reloadSchedule, renderPanel };
+    global.KriSafetyRegattaPanel = {
+        init,
+        reloadSchedule,
+        renderPanel,
+        getLaneCrew,
+        getLaneAssignment,
+        crewDisplay,
+        getCurrentRace: () => currentRace,
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

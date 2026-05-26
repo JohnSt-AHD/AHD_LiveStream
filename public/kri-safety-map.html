@@ -61,9 +61,19 @@
                 </div>
             </aside>
 
+            <div class="kri-map-column">
             <div class="rnz-map-stage" aria-label="Map area">
                 <div id="map" class="rnz-map" role="application"></div>
                 <button type="button" id="rnzMapMobileExpandBtn" class="rnz-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
+            </div>
+
+            <section class="kri-race-panel" id="kriRacePanel" aria-labelledby="kriRacePanelTitle">
+                <div class="kri-race-panel-head">
+                    <h2 id="kriRacePanelTitle" class="kri-race-panel-title">Current race</h2>
+                    <p class="kri-race-panel-status" id="kriRacePanelStatus" aria-live="polite">Loading schedule…</p>
+                </div>
+                <div class="kri-race-panel-body" id="kriRacePanelBody"></div>
+            </section>
             </div>
 
             <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
@@ -91,8 +101,7 @@
                         <summary class="rnz-panel-summary">On water boats</summary>
                         <div class="rnz-panel-inner rnz-onwater-inner">
                             <p class="rnz-onwater-hint">
-                                Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Lake Karāpiro / KRI boundary. Click a boat to show it on the map.
-                                Rowing lanes follow the <strong>start</strong> and <strong>finish</strong> pins on the <a href="live-map.html">fleet map</a> (Custom markers panel).
+                                Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Rowing NZ geofence. Click a boat to show it on the map.
                             </p>
                             <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
                         </div>
@@ -100,17 +109,6 @@
                 </div>
             </aside>
         </div>
-
-        <section class="kri-race-panel" id="kriRacePanel" aria-labelledby="kriRacePanelTitle">
-            <div class="kri-race-panel-head">
-                <h2 id="kriRacePanelTitle" class="kri-race-panel-title">Current race</h2>
-                <p class="kri-race-panel-status" id="kriRacePanelStatus" aria-live="polite">Loading schedule…</p>
-            </div>
-            <div class="kri-race-panel-body" id="kriRacePanelBody"></div>
-            <p class="kri-race-panel-foot">
-                Schedule and clock from the <a href="index.html#hub-schedule-title">hub regatta section</a> (same regatta code and clock settings).
-            </p>
-        </section>
 
         <section class="rnz-fleet-dock" aria-label="All devices">
             <details class="rnz-fleet-dock-details" id="rnzFleetDock">

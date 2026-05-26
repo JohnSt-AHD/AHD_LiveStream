@@ -110,10 +110,22 @@ body.kri-page .kri-header .rnz-header-inner {
     padding-bottom: 16px;
 }
 
+.kri-map-column {
+    width: var(--rnz-map-w);
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.kri-map-column .rnz-map-stage {
+    width: 100%;
+}
+
 .kri-race-panel {
-    margin: 0 0 16px;
-    padding: 16px 18px 14px;
-    border-radius: 10px;
+    margin: 10px 0 0;
+    padding: 8px 10px 6px;
+    border-radius: 8px;
     border: 1px solid rgba(0, 121, 209, 0.22);
     background: rgba(255, 255, 255, 0.94);
     box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
@@ -124,12 +136,12 @@ body.kri-page .kri-header .rnz-header-inner {
     flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
-    gap: 8px 16px;
-    margin-bottom: 12px;
+    gap: 2px 12px;
+    margin-bottom: 6px;
 }
 
 .kri-race-panel-title {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -138,72 +150,62 @@ body.kri-page .kri-header .rnz-header-inner {
 }
 
 .kri-race-panel-status {
-    font-size: 12px;
+    font-size: 11px;
     color: #64748b;
     margin: 0;
 }
 
-.kri-race-panel-foot {
-    margin: 12px 0 0;
-    font-size: 12px;
-    color: #64748b;
-}
-
-.kri-race-panel-foot a {
-    color: var(--kri-brand-blue);
-}
-
 .kri-race-card {
     border: 1px solid rgba(0, 121, 209, 0.18);
-    border-radius: 8px;
+    border-radius: 6px;
     background: #f8fbff;
-    padding: 14px 16px;
+    padding: 8px 10px;
 }
 
 .kri-race-card-head {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 4px 14px;
+    gap: 2px 10px;
     align-items: start;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
 }
 
 .kri-race-time {
-    grid-row: 1 / span 3;
-    font-size: 1.35rem;
+    grid-row: 1 / span 2;
+    font-size: 1.05rem;
     font-weight: 800;
     color: var(--kri-brand-blue);
     line-height: 1.1;
-    padding-top: 2px;
+    padding-top: 1px;
 }
 
 .kri-race-title {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: #0f172a;
 }
 
 .kri-race-event {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: #1e293b;
 }
 
 .kri-race-meta {
     margin: 0;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     color: #64748b;
 }
 
 .kri-race-result-badge {
     grid-column: 1 / -1;
     display: inline-block;
-    margin-top: 4px;
-    padding: 3px 8px;
+    margin-top: 2px;
+    padding: 2px 6px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -214,22 +216,22 @@ body.kri-page .kri-header .rnz-header-inner {
 
 .kri-race-empty-lanes {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     color: #64748b;
 }
 
 .kri-lane-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
 }
 
 .kri-lane {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 8px;
+    gap: 5px;
+    padding: 4px 6px;
+    border-radius: 6px;
     border: 1px solid rgba(0, 121, 209, 0.2);
     background: #fff;
     min-width: 0;
@@ -242,19 +244,19 @@ body.kri-page .kri-header .rnz-header-inner {
 
 .kri-lane-n {
     flex-shrink: 0;
-    width: 1.25rem;
-    font-size: 11px;
+    width: 1rem;
+    font-size: 10px;
     font-weight: 800;
     text-align: center;
     color: var(--kri-brand-blue);
 }
 
 .kri-lane-logo {
-    width: 32px;
-    height: 32px;
+    width: 22px;
+    height: 22px;
     object-fit: contain;
     flex-shrink: 0;
-    border-radius: 4px;
+    border-radius: 3px;
     background: #fff;
 }
 
@@ -265,12 +267,12 @@ body.kri-page .kri-header .rnz-header-inner {
 .kri-lane-text {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
     min-width: 0;
 }
 
 .kri-lane-club {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 700;
     color: #0f172a;
     overflow: hidden;
@@ -279,9 +281,63 @@ body.kri-page .kri-header .rnz-header-inner {
 }
 
 .kri-lane-code {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     color: #64748b;
+}
+
+body.kri-page .rnz-onwater-row {
+    gap: 3px;
+}
+
+body.kri-page .rnz-onwater-primary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+body.kri-page .rnz-onwater-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 3px;
+    background: #fff;
+}
+
+body.kri-page .rnz-onwater-logo--placeholder {
+    opacity: 0.35;
+}
+
+body.kri-page .rnz-onwater-crew {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+    .kri-map-column {
+        width: 100%;
+        max-width: var(--rnz-map-w);
+        margin: 0 auto;
+    }
+
+    .kri-lane-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .kri-lane-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .kri-logo-sidebar {
