@@ -56,6 +56,7 @@
             geofenceMatchColor: '#1e40af',
             geofenceMatchFill: '#3b82f6',
             enableCapsize: true,
+            enableCourseOverlay: true,
         },
     };
 })(typeof window !== 'undefined' ? window : globalThis);

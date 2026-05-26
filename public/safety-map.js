@@ -34,6 +34,7 @@ const markersByDeviceId = new Map();
 let mapInitialFitDone = false;
 let pollTimer = null;
 let geofenceLayer = null;
+let courseOverlayLayer = null;
 
 /** Latest boundary + stopped timer (for red alerts & map styling). */
 let lastFenceParts = [];
@@ -295,6 +296,17 @@ function initMap() {
 
     geofenceLayer = L.layerGroup().addTo(map);
     liveTrailLayer = L.layerGroup().addTo(map);
+
+    if (SAFETY_THEME.enableCourseOverlay) {
+        if (!map.getPane('kriCoursePane')) {
+            map.createPane('kriCoursePane');
+            map.getPane('kriCoursePane').style.zIndex = 420;
+        }
+        courseOverlayLayer = L.layerGroup([], { pane: 'kriCoursePane' }).addTo(map);
+        if (window.KriRowingCourseOverlay) {
+            window.KriRowingCourseOverlay.mount(map, courseOverlayLayer);
+        }
+    }
 
     setTimeout(() => map.invalidateSize(), 100);
     window.addEventListener('resize', () => {

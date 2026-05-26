@@ -32,10 +32,19 @@ body.kri-page::before {
 }
 
 .kri-logo-header {
+    width: clamp(260px, 42vw, 420px);
+    height: auto;
+    max-height: none;
     object-fit: contain;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.12);
-    padding: 6px;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+body.kri-page .kri-header .rnz-header-inner {
+    padding-top: 16px;
+    padding-bottom: 16px;
 }
 
 .kri-external {
@@ -108,4 +117,58 @@ body.kri-page::before {
 .safety-capsize-ack:hover {
     background: #b91c1c;
     color: #fff;
+}
+
+.kri-course-label {
+    background: transparent !important;
+    border: none !important;
+}
+
+.kri-course-label span {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+}
+
+.kri-course-label--lane span {
+    background: rgba(30, 64, 175, 0.92);
+    color: #fff;
+    border: 1px solid rgba(147, 197, 253, 0.45);
+}
+
+.kri-course-label--distance span {
+    background: rgba(255, 255, 255, 0.94);
+    color: #1e40af;
+    border: 1px solid rgba(59, 130, 246, 0.55);
+}
+
+.kri-course-label--endpoint span {
+    background: #0f172a;
+    color: #fff;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.kri-course-label--start span {
+    background: #2563eb;
+}
+
+.kri-course-label--finish span {
+    background: #1e40af;
+}
+
+.kri-course-label--hint span {
+    background: rgba(255, 255, 255, 0.88);
+    color: #475569;
+    font-weight: 600;
+    font-size: 10px;
+    max-width: 220px;
+    white-space: normal;
+    text-align: center;
 }

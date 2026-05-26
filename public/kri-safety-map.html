@@ -16,7 +16,7 @@
     <header class="rnz-header kri-header">
         <div class="rnz-header-inner">
             <div class="rnz-header-brand">
-                <img src="assets/kri/kri-logo.png" alt="Karāpiro Rowing Inc" class="rnz-logo-header kri-logo-header" width="72" height="72" loading="lazy">
+                <img src="assets/kri/kri-logo-full.png" alt="Karāpiro Rowing Inc" class="rnz-logo-header kri-logo-header" width="360" height="80" loading="lazy">
                 <div class="rnz-header-titles">
                     <a class="rnz-logo-mark" href="/">Altitude HD</a>
                     <div class="rnz-header-title">
@@ -92,6 +92,7 @@
                         <div class="rnz-panel-inner rnz-onwater-inner">
                             <p class="rnz-onwater-hint">
                                 Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Lake Karāpiro / KRI boundary. Click a boat to show it on the map.
+                                Rowing lanes follow the <strong>start</strong> and <strong>finish</strong> pins on the <a href="live-map.html">fleet map</a> (Custom markers panel).
                             </p>
                             <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
                         </div>
@@ -197,6 +198,7 @@
     <script src="safety-map-themes.js"></script>
     <script>window.SafetyMapTheme = window.SafetyMapThemes.kri;</script>
     <script src="capsize-alarm.js"></script>
+    <script src="kri-rowing-course-overlay.js"></script>
     <script src="safety-map.js"></script>
 </body>
 </html>
