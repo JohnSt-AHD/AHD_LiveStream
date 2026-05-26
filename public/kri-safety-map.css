@@ -1,0 +1,111 @@
+/**
+ * Karāpiro Rowing Inc (KRI) theme overrides for the shared safety map layout.
+ * Brand reference: https://www.karapirorowing.com/
+ */
+body.kri-page {
+    --rnz-navy: #0c1f3d;
+    --rnz-navy-deep: #071428;
+    --rnz-blue: #1e40af;
+    --rnz-teal: #2563eb;
+    --rnz-teal-dark: #1d4ed8;
+    --rnz-cream: #eef4fb;
+    --rnz-warn: #b45309;
+    background-color: var(--rnz-cream);
+    background-image:
+        linear-gradient(180deg, rgba(238, 244, 251, 0.92) 0%, rgba(238, 244, 251, 0.85) 100%),
+        url('assets/kri/kri-lake-hero.jpg');
+    background-size: cover;
+    background-position: center 30%;
+}
+
+body.kri-page::before {
+    display: none;
+}
+
+.kri-header {
+    background:
+        linear-gradient(135deg, var(--rnz-navy-deep) 0%, var(--rnz-navy) 55%, #12325c 100%);
+}
+
+.kri-header::after {
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.35), transparent);
+}
+
+.kri-logo-header {
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 6px;
+}
+
+.kri-external {
+    border-color: rgba(147, 197, 253, 0.45);
+}
+
+.kri-external:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #93c5fd;
+}
+
+.hub-stats-bar--kri .hub-stats-item--warn {
+    color: var(--rnz-warn);
+}
+
+.kri-logo-sidebar {
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.kri-footer a {
+    color: #1d4ed8;
+}
+
+.rnz-panel-details--capsize:not([hidden]) {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.25);
+}
+
+.rnz-panel-details--capsize .rnz-panel-summary {
+    background: linear-gradient(90deg, #7f1d1d, #b91c1c);
+    color: #fff;
+}
+
+.rnz-panel-details--capsize .rnz-panel-inner--critical {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.safety-capsize-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.safety-capsize-item {
+    font-size: 14px;
+    line-height: 1.45;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #fecaca;
+}
+
+.safety-capsize-ack {
+    margin-left: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid #b91c1c;
+    background: #fff;
+    color: #b91c1c;
+    cursor: pointer;
+}
+
+.safety-capsize-ack:hover {
+    background: #b91c1c;
+    color: #fff;
+}

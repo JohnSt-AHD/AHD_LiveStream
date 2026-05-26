@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>RowSafe-style fleet map · Altitude HD</title>
+    <title>Lake Karāpiro safety map · Karāpiro Rowing Inc</title>
+    <link rel="icon" href="assets/kri/kri-favicon.png" type="image/png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="hub-warning-alerts.css">
     <link rel="stylesheet" href="rowsafe-map.css">
+    <link rel="stylesheet" href="kri-safety-map.css">
 </head>
-<body class="rnz-page">
+<body class="rnz-page kri-page">
     <a class="rnz-skip" href="#rnz-main">Skip to content</a>
 
-    <header class="rnz-header">
+    <header class="rnz-header kri-header">
         <div class="rnz-header-inner">
             <div class="rnz-header-brand">
-                <img src="assets/rnz/rnz-logo-white.png" alt="Rowing New Zealand" class="rnz-logo-header" width="160" height="64" loading="lazy">
+                <img src="assets/kri/kri-logo.png" alt="Karāpiro Rowing Inc" class="rnz-logo-header kri-logo-header" width="72" height="72" loading="lazy">
                 <div class="rnz-header-titles">
                     <a class="rnz-logo-mark" href="/">Altitude HD</a>
                     <div class="rnz-header-title">
-                        <span class="rnz-kicker">Water safety awareness</span>
+                        <span class="rnz-kicker">Lake Karāpiro · water safety</span>
                         <h1>Live fleet map</h1>
                     </div>
                 </div>
             </div>
-            <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
+            <a class="rnz-external kri-external" href="https://www.karapirorowing.com/" target="_blank" rel="noopener noreferrer">Karāpiro Rowing Inc ↗</a>
         </div>
     </header>
 
-    <div class="hub-stats-bar hub-stats-bar--rnz" id="hubStatsBar" aria-live="polite">
+    <div class="hub-stats-bar hub-stats-bar--rnz hub-stats-bar--kri" id="hubStatsBar" aria-live="polite">
         <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="#rnzWarningBox">Warnings: —</a>
         <span class="hub-stats-sep" aria-hidden="true">·</span>
         <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
@@ -39,12 +41,20 @@
 
     <main class="rnz-main" id="rnz-main">
         <div class="rnz-dashboard" id="rnzLayout">
-            <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Warnings">
+            <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Alerts">
                 <div class="rnz-left-scroll" id="rnzLeftScroll">
+                    <details class="rnz-panel-details rnz-panel-details--capsize" id="safetyCapsizeBox" hidden>
+                        <summary class="rnz-panel-summary">Capsize / distress alarm</summary>
+                        <div class="rnz-panel-inner rnz-panel-inner--critical safety-capsize-inner">
+                            <p class="rnz-block-hint">Device SOS/capsize alarms, or a sudden stop after rowing speed. Sound plays for new alerts — acknowledge to clear until the next event. Click a boat name to fly the map there.</p>
+                            <div id="safetyCapsizeList"></div>
+                        </div>
+                    </details>
+
                     <details class="rnz-panel-details rnz-panel-details--warnings" id="rnzWarningBox" hidden>
                         <summary class="rnz-panel-summary">Warnings — outside boundary 30+ min</summary>
                         <div class="rnz-panel-inner rnz-panel-inner--critical">
-                            <p class="rnz-block-hint">Outside the boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name in the list to fly the map there.</p>
+                            <p class="rnz-block-hint">Outside the Lake Karāpiro / KRI boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name in the list to fly the map there.</p>
                             <div id="rnzWarningsList"></div>
                         </div>
                     </details>
@@ -58,7 +68,7 @@
 
             <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
                 <div class="rnz-sidebar-head">
-                    <img src="RNz.png" alt="" class="rnz-logo-sidebar" width="44" height="44" loading="lazy">
+                    <img src="assets/kri/kri-logo.png" alt="" class="rnz-logo-sidebar kri-logo-sidebar" width="44" height="44" loading="lazy">
                 </div>
                 <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
                     <details class="rnz-panel-details" open>
@@ -81,7 +91,7 @@
                         <summary class="rnz-panel-summary">On water boats</summary>
                         <div class="rnz-panel-inner rnz-onwater-inner">
                             <p class="rnz-onwater-hint">
-                                Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Rowing NZ boundary. Click a boat to show it on the map.
+                                Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Lake Karāpiro / KRI boundary. Click a boat to show it on the map.
                             </p>
                             <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
                         </div>
@@ -164,17 +174,15 @@
         <button type="button" id="rnzMapFullscreenExitBtn" class="rnz-map-fullscreen-exit" hidden>Exit fullscreen</button>
     </main>
 
-    <footer class="rnz-footer">
+    <footer class="rnz-footer kri-footer">
         Official resources:
-        <a href="https://rowingnz.kiwi/rowsafe/">RowSafe — Rowing New Zealand</a>
+        <a href="https://www.karapirorowing.com/">Karāpiro Rowing Inc</a>
         ·
-        <a href="https://rowingnz.kiwi/">RowingHub</a>
+        <a href="rowsafe-map.html">RowSafe map (RNZ)</a>
         ·
         <a href="/">Altitude HD home</a>
         ·
         <a href="live-map.html">Fleet map</a>
-        ·
-        <a href="beachsprints-map.html">Beach Sprints map</a>
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -187,7 +195,8 @@
     <script src="hub-stats-bar.js"></script>
     <script src="hub-warning-alerts.js"></script>
     <script src="safety-map-themes.js"></script>
-    <script>window.SafetyMapTheme = window.SafetyMapThemes.rnz;</script>
+    <script>window.SafetyMapTheme = window.SafetyMapThemes.kri;</script>
+    <script src="capsize-alarm.js"></script>
     <script src="safety-map.js"></script>
 </body>
 </html>
