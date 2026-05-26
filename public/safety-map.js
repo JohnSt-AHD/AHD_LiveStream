@@ -46,6 +46,8 @@ let courseOverlayLayer = null;
 /** Latest boundary + stopped timer (for red alerts & map styling). */
 let lastFenceParts = [];
 let lastStoppedState = {};
+/** Device IDs with active (unacknowledged) capsize alerts. */
+let activeCapsizeDeviceIds = new Set();
 
 function escapeHtml(value) {
     if (value == null) return '';
@@ -493,13 +495,13 @@ function applyDemoSnapshotToUi() {
 
     drawGeofencesOnMap(geofences, matched);
     renderFenceAndLists(parts, stoppedState);
+    renderCapsizeAlerts();
     clearSnapshotError();
     renderFleetDevices();
     renderOnWaterBoats(parts);
     updateMapMarkers();
     recordLiveTrailSamples();
     redrawLiveTrail();
-    renderCapsizeAlerts();
 
     const ts = document.getElementById('lastUpdate');
     if (ts) ts.textContent = `Last updated: demo (${snap.phase.replace(/_/g, ' ')})`;
@@ -785,6 +787,20 @@ function formatDateTime(dateString) {
     return `${hours}:${minutes}:${seconds}`;
 }
 
+function setMarkerCapsizeFlash(marker, active) {
+    if (!marker) return;
+    const el = typeof marker.getElement === 'function' ? marker.getElement() : marker._path;
+    if (el) el.classList.toggle('rnz-marker-capsize', !!active);
+}
+
+function syncCapsizeMapAlertUi() {
+    if (!SAFETY_THEME.enableCapsize) return;
+    const mapStage = document.querySelector('.rnz-map-stage');
+    if (mapStage) {
+        mapStage.classList.toggle('rnz-map-stage--capsize-alert', activeCapsizeDeviceIds.size > 0);
+    }
+}
+
 function updateMapMarkers() {
     if (!map) return;
 
@@ -811,10 +827,14 @@ function updateMapMarkers() {
         seenIds.add(device.id);
         const latlng = [position.latitude, position.longitude];
         const online = isPositionRecent(position.fixTime);
+        const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
         const critical = isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
         let fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
         let stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
-        if (isKriDemoMode()) {
+        if (capsizeAlert) {
+            fill = '#fecaca';
+            stroke = '#b91c1c';
+        } else if (isKriDemoMode()) {
             if (device.demoMarkerFill) {
                 fill = device.demoMarkerFill;
                 stroke = device.demoMarkerStroke || device.demoMarkerFill;
@@ -823,8 +843,8 @@ function updateMapMarkers() {
                 stroke = '#1e40af';
             }
         }
-        const radius = critical ? 14 : 11;
-        const weight = critical ? 3 : 2;
+        const radius = capsizeAlert || critical ? 14 : 11;
+        const weight = capsizeAlert || critical ? 3 : 2;
 
         let marker = markersByDeviceId.get(device.id);
         if (!marker) {
@@ -834,11 +854,13 @@ function updateMapMarkers() {
                 color: stroke,
                 fillColor: fill,
                 fillOpacity: 0.92,
+                className: capsizeAlert ? 'rnz-marker-capsize' : '',
             }).addTo(map);
             markersByDeviceId.set(device.id, marker);
         } else {
             marker.setLatLng(latlng);
             marker.setStyle({ fillColor: fill, color: stroke, radius, weight });
+            setMarkerCapsizeFlash(marker, capsizeAlert);
         }
 
         const speedKmh = (position.speed * 3.6).toFixed(1);
@@ -952,8 +974,12 @@ function renderCapsizeAlerts() {
     if (!SAFETY_THEME.enableCapsize || !window.AltitudeHdCapsizeAlarm) return;
     const listEl = document.getElementById('safetyCapsizeList');
     const alerts = window.AltitudeHdCapsizeAlarm.updateCapsizeAlerts(devices, positions);
+    activeCapsizeDeviceIds = new Set(alerts.map((a) => a.deviceId));
+    syncCapsizeMapAlertUi();
     window.AltitudeHdCapsizeAlarm.renderCapsizePanel(listEl, alerts, () => {
         renderCapsizeAlerts();
+        updateMapMarkers();
+        renderFleetDevices();
     });
 }
 
@@ -1013,7 +1039,6 @@ async function updateData() {
         drawGeofencesOnMap(geofences, matched);
         renderFenceAndLists(parts, stoppedState);
         renderCapsizeAlerts();
-
         clearSnapshotError();
         renderFleetDevices();
         renderOnWaterBoats(parts);
@@ -1051,7 +1076,9 @@ function renderFleetDevices() {
         const critical =
             position &&
             isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
+        const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
         const rowCriticalClass = critical ? ' rnz-fleet-row--critical' : '';
+        const rowCapsizeClass = capsizeAlert ? ' rnz-fleet-row--capsize-alert' : '';
         const groupName = escapeHtml(groupLabelForDevice(device));
         const hasLoc =
             position &&
@@ -1064,7 +1091,7 @@ function renderFleetDevices() {
             : `<span class="rnz-fleet-name">${escapeHtml(device.name)}</span>`;
 
         html += `
-            <div class="rnz-fleet-row${rowCriticalClass}">
+            <div class="rnz-fleet-row${rowCriticalClass}${rowCapsizeClass}">
                 <div class="rnz-fleet-row-top">
                     ${nameHtml}
                     <span class="device-status ${statusClass}">${statusText}</span>
@@ -1280,6 +1307,14 @@ window.addEventListener('kri-demo-changed', () => {
 });
 
 window.addEventListener('kri-race-updated', () => {
+    if (isKriDemoMode()) applyDemoSnapshotToUi();
+});
+
+window.addEventListener('kri-demo-capsize-started', () => {
+    if (isKriDemoMode()) applyDemoSnapshotToUi();
+});
+
+window.addEventListener('kri-demo-capsize-ended', () => {
     if (isKriDemoMode()) applyDemoSnapshotToUi();
 });
 

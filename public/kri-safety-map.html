@@ -196,10 +196,15 @@
     </footer>
 
     <section class="kri-demo-bar" aria-label="Demo mode">
-        <label class="kri-demo-toggle">
-            <input type="checkbox" id="kriDemoToggle" checked>
-            <span>Demo mode — A1–A8 start together; speeds vary 3–10 m/s per boat during the race</span>
-        </label>
+        <div class="kri-demo-bar-inner">
+            <label class="kri-demo-toggle">
+                <input type="checkbox" id="kriDemoToggle" checked>
+                <span>Demo mode — A1–A8 start together; speeds vary 3–10 m/s per boat during the race</span>
+            </label>
+            <button type="button" class="kri-demo-capsize-btn" id="kriDemoCapsizeBtn">
+                Simulate A4 capsize (20s)
+            </button>
+        </div>
     </section>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

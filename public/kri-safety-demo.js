@@ -13,9 +13,11 @@
     const DEVICE_ID_BASE = 9001;
     const DEVICE_ID_SAFETY = 9009;
     const DEVICE_ID_X1 = 9010;
+    const SIMULATE_CAPSIZE_MS = 20_000;
     const X1_LAT = -(37 + 55 / 60 + 32.5 / 3600);
     const X1_LNG = 175 + 32 / 60 + 24.5 / 3600;
     const FOLLOW_LANE = 4;
+    const DEVICE_ID_A4 = DEVICE_ID_BASE + FOLLOW_LANE - 1;
     const SAFETY_FOLLOW_BEHIND_M = 40;
 
     const PHASE = {
@@ -40,6 +42,10 @@
     /** @type {Array<{ departAt: number, distanceM: number, totalM: number, done: boolean, lane: number }>} */
     let returnLegs = [];
     let lastNow = 0;
+    let simulateCapsizeUntil = 0;
+    let simulateCapsizeTimer = null;
+    /** @type {{ lat: number, lng: number } | null} */
+    let frozenA4Position = null;
 
     function clampSpeed(speed) {
         return Math.min(SPEED_MAX_MPS, Math.max(SPEED_MIN_MPS, speed));
@@ -232,16 +238,59 @@
     }
 
     function clearDemoCapsizeAcks() {
+        clearDemoCapsizeAcksForDevice(DEVICE_ID_X1);
+        clearDemoCapsizeAcksForDevice(DEVICE_ID_A4);
+    }
+
+    function clearDemoCapsizeAcksForDevice(deviceId) {
         try {
             const raw = global.localStorage.getItem('altitudeHdCapsizeAck_v1');
             if (!raw) return;
             const ack = JSON.parse(raw);
-            delete ack[`${DEVICE_ID_X1}:alarm`];
-            delete ack[`${DEVICE_ID_X1}:stop`];
+            delete ack[`${deviceId}:alarm`];
+            delete ack[`${deviceId}:stop`];
             global.localStorage.setItem('altitudeHdCapsizeAck_v1', JSON.stringify(ack));
         } catch {
             /* ignore */
         }
+    }
+
+    function isSimulatedA4CapsizeActive() {
+        return simulateCapsizeUntil > performance.now();
+    }
+
+    function endSimulatedA4Capsize() {
+        simulateCapsizeUntil = 0;
+        frozenA4Position = null;
+        if (simulateCapsizeTimer) {
+            clearTimeout(simulateCapsizeTimer);
+            simulateCapsizeTimer = null;
+        }
+        clearDemoCapsizeAcksForDevice(DEVICE_ID_A4);
+        updateCapsizeButton();
+        global.dispatchEvent(new CustomEvent('kri-demo-capsize-ended'));
+    }
+
+    function simulateCapsizeA4(durationMs = SIMULATE_CAPSIZE_MS) {
+        if (!enabled) return false;
+        if (isSimulatedA4CapsizeActive()) return false;
+        const pos = boatPosition(FOLLOW_LANE);
+        frozenA4Position = { lat: pos.lat, lng: pos.lng };
+        simulateCapsizeUntil = performance.now() + durationMs;
+        clearDemoCapsizeAcksForDevice(DEVICE_ID_A4);
+        if (simulateCapsizeTimer) clearTimeout(simulateCapsizeTimer);
+        simulateCapsizeTimer = setTimeout(endSimulatedA4Capsize, durationMs);
+        updateCapsizeButton();
+        global.dispatchEvent(new CustomEvent('kri-demo-capsize-started'));
+        return true;
+    }
+
+    function updateCapsizeButton() {
+        const btn = document.getElementById('kriDemoCapsizeBtn');
+        if (!btn) return;
+        const active = isSimulatedA4CapsizeActive();
+        btn.disabled = !enabled || active;
+        btn.textContent = active ? 'A4 capsize simulation active…' : 'Simulate A4 capsize (20s)';
     }
 
     function resetSimulation() {
@@ -252,6 +301,7 @@
         returnLegs = [];
         lastNow = phaseStartedAt;
         clearDemoCapsizeAcks();
+        endSimulatedA4Capsize();
     }
 
     function beginReturnPhase(now) {
@@ -297,6 +347,12 @@
             let allFinished = true;
             for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
                 const idx = lane - 1;
+                if (lane === FOLLOW_LANE && isSimulatedA4CapsizeActive()) {
+                    if (laneRaceDistanceM[idx] < frame.lengthM - 0.5) {
+                        allFinished = false;
+                    }
+                    continue;
+                }
                 laneRaceDistanceM[idx] = Math.min(
                     frame.lengthM,
                     laneRaceDistanceM[idx] + laneSpeedMps[idx] * dt,
@@ -344,6 +400,10 @@
     }
 
     function boatPosition(lane) {
+        if (lane === FOLLOW_LANE && isSimulatedA4CapsizeActive() && frozenA4Position) {
+            return { lat: frozenA4Position.lat, lng: frozenA4Position.lng, speed: 0 };
+        }
+
         const api = courseApi();
         const frame = api?.buildCourseFrame?.();
         if (!frame || !api.lanePointAtDistance) {
@@ -444,7 +504,8 @@
                 demoLogoUrl: assignment?.logoUrl || null,
             });
             const pos = boatPosition(lane);
-            positions[id] = {
+            const a4Capsize = lane === FOLLOW_LANE && isSimulatedA4CapsizeActive();
+            const position = {
                 deviceId: id,
                 latitude: pos.lat,
                 longitude: pos.lng,
@@ -454,6 +515,16 @@
                     ? `Demo · lane ${lane} · ${assignment.crew}`
                     : `Demo · lane ${lane}`,
             };
+            if (a4Capsize) {
+                position.speed = 0;
+                position.attributes = { alarm: 'capsize' };
+            }
+            positions[id] = position;
+            if (a4Capsize) {
+                const device = devices[devices.length - 1];
+                device.demoMarkerFill = '#fecaca';
+                device.demoMarkerStroke = '#b91c1c';
+            }
         }
 
         const safetyPos = safetyBoatPosition();
@@ -504,6 +575,7 @@
         enabled = !!value;
         saveEnabled(enabled);
         resetSimulation();
+        updateCapsizeButton();
         global.dispatchEvent(new CustomEvent('kri-demo-changed', { detail: { enabled } }));
     }
 
@@ -518,11 +590,23 @@
         input.checked = enabled;
         input.addEventListener('change', () => {
             setEnabled(input.checked);
+            updateCapsizeButton();
         });
+    }
+
+    function wireCapsizeButton() {
+        const btn = document.getElementById('kriDemoCapsizeBtn');
+        if (!btn || btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', () => {
+            simulateCapsizeA4();
+        });
+        updateCapsizeButton();
     }
 
     function init() {
         wireToggle();
+        wireCapsizeButton();
         resetSimulation();
     }
 
@@ -534,10 +618,13 @@
         tick,
         reset: resetSimulation,
         getSnapshot,
+        simulateCapsizeA4,
+        isSimulatedA4CapsizeActive,
         SPEED_MIN_MPS,
         SPEED_MAX_MPS,
         DEVICE_ID_SAFETY,
         DEVICE_ID_X1,
+        DEVICE_ID_A4,
     };
 
     if (document.readyState === 'loading') {
