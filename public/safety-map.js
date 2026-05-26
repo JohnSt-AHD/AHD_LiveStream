@@ -20,6 +20,9 @@ const LIVE_TRAIL_DEDUPE_MS = 8000;
 const KRI_DEMO_TRAIL_TTL_MS = 60 * 1000;
 const KRI_DEMO_TRAIL_DEDUPE_MS = 400;
 const KRI_DEMO_TRAIL_DEDUPE_MOVE_M = 2;
+const KRI_DEMO_SPEED_MIN_MPS = 3;
+const KRI_DEMO_SPEED_MAX_MPS = 10;
+let kriDemoSpeedRangeApplied = false;
 let liveTrailLayer = null;
 const deviceLiveTrails = new Map();
 
@@ -456,8 +459,25 @@ function stopDemoAnimation() {
     }
 }
 
+function ensureKriDemoSpeedRange() {
+    const color = window.AltitudeHdSpeedColor;
+    if (!color?.setRange || !color?.getRange) return;
+    if (isKriDemoMode()) {
+        if (!kriDemoSpeedRangeApplied) {
+            color.setRange(KRI_DEMO_SPEED_MIN_MPS, KRI_DEMO_SPEED_MAX_MPS);
+            kriDemoSpeedRangeApplied = true;
+        }
+        return;
+    }
+    if (kriDemoSpeedRangeApplied) {
+        color.setRange(0, 20);
+        kriDemoSpeedRangeApplied = false;
+    }
+}
+
 function applyDemoSnapshotToUi() {
     if (!window.KriSafetyDemo) return;
+    ensureKriDemoSpeedRange();
     window.KriSafetyDemo.setGeofences(geofences);
     window.KriSafetyDemo.tick(performance.now());
     const snap = window.KriSafetyDemo.getSnapshot();
@@ -517,6 +537,7 @@ async function bootstrapMapData() {
         startDemoAnimation();
         return;
     }
+    ensureKriDemoSpeedRange();
     stopDemoAnimation();
     await updateData();
     startPolling();
@@ -731,8 +752,8 @@ function redrawLiveTrail() {
                     ],
                     {
                         color,
-                        weight: 3,
-                        opacity: 0.88,
+                        weight: 2,
+                        opacity: 0.55,
                         lineCap: 'round',
                         lineJoin: 'round',
                         interactive: false,

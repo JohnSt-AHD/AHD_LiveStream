@@ -4,12 +4,14 @@
 (function (global) {
     const LS_DEMO = 'kriSafetyDemoEnabled_v1';
     const BOAT_COUNT = 8;
-    const SPEED_MPS = 4;
+    const SPEED_MIN_MPS = 3;
+    const SPEED_MAX_MPS = 10;
     const HOLD_MS = 10_000;
-    const RETURN_STAGGER_MS = 7_000;
     const DEVICE_ID_BASE = 9001;
     const DEVICE_ID_SAFETY = 9009;
     const DEVICE_ID_X1 = 9010;
+    const X1_LAT = -(37 + 55 / 60 + 32.5 / 3600);
+    const X1_LNG = 175 + 32 / 60 + 24.5 / 3600;
     const FOLLOW_LANE = 4;
     const SAFETY_FOLLOW_BEHIND_M = 40;
 
@@ -24,10 +26,30 @@
     let geofences = [];
     let phase = PHASE.START_HOLD;
     let phaseStartedAt = 0;
-    let raceDistanceM = 0;
-    /** @type {Array<{ departAt: number, distanceM: number, totalM: number, done: boolean }>} */
+    /** @type {number[]} */
+    let laneSpeedMps = [];
+    /** @type {number[]} */
+    let laneRaceDistanceM = [];
+    /** @type {Array<{ departAt: number, distanceM: number, totalM: number, done: boolean, lane: number }>} */
     let returnLegs = [];
     let lastNow = 0;
+
+    function buildLaneSpeeds() {
+        const speeds = [];
+        for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
+            const t = BOAT_COUNT > 1 ? (lane - 1) / (BOAT_COUNT - 1) : 0;
+            speeds.push(SPEED_MIN_MPS + t * (SPEED_MAX_MPS - SPEED_MIN_MPS));
+        }
+        return speeds;
+    }
+
+    function laneSpeed(lane) {
+        return laneSpeedMps[lane - 1] ?? SPEED_MIN_MPS;
+    }
+
+    function laneDistance(lane) {
+        return laneRaceDistanceM[lane - 1] ?? 0;
+    }
 
     function loadEnabled() {
         try {
@@ -189,7 +211,8 @@
     function resetSimulation() {
         phase = PHASE.START_HOLD;
         phaseStartedAt = performance.now();
-        raceDistanceM = 0;
+        laneSpeedMps = buildLaneSpeeds();
+        laneRaceDistanceM = new Array(BOAT_COUNT).fill(0);
         returnLegs = [];
         lastNow = phaseStartedAt;
         clearDemoCapsizeAcks();
@@ -206,7 +229,7 @@
             returnLegs.push({
                 lane,
                 path,
-                departAt: now + (lane - 1) * RETURN_STAGGER_MS,
+                departAt: now,
                 distanceM: 0,
                 totalM: path?.totalM || 0,
                 done: false,
@@ -227,21 +250,35 @@
         const elapsedPhase = now - phaseStartedAt;
 
         if (phase === PHASE.START_HOLD) {
-            raceDistanceM = 0;
+            laneRaceDistanceM = new Array(BOAT_COUNT).fill(0);
             if (elapsedPhase >= HOLD_MS) {
                 phase = PHASE.RACING;
                 phaseStartedAt = now;
             }
         } else if (phase === PHASE.RACING) {
-            raceDistanceM = Math.min(frame.lengthM, raceDistanceM + SPEED_MPS * dt);
-            if (raceDistanceM >= frame.lengthM - 0.5) {
-                raceDistanceM = frame.lengthM;
+            let allFinished = true;
+            for (let lane = 1; lane <= BOAT_COUNT; lane += 1) {
+                const idx = lane - 1;
+                laneRaceDistanceM[idx] = Math.min(
+                    frame.lengthM,
+                    laneRaceDistanceM[idx] + laneSpeedMps[idx] * dt,
+                );
+                if (laneRaceDistanceM[idx] < frame.lengthM - 0.5) {
+                    allFinished = false;
+                }
+            }
+            if (allFinished) {
+                for (let i = 0; i < BOAT_COUNT; i += 1) {
+                    laneRaceDistanceM[i] = frame.lengthM;
+                }
                 phase = PHASE.FINISH_HOLD;
                 phaseStartedAt = now;
                 clearDemoCapsizeAcks();
             }
         } else if (phase === PHASE.FINISH_HOLD) {
-            raceDistanceM = frame.lengthM;
+            for (let i = 0; i < BOAT_COUNT; i += 1) {
+                laneRaceDistanceM[i] = frame.lengthM;
+            }
             if (elapsedPhase >= HOLD_MS) {
                 beginReturnPhase(now);
             }
@@ -251,7 +288,8 @@
                 if (leg.done) continue;
                 allDone = false;
                 if (now < leg.departAt) continue;
-                leg.distanceM = Math.min(leg.totalM, leg.distanceM + SPEED_MPS * dt);
+                const spd = laneSpeed(leg.lane);
+                leg.distanceM = Math.min(leg.totalM, leg.distanceM + spd * dt);
                 if (leg.distanceM >= leg.totalM - 0.5) {
                     leg.distanceM = leg.totalM;
                     leg.done = true;
@@ -260,7 +298,7 @@
             if (returnLegs.length === BOAT_COUNT && returnLegs.every((l) => l.done)) {
                 phase = PHASE.START_HOLD;
                 phaseStartedAt = now;
-                raceDistanceM = 0;
+                laneRaceDistanceM = new Array(BOAT_COUNT).fill(0);
                 returnLegs = [];
             }
         }
@@ -274,8 +312,9 @@
         }
 
         if (phase === PHASE.RACING || phase === PHASE.FINISH_HOLD) {
-            const pt = api.lanePointAtDistance(frame, lane, raceDistanceM);
-            const speed = phase === PHASE.RACING ? SPEED_MPS : 0;
+            const d = laneDistance(lane);
+            const pt = api.lanePointAtDistance(frame, lane, d);
+            const speed = phase === PHASE.RACING ? laneSpeed(lane) : 0;
             return { lat: pt.lat, lng: pt.lng, speed };
         }
 
@@ -298,7 +337,7 @@
             return { lat: pt.lat, lng: pt.lng, speed: 0 };
         }
         const pt = pointOnReturn(leg.path, leg.distanceM);
-        return { lat: pt.lat, lng: pt.lng, speed: SPEED_MPS };
+        return { lat: pt.lat, lng: pt.lng, speed: laneSpeed(lane) };
     }
 
     function safetyBoatPosition() {
@@ -309,9 +348,9 @@
         }
 
         if (phase === PHASE.RACING || phase === PHASE.FINISH_HOLD) {
-            const d = Math.max(0, raceDistanceM - SAFETY_FOLLOW_BEHIND_M);
+            const d = Math.max(0, laneDistance(FOLLOW_LANE) - SAFETY_FOLLOW_BEHIND_M);
             const pt = api.lanePointAtDistance(frame, FOLLOW_LANE, d);
-            const speed = phase === PHASE.RACING ? SPEED_MPS : 0;
+            const speed = phase === PHASE.RACING ? laneSpeed(FOLLOW_LANE) : 0;
             return { lat: pt.lat, lng: pt.lng, speed };
         }
 
@@ -336,26 +375,11 @@
         }
         const d = Math.max(0, leg.distanceM - SAFETY_FOLLOW_BEHIND_M);
         const pt = pointOnReturn(leg.path, d);
-        return { lat: pt.lat, lng: pt.lng, speed: SPEED_MPS };
+        return { lat: pt.lat, lng: pt.lng, speed: laneSpeed(FOLLOW_LANE) };
     }
 
     function x1Position() {
-        const center = damCenter();
-        if (center) return { lat: center.lat, lng: center.lng, speed: 0 };
-        const frame = courseApi()?.buildCourseFrame?.();
-        if (frame?.start && frame?.finish) {
-            const geo = courseApi()?.geo;
-            if (geo?.destination) {
-                const mid = geo.destination(
-                    frame.start.lat,
-                    frame.start.lng,
-                    frame.bearing,
-                    frame.lengthM * 0.55,
-                );
-                return { lat: mid.lat, lng: mid.lng, speed: 0 };
-            }
-        }
-        return { lat: -37.936, lng: 175.427, speed: 0 };
+        return { lat: X1_LAT, lng: X1_LNG, speed: 0 };
     }
 
     function isFinishHoldPhase() {
@@ -471,7 +495,8 @@
         tick,
         reset: resetSimulation,
         getSnapshot,
-        SPEED_MPS,
+        SPEED_MIN_MPS,
+        SPEED_MAX_MPS,
         DEVICE_ID_SAFETY,
         DEVICE_ID_X1,
     };
