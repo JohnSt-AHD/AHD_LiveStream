@@ -110,6 +110,25 @@ body.kri-page .kri-header .rnz-header-inner {
     padding-bottom: 16px;
 }
 
+body.kri-page .kri-header .rnz-header-titles {
+    gap: 6px;
+}
+
+body.kri-page .kri-header .rnz-header-title h1 {
+    line-height: 1.25;
+}
+
+body.kri-page .kri-header .rnz-kicker {
+    line-height: 1.35;
+}
+
+body.kri-page .kri-external {
+    border: 1px solid rgba(0, 121, 209, 0.35);
+    border-radius: 4px;
+    padding: 6px 12px;
+    line-height: 1.35;
+}
+
 .kri-map-column {
     width: var(--rnz-map-w);
     max-width: 100%;
@@ -334,9 +353,120 @@ body.kri-page .rnz-onwater-crew {
     }
 }
 
+@media (max-width: 768px) {
+    body.kri-page .kri-header .rnz-header-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    body.kri-page .kri-header .rnz-header-brand {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .kri-logo-header {
+        width: min(100%, 240px);
+        max-width: 100%;
+    }
+
+    body.kri-page .kri-header .rnz-header-titles {
+        width: 100%;
+        gap: 8px;
+    }
+
+    body.kri-page .kri-header .rnz-logo-mark {
+        align-self: flex-start;
+        font-size: 0.82rem;
+        padding: 5px 10px;
+    }
+
+    body.kri-page .kri-header .rnz-kicker {
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        white-space: normal;
+    }
+
+    body.kri-page .kri-header .rnz-header-title h1 {
+        font-size: 1.15rem;
+    }
+
+    body.kri-page .kri-external {
+        align-self: flex-start;
+        white-space: normal;
+        max-width: 100%;
+        font-size: 0.82rem;
+    }
+
+    .hub-stats-bar--kri {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        gap: 8px 10px;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .hub-stats-bar--kri .hub-stats-item {
+        flex-shrink: 0;
+    }
+
+    .kri-race-panel-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .kri-race-card-head {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px 0;
+    }
+
+    .kri-race-time {
+        grid-row: auto;
+        padding-top: 0;
+    }
+
+    .kri-race-title,
+    .kri-race-event,
+    .kri-race-meta {
+        word-break: break-word;
+    }
+}
+
 @media (max-width: 520px) {
     .kri-lane-grid {
         grid-template-columns: 1fr;
+    }
+
+    body.kri-page .kri-header .rnz-header-inner {
+        gap: 12px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .kri-logo-header {
+        width: min(100%, 200px);
+    }
+
+    body.kri-page .kri-header .rnz-header-title h1 {
+        font-size: 1.05rem;
+    }
+
+    .kri-demo-bar-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .kri-demo-capsize-btn {
+        width: 100%;
     }
 }
 
@@ -424,8 +554,34 @@ body.kri-page .rnz-onwater-crew {
     }
 }
 
-.kri-page .rnz-marker-capsize {
+.kri-page .rnz-marker-capsize,
+.kri-page .kri-boat-marker.rnz-marker-capsize {
     animation: kri-capsize-flash 0.85s ease-in-out infinite;
+}
+
+.leaflet-marker-icon.kri-boat-icon {
+    width: auto !important;
+    height: auto !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.kri-boat-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.kri-boat-marker__rotate {
+    transform: rotate(var(--kri-heading, 0deg));
+    transform-origin: center center;
+    line-height: 0;
+    filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.35));
+}
+
+.kri-boat-icon--safety .kri-boat-marker__rotate {
+    filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.4));
 }
 
 .kri-page .rnz-fleet-row--capsize-alert {
@@ -491,6 +647,12 @@ body.kri-page .rnz-onwater-crew {
     border: none !important;
 }
 
+.leaflet-marker-icon.kri-course-label--fixed {
+    width: 1px !important;
+    height: 1px !important;
+}
+
+.kri-course-label__text,
 .kri-course-label span {
     display: inline-block;
     padding: 2px 7px;
@@ -503,18 +665,28 @@ body.kri-page .rnz-onwater-crew {
     box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
 }
 
+.kri-course-label--fixed .kri-course-label__text {
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+}
+
+.kri-course-label--lane .kri-course-label__text,
 .kri-course-label--lane span {
     background: rgba(30, 64, 175, 0.92);
     color: #fff;
     border: 1px solid rgba(147, 197, 253, 0.45);
 }
 
+.kri-course-label--distance .kri-course-label__text,
 .kri-course-label--distance span {
     background: rgba(255, 255, 255, 0.94);
     color: #1e40af;
     border: 1px solid rgba(59, 130, 246, 0.55);
 }
 
+.kri-course-label--endpoint .kri-course-label__text,
 .kri-course-label--endpoint span {
     background: #0f172a;
     color: #fff;
@@ -522,14 +694,17 @@ body.kri-page .rnz-onwater-crew {
     text-transform: uppercase;
 }
 
+.kri-course-label--start .kri-course-label__text,
 .kri-course-label--start span {
     background: #2563eb;
 }
 
+.kri-course-label--finish .kri-course-label__text,
 .kri-course-label--finish span {
     background: #1e40af;
 }
 
+.kri-course-label--hint .kri-course-label__text,
 .kri-course-label--hint span {
     background: rgba(255, 255, 255, 0.88);
     color: #475569;

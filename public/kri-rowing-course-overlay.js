@@ -184,9 +184,9 @@
 
     function addLineLabel(lat, lng, text, className) {
         const icon = L.divIcon({
-            className: `kri-course-label ${className}`,
-            html: `<span>${text}</span>`,
-            iconSize: undefined,
+            className: `kri-course-label kri-course-label--fixed ${className}`,
+            html: `<span class="kri-course-label__text">${text}</span>`,
+            iconSize: [1, 1],
             iconAnchor: [0, 0],
         });
         L.marker([lat, lng], { icon, interactive: false, keyboard: false }).addTo(layerRef);

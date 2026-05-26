@@ -46,6 +46,8 @@
     let simulateCapsizeTimer = null;
     /** @type {{ lat: number, lng: number } | null} */
     let frozenA4Position = null;
+    /** @type {number[]} */
+    let laneLastHeading = [];
 
     function clampSpeed(speed) {
         return Math.min(SPEED_MAX_MPS, Math.max(SPEED_MIN_MPS, speed));
@@ -293,11 +295,63 @@
         btn.textContent = active ? 'A4 capsize simulation active…' : 'Simulate A4 capsize (20s)';
     }
 
+    function initLaneHeadings() {
+        const frame = courseApi()?.buildCourseFrame?.();
+        const bearing = frame?.bearing ?? 0;
+        laneLastHeading = new Array(BOAT_COUNT).fill(bearing);
+    }
+
+    function sampleHeadingDeg(lat1, lng1, lat2, lng2) {
+        const geo = courseApi()?.geo;
+        if (!geo?.bearingDeg || !geo?.haversineM) return null;
+        if (geo.haversineM(lat1, lng1, lat2, lng2) < 0.35) return null;
+        return geo.bearingDeg(lat1, lng1, lat2, lng2);
+    }
+
+    function boatHeading(lane) {
+        const api = courseApi();
+        const frame = api?.buildCourseFrame?.();
+        const idx = lane - 1;
+        if (!frame || !api?.lanePointAtDistance) {
+            return laneLastHeading[idx] ?? 0;
+        }
+
+        let heading = frame.bearing;
+
+        if (phase === PHASE.RACING || phase === PHASE.FINISH_HOLD) {
+            const d = laneDistance(lane);
+            const pt1 = api.lanePointAtDistance(frame, lane, d);
+            const pt2 = api.lanePointAtDistance(frame, lane, Math.min(frame.lengthM, d + 10));
+            heading = sampleHeadingDeg(pt1.lat, pt1.lng, pt2.lat, pt2.lng) ?? frame.bearing;
+        } else if (phase === PHASE.START_HOLD) {
+            const pt1 = api.lanePointAtDistance(frame, lane, 0);
+            const pt2 = api.lanePointAtDistance(frame, lane, Math.min(frame.lengthM, 10));
+            heading = sampleHeadingDeg(pt1.lat, pt1.lng, pt2.lat, pt2.lng) ?? frame.bearing;
+        } else if (phase === PHASE.RETURNING) {
+            const leg = returnLegs.find((l) => l.lane === lane);
+            if (leg?.path && lastNow >= leg.departAt && !leg.done) {
+                const d = leg.distanceM;
+                const pt1 = pointOnReturn(leg.path, d);
+                const pt2 = pointOnReturn(leg.path, Math.min(leg.totalM, d + 10));
+                heading = sampleHeadingDeg(pt1.lat, pt1.lng, pt2.lat, pt2.lng) ?? frame.bearing + 180;
+            } else {
+                heading = frame.bearing + 180;
+            }
+        }
+
+        const speed = lane === FOLLOW_LANE && isSimulatedA4CapsizeActive() ? 0 : laneSpeed(lane);
+        if (speed > 0.25 || phase === PHASE.RACING) {
+            laneLastHeading[idx] = heading;
+        }
+        return laneLastHeading[idx] ?? heading;
+    }
+
     function resetSimulation() {
         phase = PHASE.START_HOLD;
         phaseStartedAt = performance.now();
         laneRaceDistanceM = new Array(BOAT_COUNT).fill(0);
         initLaneSpeedState(phaseStartedAt);
+        initLaneHeadings();
         returnLegs = [];
         lastNow = phaseStartedAt;
         clearDemoCapsizeAcks();
@@ -499,6 +553,7 @@
                 id,
                 name,
                 groupId: null,
+                demoMarkerKind: 'shell',
                 demoCrew: assignment?.crew || '',
                 demoClubName: assignment?.clubName || '',
                 demoLogoUrl: assignment?.logoUrl || null,
@@ -510,6 +565,7 @@
                 latitude: pos.lat,
                 longitude: pos.lng,
                 speed: pos.speed,
+                courseHeading: boatHeading(lane),
                 fixTime: nowIso,
                 address: assignment?.crew
                     ? `Demo · lane ${lane} · ${assignment.crew}`
@@ -532,6 +588,7 @@
             id: DEVICE_ID_SAFETY,
             name: 'Safety boat',
             groupId: null,
+            demoMarkerKind: 'safety',
             demoMarkerFill: '#22c55e',
             demoMarkerStroke: '#15803d',
         });
@@ -540,6 +597,7 @@
             latitude: safetyPos.lat,
             longitude: safetyPos.lng,
             speed: safetyPos.speed,
+            courseHeading: boatHeading(FOLLOW_LANE),
             fixTime: nowIso,
             address: 'Demo · following A4',
         };

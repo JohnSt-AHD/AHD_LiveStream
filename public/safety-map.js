@@ -790,7 +790,50 @@ function formatDateTime(dateString) {
 function setMarkerCapsizeFlash(marker, active) {
     if (!marker) return;
     const el = typeof marker.getElement === 'function' ? marker.getElement() : marker._path;
-    if (el) el.classList.toggle('rnz-marker-capsize', !!active);
+    if (!el) return;
+    const boat = el.querySelector?.('.kri-boat-marker');
+    if (boat) {
+        boat.classList.toggle('rnz-marker-capsize', !!active);
+        return;
+    }
+    el.classList.toggle('rnz-marker-capsize', !!active);
+}
+
+function isKriDemoBoatDevice(device) {
+    return isKriDemoMode() && window.KriSafetyMarkers?.isDemoBoatDevice?.(device);
+}
+
+function updateKriDemoBoatMarker(device, position, latlng, fill, stroke, capsizeAlert) {
+    const markersApi = window.KriSafetyMarkers;
+    if (!markersApi?.createIcon) return null;
+
+    const heading =
+        typeof position.courseHeading === 'number' && Number.isFinite(position.courseHeading)
+            ? position.courseHeading
+            : 0;
+    const icon = markersApi.createIcon({
+        kind: device.demoMarkerKind === 'safety' ? 'safety' : 'shell',
+        fill,
+        stroke,
+        heading,
+        capsize: capsizeAlert,
+    });
+    if (!icon) return null;
+
+    const z = device.demoMarkerKind === 'safety' ? 450 : 350;
+    let marker = markersByDeviceId.get(device.id);
+    const needsReplace = marker && typeof marker.setRadius === 'function';
+
+    if (!marker || needsReplace) {
+        if (marker) marker.remove();
+        marker = L.marker(latlng, { icon, zIndexOffset: z }).addTo(map);
+        markersByDeviceId.set(device.id, marker);
+    } else {
+        marker.setLatLng(latlng);
+        marker.setIcon(icon);
+        marker.setZIndexOffset(z);
+    }
+    return marker;
 }
 
 function syncCapsizeMapAlertUi() {
@@ -846,33 +889,45 @@ function updateMapMarkers() {
         const radius = capsizeAlert || critical ? 14 : 11;
         const weight = capsizeAlert || critical ? 3 : 2;
 
-        let marker = markersByDeviceId.get(device.id);
-        if (!marker) {
-            marker = L.circleMarker(latlng, {
-                radius,
-                weight,
-                color: stroke,
-                fillColor: fill,
-                fillOpacity: 0.92,
-                className: capsizeAlert ? 'rnz-marker-capsize' : '',
-            }).addTo(map);
-            markersByDeviceId.set(device.id, marker);
+        let marker;
+        if (isKriDemoBoatDevice(device)) {
+            marker = updateKriDemoBoatMarker(device, position, latlng, fill, stroke, capsizeAlert);
         } else {
-            marker.setLatLng(latlng);
-            marker.setStyle({ fillColor: fill, color: stroke, radius, weight });
-            setMarkerCapsizeFlash(marker, capsizeAlert);
+            const existing = markersByDeviceId.get(device.id);
+            if (existing && typeof existing.setRadius !== 'function') {
+                existing.remove();
+                markersByDeviceId.delete(device.id);
+            }
+            marker = markersByDeviceId.get(device.id);
+            if (!marker) {
+                marker = L.circleMarker(latlng, {
+                    radius,
+                    weight,
+                    color: stroke,
+                    fillColor: fill,
+                    fillOpacity: 0.92,
+                    className: capsizeAlert ? 'rnz-marker-capsize' : '',
+                }).addTo(map);
+                markersByDeviceId.set(device.id, marker);
+            } else {
+                marker.setLatLng(latlng);
+                marker.setStyle({ fillColor: fill, color: stroke, radius, weight });
+                setMarkerCapsizeFlash(marker, capsizeAlert);
+            }
         }
 
-        const speedKmh = (position.speed * 3.6).toFixed(1);
-        const fix = formatDateTime(position.fixTime);
-        const addr = escapeHtml(position.address || 'Unknown');
-        marker.bindPopup(
-            `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
-                `<div><strong>Speed:</strong> ${speedKmh} km/h</div>` +
-                `<div><strong>Last fix:</strong> ${fix}</div>` +
-                `<div><strong>Location:</strong> ${addr}</div>`,
-            { maxWidth: 260 }
-        );
+        if (marker) {
+            const speedKmh = (position.speed * 3.6).toFixed(1);
+            const fix = formatDateTime(position.fixTime);
+            const addr = escapeHtml(position.address || 'Unknown');
+            marker.bindPopup(
+                `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
+                    `<div><strong>Speed:</strong> ${speedKmh} km/h</div>` +
+                    `<div><strong>Last fix:</strong> ${fix}</div>` +
+                    `<div><strong>Location:</strong> ${addr}</div>`,
+                { maxWidth: 260 }
+            );
+        }
 
         latlngs.push(latlng);
     });
