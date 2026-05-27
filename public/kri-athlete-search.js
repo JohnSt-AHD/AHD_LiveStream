@@ -10,6 +10,7 @@
     let competitorsError = null;
     let onWaterBoats = [];
     const boatInfoByDeviceId = new Map();
+    const expandedCrewDeviceIds = new Set();
 
     function escapeHtml(value) {
         if (value == null) return '';
@@ -243,6 +244,11 @@
             String(a.deviceName).localeCompare(String(b.deviceName), undefined, { sensitivity: 'base' }),
         );
 
+        const currentIds = new Set(onWaterBoats.map((b) => b.deviceId));
+        for (const id of expandedCrewDeviceIds) {
+            if (!currentIds.has(id)) expandedCrewDeviceIds.delete(id);
+        }
+
         return onWaterBoats;
     }
 
@@ -284,6 +290,68 @@
         return results.slice(0, 40);
     }
 
+    function listAllOnWaterAthletes() {
+        const results = [];
+        for (const boat of onWaterBoats) {
+            for (const name of boat.athletes || []) {
+                const trimmed = String(name).trim();
+                if (!trimmed) continue;
+                results.push({ athleteName: trimmed, boat });
+            }
+        }
+        results.sort((a, b) =>
+            a.athleteName.localeCompare(b.athleteName, undefined, { sensitivity: 'base' }),
+        );
+        return results;
+    }
+
+    function isSearchPanelOpen() {
+        const box = document.getElementById('kriAthleteSearchBox');
+        return box?.tagName === 'DETAILS' && box.open;
+    }
+
+    function renderSearchHitsHtml(hits) {
+        return (
+            '<ul class="kri-athlete-search-list">' +
+            hits
+                .map((hit) => {
+                    const sub = [
+                        hit.boat.deviceName,
+                        hit.boat.clubName || hit.boat.crew,
+                        hit.boat.raceLabel,
+                    ]
+                        .filter(Boolean)
+                        .join(' · ');
+                    return (
+                        `<li>` +
+                        `<button type="button" class="kri-athlete-search-hit" ` +
+                        `data-fly-lat="${hit.boat.lat}" data-fly-lng="${hit.boat.lng}" data-device-id="${hit.boat.deviceId}">` +
+                        `<span class="kri-athlete-search-name">${escapeHtml(hit.athleteName)}</span>` +
+                        `<span class="kri-athlete-search-meta">${escapeHtml(sub)}</span>` +
+                        `</button>` +
+                        `</li>`
+                    );
+                })
+                .join('') +
+            '</ul>'
+        );
+    }
+
+    function toggleCrewExpanded(deviceId) {
+        const id = Number(deviceId);
+        if (!Number.isFinite(id)) return false;
+        if (expandedCrewDeviceIds.has(id)) {
+            expandedCrewDeviceIds.delete(id);
+            return false;
+        }
+        expandedCrewDeviceIds.add(id);
+        return true;
+    }
+
+    function isCrewExpanded(deviceId) {
+        return expandedCrewDeviceIds.has(Number(deviceId));
+    }
+
     function flyToBoat(boat) {
         if (!boat) return;
         global.dispatchEvent(
@@ -321,7 +389,17 @@
         }
 
         if (!normalizeQuery(q)) {
-            el.innerHTML = `<p class="kri-athlete-search-hint">${onWaterBoats.length} boat${onWaterBoats.length === 1 ? '' : 's'} on water — type a name to search.</p>`;
+            if (isSearchPanelOpen()) {
+                const all = listAllOnWaterAthletes();
+                if (!all.length) {
+                    el.innerHTML =
+                        '<p class="kri-athlete-search-hint">No athlete names listed for on-water boats yet (check competitors CSV and current race draw).</p>';
+                    return;
+                }
+                el.innerHTML = renderSearchHitsHtml(all);
+                return;
+            }
+            el.innerHTML = `<p class="kri-athlete-search-hint">${onWaterBoats.length} boat${onWaterBoats.length === 1 ? '' : 's'} on water — expand to list athletes A–Z, or type to search.</p>`;
             return;
         }
 
@@ -331,29 +409,7 @@
             return;
         }
 
-        el.innerHTML =
-            '<ul class="kri-athlete-search-list">' +
-            hits
-                .map((hit) => {
-                    const sub = [
-                        hit.boat.deviceName,
-                        hit.boat.clubName || hit.boat.crew,
-                        hit.boat.raceLabel,
-                    ]
-                        .filter(Boolean)
-                        .join(' · ');
-                    return (
-                        `<li>` +
-                        `<button type="button" class="kri-athlete-search-hit" ` +
-                        `data-fly-lat="${hit.boat.lat}" data-fly-lng="${hit.boat.lng}" data-device-id="${hit.boat.deviceId}">` +
-                        `<span class="kri-athlete-search-name">${escapeHtml(hit.athleteName)}</span>` +
-                        `<span class="kri-athlete-search-meta">${escapeHtml(sub)}</span>` +
-                        `</button>` +
-                        `</li>`
-                    );
-                })
-                .join('') +
-            '</ul>';
+        el.innerHTML = renderSearchHitsHtml(hits);
     }
 
     function getBoatInfo(deviceId) {
@@ -396,6 +452,11 @@
                 });
             });
         }
+
+        const searchBox = document.getElementById('kriAthleteSearchBox');
+        if (searchBox && searchBox.tagName === 'DETAILS') {
+            searchBox.addEventListener('toggle', () => renderSearchResults());
+        }
     }
 
     function wireOnWaterCrewToggle() {
@@ -411,7 +472,7 @@
                 const id = toggle.dataset.deviceId;
                 const panel = document.getElementById(`rnz-onwater-crew-${id}`);
                 if (!panel) return;
-                const open = panel.hidden;
+                const open = toggleCrewExpanded(id);
                 panel.hidden = !open;
                 toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
                 toggle.textContent = open ? 'Hide athletes' : 'Athletes';
@@ -462,6 +523,8 @@
         renderSearchResults,
         getBoatInfo,
         countOnWaterCompetitors,
+        isCrewExpanded,
+        toggleCrewExpanded,
         getOnWaterBoats: () => onWaterBoats,
         ON_WATER_FIX_MAX_MIN,
         STOP_SPEED_MPS,

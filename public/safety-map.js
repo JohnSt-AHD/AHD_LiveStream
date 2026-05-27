@@ -1290,13 +1290,15 @@ function renderOnWaterBoats(boundaryParts) {
 
             const boatInfo = isKri ? window.KriAthleteSearch?.getBoatInfo?.(device.id) : null;
             const athletes = boatInfo?.athletes || [];
+            const crewExpanded =
+                isKri && window.KriAthleteSearch?.isCrewExpanded?.(device.id);
             const crewToggle =
                 isKri && athletes.length
-                    ? `<button type="button" class="rnz-onwater-crew-toggle" data-device-id="${device.id}" aria-expanded="false">Athletes</button>`
+                    ? `<button type="button" class="rnz-onwater-crew-toggle" data-device-id="${device.id}" aria-expanded="${crewExpanded ? 'true' : 'false'}">${crewExpanded ? 'Hide athletes' : 'Athletes'}</button>`
                     : '';
             const crewPanel =
                 isKri && athletes.length
-                    ? `<div class="rnz-onwater-crew-panel" id="rnz-onwater-crew-${device.id}" hidden>` +
+                    ? `<div class="rnz-onwater-crew-panel" id="rnz-onwater-crew-${device.id}"${crewExpanded ? '' : ' hidden'}>` +
                       `<ul class="rnz-onwater-crew-list">` +
                       athletes
                           .map(
@@ -1308,7 +1310,7 @@ function renderOnWaterBoats(boundaryParts) {
                           .join('') +
                       `</ul></div>`
                     : isKri && boatInfo && !athletes.length && (boatInfo.crew || boatInfo.clubName)
-                      ? `<div class="rnz-onwater-crew-panel rnz-onwater-crew-panel--muted" id="rnz-onwater-crew-${device.id}" hidden>` +
+                      ? `<div class="rnz-onwater-crew-panel rnz-onwater-crew-panel--muted" id="rnz-onwater-crew-${device.id}"${crewExpanded ? '' : ' hidden'}>` +
                         `<p class="rnz-onwater-crew-empty">No athlete names in competitors CSV for this crew.</p>` +
                         `</div>`
                       : '';
