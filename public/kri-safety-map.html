@@ -34,6 +34,8 @@
         <span class="hub-stats-sep" aria-hidden="true">·</span>
         <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
         <span class="hub-stats-sep" aria-hidden="true">·</span>
+        <span class="hub-stats-item" id="hubStatOnWaterCompetitors">Competitors on water: —</span>
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
         <span class="hub-stats-item" id="hubStatDistance">Distance today: —</span>
         <span class="hub-stats-sep" aria-hidden="true">·</span>
         <a class="hub-stats-item hub-stats-item--event" id="hubStatEvent" href="index.html#hub-calendar-title">—</a>
@@ -56,6 +58,25 @@
                         <div class="rnz-panel-inner rnz-panel-inner--critical">
                             <p class="rnz-block-hint">Outside the Lake Karāpiro / KRI boundary and either last fix older than 30 minutes, or slow (&lt;0.5 m/s) outside for 30+ minutes. Click a device name in the list to fly the map there.</p>
                             <div id="rnzWarningsList"></div>
+                        </div>
+                    </details>
+
+                    <details class="rnz-panel-details kri-athlete-search-panel" id="kriAthleteSearchBox">
+                        <summary class="rnz-panel-summary">Athlete search</summary>
+                        <div class="rnz-panel-inner kri-athlete-search-inner">
+                            <p class="rnz-block-hint">Search athletes on the water using the competitors list and current race draw. Click a result to show their boat on the map.</p>
+                            <label class="kri-athlete-search-field">
+                                <span class="kri-athlete-search-label">Search</span>
+                                <input
+                                    type="search"
+                                    id="kriAthleteSearchInput"
+                                    class="kri-athlete-search-input"
+                                    placeholder="Athlete, crew, or boat…"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                >
+                            </label>
+                            <div id="kriAthleteSearchResults" class="kri-athlete-search-results" aria-live="polite"></div>
                         </div>
                     </details>
                 </div>
@@ -101,7 +122,7 @@
                         <summary class="rnz-panel-summary">On water boats</summary>
                         <div class="rnz-panel-inner rnz-onwater-inner">
                             <p class="rnz-onwater-hint">
-                                Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Rowing NZ geofence. Click a boat to show it on the map.
+                                Last GPS fix within 30 minutes, speed at least 0.5 m/s, and outside the Rowing NZ geofence. Click a boat to show it on the map. Use <strong>Athletes</strong> to list crew names when available.
                             </p>
                             <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
                         </div>
@@ -225,6 +246,7 @@
     <script src="kri-safety-markers.js"></script>
     <script src="kri-safety-demo.js"></script>
     <script src="kri-safety-regatta-panel.js"></script>
+    <script src="kri-athlete-search.js"></script>
     <script src="safety-map.js"></script>
 </body>
 </html>

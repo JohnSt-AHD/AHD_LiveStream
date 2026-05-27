@@ -209,6 +209,40 @@ function deviceOnWaterCrew(device) {
     return { clubName: '', logoUrl: null };
 }
 
+let lastKriWarningCount = 0;
+
+function refreshKriAthleteSearch(boundaryParts) {
+    if (!document.body?.classList.contains('kri-page') || !window.KriAthleteSearch) return;
+    const onWater = window.KriAthleteSearch.refreshOnWater(devices, positions, boundaryParts, {
+        getOnWaterParts: getOnWaterBoundaryParts,
+        isOnWater(d, pos, parts) {
+            if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') {
+                return false;
+            }
+            if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) return false;
+            if (!isMovingRecently(pos, ON_WATER_FIX_MAX_MIN, STOP_SPEED_MPS)) return false;
+            if (isInsideBoundaryParts(pos.latitude, pos.longitude, parts)) return false;
+            return true;
+        },
+    });
+    window.KriAthleteSearch.renderSearchResults();
+    updateKriHubStatsFromUi(lastKriWarningCount, onWater.length);
+}
+
+function flyToDeviceOnMap(lat, lng, deviceId) {
+    if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const targetZoom = Math.max(map.getZoom(), 15);
+    if (typeof map.flyTo === 'function') {
+        map.flyTo([lat, lng], targetZoom, { duration: 0.65 });
+    } else {
+        map.setView([lat, lng], targetZoom);
+    }
+    const mk = markersByDeviceId.get(deviceId);
+    if (mk) {
+        setTimeout(() => mk.openPopup(), 400);
+    }
+}
+
 function countOnWaterBoats(boundaryParts) {
     const parts = getOnWaterBoundaryParts(boundaryParts);
     if (!parts || parts.length === 0) return 0;
@@ -228,7 +262,12 @@ function updateKriHubStatsFromUi(warningCount, onWaterCount) {
     if (!document.body?.classList.contains('kri-page')) return;
     const warnEl = document.getElementById('hubStatWarnings');
     const onWaterEl = document.getElementById('hubStatOnWater');
-    if (onWaterEl) onWaterEl.textContent = `${onWaterCount} on water`;
+    const competitorsEl = document.getElementById('hubStatOnWaterCompetitors');
+    if (onWaterEl) onWaterEl.textContent = `${onWaterCount} boat${onWaterCount === 1 ? '' : 's'} on water`;
+    if (competitorsEl) {
+        const competitorCount = window.KriAthleteSearch?.countOnWaterCompetitors?.() ?? 0;
+        competitorsEl.textContent = `${competitorCount} competitor${competitorCount === 1 ? '' : 's'} on water`;
+    }
     if (warnEl) {
         warnEl.textContent = `${warningCount} warning${warningCount === 1 ? '' : 's'}`;
         warnEl.dataset.level = warningCount > 0 ? 'alert' : '';
@@ -525,6 +564,7 @@ function applyDemoSnapshotToUi() {
     renderFenceAndLists(parts, stoppedState);
     renderCapsizeAlerts();
     clearSnapshotError();
+    refreshKriAthleteSearch(parts);
     renderFleetDevices();
     renderOnWaterBoats(parts);
     updateMapMarkers();
@@ -1051,6 +1091,7 @@ function renderFenceAndLists(parts, stoppedState) {
     }
 
     if (document.body?.classList.contains('kri-page')) {
+        lastKriWarningCount = warnings.length;
         updateKriHubStatsFromUi(warnings.length, countOnWaterBoats(parts));
     }
 }
@@ -1125,6 +1166,7 @@ async function updateData() {
         renderFenceAndLists(parts, stoppedState);
         renderCapsizeAlerts();
         clearSnapshotError();
+        refreshKriAthleteSearch(parts);
         renderFleetDevices();
         renderOnWaterBoats(parts);
         recordLiveTrailSamples();
@@ -1230,6 +1272,7 @@ function renderOnWaterBoats(boundaryParts) {
     }
 
     const placeholderLogo = 'assets/school-logos/placeholder-white.svg';
+    const isKri = document.body?.classList.contains('kri-page');
 
     el.innerHTML = boats
         .map(({ device, pos }) => {
@@ -1244,7 +1287,35 @@ function renderOnWaterBoats(boundaryParts) {
             const crewHtml = crew.clubName
                 ? `<span class="rnz-onwater-crew">${escapeHtml(crew.clubName)}</span>`
                 : '';
+
+            const boatInfo = isKri ? window.KriAthleteSearch?.getBoatInfo?.(device.id) : null;
+            const athletes = boatInfo?.athletes || [];
+            const crewToggle =
+                isKri && athletes.length
+                    ? `<button type="button" class="rnz-onwater-crew-toggle" data-device-id="${device.id}" aria-expanded="false">Athletes</button>`
+                    : '';
+            const crewPanel =
+                isKri && athletes.length
+                    ? `<div class="rnz-onwater-crew-panel" id="rnz-onwater-crew-${device.id}" hidden>` +
+                      `<ul class="rnz-onwater-crew-list">` +
+                      athletes
+                          .map(
+                              (name) =>
+                                  `<li><button type="button" class="rnz-onwater-athlete-fly" ` +
+                                  `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}">` +
+                                  `${escapeHtml(name)}</button></li>`,
+                          )
+                          .join('') +
+                      `</ul></div>`
+                    : isKri && boatInfo && !athletes.length && (boatInfo.crew || boatInfo.clubName)
+                      ? `<div class="rnz-onwater-crew-panel rnz-onwater-crew-panel--muted" id="rnz-onwater-crew-${device.id}" hidden>` +
+                        `<p class="rnz-onwater-crew-empty">No athlete names in competitors CSV for this crew.</p>` +
+                        `</div>`
+                      : '';
+
             return (
+                `<div class="rnz-onwater-item">` +
+                `<div class="rnz-onwater-item-top">` +
                 `<button type="button" class="rnz-onwater-row device-name--fly" ` +
                 `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
                 `title="Show on map">` +
@@ -1254,7 +1325,11 @@ function renderOnWaterBoats(boundaryParts) {
                 crewHtml +
                 `</span>` +
                 `<span class="rnz-onwater-meta">${kmh} km/h · last ${escapeHtml(fix)}</span>` +
-                `</button>`
+                `</button>` +
+                crewToggle +
+                `</div>` +
+                crewPanel +
+                `</div>`
             );
         })
         .join('');
@@ -1392,7 +1467,14 @@ window.addEventListener('kri-demo-changed', () => {
 });
 
 window.addEventListener('kri-race-updated', () => {
-    if (isKriDemoMode()) applyDemoSnapshotToUi();
+    if (isKriDemoMode()) {
+        applyDemoSnapshotToUi();
+        return;
+    }
+    if (document.body?.classList.contains('kri-page')) {
+        refreshKriAthleteSearch(lastFenceParts);
+        renderOnWaterBoats(lastFenceParts);
+    }
 });
 
 window.addEventListener('kri-demo-capsize-started', () => {
@@ -1401,6 +1483,12 @@ window.addEventListener('kri-demo-capsize-started', () => {
 
 window.addEventListener('kri-demo-capsize-ended', () => {
     if (isKriDemoMode()) applyDemoSnapshotToUi();
+});
+
+window.addEventListener('kri-fly-to-device', (e) => {
+    const d = e.detail;
+    if (!d) return;
+    flyToDeviceOnMap(d.lat, d.lng, d.deviceId);
 });
 
 document.addEventListener('DOMContentLoaded', () => {
