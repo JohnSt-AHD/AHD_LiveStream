@@ -11,6 +11,8 @@
     let onWaterBoats = [];
     const boatInfoByDeviceId = new Map();
     const expandedCrewDeviceIds = new Set();
+    let laneAthletesCacheKey = '';
+    let laneAthletesCache = new Map();
 
     function escapeHtml(value) {
         if (value == null) return '';
@@ -78,11 +80,26 @@
             map.set(`${info.label}|${division}`, {
                 race: info.label,
                 raceNum: info.raceNum,
+                eventType: cols[3] ? cols[3].trim() : '',
                 division,
                 names: cols[6] ? cols[6].trim() : '',
             });
         }
         return map;
+    }
+
+    /** Athletes per boat from event type (competitors col D), e.g. 1X→1, 4X+→5, 8X+→9. */
+    function athletesPerBoat(eventType) {
+        const t = String(eventType || '').toUpperCase().replace(/\s+/g, '');
+        if (/8X\+/.test(t)) return 9;
+        if (/8\+/.test(t) && !/8X/.test(t)) return 9;
+        if (/4X\+/.test(t)) return 5;
+        if (/4\+/.test(t) && !/4X/.test(t)) return 5;
+        if (/1X/.test(t)) return 1;
+        if (/2X|2-|2\+/.test(t)) return 2;
+        if (/4X|4-|4\+/.test(t)) return 4;
+        if (/8X|8-|8\+/.test(t)) return 8;
+        return 1;
     }
 
     function parseAthleteNames(namesStr) {
@@ -93,35 +110,74 @@
             .filter((s) => s.length > 1);
     }
 
+    function findCompetitorRow(race) {
+        if (!race) return null;
+        const div = race.division ? String(race.division).trim() : '';
+        const exact = competitors.get(`${race.race}|${div}`);
+        if (exact?.names) return exact;
+
+        for (const [, row] of competitors) {
+            if (row.race === race.race && row.division === div && row.names) return row;
+        }
+        for (const [, row] of competitors) {
+            if (row.raceNum === race.raceNum && row.race === race.race && row.names) return row;
+        }
+        return null;
+    }
+
+    /** Lane → athlete names for one race (names in col G, lane order from daysheet draw). */
+    function buildLaneAthletesMap(race) {
+        const map = new Map();
+        if (!race?.lanes?.length) return map;
+
+        const row = findCompetitorRow(race);
+        if (!row?.names) return map;
+
+        const eventType = row.eventType || race.eventName || '';
+        const perBoat = athletesPerBoat(eventType);
+        const allNames = parseAthleteNames(row.names);
+        const lanesWithCrew = race.lanes
+            .filter((l) => l.crew)
+            .sort((a, b) => a.lane - b.lane);
+
+        let idx = 0;
+        for (const { lane } of lanesWithCrew) {
+            const chunk = [];
+            for (let i = 0; i < perBoat && idx < allNames.length; i++) {
+                chunk.push(allNames[idx]);
+                idx += 1;
+            }
+            if (chunk.length) map.set(lane, chunk);
+        }
+        return map;
+    }
+
+    function laneAthletesMapForRace(race) {
+        if (!race) return new Map();
+        const key = `${race.race}|${race.division || ''}|${race.eventName || ''}`;
+        if (key !== laneAthletesCacheKey) {
+            laneAthletesCacheKey = key;
+            laneAthletesCache = buildLaneAthletesMap(race);
+        }
+        return laneAthletesCache;
+    }
+
+    function athletesForLane(race, lane) {
+        if (!race || !lane) return [];
+        return laneAthletesMapForRace(race).get(lane) || [];
+    }
+
+    function clearLaneAthletesCache() {
+        laneAthletesCacheKey = '';
+        laneAthletesCache = new Map();
+    }
+
     function parseClubCode(raw) {
         const m = String(raw || '')
             .trim()
             .match(/^([A-Za-z]+)(?:\s+(\d+))?$/);
         if (!m) return { id: '', crewNum: '' };
         return { id: m[1].toLowerCase(), crewNum: m[2] || '' };
-    }
-
-    function competitorNamesFor(race, lane, crew) {
-        if (!race) return '';
-        const divisions = [];
-        if (crew) {
-            const club = parseClubCode(crew);
-            if (club.crewNum) divisions.push(club.crewNum);
-        }
-        if (lane) divisions.push(String(lane));
-        if (race.division) divisions.push(race.division);
-        divisions.push('');
-
-        for (const div of divisions) {
-            const row = competitors.get(`${race.race}|${div}`);
-            if (row?.names) return row.names;
-        }
-        for (const [, v] of competitors) {
-            if (v.raceNum === race.raceNum && lane && v.division === String(lane)) {
-                return v.names;
-            }
-        }
-        return '';
     }
 
     function deviceDemoLane(device) {
@@ -162,8 +218,7 @@
             crew = panel.getLaneAssignment(lane)?.crew || '';
         }
 
-        const namesRaw = competitorNamesFor(race, lane, crew);
-        const athletes = parseAthleteNames(namesRaw);
+        const athletes = athletesForLane(race, lane);
         const clubName = device.demoClubName || panel?.crewDisplay?.(crew)?.name || '';
 
         return {
@@ -186,10 +241,12 @@
         try {
             const text = await board.fetchCsvText(board.getCsvUrl('competitors'));
             competitors = parseCompetitorsCsv(text);
+            clearLaneAthletesCache();
             competitorsLoaded = true;
             competitorsError = null;
         } catch (err) {
             competitors = new Map();
+            clearLaneAthletesCache();
             competitorsLoaded = false;
             competitorsError = err.message || 'Could not load competitors CSV';
         }
@@ -512,7 +569,10 @@
                 loadCompetitors().then(() => renderSearchResults());
             }
         });
-        global.addEventListener('kri-race-updated', () => renderSearchResults());
+        global.addEventListener('kri-race-updated', () => {
+            clearLaneAthletesCache();
+            renderSearchResults();
+        });
     }
 
     global.KriAthleteSearch = {
