@@ -381,6 +381,24 @@
     }
 }
 
+.hub-nav-pair {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(12px, 2vw, 20px);
+}
+
+@media (min-width: 768px) {
+    .hub-nav-pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .hub-nav-pair {
+        grid-column: span 2;
+    }
+}
+
 .hub-panel--vmix .hub-section-title {
     color: #f472b6;
 }
@@ -728,6 +746,35 @@
 
 .hub-panel--safety .hub-section-title {
     color: var(--ahd-safety);
+}
+
+.hub-panel--apps {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 100%);
+    border-color: rgba(96, 165, 250, 0.4);
+}
+
+.hub-panel--apps .hub-section-title {
+    color: #93c5fd;
+}
+
+.hub-apps-lead {
+    font-size: 13px;
+    color: var(--ahd-muted);
+    line-height: 1.45;
+    margin-bottom: 14px;
+}
+
+.hub-link-card--monitor {
+    border-color: rgba(96, 165, 250, 0.35);
+}
+
+.hub-panel--apps .hub-link-card:hover {
+    border-color: rgba(147, 197, 253, 0.55);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.hub-panel--apps .hub-link-card:hover .hub-link-arrow {
+    color: #93c5fd;
 }
 
 .hub-rnz-strip {
