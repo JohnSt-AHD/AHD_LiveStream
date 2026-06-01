@@ -6,6 +6,7 @@
     <title>Beach Sprints NZ · Regatta dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="beachsprints-regatta.css">
+    <link rel="stylesheet" href="tracker-source-bar.css">
 </head>
 <body class="bsr-page">
     <header class="bsr-header">
@@ -39,6 +40,14 @@
                 </label>
                 <a class="bsr-btn bsr-btn--ghost" href="beachsprints-map.html">GPS map</a>
                 <a class="bsr-btn bsr-btn--ghost" href="index.html">Hub</a>
+            </div>
+            <div class="tracker-source-inline bsr-tracker-source">
+                <div class="tracker-source-label">Position data source</div>
+                <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
+                    <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
+                    <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">Recorder</button>
+                </div>
+                <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
             </div>
         </div>
     </header>
@@ -112,6 +121,8 @@
     <script src="speed-color-scale.js"></script>
     <script src="hub-csv.js"></script>
     <script src="beachsprints-coastal-analysis.js"></script>
+    <script src="tracker-source.js"></script>
     <script src="beachsprints-regatta.js"></script>
+    <script src="tracker-source-ui.js"></script>
 </body>
 </html>

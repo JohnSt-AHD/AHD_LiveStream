@@ -335,7 +335,10 @@ function mergeDevicesFromPositions(deviceList, positionsMap) {
 async function tick() {
     if (!Number.isFinite(deviceId) || deviceId < 1) return;
     try {
-        const res = await fetch(`${API_BASE}?action=snapshot`);
+        const ts = window.AltitudeHdTrackerSource;
+        const res = ts
+            ? await fetch(ts.buildTraccarUrl({ action: 'snapshot' }))
+            : await fetch(`${API_BASE}?action=snapshot`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
             elSplit.textContent = '—';
@@ -385,4 +388,5 @@ async function tick() {
 if (Number.isFinite(deviceId) && deviceId >= 1) {
     tick();
     setInterval(tick, pollMs);
+    window.addEventListener('altitudehd:tracker-source', tick);
 }

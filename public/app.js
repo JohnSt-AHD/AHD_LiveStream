@@ -875,6 +875,10 @@ async function loadHistoryRoute() {
     try {
         const settled = await Promise.allSettled(
             ids.map(async (deviceId) => {
+                const ts = window.AltitudeHdTrackerSource;
+                if (ts) {
+                    return ts.fetchRoute(deviceId, fromIso, toIso);
+                }
                 const params = new URLSearchParams({
                     action: 'route',
                     deviceId: String(deviceId),
@@ -1181,7 +1185,19 @@ document.addEventListener('DOMContentLoaded', () => {
     startPolling();
 });
 
+async function onTrackerSourceChanged() {
+    await updateData();
+    if (lastHistoryDeviceRoutes?.length) {
+        await loadHistoryRoute();
+    }
+}
+
+window.trackerSourcePageRefresh = onTrackerSourceChanged;
+window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
+
 function liveMapSnapshotFetch() {
+    const ts = window.AltitudeHdTrackerSource;
+    if (ts) return ts.fetchSnapshot();
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot();
     return fetch(`${API_BASE}?action=snapshot`)

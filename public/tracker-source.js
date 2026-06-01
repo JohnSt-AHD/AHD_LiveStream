@@ -48,7 +48,53 @@
     }
 
     function label(source) {
-        return source === 'rowing' ? 'RNZ recorder' : 'Traccar';
+        return source === 'rowing' ? 'Recorder (RNZ/KRI)' : 'Traccar';
+    }
+
+    /** Snapshot fetch — prefers shared bus; falls back to direct API with source param. */
+    async function fetchSnapshot(options = {}) {
+        const bus = global.AltitudeHdTraccarSnapshot;
+        if (bus && !options.direct) {
+            return bus.fetchSnapshot(options);
+        }
+        try {
+            const res = await fetch(buildTraccarUrl({ action: 'snapshot' }));
+            const data = await res.json().catch(() => ({}));
+            return {
+                ok: res.ok,
+                status: res.status,
+                data,
+                error: res.ok ? null : data.error || `Request failed (${res.status})`,
+            };
+        } catch (err) {
+            return {
+                ok: false,
+                status: 0,
+                data: {},
+                error: err.message || 'Network error',
+            };
+        }
+    }
+
+    /** Route history for live map / beach sprints (respects current source). */
+    async function fetchRoute(deviceId, fromIso, toIso) {
+        const res = await fetch(
+            buildTraccarUrl({
+                action: 'route',
+                deviceId: String(deviceId),
+                from: String(fromIso),
+                to: String(toIso),
+            }),
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const msg = data && data.error ? data.error : `Request failed (${res.status})`;
+            throw new Error(msg);
+        }
+        if (!Array.isArray(data)) {
+            throw new Error('Unexpected response from server.');
+        }
+        return data;
     }
 
     global.AltitudeHdTrackerSource = {
@@ -59,6 +105,8 @@
         setSource,
         applySource,
         buildTraccarUrl,
+        fetchSnapshot,
+        fetchRoute,
         label,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

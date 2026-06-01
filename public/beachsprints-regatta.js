@@ -3236,9 +3236,17 @@
 
     async function resolveDevices() {
         try {
-            const res = await fetch('/api/traccar?action=snapshot');
-            if (!res.ok) return;
-            const data = await res.json();
+            const ts = window.AltitudeHdTrackerSource;
+            const result = ts
+                ? await ts.fetchSnapshot()
+                : await fetch('/api/traccar?action=snapshot')
+                      .then(async (res) => ({
+                          ok: res.ok,
+                          data: await res.json().catch(() => ({})),
+                      }))
+                      .catch(() => ({ ok: false, data: {} }));
+            if (!result.ok) return;
+            const data = result.data;
             state.devices = Array.isArray(data.devices) ? data.devices : [];
             ensureDeviceAliases();
             for (const alias of BOAT_ALIASES.slice(0, maxLaneCount())) {
@@ -3327,6 +3335,10 @@
     }
 
     async function fetchRoute(deviceId, from, to) {
+        const ts = window.AltitudeHdTrackerSource;
+        if (ts) {
+            return ts.fetchRoute(deviceId, from.toISOString(), to.toISOString());
+        }
         const url =
             `/api/traccar?action=route&deviceId=${encodeURIComponent(deviceId)}` +
             `&from=${encodeURIComponent(from.toISOString())}` +
@@ -3759,6 +3771,20 @@
         renderDeviceConfig();
         await loadRegatta();
     }
+
+    async function onTrackerSourceChanged() {
+        await resolveDevices();
+        renderDeviceConfig();
+        if (state.races.length) {
+            await probeGpsForDays();
+        }
+        if (state.selectedRaceNum) {
+            selectRace(state.selectedRaceNum);
+        }
+    }
+
+    window.trackerSourcePageRefresh = onTrackerSourceChanged;
+    window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
     document.addEventListener('DOMContentLoaded', init);
 })();

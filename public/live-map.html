@@ -6,6 +6,7 @@
     <title>Altitude HD · Live fleet map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="tracker-source-bar.css">
 </head>
 <body>
     <div class="app-root">
@@ -27,6 +28,12 @@
                 </div>
 
             <div class="history-panel" id="historyPanel">
+                <div class="tracker-source-inline history-title">Position data source</div>
+                <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
+                    <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
+                    <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">Recorder</button>
+                </div>
+                <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
                 <div class="history-title">Route history</div>
                 <label class="history-field">
                     <span>Devices</span>
@@ -160,5 +167,6 @@
     <script src="traccar-snapshot-bus.js"></script>
     <script src="speed-color-scale.js"></script>
     <script src="app.js"></script>
+    <script src="tracker-source-ui.js"></script>
 </body>
 </html>

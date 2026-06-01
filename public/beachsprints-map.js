@@ -595,6 +595,10 @@ async function loadHistoryRoute() {
     try {
         const settled = await Promise.allSettled(
             ids.map(async (deviceId) => {
+                const ts = window.AltitudeHdTrackerSource;
+                if (ts) {
+                    return ts.fetchRoute(deviceId, fromIso, toIso);
+                }
                 const params = new URLSearchParams({
                     action: 'route',
                     deviceId: String(deviceId),
@@ -1672,6 +1676,8 @@ function showError(message) {
 }
 
 function beachSprintsSnapshotFetch() {
+    const ts = window.AltitudeHdTrackerSource;
+    if (ts) return ts.fetchSnapshot();
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot();
     return fetch(`${API_BASE}?action=snapshot`)
@@ -1741,6 +1747,16 @@ window.addEventListener('altitudehd:speed-color-range', () => {
         renderHistoryRouteOnMap(lastHistoryRoutes);
     }
 });
+
+async function onTrackerSourceChanged() {
+    await updateData();
+    if (lastHistoryRoutes?.length) {
+        await loadHistoryRoute();
+    }
+}
+
+window.trackerSourcePageRefresh = onTrackerSourceChanged;
+window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();

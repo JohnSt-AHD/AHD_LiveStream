@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="hub-warning-alerts.css">
     <link rel="stylesheet" href="rowsafe-map.css">
     <link rel="stylesheet" href="kri-safety-map.css">
+    <link rel="stylesheet" href="tracker-source-bar.css">
 </head>
 <body class="rnz-page kri-page">
     <a class="rnz-skip" href="#rnz-main">Skip to content</a>
@@ -115,6 +116,17 @@
                             <div class="rnz-footer-inline">
                                 <span id="lastUpdate">Last updated: —</span>
                             </div>
+                        </div>
+                    </details>
+
+                    <details class="rnz-panel-details tracker-source-panel" open>
+                        <summary class="rnz-panel-summary">Position data source</summary>
+                        <div class="rnz-panel-inner">
+                            <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
+                                <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
+                                <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">Recorder</button>
+                            </div>
+                            <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
                         </div>
                     </details>
 
@@ -248,5 +260,6 @@
     <script src="kri-safety-regatta-panel.js"></script>
     <script src="kri-athlete-search.js"></script>
     <script src="safety-map.js"></script>
+    <script src="tracker-source-ui.js"></script>
 </body>
 </html>

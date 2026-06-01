@@ -6,6 +6,7 @@
     <title>Beach Sprints NZ · live fleet map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="beachsprints-map.css">
+    <link rel="stylesheet" href="tracker-source-bar.css">
 </head>
 <body class="bsp-page">
     <div class="bsp-stack">
@@ -133,6 +134,15 @@
                 </label>
                 <p class="bsp-last-update" id="bspLastUpdate">Last updated: —</p>
 
+                <div class="tracker-source-inline">
+                    <div class="tracker-source-label">Position data source</div>
+                    <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
+                        <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
+                        <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">Recorder</button>
+                    </div>
+                    <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
+                </div>
+
                 <div class="history-panel" id="bspHistoryPanel">
                     <div class="history-title">Route history</div>
                     <label class="history-field">
@@ -247,5 +257,6 @@
     <script src="beachsprints-map.js"></script>
     <script src="beachsprints-course-layout.js"></script>
     <script src="beachsprints-race-compare.js"></script>
+    <script src="tracker-source-ui.js"></script>
 </body>
 </html>

@@ -626,6 +626,8 @@ function renderFenceAndLists(parts, stoppedState) {
 }
 
 function rowsafeSnapshotFetch() {
+    const ts = window.AltitudeHdTrackerSource;
+    if (ts) return ts.fetchSnapshot();
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot();
     return fetch(`${API_BASE}?action=snapshot`)
@@ -905,6 +907,13 @@ window.addEventListener('altitudehd:speed-color-range', () => {
 window.addEventListener('altitudehd:map-refresh-rate', () => {
     if (isLiveUpdatesEnabled()) startPolling();
 });
+
+function onTrackerSourceChanged() {
+    updateData();
+}
+
+window.trackerSourcePageRefresh = onTrackerSourceChanged;
+window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();

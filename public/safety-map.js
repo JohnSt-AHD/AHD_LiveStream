@@ -1110,6 +1110,8 @@ function renderCapsizeAlerts() {
 }
 
 function rowsafeSnapshotFetch() {
+    const ts = window.AltitudeHdTrackerSource;
+    if (ts) return ts.fetchSnapshot();
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot();
     return fetch(`${API_BASE}?action=snapshot`)
@@ -1492,6 +1494,14 @@ window.addEventListener('kri-fly-to-device', (e) => {
     if (!d) return;
     flyToDeviceOnMap(d.lat, d.lng, d.deviceId);
 });
+
+function onTrackerSourceChanged() {
+    if (isKriDemoMode()) return;
+    updateData();
+}
+
+window.trackerSourcePageRefresh = onTrackerSourceChanged;
+window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();

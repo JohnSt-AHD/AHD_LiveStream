@@ -1,19 +1,19 @@
 /**
- * Hub main page — Traccar / RNZ recorder toggle and refresh hooks.
+ * Wire Traccar / RNZ·KRI recorder toggle on hub and map pages.
  */
 (function () {
     const ts = window.AltitudeHdTrackerSource;
     if (!ts) return;
 
-    function statusEl() {
-        return document.getElementById('hubTrackerSourceStatus');
+    function statusEls() {
+        return document.querySelectorAll('.tracker-source-status, #hubTrackerSourceStatus');
     }
 
     function setStatus(text, ok) {
-        const el = statusEl();
-        if (!el) return;
-        el.textContent = text;
-        el.dataset.ok = ok ? '1' : '0';
+        statusEls().forEach((el) => {
+            el.textContent = text;
+            el.dataset.ok = ok ? '1' : '0';
+        });
     }
 
     function syncButtons() {
@@ -44,13 +44,15 @@
         if (typeof window.hubFleetRefresh === 'function') {
             window.hubFleetRefresh();
         }
+        if (typeof window.trackerSourcePageRefresh === 'function') {
+            window.trackerSourcePageRefresh();
+        }
     }
 
     function wireToggle() {
-        const group = document.getElementById('hubTrackerSourceToggle');
-        if (!group) return;
-
-        group.querySelectorAll('[data-tracker-source]').forEach((btn) => {
+        document.querySelectorAll('[data-tracker-source]').forEach((btn) => {
+            if (btn.dataset.trackerSourceWired === '1') return;
+            btn.dataset.trackerSourceWired = '1';
             btn.addEventListener('click', () => {
                 const next = btn.getAttribute('data-tracker-source');
                 if (!next || next === ts.getSource()) return;
@@ -59,11 +61,9 @@
                 refreshMaps();
             });
         });
-
         syncButtons();
     }
 
     window.addEventListener(ts.EVENT_NAME, syncButtons);
-
     document.addEventListener('DOMContentLoaded', wireToggle);
 })();

@@ -1,0 +1,60 @@
+/* Traccar vs RNZ/KRI recorder toggle — shared on hub and map pages */
+.tracker-source-panel .rnz-panel-inner,
+.tracker-source-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tracker-source-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: inherit;
+}
+
+.hub-tracker-toggle,
+.tracker-source-toggle {
+    display: inline-flex;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.hub-tracker-btn {
+    padding: 7px 12px;
+    border: none;
+    background: transparent;
+    color: rgba(148, 163, 184, 0.95);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.hub-tracker-btn + .hub-tracker-btn {
+    border-left: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.hub-tracker-btn--active {
+    background: rgba(13, 148, 136, 0.35);
+    color: #f8fafc;
+}
+
+.hub-tracker-btn:focus-visible {
+    outline: 2px solid #0d9488;
+    outline-offset: -2px;
+}
+
+.tracker-source-status,
+.hub-settings-note.tracker-source-status {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(148, 163, 184, 0.95);
+}
+
+.tracker-source-status[data-ok='0'] {
+    color: #f87171;
+}
