@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Altitude HD · Documents &amp; reports</title>
+    <link rel="stylesheet" href="hub.css">
+    <link rel="stylesheet" href="documents.css">
+</head>
+<body class="hub-page doc-page">
+    <header class="hub-topbar">
+        <div class="hub-topbar-inner">
+            <div class="hub-topbar-brands">
+                <img src="altitude-hd-logo.png" alt="Altitude HD" class="hub-logo" width="320" height="120">
+            </div>
+            <p class="hub-tagline">Field tests, storage, and ingest reports</p>
+        </div>
+    </header>
+
+    <div class="doc-wrap">
+        <a class="doc-back" href="index.html">← Altitude HD hub</a>
+
+        <header class="doc-header">
+            <h1>Documents</h1>
+            <p class="doc-header-lead">
+                Battery and GPS field tests, data usage notes, and live Postgres storage from the RNZ recorder backend.
+                Archived reports are kept here; live panels refresh on demand.
+            </p>
+        </header>
+
+        <div class="doc-toolbar">
+            <label>
+                Recorder API (optional token)
+                <input type="password" id="docIngestToken" autocomplete="off" placeholder="Same as monitor INGEST_TOKEN">
+            </label>
+            <button type="button" class="doc-btn" id="docRefreshLive">Refresh live data</button>
+            <a class="doc-btn doc-btn--ghost" href="https://rowing-app-recorder-pwa.vercel.app/dashboard.html" target="_blank" rel="noopener noreferrer">Open monitor ↗</a>
+        </div>
+
+        <p class="doc-status" id="docStatus" data-ok="1">Loading reports…</p>
+
+        <nav class="doc-tabs" id="docTabs" aria-label="Report categories">
+            <button type="button" class="doc-tab doc-tab--active" data-filter="all">All</button>
+            <button type="button" class="doc-tab" data-filter="live">Live</button>
+            <button type="button" class="doc-tab" data-filter="battery">Battery</button>
+            <button type="button" class="doc-tab" data-filter="gps">GPS</button>
+            <button type="button" class="doc-tab" data-filter="storage">Storage</button>
+            <button type="button" class="doc-tab" data-filter="data">Data usage</button>
+        </nav>
+
+        <section id="docLiveSection" class="doc-live-grid" aria-label="Live data" data-categories="live storage data battery">
+            <article class="doc-card" id="docStorageCard">
+                <h2>Database storage (live)</h2>
+                <div id="docStorageBody">
+                    <p class="doc-status">Refresh to load…</p>
+                </div>
+            </article>
+
+            <article class="doc-card" id="docBatteryLiveCard">
+                <h2>Fleet battery (live)</h2>
+                <div class="doc-chart-box">
+                    <canvas id="docBatteryLiveChart" aria-label="Current battery by device"></canvas>
+                </div>
+                <p class="doc-status" id="docBatteryLiveNote" style="margin-top:8px"></p>
+            </article>
+
+            <article class="doc-card" id="docDevicesCard">
+                <h2>Devices &amp; ingest (live)</h2>
+                <div class="doc-chart-box">
+                    <canvas id="docIngestChart" aria-label="Ingest rate by device"></canvas>
+                </div>
+            </article>
+
+            <article class="doc-card" id="docSamplesCard">
+                <h2>Sample volume (history)</h2>
+                <div class="doc-chart-box doc-chart-box--tall">
+                    <canvas id="docSamplesChart" aria-label="Stored samples per device"></canvas>
+                </div>
+            </article>
+        </section>
+
+        <section aria-labelledby="doc-archived-title">
+            <h2 id="doc-archived-title" class="hub-section-title" style="margin-bottom:16px">Archived reports</h2>
+            <div class="doc-reports-list" id="docReportsList"></div>
+            <p class="doc-empty" id="docReportsEmpty" hidden>No reports in this category.</p>
+        </section>
+
+        <footer class="doc-footer">
+            Reports are stored in <code>data/documents-reports.json</code> on the overlay site.
+            Live data from <a href="https://rowing-app-recorder-pwa.vercel.app" target="_blank" rel="noopener noreferrer">rowing-app-recorder-pwa.vercel.app</a>.
+        </footer>
+    </div>
+
+    <script src="vendor/chart.umd.js"></script>
+    <script src="documents.js"></script>
+</body>
+</html>

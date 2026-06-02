@@ -399,6 +399,19 @@
     }
 }
 
+.hub-panel--documents .hub-section-title {
+    color: #a5b4fc;
+}
+
+.hub-link-card--documents {
+    border-color: rgba(165, 180, 252, 0.4);
+}
+
+.hub-panel--documents .hub-link-card:hover {
+    border-color: rgba(199, 210, 254, 0.55);
+    background: rgba(99, 102, 241, 0.08);
+}
+
 .hub-panel--vmix .hub-section-title {
     color: #f472b6;
 }

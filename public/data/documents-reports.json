@@ -1,0 +1,171 @@
+{
+  "updated": "2026-06-02",
+  "reports": [
+    {
+      "id": "battery-a1-a6-long-2026-06-02",
+      "category": "battery",
+      "date": "2026-06-02",
+      "title": "A1 & A6 — long session battery (30 s GPS)",
+      "summary": "Both phones on continuous RNZ recorder sessions with ~30 s GPS. A1 started at 100%; A6 assumed 75% from prior test.",
+      "metrics": [
+        { "label": "A1 runtime", "value": "~6.8 h" },
+        { "label": "A1 drop", "value": "25% (100% → 75%)" },
+        { "label": "A1 drain", "value": "~3.7 %/h" },
+        { "label": "A1 est. full charge", "value": "~27 h" },
+        { "label": "A6 runtime", "value": "~6.4 h" },
+        { "label": "A6 drop", "value": "10% (75% → 65%)" },
+        { "label": "A6 drain", "value": "~1.6 %/h" },
+        { "label": "A6 est. full charge", "value": "~64 h" }
+      ],
+      "charts": [
+        {
+          "id": "drain-rate",
+          "type": "bar",
+          "title": "Battery drain (% per hour)",
+          "labels": ["A1", "A6"],
+          "values": [3.7, 1.6],
+          "unit": "%/h",
+          "color": ["#f59e0b", "#3b82f6"]
+        },
+        {
+          "id": "est-runtime",
+          "type": "bar",
+          "title": "Estimated runtime from 100% (hours)",
+          "labels": ["A1", "A6"],
+          "values": [27, 64],
+          "unit": "h",
+          "color": ["#f59e0b", "#3b82f6"]
+        }
+      ],
+      "notes": [
+        "Battery % is reported by the native app about every 10 minutes on GPS or heartbeat samples.",
+        "A6 drain is much lower than A1 on the same ingest path — useful as a low-drain reference device.",
+        "Plan ~1 full day on A1 for 30 s GPS + background recording; A6 substantially longer."
+      ]
+    },
+    {
+      "id": "battery-a1-a6-short-2026-06-02",
+      "category": "battery",
+      "date": "2026-06-02",
+      "title": "A1 & A6 — short morning test (~2.5 h, 30 s GPS)",
+      "summary": "Morning battery check after ~6:30 AM NZ start with 30 s update interval configured.",
+      "metrics": [
+        { "label": "Duration", "value": "~2.5 h" },
+        { "label": "A1", "value": "90% (≈10% drop if from 100%)" },
+        { "label": "A6", "value": "70% (5% from 75% start)" },
+        { "label": "A1 drain", "value": "~4 %/h" },
+        { "label": "A6 drain", "value": "~2 %/h" },
+        { "label": "Ingest rate", "value": "~0.5 Hz both" }
+      ],
+      "charts": [
+        {
+          "id": "short-drain",
+          "type": "bar",
+          "title": "Drain rate — short test (%/h)",
+          "labels": ["A1", "A6"],
+          "values": [4, 2],
+          "unit": "%/h"
+        }
+      ],
+      "notes": [
+        "Consistent with the longer session: A1 ~3.7–4 %/h, A6 ~1.5–2 %/h."
+      ]
+    },
+    {
+      "id": "gps-30s-moving-2026-06-02",
+      "category": "gps",
+      "date": "2026-06-02",
+      "title": "GPS moving test — 30 s interval (A1 & A6)",
+      "summary": "Active recording windows show ~30 s median GPS spacing; full-session averages are diluted by idle/doze periods.",
+      "metrics": [
+        { "label": "Median GPS gap (active 2 h)", "value": "~30–31 s" },
+        { "label": "Fixes ≤35 s apart", "value": "~99%" },
+        { "label": "Ingest rate (active)", "value": "~0.54 Hz" },
+        { "label": "Median gap (full ~7 h session)", "value": "~91 s" },
+        { "label": "GPS fixes per 2 h active", "value": "~236 each" }
+      ],
+      "charts": [
+        {
+          "id": "gps-interval",
+          "type": "bar",
+          "title": "Median GPS interval — active vs full session (seconds)",
+          "labels": ["Active 2 h", "Full session"],
+          "datasets": [
+            { "label": "A1", "values": [31, 91] },
+            { "label": "A6", "values": [30, 92] }
+          ]
+        }
+      ],
+      "notes": [
+        "30 s GPS setting is working whenever the app is actively logging.",
+        "Long gaps (~4 min p90 on full session) are stationary / screen-off / doze, not upload failures.",
+        "Optional faster uploads (~2.5 s) on the phone use more battery; dashboard smooth map does not require it."
+      ]
+    },
+    {
+      "id": "gps-h6-drive-2026-06-02",
+      "category": "gps",
+      "date": "2026-06-02",
+      "title": "H6 — morning drive & overlay smoothing",
+      "summary": "Car test for yellow predict-to-now overlay vs raw green fix; rowing vs car speed caps on dashboard.",
+      "metrics": [
+        { "label": "Distance", "value": "~30 km" },
+        { "label": "GPS rate", "value": "~0.78 Hz" },
+        { "label": "Max speed", "value": "~64 km/h" },
+        { "label": "Predict cap (rowing)", "value": "12 m/s, ~10 m" },
+        { "label": "Predict cap (car)", "value": "120 km/h" }
+      ],
+      "charts": [],
+      "notes": [
+        "Green dot = raw fix; yellow = predict-to-now (max 2.5 s, distance cap).",
+        "Car mode allows larger prediction offset at highway speed without rowing cap."
+      ]
+    },
+    {
+      "id": "storage-postgres-2026-05",
+      "category": "storage",
+      "date": "2026-05",
+      "title": "Postgres storage & historical retention",
+      "summary": "RNZ ingest stores samples in Neon Postgres; monitor shows usage against POSTGRES_STORAGE_LIMIT_MB (default 512 MB).",
+      "metrics": [
+        { "label": "Default quota", "value": "512 MB" },
+        { "label": "Per-sample fields", "value": "GPS, motion, HR, stroke, capsize, tilt, battery, heartbeat" },
+        { "label": "History API", "value": "/api/history (route, dashboard, sessions)" }
+      ],
+      "charts": [],
+      "notes": [
+        "See live storage chart on this page (refreshed from production).",
+        "Setup: docs/POSTGRES-SETUP.md in rowing_app repo.",
+        "Delete old data from monitor Settings → data management when quota is high."
+      ]
+    },
+    {
+      "id": "data-ingest-rates-2026-06",
+      "category": "data",
+      "date": "2026-06",
+      "title": "Data usage & ingest rates",
+      "summary": "Typical phone upload rates and server load for fleet monitoring at 30 s GPS.",
+      "metrics": [
+        { "label": "30 s GPS ingest", "value": "~0.5 Hz per device" },
+        { "label": "Battery report", "value": "~every 10 min on native APK" },
+        { "label": "Native flush", "value": "~3 s batching (default)" },
+        { "label": "Dashboard poll", "value": "2 s default (overlay maps)" },
+        { "label": "Samples per device / 24 h @ 0.5 Hz", "value": "~43,000" }
+      ],
+      "charts": [
+        {
+          "id": "ingest-by-mode",
+          "type": "bar",
+          "title": "Typical ingest rate (Hz) by mode",
+          "labels": ["30 s GPS", "Faster uploads (~2.5 s)", "Heartbeat only"],
+          "values": [0.5, 0.4, 0.1],
+          "unit": "Hz"
+        }
+      ],
+      "notes": [
+        "270 devices @ 0.5 Hz ≈ 135 samples/s peak — see cost estimate notes in rowing_app docs.",
+        "Traccar overlay can switch source: Traccar (default) or Recorder (RNZ/KRI) in hub Settings."
+      ]
+    }
+  ]
+}
