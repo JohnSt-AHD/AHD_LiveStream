@@ -194,11 +194,27 @@ export default async function handler(req, res) {
             const data = await rowingGetJson('/api/snapshot', {
                 onlineSec: req.query.onlineSec || '120',
             });
+            // Keep safety-map behaviour consistent in Recorder mode:
+            // warnings/on-water rely on geofences/groups from Traccar.
+            let geofences = [];
+            let groups = [];
+            try {
+                const { traccarUrl, cookie } = await traccarLogin();
+                const [geofencesRaw, groupsRaw] = await Promise.all([
+                    traccarGetJson(traccarUrl, cookie, '/api/geofences').catch(() => []),
+                    traccarGetJson(traccarUrl, cookie, '/api/groups').catch(() => []),
+                ]);
+                geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
+                groups = Array.isArray(groupsRaw) ? groupsRaw : [];
+            } catch (e) {
+                // Recorder data can still be returned even if Traccar geofence metadata fails.
+                console.error('Recorder snapshot geofence/group fetch failed:', e);
+            }
             res.status(200).json({
                 devices: Array.isArray(data.devices) ? data.devices : [],
                 positions: Array.isArray(data.positions) ? data.positions : [],
-                geofences: [],
-                groups: [],
+                geofences,
+                groups,
                 source: 'rowing',
             });
             return;
