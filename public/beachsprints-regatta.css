@@ -162,8 +162,8 @@ body.bsr-page {
 }
 
 .bsr-tt-table tr.bsr-tt-cutoff-rep td {
-    border-bottom: 3px solid var(--bsr-teal);
-    box-shadow: 0 3px 0 rgba(45, 212, 191, 0.5);
+    border-bottom: 3px solid #3b82f6;
+    box-shadow: 0 3px 0 rgba(59, 130, 246, 0.5);
 }
 
 .bsr-tt-prog {

@@ -905,25 +905,54 @@
         return map;
     }
 
+    function progressionKindToLabel(kind) {
+        if (kind === 'qf') return 'QF';
+        if (kind === 'sf') return 'SF';
+        if (kind === 'final') return 'Final';
+        return 'Knockout';
+    }
+
+    function progressionKindToClass(kind) {
+        if (kind === 'qf') return 'bsr-tt-prog--qf';
+        if (kind === 'sf') return 'bsr-tt-prog--sf';
+        if (kind === 'final') return 'bsr-tt-prog--final';
+        return '';
+    }
+
+    /**
+     * First knockout round crews qualify into from TT1/TT2 for this event.
+     * Priority: QF -> SF -> Final, based on posted races/results.
+     */
+    function firstKnockoutKind(group) {
+        const posted = new Set();
+        for (const race of state.races) {
+            if (!eventMatchesNum(race, group.eventNum)) continue;
+            posted.add(classifyRound(race.round));
+        }
+        for (const res of state.results.values()) {
+            if (!eventMatchesNum(res, group.eventNum)) continue;
+            posted.add(classifyRound(res.round));
+        }
+        for (const kind of ['qf', 'sf', 'final']) {
+            if (posted.has(kind)) return kind;
+        }
+        const direct = inferProgressionCutoff(group);
+        if (direct <= 2) return 'final';
+        if (direct <= 4) return 'sf';
+        return 'qf';
+    }
+
     function resolveProgressionLabel(crewKey, group, ctx) {
         const { column, tt1Rank, tt2Rank, directCutoff, repCutoff, tt2AdvanceCutoff } = ctx;
-        const inFin = crewsInKnockoutRound(group, 'final');
-        const inSf = crewsInKnockoutRound(group, 'sf');
-        const inQf = crewsInKnockoutRound(group, 'qf');
-        const inRep = crewsInKnockoutRound(group, 'rep');
-
-        if (inFin.has(crewKey)) return { label: 'Final', cls: 'bsr-tt-prog--final' };
-        if (inSf.has(crewKey)) return { label: 'SF', cls: 'bsr-tt-prog--sf' };
-        if (inQf.has(crewKey)) return { label: 'QF', cls: 'bsr-tt-prog--qf' };
+        const nextKnockoutKind = firstKnockoutKind(group);
+        const nextKnockout = {
+            label: progressionKindToLabel(nextKnockoutKind),
+            cls: progressionKindToClass(nextKnockoutKind),
+        };
 
         if (column === 'tt2') {
-            if (inRep.has(crewKey)) {
-                return crewWasWinnerInRound(crewKey, group, 'rep')
-                    ? { label: 'QF', cls: 'bsr-tt-prog--qf' }
-                    : { label: 'Out', cls: 'bsr-tt-prog--out' };
-            }
             if (tt2Rank && tt2Rank <= tt2AdvanceCutoff) {
-                return { label: 'QF', cls: 'bsr-tt-prog--qf' };
+                return nextKnockout;
             }
             return { label: 'Out', cls: 'bsr-tt-prog--out' };
         }
@@ -931,14 +960,9 @@
         const rank = tt1Rank || 999;
         if (rank > repCutoff) return { label: 'Out', cls: 'bsr-tt-prog--out' };
         if (rank > directCutoff) {
-            if (inRep.has(crewKey)) {
-                return crewWasWinnerInRound(crewKey, group, 'rep')
-                    ? { label: 'QF', cls: 'bsr-tt-prog--qf' }
-                    : { label: 'Rep', cls: 'bsr-tt-prog--rep' };
-            }
             return { label: 'TT2', cls: 'bsr-tt-prog--tt2' };
         }
-        if (rank <= directCutoff) return { label: 'QF', cls: 'bsr-tt-prog--qf' };
+        if (rank <= directCutoff) return nextKnockout;
         return { label: '—', cls: '' };
     }
 
