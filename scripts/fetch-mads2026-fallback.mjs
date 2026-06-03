@@ -72,6 +72,10 @@ function parseRoundFromSummary(summary) {
         const d = label.match(/(\d+)/);
         return { round: 's', division: d ? d[1] : '1', label };
     }
+    if (/rep/i.test(lower)) {
+        const d = label.match(/(\d+)/);
+        return { round: 'r', division: d ? d[1] : '1', label };
+    }
     if (/final/i.test(lower)) {
         return { round: 'f', division: String(finalDivisionFromLabel(label)), label };
     }
@@ -224,10 +228,19 @@ async function main() {
         await sleep(250);
     }
 
-    console.log(`\nMatched ${matched} races (${missed} unmatched)`);
-    const csv = resultsToCsv(allRows);
+    console.log(`\nMatched ${matched} races (${missed} unmatched, ${allRows.length} before dedupe)`);
+
+    const byRaceNum = new Map();
+    for (const row of allRows) {
+        const cur = byRaceNum.get(row.raceNum);
+        if (!cur || row.placings.length > cur.placings.length) {
+            byRaceNum.set(row.raceNum, row);
+        }
+    }
+    const deduped = [...byRaceNum.values()];
+    const csv = resultsToCsv(deduped);
     writeFileSync(join(OUT_DIR, `${REGATTA}-results.csv`), csv, 'utf8');
-    console.log(`Saved ${allRows.length} result rows to public/data/${REGATTA}-results.csv`);
+    console.log(`Saved ${deduped.length} result rows to public/data/${REGATTA}-results.csv`);
 }
 
 main().catch((err) => {

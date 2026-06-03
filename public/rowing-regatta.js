@@ -288,9 +288,18 @@
             };
             if (map.has(raceNum)) {
                 const prev = map.get(raceNum);
-                prev.placings = mergeResultPlacings(prev.placings, placings);
-                if (!prev.status && row.status) prev.status = row.status;
-                if (!prev.format && row.format) prev.format = row.format;
+                const sameMeta =
+                    prev.eventNum === row.eventNum &&
+                    prev.round === row.round &&
+                    prev.division === row.division;
+                if (sameMeta && placings.length <= prev.placings.length) continue;
+                if (sameMeta) {
+                    prev.placings = mergeResultPlacings(prev.placings, placings);
+                    if (!prev.status && row.status) prev.status = row.status;
+                    if (!prev.format && row.format) prev.format = row.format;
+                } else if (placings.length >= prev.placings.length) {
+                    map.set(raceNum, row);
+                }
             } else {
                 map.set(raceNum, row);
             }
@@ -943,14 +952,28 @@
 
     function collectRepResultsForEvent(group) {
         const reps = [];
+        const seen = new Set();
         for (const [raceNum, res] of state.results) {
             if (!eventMatchesNum(res, group.eventNum)) continue;
             if (classifyRound(res.round) !== 'rep') continue;
+            seen.add(raceNum);
             reps.push({
                 raceNum,
                 division: res.division,
                 format: res.format || primaryProgressionFormat(group),
                 placings: res.placings || [],
+            });
+        }
+        for (const race of getRacesForEvent(group)) {
+            if (classifyRound(race.round) !== 'rep') continue;
+            if (seen.has(race.raceNum)) continue;
+            seen.add(race.raceNum);
+            const res = state.results.get(race.raceNum);
+            reps.push({
+                raceNum: race.raceNum,
+                division: race.division,
+                format: res?.format || race.progression || primaryProgressionFormat(group),
+                placings: res?.placings || [],
             });
         }
         reps.sort((a, b) => {
@@ -1176,7 +1199,39 @@
         const repProg = WR?.computeRepProgression(repResults);
 
         if (!repProg?.reps?.length) {
-            root.innerHTML = '';
+            const scheduled = collectRepResultsForEvent(group);
+            if (!scheduled.length) {
+                root.innerHTML = '';
+                return;
+            }
+            root.innerHTML =
+                `<h3 class="bsr-tt-col-head">Repechages</h3>` +
+                scheduled
+                    .map((rep) => {
+                        const race = findRace(rep.raceNum);
+                        const crews = (rep.placings?.length ? rep.placings : race?.lanes || [])
+                            .map((p, i) => {
+                                const crew = p.competitor || p.crew;
+                                const info = clubInfo(crew);
+                                return (
+                                    `<tr><td class="bsr-tt-rank">${p.place || i + 1}</td>` +
+                                    `<td>${logoImgHtml('bsr-tt-logo', info.logoUrl, info.name)}` +
+                                    `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span></td>` +
+                                    `<td class="bsr-tt-time">${escapeHtml(p.time || '—')}</td>` +
+                                    `<td class="bsr-tt-prog">—</td></tr>`
+                                );
+                            })
+                            .join('');
+                        return (
+                            `<div class="bsr-tt-col">` +
+                            `<h4 class="bsr-tt-col-head">Repechage ${escapeHtml(rep.division || rep.raceNum)}` +
+                            `<span class="bsr-note"> · R${rep.raceNum}</span></h4>` +
+                            (rep.placings?.length ? '' : `<p class="bsr-note">Draw only — results pending</p>`) +
+                            `<table class="bsr-tt-table"><thead><tr><th>Pl</th><th>Crew</th><th>Time</th><th>Progression</th></tr></thead>` +
+                            `<tbody>${crews}</tbody></table></div>`
+                        );
+                    })
+                    .join('');
             return;
         }
 
