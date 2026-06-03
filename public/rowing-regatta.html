@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Rowing Regatta Dashboard · Altitude HD</title>
+    <link rel="stylesheet" href="beachsprints-regatta.css">
+    <link rel="stylesheet" href="rowing-regatta.css">
+</head>
+<body class="bsr-page rrd-page">
+    <header class="bsr-header">
+        <div class="bsr-header-inner">
+            <div class="bsr-brand">
+                <img
+                    class="rrd-logo-rnz"
+                    src="assets/rnz/rnz-logo-white.png"
+                    alt="Rowing New Zealand"
+                    width="160"
+                    height="64"
+                >
+                <div>
+                    <p class="bsr-brand-kicker">Flat-water regatta · World Rowing progression</p>
+                    <h1>Rowing Regatta Dashboard</h1>
+                </div>
+            </div>
+            <div class="bsr-toolbar">
+                <div class="bsr-field">
+                    <label for="rrdRegattaCode">Regatta code</label>
+                    <input type="text" id="rrdRegattaCode" value="nicc2026" spellcheck="false" autocomplete="off">
+                </div>
+                <button type="button" class="bsr-btn bsr-btn--primary" id="rrdLoadBtn">Load regatta</button>
+                <label class="bsr-toggle bsr-toggle--toolbar">
+                    <input type="checkbox" id="rrdLiveRefresh">
+                    <span>Live refresh (1 min)</span>
+                </label>
+                <a class="bsr-btn bsr-btn--ghost" href="index.html">Hub</a>
+            </div>
+        </div>
+    </header>
+
+    <p class="rrd-rules-banner" id="rrdRulesBanner">
+        <strong>World Rowing progression (2025+):</strong>
+        top 2 per heat advance directly; remaining next-round places go to fastest times across heats; no repechages.
+        <a href="https://worldrowing.com/" target="_blank" rel="noopener noreferrer">worldrowing.com</a>
+    </p>
+
+    <p class="bsr-status" id="rrdStatus">Ready — default regatta NICC 2026 (RowIT daysheet + bundled results CSV).</p>
+
+    <main class="bsr-main-wrap">
+        <section class="bsr-stats" id="rrdStats" hidden aria-label="Regatta overview"></section>
+
+        <section class="bsr-card bsr-event-picker">
+            <div class="bsr-event-picker-row">
+                <div class="bsr-field bsr-field--event">
+                    <label for="rrdFilterEvent">Event</label>
+                    <select id="rrdFilterEvent"><option value="">— Select event —</option></select>
+                </div>
+                <div class="bsr-field bsr-field--grow">
+                    <label for="rrdEventSearch">Search</label>
+                    <input type="search" id="rrdEventSearch" placeholder="e.g. U18 2x or event 12…" autocomplete="off">
+                </div>
+            </div>
+        </section>
+
+        <section class="bsr-event-workspace" id="rrdEventWorkspace" hidden>
+            <header class="bsr-card bsr-event-hero" id="rrdEventHero"></header>
+
+            <section class="bsr-card bsr-tt-panel">
+                <h2>Heats &amp; progression</h2>
+                <p class="bsr-card-lead" id="rrdHeatsLead">Heat results ranked with World Rowing progression (direct + fastest times).</p>
+                <div id="rrdHeatsProgression" class="bsr-tt-grid"></div>
+            </section>
+
+            <section class="bsr-card bsr-bracket-panel">
+                <h2>Regatta bracket</h2>
+                <p class="bsr-card-lead">Heats → quarter-finals → semi-finals → finals. Click a race for full results.</p>
+                <div id="rrdBracketTree" class="bsr-bracket-arena-wrap"></div>
+            </section>
+
+            <section class="bsr-card">
+                <h2>Event schedule &amp; results</h2>
+                <p class="bsr-card-lead">All races for this event from the daysheet and RowIT results.</p>
+                <div id="rrdEventSchedule"></div>
+            </section>
+        </section>
+
+        <section class="bsr-card bsr-race-analysis" id="rrdRaceAnalysis" hidden>
+            <h2 id="rrdRaceAnalysisTitle">Race analysis</h2>
+            <div id="rrdRaceDetail"></div>
+        </section>
+
+        <details class="bsr-card bsr-settings-details">
+            <summary>World Rowing progression reference</summary>
+            <p class="bsr-card-lead">Entry-count table from World Rowing Rule 58 (2025+). Your event highlights when selected.</p>
+            <div id="rrdSchemeReference"></div>
+        </details>
+
+        <details class="bsr-card bsr-settings-details">
+            <summary>Missing school logos</summary>
+            <p class="bsr-card-lead">Clubs in <code>AHD_lookup</code> without a PNG in <code>assets/school-logos/</code> show a white placeholder.</p>
+            <div id="rrdMissingLogos"></div>
+        </details>
+    </main>
+
+    <footer class="bsr-footer">
+        <a href="https://worldrowing.com/" target="_blank" rel="noopener noreferrer">World Rowing</a>
+        <span>·</span>
+        <a href="https://www.rowingnz.kiwi/" target="_blank" rel="noopener noreferrer">Rowing NZ</a>
+        <span>·</span>
+        <span>RowIT CSV · GPS coming later</span>
+    </footer>
+
+    <script src="hub-csv.js"></script>
+    <script src="rowing-regatta-progression.js"></script>
+    <script src="rowing-regatta.js"></script>
+</body>
+</html>

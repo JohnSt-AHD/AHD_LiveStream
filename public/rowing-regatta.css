@@ -1,0 +1,190 @@
+/* Rowing Regatta Dashboard — RNZ / World Rowing theme (extends beach sprints layout) */
+:root {
+    --rrd-bg: #0c2340;
+    --rrd-bg-deep: #071628;
+    --rrd-panel: rgba(8, 30, 58, 0.96);
+    --rrd-border: rgba(96, 165, 250, 0.35);
+    --rrd-text: #eef4ff;
+    --rrd-muted: #94a3b8;
+    --rrd-accent: #3b82f6;
+    --rrd-accent-dim: #1d4ed8;
+    --rrd-gold: #fbbf24;
+    --rrd-win: #34d399;
+    --rrd-cutoff: rgba(251, 191, 36, 0.45);
+}
+
+body.rrd-page {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(165deg, var(--rrd-bg-deep) 0%, var(--rrd-bg) 50%, #0f2d52 100%);
+    color: var(--rrd-text);
+    display: flex;
+    flex-direction: column;
+}
+
+body.rrd-page .bsr-header {
+    border-bottom-color: var(--rrd-border);
+    background: var(--rrd-panel);
+}
+
+body.rrd-page .bsr-stat-card {
+    border-top-color: var(--rrd-accent);
+}
+
+body.rrd-page .bsr-btn--primary {
+    background: var(--rrd-accent);
+    border-color: var(--rrd-accent-dim);
+}
+
+body.rrd-page .bsr-btn--primary:hover {
+    background: var(--rrd-accent-dim);
+}
+
+body.rrd-page .bsr-card {
+    border-color: var(--rrd-border);
+    background: var(--rrd-panel);
+}
+
+body.rrd-page .bsr-brand-kicker {
+    color: #93c5fd;
+}
+
+body.rrd-page .bsr-stat-value {
+    color: #dbeafe;
+}
+
+.rrd-logo-rnz {
+    height: 44px;
+    width: auto;
+    object-fit: contain;
+}
+
+.rrd-rules-banner {
+    margin: 12px 20px 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--rrd-border);
+    background: rgba(59, 130, 246, 0.12);
+    font-size: 0.85rem;
+    color: var(--rrd-muted);
+    line-height: 1.45;
+}
+
+.rrd-rules-banner a {
+    color: #93c5fd;
+}
+
+.rrd-rules-banner strong {
+    color: var(--rrd-text);
+}
+
+.rrd-prog--direct {
+    background: rgba(52, 211, 153, 0.2);
+    color: #6ee7b7;
+    border: 1px solid rgba(52, 211, 153, 0.45);
+}
+
+.rrd-prog--ft {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.45);
+}
+
+.rrd-prog--lower {
+    background: rgba(148, 163, 184, 0.15);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.rrd-prog--final {
+    background: rgba(251, 191, 36, 0.18);
+    color: #fde68a;
+    border: 1px solid rgba(251, 191, 36, 0.45);
+}
+
+.rrd-prog--out {
+    background: rgba(251, 113, 133, 0.12);
+    color: #fda4af;
+    border: 1px solid rgba(251, 113, 133, 0.35);
+}
+
+body.rrd-page .bsr-tt-prog-pill.rrd-prog--direct,
+body.rrd-page .bsr-tt-prog-pill.rrd-prog--ft,
+body.rrd-page .bsr-tt-prog-pill.rrd-prog--lower,
+body.rrd-page .bsr-tt-prog-pill.rrd-prog--final,
+body.rrd-page .bsr-tt-prog-pill.rrd-prog--out {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.rrd-format-notes {
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    color: var(--rrd-muted);
+}
+
+.rrd-format-notes li {
+    margin: 4px 0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    font-family: ui-monospace, monospace;
+}
+
+.rrd-gps-soon {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px dashed var(--rrd-border);
+    color: var(--rrd-muted);
+    font-size: 0.85rem;
+}
+
+.rrd-scheme-table-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+
+.rrd-scheme-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+}
+
+.rrd-scheme-table th,
+.rrd-scheme-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: left;
+}
+
+.rrd-scheme-table th {
+    color: var(--rrd-muted);
+    font-weight: 600;
+}
+
+.rrd-scheme-table tr.rrd-scheme-table--active td {
+    background: rgba(59, 130, 246, 0.15);
+    color: #dbeafe;
+}
+
+body.rrd-page .bsr-tree-col--heat .bsr-tree-col-title {
+    color: #93c5fd;
+}
+
+body.rrd-page .bsr-tree-col--qf .bsr-tree-col-title {
+    color: #a5b4fc;
+}
+
+body.rrd-page .bsr-tree-col--sf .bsr-tree-col-title {
+    color: #c4b5fd;
+}
+
+body.rrd-page .bsr-tree-col--final .bsr-tree-col-title {
+    color: var(--rrd-gold);
+}
