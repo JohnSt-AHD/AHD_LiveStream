@@ -60,23 +60,36 @@ body.rrd-page .bsr-stat-value {
     object-fit: contain;
 }
 
-.rrd-rules-banner {
-    margin: 12px 20px 0;
-    padding: 10px 14px;
+.rrd-heats-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .rrd-heats-split {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rrd-heats-left,
+.rrd-heats-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rrd-heats-right:empty {
+    display: none;
+}
+
+.rrd-rep-empty {
+    padding: 12px;
+    border: 1px dashed var(--rrd-border);
     border-radius: 8px;
-    border: 1px solid var(--rrd-border);
-    background: rgba(59, 130, 246, 0.12);
-    font-size: 0.85rem;
     color: var(--rrd-muted);
-    line-height: 1.45;
-}
-
-.rrd-rules-banner a {
-    color: #93c5fd;
-}
-
-.rrd-rules-banner strong {
-    color: var(--rrd-text);
+    font-size: 0.85rem;
 }
 
 .rrd-prog--direct {
@@ -173,10 +186,6 @@ body.rrd-page .bsr-tt-prog-pill.rrd-prog--out {
     color: #dbeafe;
 }
 
-body.rrd-page .bsr-tree-col--heat .bsr-tree-col-title {
-    color: #93c5fd;
-}
-
 body.rrd-page .bsr-tree-col--qf .bsr-tree-col-title {
     color: #a5b4fc;
 }
@@ -187,4 +196,64 @@ body.rrd-page .bsr-tree-col--sf .bsr-tree-col-title {
 
 body.rrd-page .bsr-tree-col--final .bsr-tree-col-title {
     color: var(--rrd-gold);
+}
+
+body.rrd-page .bsr-tree-col--medalists .bsr-tree-col-title {
+    color: var(--rrd-gold);
+}
+
+.rrd-tree-match-crews {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.rrd-medalist {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rrd-medalist:last-child {
+    border-bottom: none;
+}
+
+.rrd-medalist--gold .rrd-medal-label {
+    color: #fbbf24;
+}
+
+.rrd-medalist--silver .rrd-medal-label {
+    color: #cbd5e1;
+}
+
+.rrd-medalist--bronze .rrd-medal-label {
+    color: #d97706;
+}
+
+.rrd-medal-label {
+    flex: 0 0 4.5em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.rrd-medalist-logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.rrd-medalist-name {
+    flex: 1;
+    font-size: 0.85rem;
+}
+
+.rrd-medalist-time {
+    font-size: 0.78rem;
+    color: var(--rrd-muted);
+    font-variant-numeric: tabular-nums;
 }

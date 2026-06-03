@@ -57,6 +57,8 @@
         loading: false,
         liveRefresh: false,
         missingLogos: null,
+        drawRows: [],
+        progressionByEvent: new Map(),
     };
 
     let liveRefreshTimer = null;
@@ -198,6 +200,13 @@
             const startAt = parseTimeOnDay(cols[1], dayDate);
             if (!startAt) continue;
             const lanes = parseLanes(cols, headerCols);
+            let progression = '';
+            if (headerCols?.length) {
+                const pi = headerCols.findIndex((h) => String(h || '').toLowerCase().includes('progression'));
+                if (pi >= 0) progression = (cols[pi] || '').trim();
+            } else if (cols.length > 6) {
+                progression = cols[cols.length - 1] ? cols[cols.length - 1].trim() : '';
+            }
             races.push({
                 raceNum: info.raceNum,
                 race: info.label,
@@ -207,7 +216,7 @@
                 round: cols[4].trim(),
                 division: cols[5] ? cols[5].trim() : '',
                 lanes,
-                progression: headerCols ? '' : cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
+                progression,
                 dayLabel,
             });
         }
@@ -368,6 +377,90 @@
         return res.text();
     }
 
+    async function fetchDrawCsv(code) {
+        const c = normalizeRegattaCode(code);
+        const urls = [`https://l.rowit.nz/${c}/draw.csv`, `https://rowit.nz/${c}/draw.csv`];
+        for (const url of urls) {
+            try {
+                const text = await fetchCsvText(url);
+                if (text && !/Nothing published/i.test(text)) return text;
+            } catch {
+                /* try next */
+            }
+        }
+        return '';
+    }
+
+    function parseDrawCsv(text) {
+        const rows = [];
+        if (!text || /Nothing published/i.test(text)) return rows;
+        let header = null;
+        for (const line of text.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || /^"DRAW/i.test(trimmed) || /^"DRAFT DRAW/i.test(trimmed)) continue;
+            const cols = parseCsvLine(trimmed);
+            if (/^Event/i.test(cols[0] || '')) {
+                header = cols.map((c) => String(c || '').toLowerCase().trim());
+                continue;
+            }
+            const eventNum = (cols[0] || '').trim();
+            if (!eventNum) continue;
+            const row = {
+                eventNum,
+                eventType: (cols[1] || '').trim(),
+                round: (cols[2] || '').trim(),
+                division: (cols[3] || '').trim(),
+                lanes: [],
+            };
+            const laneStart = 4;
+            for (let i = laneStart; i < cols.length; i++) {
+                const crew = (cols[i] || '').trim();
+                if (crew) row.lanes.push({ lane: i - laneStart + 1, crew });
+            }
+            rows.push(row);
+        }
+        return rows;
+    }
+
+    function buildProgressionIndex() {
+        const byEvent = new Map();
+        const add = (eventNum, format) => {
+            const key = String(eventNum || '').trim();
+            const f = String(format || '').trim();
+            if (!key || !f) return;
+            if (!byEvent.has(key)) byEvent.set(key, new Set());
+            byEvent.get(key).add(f);
+        };
+
+        for (const race of state.races) {
+            if (race.progression) add(race.eventNum, race.progression);
+        }
+        for (const res of state.results.values()) {
+            if (res.format) add(res.eventNum, res.format);
+        }
+        state.progressionByEvent = byEvent;
+    }
+
+    function primaryProgressionFormat(group) {
+        const fromMeta = group?.meta?.format;
+        if (fromMeta) return fromMeta;
+        const set = state.progressionByEvent.get(String(group?.eventNum || ''));
+        if (set?.size) return [...set][0];
+        return '';
+    }
+
+    function formatForHeatRace(group, heatResult) {
+        if (heatResult.format) return heatResult.format;
+        const ds = state.races.find(
+            (r) =>
+                eventMatchesNum(r, group.eventNum) &&
+                classifyRound(r.round) === 'heat' &&
+                String(r.division) === String(heatResult.division),
+        );
+        if (ds?.progression) return ds.progression;
+        return primaryProgressionFormat(group);
+    }
+
     async function fetchRegattaCsv(code, file) {
         const candidates = csvUrlCandidates(code, file);
         let lastErr = null;
@@ -522,6 +615,7 @@
 
     function classifyRound(round) {
         const r = String(round || '').toLowerCase();
+        if (r === 'r' || /rep|repechage/.test(r)) return 'rep';
         if (r === 'q' || /quarter|\bqf\b/.test(r)) return 'qf';
         if (r === 's' || /semi|\bsf\b/.test(r)) return 'sf';
         if (r === 'f' || /final|\bf\b/.test(r)) return 'final';
@@ -531,8 +625,15 @@
     }
 
     function expandRoundLabel(round) {
-        const map = { h: 'Heat', q: 'Quarter-final', s: 'Semi-final', f: 'Final', e: 'Exhibition' };
-        return map[String(round || '').trim().toLowerCase()] || String(round || '');
+        const map = { h: 'Heat', q: 'Quarter-final', s: 'Semi-final', f: 'Final', e: 'Exhibition', r: 'Repechage' };
+        const r = String(round || '').trim().toLowerCase();
+        if (map[r]) return map[r];
+        if (/quarter/i.test(r)) return 'Quarter-final';
+        if (/semi/i.test(r)) return 'Semi-final';
+        if (/rep/i.test(r)) return 'Repechage';
+        if (/heat/i.test(r)) return 'Heat';
+        if (/final/i.test(r)) return 'Final';
+        return String(round || '');
     }
 
     function finalDivisionRank(race) {
@@ -676,6 +777,31 @@
                 dayLabel: '',
             });
         }
+
+        let synthId = 900000;
+        for (const dr of state.drawRows) {
+            if (String(dr.eventNum) !== String(group.eventNum)) continue;
+            const kind = classifyRound(dr.round);
+            if (kind !== 'qf' && kind !== 'sf' && kind !== 'final') continue;
+            const exists = [...byNum.values()].some(
+                (r) => classifyRound(r.round) === kind && String(r.division) === String(dr.division),
+            );
+            if (exists) continue;
+            byNum.set(synthId, {
+                raceNum: synthId,
+                race: `D${synthId - 900000}`,
+                eventNum: group.eventNum,
+                eventName: group.eventName,
+                round: dr.round,
+                division: dr.division,
+                lanes: dr.lanes,
+                startAt: null,
+                dayLabel: '',
+                fromDraw: true,
+            });
+            synthId += 1;
+        }
+
         return [...byNum.values()].sort((a, b) => {
             const ta = a.startAt ? a.startAt.getTime() : a.raceNum;
             const tb = b.startAt ? b.startAt.getTime() : b.raceNum;
@@ -764,12 +890,11 @@
         const heats = [];
         for (const [raceNum, res] of state.results) {
             if (!eventMatchesNum(res, group.eventNum)) continue;
-            const kind = classifyRound(res.round);
-            if (kind !== 'heat') continue;
+            if (classifyRound(res.round) !== 'heat') continue;
             heats.push({
                 raceNum,
                 division: res.division,
-                format: res.format,
+                format: formatForHeatRace(group, { division: res.division, format: res.format }),
                 placings: res.placings || [],
             });
         }
@@ -780,6 +905,45 @@
             return a.raceNum - b.raceNum;
         });
         return heats;
+    }
+
+    function collectRepResultsForEvent(group) {
+        const reps = [];
+        for (const [raceNum, res] of state.results) {
+            if (!eventMatchesNum(res, group.eventNum)) continue;
+            if (classifyRound(res.round) !== 'rep') continue;
+            reps.push({
+                raceNum,
+                division: res.division,
+                format: res.format || primaryProgressionFormat(group),
+                placings: res.placings || [],
+            });
+        }
+        reps.sort((a, b) => {
+            const da = parseInt(a.division, 10);
+            const db = parseInt(b.division, 10);
+            if (Number.isFinite(da) && Number.isFinite(db)) return da - db;
+            return a.raceNum - b.raceNum;
+        });
+        return reps;
+    }
+
+    function renderHeatTableRows(rows, renderCrew) {
+        return rows
+            .map((row) => {
+                const info = renderCrew(row.crew);
+                return (
+                    `<tr>` +
+                    `<td class="bsr-tt-rank">${row.place}</td>` +
+                    `<td>${logoImgHtml('bsr-tt-logo', info.logoUrl, info.name)}` +
+                    `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span>` +
+                    `<span class="bsr-note"> ${escapeHtml(row.crew)}</span></td>` +
+                    `<td class="bsr-tt-time">${escapeHtml(row.time || '—')}</td>` +
+                    `<td class="bsr-tt-prog"><span class="bsr-tt-prog-pill ${escapeHtml(row.progression.cls)}">${escapeHtml(row.progression.label)}</span></td>` +
+                    `</tr>`
+                );
+            })
+            .join('');
     }
 
     function setStatus(msg, isError) {
@@ -886,12 +1050,14 @@
         if (key) {
             renderEventHero();
             renderHeatsProgression();
+            renderRepechagePanel();
             renderBracketTree();
             renderEventSchedule();
+            const group = getEventGroup(key);
             const heatResults = collectHeatResultsForEvent(group);
             const WR = window.WorldRowingProgression;
             const entryCount = group?.meta?.drawSize ? parseInt(group.meta.drawSize, 10) : undefined;
-            const prog = WR?.computeHeatProgression({ heatResults, entryCount });
+            const prog = WR?.computeEventHeatProgression({ heatResults, entryCount });
             renderSchemeReference(prog?.scheme?.entryCount || heatResults.length * 6);
         }
     }
@@ -930,43 +1096,72 @@
         const WR = window.WorldRowingProgression;
         const heatResults = collectHeatResultsForEvent(group);
         const entryCount = group.meta?.drawSize ? parseInt(group.meta.drawSize, 10) : undefined;
-        const prog = WR?.computeHeatProgression({ heatResults, entryCount });
+        const prog = WR?.computeEventHeatProgression({ heatResults, entryCount });
 
-        if (lead && prog) lead.textContent = prog.summary || WR?.RULES_SUMMARY;
+        if (lead && prog) {
+            const src =
+                prog.source === 'rowit'
+                    ? 'RowIT progression (results / daysheet / draw)'
+                    : 'World Rowing progression (fallback — no RowIT format found)';
+            lead.textContent = `${src}. ${prog.summary || ''}`.trim();
+        }
 
-        if (!prog?.rows?.length) {
+        if (!prog?.heats?.length) {
             root.innerHTML = '<p class="bsr-note">No heat results for this event yet.</p>';
             return;
         }
 
-        let formatHtml = '';
-        if (prog.formatNotes?.length) {
-            formatHtml =
-                '<p class="bsr-note">RowIT format notes from results CSV:</p><ul class="rrd-format-notes">' +
-                prog.formatNotes.map((n) => `<li>${escapeHtml(n)}</li>`).join('') +
-                '</ul>';
-        }
+        root.innerHTML = prog.heats
+            .map((heat) => {
+                const note = heat.format
+                    ? `<p class="bsr-note rrd-format-notes">${escapeHtml(heat.format)}</p>`
+                    : '';
+                return (
+                    `<div class="bsr-tt-col">` +
+                    `<h3 class="bsr-tt-col-head">Heat ${escapeHtml(heat.heatNum)}` +
+                    (heat.raceNum ? `<span class="bsr-note"> · R${heat.raceNum}</span>` : '') +
+                    `</h3>` +
+                    note +
+                    `<table class="bsr-tt-table"><thead><tr><th>Pl</th><th>Crew</th><th>Time</th><th>Progression</th></tr></thead>` +
+                    `<tbody>${renderHeatTableRows(heat.rows, clubInfo)}</tbody></table></div>`
+                );
+            })
+            .join('');
+    }
 
-        let rows = '';
-        for (const row of prog.rows) {
-            const info = clubInfo(row.crew);
-            rows +=
-                `<tr>` +
-                `<td class="bsr-tt-rank">H${escapeHtml(row.heat)} · ${row.place}</td>` +
-                `<td>${logoImgHtml('bsr-tt-logo', info.logoUrl, info.name)}` +
-                `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span>` +
-                `<span class="bsr-note"> ${escapeHtml(row.crew)}</span></td>` +
-                `<td class="bsr-tt-time">${escapeHtml(row.time || '—')}</td>` +
-                `<td class="bsr-tt-race">R${row.raceNum}</td>` +
-                `<td class="bsr-tt-prog"><span class="bsr-tt-prog-pill ${escapeHtml(row.progression.cls)}">${escapeHtml(row.progression.label)}</span></td>` +
-                `</tr>`;
+    function renderRepechagePanel() {
+        const root = document.getElementById('rrdRepechagePanel');
+        if (!root) return;
+        const group = getEventGroup(state.selectedEventKey);
+        if (!group) {
+            root.innerHTML = '';
+            return;
+        }
+        const WR = window.WorldRowingProgression;
+        const repResults = collectRepResultsForEvent(group);
+        const repProg = WR?.computeRepProgression(repResults);
+
+        if (!repProg?.reps?.length) {
+            root.innerHTML = '';
+            return;
         }
 
         root.innerHTML =
-            formatHtml +
-            `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">World Rowing progression</h3>` +
-            `<table class="bsr-tt-table"><thead><tr><th>Heat · Pl</th><th>Crew</th><th>Time</th><th>Race</th><th>Progression</th></tr></thead>` +
-            `<tbody>${rows}</tbody></table></div>`;
+            `<h3 class="bsr-tt-col-head">Repechages</h3>` +
+            repProg.reps
+                .map((rep) => {
+                    const note = rep.format ? `<p class="bsr-note">${escapeHtml(rep.format)}</p>` : '';
+                    return (
+                        `<div class="bsr-tt-col">` +
+                        `<h4 class="bsr-tt-col-head">Repechage ${escapeHtml(rep.repNum)}` +
+                        (rep.raceNum ? `<span class="bsr-note"> · R${rep.raceNum}</span>` : '') +
+                        `</h4>` +
+                        note +
+                        `<table class="bsr-tt-table"><thead><tr><th>Pl</th><th>Crew</th><th>Time</th><th>Progression</th></tr></thead>` +
+                        `<tbody>${renderHeatTableRows(rep.rows, clubInfo)}</tbody></table></div>`
+                    );
+                })
+                .join('');
     }
 
     function renderTreeCrewLine(slot) {
@@ -985,14 +1180,13 @@
         const m = getRaceMatchData(raceNum);
         const current = raceNum === state.selectedRaceNum;
         const timeLabel = m.race?.startAt ? formatRaceTime(m.race.startAt) : '';
+        const crewsHtml = m.slots.map((slot) => renderTreeCrewLine(slot)).join('');
         return (
             `<button type="button" class="bsr-tree-match${current ? ' bsr-tree-match--current' : ''}" data-race-num="${raceNum}">` +
             `<span class="bsr-tree-match-meta">${escapeHtml(label || formatRoundLabel(m.race || { round: m.round }))}` +
             (timeLabel ? ` · ${escapeHtml(timeLabel)}` : '') +
             `</span>` +
-            renderTreeCrewLine(m.slots[0]) +
-            (m.slots[1] ? renderTreeCrewLine(m.slots[1]) : '') +
-            (m.slots.length > 2 ? `<span class="bsr-note">+${m.slots.length - 2} more</span>` : '') +
+            `<div class="rrd-tree-match-crews">${crewsHtml || renderTreeCrewLine(null)}</div>` +
             `</button>`
         );
     }
@@ -1010,20 +1204,42 @@
         );
     }
 
-    function renderTreeChampion(finRaces) {
+    function renderMedalists(finRaces) {
         const sorted = sortFinalRaces(finRaces);
-        const primary = sorted.find((r) => finalDivisionRank(r) === 1) || sorted[0];
-        if (!primary) return '<p class="bsr-note">—</p>';
-        const win = winnerForRace(primary.raceNum);
-        if (!win) return '<p class="bsr-note">Pending</p>';
-        const info = clubInfo(win.competitor);
-        return (
-            `<div class="bsr-tree-champion">` +
-            logoImgHtml('bsr-tree-champion-logo', info.logoUrl, info.name) +
-            `<span class="bsr-tree-champion-name">${escapeHtml(info.name)}</span>` +
-            (win.time ? `<span class="bsr-tree-champion-time">${escapeHtml(win.time)}</span>` : '') +
-            `</div>`
-        );
+        const aFinal = sorted.find((r) => finalDivisionRank(r) === 1) || sorted[0];
+        if (!aFinal) return '<p class="bsr-note">—</p>';
+
+        const res = state.results.get(aFinal.raceNum);
+        let top3 = (res?.placings || []).filter((p) => p.place >= 1 && p.place <= 3 && p.place < 90).sort((a, b) => a.place - b.place);
+
+        if (!top3.length) {
+            const m = getRaceMatchData(aFinal.raceNum);
+            top3 = m.slots.slice(0, 3).map((s, i) => ({
+                place: s.place || i + 1,
+                competitor: s.crew,
+                time: s.time,
+            }));
+        }
+
+        if (!top3.length) return '<p class="bsr-note">Pending</p>';
+
+        const medalClass = ['gold', 'silver', 'bronze'];
+        const medalLabel = ['Gold', 'Silver', 'Bronze'];
+
+        return top3
+            .map((p) => {
+                const idx = Math.min(p.place - 1, 2);
+                const info = clubInfo(p.competitor);
+                return (
+                    `<div class="rrd-medalist rrd-medalist--${medalClass[idx]}">` +
+                    `<span class="rrd-medal-label">${medalLabel[idx]}</span>` +
+                    logoImgHtml('rrd-medalist-logo', info.logoUrl, info.name) +
+                    `<span class="rrd-medalist-name">${escapeHtml(info.name)}</span>` +
+                    (p.time ? `<span class="rrd-medalist-time">${escapeHtml(p.time)}</span>` : '') +
+                    `</div>`
+                );
+            })
+            .join('');
     }
 
     function renderBracketTree() {
@@ -1041,37 +1257,48 @@
             if (!byKind.has(k)) byKind.set(k, []);
             byKind.get(k).push(r);
         }
-        const heats = (byKind.get('heat') || []).sort((a, b) => {
+        const qf = (byKind.get('qf') || []).sort((a, b) => {
             const da = parseInt(a.division, 10);
             const db = parseInt(b.division, 10);
             if (Number.isFinite(da) && Number.isFinite(db)) return da - db;
             return a.raceNum - b.raceNum;
         });
-        const qf = (byKind.get('qf') || []).sort((a, b) => a.raceNum - b.raceNum);
-        const sf = (byKind.get('sf') || []).sort((a, b) => a.raceNum - b.raceNum);
+        const sf = (byKind.get('sf') || []).sort((a, b) => {
+            const da = parseInt(a.division, 10);
+            const db = parseInt(b.division, 10);
+            if (Number.isFinite(da) && Number.isFinite(db)) return da - db;
+            return a.raceNum - b.raceNum;
+        });
         const fin = sortFinalRaces(byKind.get('final') || []);
 
-        if (!heats.length && !qf.length && !sf.length && !fin.length) {
-            root.innerHTML = '<p class="bsr-note">No races posted for this event yet.</p>';
+        if (!qf.length && !sf.length && !fin.length) {
+            root.innerHTML = '<p class="bsr-note">No quarter-finals, semi-finals or finals posted for this event yet.</p>';
             return;
         }
 
-        const toMatch = (list, prefix) => list.map((r, i) => ({ raceNum: r.raceNum, label: `${prefix}${r.division || i + 1}` }));
-
         let html = '<div class="bsr-knockout-tree">';
-        if (heats.length) {
-            html += renderTreeColumn('Heats', heats.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `Heat ${r.division || ''}` }])).join(''), 'bsr-tree-col--heat');
-        }
         if (qf.length) {
-            html += renderTreeColumn('Quarter-finals', qf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `QF ${r.division || ''}` }])).join(''), 'bsr-tree-col--qf');
+            html += renderTreeColumn(
+                'Quarter-finals',
+                qf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `QF ${r.division || ''}` }])).join(''),
+                'bsr-tree-col--qf',
+            );
         }
         if (sf.length) {
-            html += renderTreeColumn('Semi-finals', sf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `SF ${r.division || ''}` }])).join(''), 'bsr-tree-col--sf');
+            html += renderTreeColumn(
+                'Semi-finals',
+                sf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `SF ${r.division || ''}` }])).join(''),
+                'bsr-tree-col--sf',
+            );
         }
         if (fin.length) {
-            html += renderTreeColumn('Finals', fin.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: finalLabelForRace(r) }])).join(''), 'bsr-tree-col--final');
+            html += renderTreeColumn(
+                'Finals',
+                fin.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: finalLabelForRace(r) }])).join(''),
+                'bsr-tree-col--final',
+            );
         }
-        html += renderTreeColumn('Winner', renderTreeChampion(fin), 'bsr-tree-col--winner');
+        html += renderTreeColumn('Medalists', renderMedalists(fin), 'bsr-tree-col--medalists');
         html += '</div>';
 
         root.innerHTML = html;
@@ -1221,6 +1448,8 @@
         }
         renderBracketTree();
         renderEventSchedule();
+        renderHeatsProgression();
+        renderRepechagePanel();
         const analysisEl = document.getElementById('rrdRaceAnalysis');
         if (analysisEl) analysisEl.hidden = !race;
         const titleEl = document.getElementById('rrdRaceAnalysisTitle');
@@ -1281,11 +1510,12 @@
         const selRace = preserveSelection ? state.selectedRaceNum : null;
         const selEvent = preserveSelection ? state.selectedEventKey : null;
 
-        const [daysheet, results, competitors, events, lookup] = await Promise.all([
+        const [daysheet, results, competitors, events, drawText, lookup] = await Promise.all([
             fetchRegattaCsv(code, 'daysheet').catch(() => ''),
             fetchRegattaCsv(code, 'results').catch(() => ''),
             fetchRegattaCsv(code, 'competitors').catch(() => ''),
             fetchRegattaCsv(code, 'events').catch(() => ''),
+            fetchDrawCsv(code).catch(() => ''),
             state.lookup ? Promise.resolve(state.lookup) : fetch('data/ahd-lookup.json').then((r) => r.json()),
         ]);
 
@@ -1293,6 +1523,8 @@
         state.results = results ? parseResults(results) : new Map();
         state.competitors = competitors ? parseCompetitors(competitors) : new Map();
         state.events = events ? parseEvents(events) : [];
+        state.drawRows = drawText ? parseDrawCsv(drawText) : [];
+        buildProgressionIndex();
         if (!state.lookup) {
             state.lookup = lookup;
             buildClubIndex();
@@ -1309,6 +1541,7 @@
         if (state.liveRefresh) statusMsg += ' · live refresh 1 min';
         if (state.results.size === 0) statusMsg += ' — no results loaded.';
         else if (!daysheet) statusMsg += ' — results only (daysheet not on RowIT yet).';
+        if (state.drawRows.length) statusMsg += ` · draw ${state.drawRows.length} rows`;
 
         setStatus(statusMsg);
         renderStatsOverview();

@@ -19,7 +19,7 @@
                     height="64"
                 >
                 <div>
-                    <p class="bsr-brand-kicker">Flat-water regatta · World Rowing progression</p>
+                    <p class="bsr-brand-kicker">Flat-water regatta · RowIT progression</p>
                     <h1>Rowing Regatta Dashboard</h1>
                 </div>
             </div>
@@ -37,12 +37,6 @@
             </div>
         </div>
     </header>
-
-    <p class="rrd-rules-banner" id="rrdRulesBanner">
-        <strong>World Rowing progression (2025+):</strong>
-        top 2 per heat advance directly; remaining next-round places go to fastest times across heats; no repechages.
-        <a href="https://worldrowing.com/" target="_blank" rel="noopener noreferrer">worldrowing.com</a>
-    </p>
 
     <p class="bsr-status" id="rrdStatus">Ready — default regatta NICC 2026 (RowIT daysheet + bundled results CSV).</p>
 
@@ -67,13 +61,16 @@
 
             <section class="bsr-card bsr-tt-panel">
                 <h2>Heats &amp; progression</h2>
-                <p class="bsr-card-lead" id="rrdHeatsLead">Heat results ranked with World Rowing progression (direct + fastest times).</p>
-                <div id="rrdHeatsProgression" class="bsr-tt-grid"></div>
+                <p class="bsr-card-lead" id="rrdHeatsLead">Progression from RowIT draw/daysheet when available; World Rowing rules used as fallback.</p>
+                <div class="rrd-heats-split">
+                    <div id="rrdHeatsProgression" class="rrd-heats-left"></div>
+                    <div id="rrdRepechagePanel" class="rrd-heats-right"></div>
+                </div>
             </section>
 
             <section class="bsr-card bsr-bracket-panel">
                 <h2>Regatta bracket</h2>
-                <p class="bsr-card-lead">Heats → quarter-finals → semi-finals → finals. Click a race for full results.</p>
+                <p class="bsr-card-lead">Quarter-finals → semi-finals → finals. Click a race for full results.</p>
                 <div id="rrdBracketTree" class="bsr-bracket-arena-wrap"></div>
             </section>
 
