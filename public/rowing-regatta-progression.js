@@ -37,20 +37,40 @@
         return l ? `${l} Final` : 'Final';
     }
 
-    function progPill(label, kind) {
-        const clsMap = {
-            direct: 'rrd-prog--direct',
-            ft: 'rrd-prog--ft',
-            lower: 'rrd-prog--lower',
-            final: 'rrd-prog--final',
-            rep: 'rrd-prog--ft',
-            out: 'rrd-prog--out',
-        };
-        return { label, cls: clsMap[kind] || '' };
+    function destFromMaadiToken(raw) {
+        const t = String(raw || '').trim().toUpperCase().replace(/\s+/g, ' ');
+        if (!t || /elim/i.test(t)) return null;
+        if (t === 'S' || t === 'SF') return 'Semi-final';
+        if (t === 'Q F' || t === 'QF' || t === 'Q') return 'Quarter-final';
+        if (t === 'FA') return 'A Final';
+        if (t === 'FB') return 'B Final';
+        if (t === 'FC') return 'C Final';
+        if (t === 'FD') return 'D Final';
+        if (t === 'FE') return 'E Final';
+        if (/^F[A-Z]$/.test(t)) return `${t.slice(1)} Final`;
+        if (/final/i.test(t)) return t.replace(/\s*final/i, ' Final').replace(/^([A-Z])\s/, '$1 ');
+        return t;
+    }
+
+    function placesFromMaadiSpec(spec) {
+        const s = String(spec || '').trim();
+        const range = s.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (range) {
+            const from = parseInt(range[1], 10);
+            const to = parseInt(range[2], 10);
+            const places = [];
+            for (let p = from; p <= to; p++) places.push(p);
+            return places;
+        }
+        return s
+            .split(/[,+]/)
+            .map((x) => parseInt(x.trim(), 10))
+            .filter((n) => Number.isFinite(n));
     }
 
     /**
-     * Parse RowIT progression string (from draw/daysheet/results).
+     * Parse RowIT / Maadi progression string (draw/daysheet/results).
+     * Supports: 1,2->A Final; 1-4=S; 5,6=FC; 1-4=Q F; Rest Elim
      * @param {string} raw
      */
     function parseRowitProgressionRules(raw) {
@@ -71,6 +91,18 @@
             raw: s,
         };
 
+        for (const m of s.matchAll(/([\d,\s-]+)\s*->\s*([^;+]+?)(?:\s*Final)?(?=[;+]|$)/gi)) {
+            const places = placesFromMaadiSpec(m[1]);
+            const dest = destFromMaadiToken(m[2].trim()) || finalDest(m[2].trim());
+            if (places.length && dest) rules.direct.push({ places, dest });
+        }
+
+        for (const m of s.matchAll(/([\d,\s-]+)\s*=\s*([^;+]+)/gi)) {
+            const places = placesFromMaadiSpec(m[1]);
+            const dest = destFromMaadiToken(m[2].trim());
+            if (places.length && dest) rules.direct.push({ places, dest });
+        }
+
         const rangeMatch = s.match(/(\d+)\s*\.\.\s*(\d+)\s*->\s*(?:([A-Z])\s*)?Final/i);
         if (rangeMatch) {
             const from = parseInt(rangeMatch[1], 10);
@@ -79,7 +111,7 @@
             for (let p = from; p <= to; p++) places.push(p);
             rules.direct.push({ places, dest: finalDest(rangeMatch[3]) });
             rules.nfDest = finalDest(rangeMatch[3]);
-        } else {
+        } else if (!rules.direct.length) {
             const listMatch = s.match(/([\d.,\s]+)\s*->\s*(?:([A-Z])\s*)?Final/i);
             if (listMatch) {
                 const places = listMatch[1]
@@ -101,6 +133,37 @@
 
         if (!rules.direct.length && !rules.nfCount && !rules.lower.length) return null;
         return rules;
+    }
+
+    /** Places that advance from a knockout round (QF/SF) given format string. */
+    function advancingPlacesForRound(roundKind, format) {
+        const kind = String(roundKind || '').toLowerCase();
+        const rules = parseRowitProgressionRules(format);
+        const places = new Set();
+        if (rules?.direct?.length) {
+            for (const d of rules.direct) {
+                const dest = String(d.dest || '').toLowerCase().replace(/\s+/g, '');
+                let match = false;
+                if (kind === 'qf') match = /semi-final|^semi|^s$/.test(dest);
+                else if (kind === 'sf') match = /afinal|^fa$/.test(dest);
+                else if (kind === 'heat') match = /quarter|semi|final|^qf|^q$/.test(dest);
+                if (match) for (const p of d.places) places.add(p);
+            }
+        }
+        if (!places.size && (kind === 'qf' || kind === 'sf')) return new Set([1, 2, 3, 4]);
+        return places;
+    }
+
+    function progPill(label, kind) {
+        const clsMap = {
+            direct: 'rrd-prog--direct',
+            ft: 'rrd-prog--ft',
+            lower: 'rrd-prog--lower',
+            final: 'rrd-prog--final',
+            rep: 'rrd-prog--ft',
+            out: 'rrd-prog--out',
+        };
+        return { label, cls: clsMap[kind] || '' };
     }
 
     function resolveDirectProgression(place, rules) {
@@ -407,6 +470,7 @@
         RULES_SUMMARY,
         parseRaceTimeMs,
         parseRowitProgressionRules,
+        advancingPlacesForRound,
         getSchemeForEntries,
         computeEventHeatProgression,
         computeRowitHeatProgression,

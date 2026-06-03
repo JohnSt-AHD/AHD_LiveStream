@@ -1,15 +1,24 @@
 /**
  * Rowing Regatta Dashboard — RowIT CSV results + World Rowing progression (2025+).
- * Default regatta: nicc2026 (RowIT daysheet/events + bundled results CSV).
+ * Default regatta: mads2026 (Maadi 2026 — RowIT daysheet + bundled results fallback).
  */
 (function () {
-    const DEFAULT_REGATTA = 'nicc2026';
+    const DEFAULT_REGATTA = 'mads2026';
     const ROWIT_CSV_BASES = ['https://l.rowit.nz/altitude', 'https://rowit.nz/altitude'];
     const LOCAL_REGATTA_CSV = {
+        mads2026: {
+            daysheet: 'data/mads2026-daysheet.csv',
+            results: 'data/mads2026-results.csv',
+        },
         nicc2026: { results: 'data/nicc-results.csv' },
         nicc: { results: 'data/nicc-results.csv' },
     };
     const REGATTA_META = {
+        mads2026: {
+            name: 'Maadi Regatta 2026',
+            location: 'Lake Ruataniwha, Twizel',
+            venue: 'Maadi Cup',
+        },
         nicc2026: {
             name: 'NICC 2026',
             location: 'New Zealand',
@@ -20,6 +29,11 @@
             location: 'New Zealand',
             venue: '',
         },
+    };
+    const MEDAL_ICONS = {
+        gold: 'https://s.rowit.nz/i/m/medal_nz-g.png',
+        silver: 'https://s.rowit.nz/i/m/medal_nz-s.png',
+        bronze: 'https://s.rowit.nz/i/m/medal_nz-b.png',
     };
     const LS_REGATTA = 'rrdRegattaCode_v1';
     const LS_LIVE_REFRESH = 'rrdLiveRefresh_v1';
@@ -342,7 +356,7 @@
                 if (cols[4]) row.boat = cols[4].trim();
                 if (cols[6]) row.drawSize = cols[6].trim();
             }
-            row.displayName = expandEventName(row.name || row.classCode || eventNum);
+            row.displayName = eventTitleFromMeta(row);
             events.push(row);
             byNum.set(eventNum, row);
             byNum.set(String(parseInt(eventNum, 10)), row);
@@ -592,11 +606,31 @@
         for (const p of parts) {
             const low = p.toLowerCase();
             if (state.lookup.gender?.[low]) out.push(state.lookup.gender[low]);
-            else if (state.lookup.class?.[low]) out.push(state.lookup.class[low]);
             else if (state.lookup.boat?.[low]) out.push(state.lookup.boat[low]);
+            else if (state.lookup.class?.[low.replace(/\s/g, '')]) out.push(state.lookup.class[low.replace(/\s/g, '')]);
+            else if (state.lookup.class?.[low]) out.push(state.lookup.class[low]);
             else out.push(p);
         }
         return out.join(' ');
+    }
+
+    function eventTitleFromMeta(row) {
+        if (!row) return '';
+        const bits = [];
+        const genderCode = String(row.gender || '').trim();
+        const classCode = String(row.classCode || '').trim().replace(/\s/g, '');
+        const boatCode = String(row.boat || '').trim();
+        if (genderCode && state.lookup?.gender?.[genderCode.toLowerCase()]) {
+            bits.push(state.lookup.gender[genderCode.toLowerCase()]);
+        }
+        if (classCode && state.lookup?.class?.[classCode.toLowerCase()]) {
+            bits.push(state.lookup.class[classCode.toLowerCase()]);
+        }
+        if (boatCode && state.lookup?.boat?.[boatCode.toLowerCase()]) {
+            bits.push(state.lookup.boat[boatCode.toLowerCase()]);
+        }
+        if (bits.length) return bits.join(' ');
+        return expandEventName(row.name || row.classCode || row.eventNum);
     }
 
     function eventMetaForRace(race) {
@@ -1164,11 +1198,39 @@
                 .join('');
     }
 
-    function renderTreeCrewLine(slot) {
-        if (!slot) return '<span class="bsr-tree-crew bsr-tree-crew--empty">TBD</span>';
-        const win = slot.place === 1;
+    function getRaceProgressionFormat(raceNum) {
+        const race = findRace(raceNum);
+        if (race?.progression) return race.progression;
+        const res = state.results.get(raceNum);
+        return res?.format || '';
+    }
+
+    function advancingPlacesForRace(raceNum, roundKind) {
+        const WR = window.WorldRowingProgression;
+        return WR?.advancingPlacesForRound?.(roundKind, getRaceProgressionFormat(raceNum)) || new Set([1, 2, 3, 4]);
+    }
+
+    function medalIconHtml(medalKey, alt) {
+        const src = MEDAL_ICONS[medalKey];
+        if (!src) return '';
         return (
-            `<span class="bsr-tree-crew${win ? ' bsr-tree-crew--winner' : ''}">` +
+            `<img class="rrd-medal-icon" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" width="28" height="28" ` +
+            `onerror="this.style.display='none'">`
+        );
+    }
+
+    function renderTreeCrewLine(slot, opts = {}) {
+        if (!slot) return '<span class="bsr-tree-crew bsr-tree-crew--empty">TBD</span>';
+        const { advances, medalClass } = opts;
+        const win = slot.place === 1;
+        let cls = 'bsr-tree-crew';
+        if (win && !medalClass) cls += ' bsr-tree-crew--winner';
+        if (advances) cls += ' bsr-tree-crew--advances';
+        if (medalClass) cls += ` rrd-tree-crew--medal-${medalClass}`;
+        const progMark = advances ? '<span class="rrd-tree-advance-mark" aria-hidden="true"></span>' : '';
+        return (
+            `<span class="${cls}">` +
+            progMark +
             logoImgHtml('bsr-tree-crew-logo', slot.info.logoUrl, slot.info.name) +
             `<span class="bsr-tree-crew-name">${escapeHtml(slot.info.name)}</span>` +
             (slot.time ? `<span class="bsr-tree-crew-time">${escapeHtml(slot.time)}</span>` : '') +
@@ -1176,23 +1238,41 @@
         );
     }
 
-    function renderTreeMatch(raceNum, label) {
+    function renderTreeMatch(raceNum, label, roundKind) {
         const m = getRaceMatchData(raceNum);
         const current = raceNum === state.selectedRaceNum;
         const timeLabel = m.race?.startAt ? formatRaceTime(m.race.startAt) : '';
-        const crewsHtml = m.slots.map((slot) => renderTreeCrewLine(slot)).join('');
+        const advancePlaces = advancingPlacesForRace(raceNum, roundKind);
+        const isAFinal = roundKind === 'final' && finalDivisionRank(m.race || { division: m.res?.division }) === 1;
+        const medalKeys = ['gold', 'silver', 'bronze'];
+        const crewsHtml = m.slots
+            .map((slot) => {
+                const advances = slot.place && advancePlaces.has(slot.place);
+                let medalClass = '';
+                if (isAFinal && slot.place >= 1 && slot.place <= 3) {
+                    medalClass = medalKeys[slot.place - 1];
+                }
+                return renderTreeCrewLine(slot, { advances, medalClass });
+            })
+            .join('');
+        const format = getRaceProgressionFormat(raceNum);
+        const progHint =
+            format && (roundKind === 'qf' || roundKind === 'sf')
+                ? `<span class="rrd-tree-prog-hint">${escapeHtml(format)}</span>`
+                : '';
         return (
             `<button type="button" class="bsr-tree-match${current ? ' bsr-tree-match--current' : ''}" data-race-num="${raceNum}">` +
             `<span class="bsr-tree-match-meta">${escapeHtml(label || formatRoundLabel(m.race || { round: m.round }))}` +
             (timeLabel ? ` · ${escapeHtml(timeLabel)}` : '') +
             `</span>` +
+            progHint +
             `<div class="rrd-tree-match-crews">${crewsHtml || renderTreeCrewLine(null)}</div>` +
             `</button>`
         );
     }
 
-    function renderTreeFeeder(matches) {
-        return `<div class="bsr-tree-feeder">${matches.map((m) => `<div class="bsr-tree-match-row">${renderTreeMatch(m.raceNum, m.label)}</div>`).join('')}</div>`;
+    function renderTreeFeeder(matches, roundKind) {
+        return `<div class="bsr-tree-feeder">${matches.map((m) => `<div class="bsr-tree-match-row">${renderTreeMatch(m.raceNum, m.label, roundKind)}</div>`).join('')}</div>`;
     }
 
     function renderTreeColumn(title, feedersHtml, extraClass) {
@@ -1232,7 +1312,8 @@
                 const info = clubInfo(p.competitor);
                 return (
                     `<div class="rrd-medalist rrd-medalist--${medalClass[idx]}">` +
-                    `<span class="rrd-medal-label">${medalLabel[idx]}</span>` +
+                    medalIconHtml(medalClass[idx], `${medalLabel[idx]} medal`) +
+                    `<span class="rrd-medalist-rank">${p.place}</span>` +
                     logoImgHtml('rrd-medalist-logo', info.logoUrl, info.name) +
                     `<span class="rrd-medalist-name">${escapeHtml(info.name)}</span>` +
                     (p.time ? `<span class="rrd-medalist-time">${escapeHtml(p.time)}</span>` : '') +
@@ -1280,21 +1361,21 @@
         if (qf.length) {
             html += renderTreeColumn(
                 'Quarter-finals',
-                qf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `QF ${r.division || ''}` }])).join(''),
+                qf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `QF ${r.division || ''}` }], 'qf')).join(''),
                 'bsr-tree-col--qf',
             );
         }
         if (sf.length) {
             html += renderTreeColumn(
                 'Semi-finals',
-                sf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `SF ${r.division || ''}` }])).join(''),
+                sf.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: `SF ${r.division || ''}` }], 'sf')).join(''),
                 'bsr-tree-col--sf',
             );
         }
         if (fin.length) {
             html += renderTreeColumn(
                 'Finals',
-                fin.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: finalLabelForRace(r) }])).join(''),
+                fin.map((r) => renderTreeFeeder([{ raceNum: r.raceNum, label: finalLabelForRace(r) }], 'final')).join(''),
                 'bsr-tree-col--final',
             );
         }
@@ -1519,16 +1600,17 @@
             state.lookup ? Promise.resolve(state.lookup) : fetch('data/ahd-lookup.json').then((r) => r.json()),
         ]);
 
+        if (!state.lookup) {
+            state.lookup = lookup;
+            buildClubIndex();
+        }
+
         state.races = daysheet ? parseDaysheet(daysheet) : [];
         state.results = results ? parseResults(results) : new Map();
         state.competitors = competitors ? parseCompetitors(competitors) : new Map();
         state.events = events ? parseEvents(events) : [];
         state.drawRows = drawText ? parseDrawCsv(drawText) : [];
         buildProgressionIndex();
-        if (!state.lookup) {
-            state.lookup = lookup;
-            buildClubIndex();
-        }
         rebuildRaceIndex();
 
         if (!preserveSelection && !state.selectedRaceNum && state.races.length) {

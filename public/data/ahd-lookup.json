@@ -2823,9 +2823,7 @@
     "Trn": "Tournament",
     "Chm": "Championship",
     "Uni": "University",
-    "UNv": "University Novice",
-    "1x": "Para",
-    "2x": "Para"
+    "UNv": "University Novice"
   },
   "boat": {
     "1x": "Single",
