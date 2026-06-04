@@ -391,7 +391,60 @@ body.kri-weather-page {
     align-items: center;
     justify-content: center;
     transform-origin: 50% 50%;
+    opacity: var(--wind-opacity, 0.42);
     filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.35));
+}
+
+.kri-wind-arrow__track {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 18%,
+        #000 42%,
+        #000 58%,
+        rgba(0, 0, 0, 0.35) 82%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.35) 18%,
+        #000 42%,
+        #000 58%,
+        rgba(0, 0, 0, 0.35) 82%,
+        transparent 100%
+    );
+    -webkit-mask-size: 55% 100%;
+    mask-size: 55% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation:
+        kri-wind-drift var(--wind-flow, 6s) linear infinite,
+        kri-wind-fade var(--wind-flow, 6s) linear infinite;
+}
+
+@keyframes kri-wind-drift {
+    from {
+        transform: translateX(-4px);
+    }
+    to {
+        transform: translateX(7px);
+    }
+}
+
+@keyframes kri-wind-fade {
+    from {
+        -webkit-mask-position: -40% 0;
+        mask-position: -40% 0;
+    }
+    to {
+        -webkit-mask-position: 140% 0;
+        mask-position: 140% 0;
+    }
 }
 
 .kri-wind-arrow__shaft {

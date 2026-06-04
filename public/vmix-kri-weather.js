@@ -471,11 +471,13 @@
         );
         const shaftW = Math.max(8 * WIND_ARROW_SCALE, len - 10 * WIND_ARROW_SCALE);
         const rotateDeg = windDirectionToArrowRotate(dirFromDeg);
+        const flowSec = Math.max(3.5, Math.min(9, 11 - speedKmh * 0.12));
         return (
-            `<div class="kri-wind-arrow" style="transform: rotate(${rotateDeg}deg); width:${len}px;opacity:${WIND_ARROW_OPACITY}">` +
+            `<div class="kri-wind-arrow" style="transform: rotate(${rotateDeg}deg); width:${len}px;--wind-flow:${flowSec}s;--wind-opacity:${WIND_ARROW_OPACITY}">` +
+            `<div class="kri-wind-arrow__track">` +
             `<span class="kri-wind-arrow__shaft" style="width:${shaftW}px;background:${color}"></span>` +
             `<span class="kri-wind-arrow__head" style="border-left-color:${color}"></span>` +
-            `</div>`
+            `</div></div>`
         );
     }
 
