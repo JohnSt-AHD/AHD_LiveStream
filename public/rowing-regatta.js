@@ -66,6 +66,7 @@
         lookup: null,
         clubIndex: new Map(),
         selectedRaceNum: null,
+        selectedLane: null,
         filterEvent: '',
         selectedEventKey: '',
         loading: false,
@@ -325,6 +326,7 @@
             map.set(`${info.label}|${division}`, {
                 race: info.label,
                 raceNum: info.raceNum,
+                eventType: cols[3] ? cols[3].trim() : '',
                 division,
                 names: cols[6] ? cols[6].trim() : '',
             });
@@ -683,6 +685,10 @@
     }
 
     function competitorNames(race) {
+        const RCA = global.RegattaCrewAthletes;
+        if (RCA?.findCompetitorRow) {
+            return RCA.findCompetitorRow(state.competitors, race)?.names || '';
+        }
         const key = `${race.race}|${race.division}`;
         const row = state.competitors.get(key);
         if (row?.names) return row.names;
@@ -690,6 +696,55 @@
             if (v.raceNum === race.raceNum && v.division === race.division) return v.names;
         }
         return '';
+    }
+
+    function athletesForLane(race, lane) {
+        const RCA = global.RegattaCrewAthletes;
+        if (!RCA?.athletesForLane) return [];
+        return RCA.athletesForLane(race, lane, state.competitors);
+    }
+
+    function renderLaneAthletesPanel(race, laneNum) {
+        if (!laneNum) {
+            return '<p class="bsr-note rrd-lane-athletes-hint">Select a boat in the lane list to view athletes.</p>';
+        }
+        const laneSource = race.lanes?.length
+            ? race.lanes
+            : (state.results.get(race.raceNum)?.placings || []).map((p, i) => ({ lane: i + 1, crew: p.competitor }));
+        const laneRow = laneSource.find((l) => l.lane === laneNum);
+        if (!laneRow?.crew) {
+            return '<p class="bsr-note">Empty lane — no crew drawn.</p>';
+        }
+        const info = clubInfo(laneRow.crew);
+        const athletes = athletesForLane(race, laneNum);
+        if (!athletes.length) {
+            return (
+                `<p class="bsr-note">No athlete names in the competitors list for lane ${laneNum}.` +
+                (competitorNames(race) ? '' : ' Load a regatta with a competitors CSV.') +
+                `</p>`
+            );
+        }
+        const rows = athletes
+            .map(
+                (name) =>
+                    `<li class="rrd-athlete-row">` +
+                    `<span class="rrd-athlete-name">${escapeHtml(name)}</span>` +
+                    `<span class="rrd-athlete-club">` +
+                    logoImgHtml('rrd-athlete-club-logo', info.logoUrl, info.name) +
+                    `<span>${escapeHtml(info.name)}</span>` +
+                    `<span class="bsr-note">${escapeHtml(laneRow.crew)}</span>` +
+                    `</span></li>`,
+            )
+            .join('');
+        return (
+            `<div class="rrd-lane-athletes-head">` +
+            `<span class="bsr-note">Lane ${laneNum}</span>` +
+            logoImgHtml('rrd-lane-athletes-logo', info.logoUrl, info.name) +
+            `<strong>${escapeHtml(info.name)}</strong>` +
+            `<span class="bsr-note">${escapeHtml(laneRow.crew)}</span>` +
+            `</div>` +
+            `<ul class="rrd-athlete-list">${rows}</ul>`
+        );
     }
 
     function classifyRound(round) {
@@ -1567,22 +1622,25 @@
         }
         const res = state.results.get(race.raceNum);
         const winner = winnerForRace(race.raceNum);
-        const names = competitorNames(race);
 
         let lanesHtml = '';
         const laneSource = race.lanes.length ? race.lanes : (res?.placings || []).map((p, i) => ({ lane: i + 1, crew: p.competitor }));
         for (const lane of laneSource) {
+            if (!lane.crew) continue;
             const info = clubInfo(lane.crew);
             const placing = matchingPlacing(lane.crew, res?.placings);
             const isWinner = placing?.place === 1;
+            const isSelected = state.selectedLane === lane.lane;
             lanesHtml +=
-                `<div class="bsr-lane-row${isWinner ? ' bsr-lane-row--winner' : ''}">` +
+                `<button type="button" class="bsr-lane-row rrd-lane-row${isWinner ? ' bsr-lane-row--winner' : ''}${isSelected ? ' rrd-lane-row--selected' : ''}" data-lane-select="${lane.lane}" aria-pressed="${isSelected ? 'true' : 'false'}">` +
                 `<span class="bsr-lane-n">${lane.lane}</span>` +
                 logoImgHtml('bsr-lane-logo', info.logoUrl, info.name) +
                 `<div><div class="bsr-lane-club">${escapeHtml(info.name)}</div>` +
                 `<div class="bsr-lane-names">${escapeHtml(lane.crew || '')}</div></div>` +
-                `<span class="bsr-lane-time">${escapeHtml(placing?.time || '—')}</span></div>`;
+                `<span class="bsr-lane-time">${escapeHtml(placing?.time || '—')}</span></button>`;
         }
+
+        const athletesHtml = renderLaneAthletesPanel(race, state.selectedLane);
 
         let resultsHtml = '<p class="bsr-note">No results posted yet.</p>';
         if (res?.placings?.length) {
@@ -1616,15 +1674,23 @@
             `<p class="rrd-gps-soon">GPS trace analysis will be added in a future update.</p>` +
             `</section>` +
             `<section class="bsr-card"><h3>Event metadata</h3><div id="rrdEventsPanel"></div></section>` +
-            `<section class="bsr-card"><h3>Lane / crew list</h3><div class="bsr-lane-grid">${lanesHtml || '<p class="bsr-note">No crews listed.</p>'}</div></section>` +
-            (names ? `<section class="bsr-card"><h3>Crew names</h3><p>${escapeHtml(names)}</p></section>` : '') +
+            `<section class="bsr-card"><h3>Lane / crew list</h3>` +
+            `<p class="bsr-note rrd-lane-list-hint">Click a boat to view athletes from the competitors list.</p>` +
+            `<div class="bsr-lane-grid">${lanesHtml || '<p class="bsr-note">No crews listed.</p>'}</div>` +
+            `<div class="rrd-lane-athletes" id="rrdLaneAthletes">${athletesHtml}</div></section>` +
             `<section class="bsr-card"><h3>Official results</h3>${resultsHtml}</section>`;
 
         renderEventsPanel(race);
     }
 
+    function selectLane(laneNum) {
+        state.selectedLane = state.selectedLane === laneNum ? null : laneNum;
+        renderRaceDetail();
+    }
+
     function selectRace(raceNum) {
         state.selectedRaceNum = raceNum;
+        state.selectedLane = null;
         const race = findRace(raceNum);
         if (race) {
             const key = eventKey(race);
@@ -1841,6 +1907,13 @@
                 e.preventDefault();
                 stepRace(-1);
             }
+        });
+
+        document.getElementById('rrdRaceDetail')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-lane-select]');
+            if (!btn) return;
+            const lane = parseInt(btn.dataset.laneSelect, 10);
+            if (Number.isFinite(lane)) selectLane(lane);
         });
     }
 

@@ -368,6 +368,99 @@ body.rrd-page .bsr-bracket-arena-wrap {
     padding: 12px 4px 20px;
 }
 
+/* Lane crew list — selectable boats + athlete panel */
+body.rrd-page .rrd-lane-list-hint {
+    margin: 0 0 10px;
+}
+
+body.rrd-page .rrd-lane-row {
+    width: 100%;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+body.rrd-page .rrd-lane-row:hover {
+    border-color: var(--rrd-accent);
+}
+
+body.rrd-page .rrd-lane-row--selected {
+    border-color: var(--rrd-accent);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.45);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.rrd-lane-athletes {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rrd-border);
+}
+
+.rrd-lane-athletes-hint {
+    margin: 0;
+}
+
+.rrd-lane-athletes-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+}
+
+.rrd-lane-athletes-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.rrd-athlete-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rrd-athlete-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rrd-athlete-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.rrd-athlete-club {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--rrd-muted);
+    text-align: right;
+}
+
+.rrd-athlete-club-logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    border-radius: 3px;
+    background: #fff;
+    flex-shrink: 0;
+}
+
 .rrd-tree-prog-hint {
     display: block;
     font-size: 0.62rem;
