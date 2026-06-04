@@ -8,6 +8,7 @@
     const REPORTS_URL = 'data/documents-reports.json';
 
     const charts = {};
+    const maps = {};
 
     function $(id) {
         return document.getElementById(id);
@@ -166,6 +167,173 @@
         return charts[canvasId];
     }
 
+    function destroyMap(id) {
+        if (maps[id]) {
+            maps[id].remove();
+            delete maps[id];
+        }
+    }
+
+    function pinIcon(color, label) {
+        return L.divIcon({
+            className: 'doc-map-pin',
+            html: `<span style="background:${color}" title="${escapeHtml(label)}"></span>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+        });
+    }
+
+    function renderReportMapShell(container, mapDef, reportId) {
+        const wrap = document.createElement('div');
+        wrap.className = 'doc-report-map-wrap doc-card';
+        const height = mapDef.height || 420;
+        wrap.innerHTML = `
+            <h2>Session GPS overlay</h2>
+            <p class="doc-report-map-caption" id="map-caption-${reportId}">Loading track data…</p>
+            <div class="doc-report-map" id="map-${reportId}" style="height:${height}px" role="img" aria-label="GPS track overlay"></div>
+            <div class="doc-report-map-legend" id="map-legend-${reportId}" hidden></div>
+            <p class="doc-report-map-status" id="map-status-${reportId}">Loading…</p>
+        `;
+        container.appendChild(wrap);
+    }
+
+    async function mountReportMap(reportId, tracksUrl) {
+        const mapEl = $(`map-${reportId}`);
+        const legendEl = $(`map-legend-${reportId}`);
+        const captionEl = $(`map-caption-${reportId}`);
+        const statusEl = $(`map-status-${reportId}`);
+        if (!mapEl || typeof L === 'undefined') return;
+
+        destroyMap(reportId);
+
+        const setMapStatus = (text, ok = true) => {
+            if (statusEl) {
+                statusEl.textContent = text;
+                statusEl.dataset.ok = ok ? '1' : '0';
+            }
+        };
+
+        try {
+            const res = await fetch(tracksUrl);
+            if (!res.ok) throw new Error(`Could not load ${tracksUrl}`);
+            const data = await res.json();
+
+            const session = data.session || {};
+            if (captionEl) {
+                captionEl.textContent =
+                    session.label ||
+                    `${session.recorderDevice || 'Recorder'} vs ${session.traccarDevice || 'Traccar'}`;
+            }
+
+            const map = L.map(mapEl, { zoomControl: true, attributionControl: true });
+            maps[reportId] = map;
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            }).addTo(map);
+
+            const bounds = [];
+            const legendItems = [];
+
+            const trackOrder = ['recorder', 'traccar'];
+            for (const key of trackOrder) {
+                const track = data.tracks?.[key];
+                if (!track?.points?.length) continue;
+
+                const latlngs = track.points.map((p) => {
+                    bounds.push(p);
+                    return [p[0], p[1]];
+                });
+
+                const isTraccar = key === 'traccar';
+                L.polyline(latlngs, {
+                    color: track.color || (isTraccar ? '#f59e0b' : '#00e5ff'),
+                    weight: isTraccar ? 3 : 5,
+                    opacity: isTraccar ? 0.92 : 0.78,
+                    dashArray: isTraccar ? '8 6' : null,
+                }).addTo(map);
+
+                legendItems.push({
+                    label: track.label || key,
+                    color: track.color || (isTraccar ? '#f59e0b' : '#00e5ff'),
+                    dashed: isTraccar,
+                    count: track.count,
+                });
+            }
+
+            const pins = data.pins || {};
+            if (pins.start) {
+                const { lat, lng, name } = pins.start;
+                bounds.push([lat, lng]);
+                L.marker([lat, lng], { icon: pinIcon('#4ade80', name || 'Start') })
+                    .bindPopup(escapeHtml(name || 'Start pin'))
+                    .addTo(map);
+                legendItems.push({ label: pins.start.name || 'Start pin', color: '#4ade80', pin: true });
+            }
+            if (pins.finish) {
+                const { lat, lng, name } = pins.finish;
+                bounds.push([lat, lng]);
+                L.marker([lat, lng], { icon: pinIcon('#f87171', name || 'Finish') })
+                    .bindPopup(escapeHtml(name || 'Finish pin'))
+                    .addTo(map);
+                legendItems.push({ label: pins.finish.name || 'Finish pin', color: '#f87171', pin: true });
+            }
+
+            if (legendEl && legendItems.length) {
+                legendEl.hidden = false;
+                legendEl.innerHTML = legendItems
+                    .map((item) => {
+                        const count =
+                            item.count != null
+                                ? ` · ${Number(item.count).toLocaleString()} pts`
+                                : '';
+                        const swatchClass = item.dashed
+                            ? ' doc-map-swatch--dashed'
+                            : item.pin
+                              ? ''
+                              : '';
+                        const swatchStyle = item.pin
+                            ? `border-radius:50%;width:10px;height:10px;background:${item.color}`
+                            : `background:${item.color}`;
+                        return `<span><i class="${swatchClass.trim()}" style="${swatchStyle}"></i>${escapeHtml(item.label)}${escapeHtml(count)}</span>`;
+                    })
+                    .join('');
+            }
+
+            if (bounds.length) {
+                map.fitBounds(bounds, { padding: [28, 28], maxZoom: 15 });
+            } else {
+                map.setView([-37.95, 175.55], 12);
+            }
+
+            requestAnimationFrame(() => map.invalidateSize());
+
+            const counts = trackOrder
+                .map((k) => data.tracks?.[k]?.count)
+                .filter((n) => n != null);
+            const ptsNote =
+                counts.length === 2
+                    ? `${counts[0].toLocaleString()} vs ${counts[1].toLocaleString()} full-resolution points (map shows ~450 each).`
+                    : '';
+            setMapStatus(
+                ptsNote ? `Tracks loaded. ${ptsNote}` : 'Tracks loaded.',
+                true,
+            );
+        } catch (e) {
+            if (captionEl) captionEl.textContent = 'Could not load GPS tracks.';
+            setMapStatus(e.message, false);
+        }
+    }
+
+    async function mountAllReportMaps(reports) {
+        const tasks = (reports || [])
+            .filter((r) => r.map?.tracksUrl)
+            .map((r) => mountReportMap(r.id, r.map.tracksUrl));
+        await Promise.all(tasks);
+    }
+
     function renderReportChart(container, chartDef, reportId) {
         const wrap = document.createElement('div');
         wrap.className = 'doc-card';
@@ -232,6 +400,11 @@
 
         const chartsWrap = document.createElement('div');
         chartsWrap.className = 'doc-report-charts';
+
+        if (report.map?.tracksUrl) {
+            renderReportMapShell(article, report.map, report.id);
+        }
+
         article.appendChild(chartsWrap);
 
         if (notesHtml) {
@@ -291,6 +464,10 @@
                 activeFilter === 'storage' ||
                 activeFilter === 'data';
         }
+
+        Object.values(maps).forEach((map) => {
+            requestAnimationFrame(() => map.invalidateSize());
+        });
     }
 
     function wireTabs() {
@@ -314,6 +491,7 @@
         for (const report of data.reports || []) {
             list.appendChild(renderReport(report));
         }
+        await mountAllReportMaps(data.reports || []);
         return data;
     }
 

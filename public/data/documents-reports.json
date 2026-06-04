@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-02",
+  "updated": "2026-06-04",
   "reports": [
     {
       "id": "battery-a1-a6-long-2026-06-02",
@@ -100,6 +100,52 @@
         "30 s GPS setting is working whenever the app is actively logging.",
         "Long gaps (~4 min p90 on full session) are stationary / screen-off / doze, not upload failures.",
         "Optional faster uploads (~2.5 s) on the phone use more battery; dashboard smooth map does not require it."
+      ]
+    },
+    {
+      "id": "gps-h6-traccar-compare-2026-06-04",
+      "category": "gps",
+      "date": "2026-06-04",
+      "title": "H6 dual-upload test — Recorder vs Traccar",
+      "summary": "Same ~22 km drive (~45 min) logged to RNZ Recorder (device H6) and Traccar (John Start) between 11:30–12:15 NZ time. Both tracks overlay on the map below; positions agree to within GPS noise.",
+      "metrics": [
+        { "label": "Window (NZ)", "value": "11:30–12:15, 4 Jun" },
+        { "label": "Distance", "value": "~22.1 km" },
+        { "label": "Duration", "value": "~45 min" },
+        { "label": "Recorder points", "value": "2,686" },
+        { "label": "Traccar points", "value": "2,703" },
+        { "label": "Median position error", "value": "0 m" },
+        { "label": "Max fix gap (Recorder)", "value": "3.8 s" },
+        { "label": "Max fix gap (Traccar)", "value": "1.1 s" }
+      ],
+      "map": {
+        "tracksUrl": "data/documents-h6-traccar-2026-06-04.json",
+        "height": 420
+      },
+      "charts": [
+        {
+          "id": "point-count",
+          "type": "bar",
+          "title": "GPS points in window",
+          "labels": ["Recorder H6", "Traccar"],
+          "values": [2686, 2703],
+          "color": ["#00e5ff", "#f59e0b"]
+        },
+        {
+          "id": "max-gap",
+          "type": "bar",
+          "title": "Max fix gap (seconds)",
+          "labels": ["Recorder", "Traccar"],
+          "values": [3.8, 1.1],
+          "unit": "s"
+        }
+      ],
+      "notes": [
+        "Traccar device John Start (id 36) received the same phone upload path as Recorder H6 — not a separate Traccar hardware unit named H6.",
+        "Traccar speed is stored in knots; overlay maps convert to m/s (× 0.514).",
+        "Tracks are nearly identical (~1 Hz). Traccar had slightly more points and shorter max gaps; median position difference was 0 m.",
+        "Closest approach to hub start pin (~186 m) at ~12:13 NZ — useful reference for geofence tuning.",
+        "Choose platform by workflow: Traccar for geofences and fleet maps; Recorder for RNZ Postgres history and device id H6."
       ]
     },
     {
