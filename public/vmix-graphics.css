@@ -459,15 +459,15 @@ body {
     padding: 36px 44px 28px;
     display: flex;
     flex-direction: column;
-    border-top: 2px solid rgba(255, 255, 255, 0.88);
-    border-right: 2px solid rgba(255, 255, 255, 0.88);
+    border-top: 2px solid rgba(255, 255, 255, 0.8);
+    border-right: 2px solid rgba(255, 255, 255, 0.8);
     border-radius: 0 22px 0 0;
     background: linear-gradient(
         135deg,
-        rgba(147, 197, 253, 0.34) 0%,
-        rgba(56, 189, 248, 0.42) 22%,
-        rgba(0, 121, 209, 0.58) 52%,
-        rgba(7, 20, 40, 0.84) 100%
+        rgba(147, 197, 253, 0.8) 0%,
+        rgba(56, 189, 248, 0.8) 22%,
+        rgba(0, 121, 209, 0.8) 52%,
+        rgba(7, 20, 40, 0.8) 100%
     );
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
     z-index: 1;
@@ -503,9 +503,9 @@ body {
     justify-content: center;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.8);
-    border-top: 2px solid rgba(255, 255, 255, 0.88);
-    border-left: 2px solid rgba(255, 255, 255, 0.88);
-    border-bottom: 2px solid rgba(255, 255, 255, 0.88);
+    border-top: 2px solid rgba(255, 255, 255, 0.8);
+    border-left: 2px solid rgba(255, 255, 255, 0.8);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 [data-vmix-theme='kri'] .vg-kri-lower-logo-mark {
@@ -1681,14 +1681,14 @@ body {
     border: 2px solid rgba(0, 121, 209, 0.5);
     background: linear-gradient(
         135deg,
-        rgba(255, 255, 255, 0.96) 0%,
-        rgba(186, 230, 253, 0.94) 40%,
-        rgba(147, 197, 253, 0.92) 70%,
-        rgba(224, 242, 254, 0.96) 100%
+        rgba(255, 255, 255, 0.8) 0%,
+        rgba(186, 230, 253, 0.8) 40%,
+        rgba(147, 197, 253, 0.8) 70%,
+        rgba(224, 242, 254, 0.8) 100%
     );
     box-shadow:
         0 -8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
@@ -1741,7 +1741,7 @@ body {
 }
 
 .vg-speed-chart__plot-bg {
-    fill: rgba(255, 255, 255, 0.58);
+    fill: rgba(255, 255, 255, 0.8);
     stroke: rgba(0, 121, 209, 0.4);
     stroke-width: 1;
 }
@@ -1807,7 +1807,7 @@ body {
     white-space: nowrap;
     padding: 2px 8px 2px 4px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.8);
     box-shadow: 0 1px 4px rgba(12, 31, 61, 0.12);
     transition:
         left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
@@ -1826,7 +1826,7 @@ body {
     height: 22px;
     object-fit: contain;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.8);
     border-radius: 3px;
     padding: 2px;
     box-sizing: border-box;
@@ -1923,9 +1923,9 @@ body {
     border-radius: 14px;
     background: linear-gradient(
         145deg,
-        rgba(255, 255, 255, 0.94) 0%,
-        rgba(147, 197, 253, 0.42) 48%,
-        rgba(0, 121, 209, 0.28) 100%
+        rgba(255, 255, 255, 0.8) 0%,
+        rgba(147, 197, 253, 0.8) 48%,
+        rgba(0, 121, 209, 0.8) 100%
     );
     border: 2px solid rgba(0, 121, 209, 0.5);
     box-shadow: 0 8px 24px rgba(12, 31, 61, 0.18);
@@ -1976,7 +1976,7 @@ body {
     align-items: center;
     padding: 0 10px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.8);
     box-shadow: 0 2px 8px rgba(12, 31, 61, 0.1);
     transition: top 3s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1993,7 +1993,7 @@ body {
     width: 28px;
     height: 28px;
     object-fit: contain;
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.8);
     border-radius: 4px;
     padding: 2px;
     box-sizing: border-box;
