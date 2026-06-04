@@ -25,6 +25,22 @@
     const WIND_ARROW_OPACITY = 0.42;
     const WIND_SPEED_MIN_KMH = 0;
     const WIND_SPEED_MAX_KMH = 45;
+    const FORECAST_CHART_HOURS = 8;
+    const RAIN_CHART_MAX_MM = 2;
+
+    const CHART_SIZE = { w: 328, h: 76 };
+    const CHART_PAD = { l: 38, r: 8, t: 18, b: 22 };
+    const CHART_THEME = {
+        line: '#0079d1',
+        lineSoft: 'rgba(0, 121, 209, 0.45)',
+        fill: 'rgba(0, 121, 209, 0.2)',
+        grid: 'rgba(0, 96, 191, 0.22)',
+        bar: '#0079d1',
+        barDeep: '#004a99',
+        text: '#0060bf',
+        textDark: '#0c1f3d',
+        white: '#ffffff',
+    };
     const ZOOM_IN_FACTOR = 1.386 * 1.1;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
@@ -184,7 +200,7 @@
                 'wind_speed_10m',
                 'wind_direction_10m',
             ].join(','),
-            forecast_hours: '4',
+            forecast_hours: String(FORECAST_CHART_HOURS),
             timezone: TIMEZONE,
             wind_speed_unit: 'kmh',
             precipitation_unit: 'mm',
@@ -240,6 +256,189 @@
             );
         }
         list.innerHTML = items.join('');
+    }
+
+    function escapeXml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function sliceHourlyForecast(hourly, hours) {
+        if (!hourly?.time?.length) return null;
+        const n = Math.min(hours, hourly.time.length);
+        return {
+            labels: hourly.time.slice(0, n).map((t, i) => (i % 2 === 0 ? formatHour(t) : '')),
+            temp: hourly.temperature_2m.slice(0, n).map(Number),
+            wind: hourly.wind_speed_10m.slice(0, n).map(Number),
+            rain: hourly.precipitation.slice(0, n).map((v) => Number(v) || 0),
+        };
+    }
+
+    function chartPlotRect() {
+        const { w, h } = CHART_SIZE;
+        const p = CHART_PAD;
+        return {
+            w,
+            h,
+            plotW: w - p.l - p.r,
+            plotH: h - p.t - p.b,
+            ...p,
+        };
+    }
+
+    function chartX(index, count, rect) {
+        if (count <= 1) return rect.l + rect.plotW / 2;
+        return rect.l + (index / (count - 1)) * rect.plotW;
+    }
+
+    function chartY(value, yMin, yMax, rect) {
+        const span = yMax - yMin || 1;
+        return rect.t + rect.plotH - ((value - yMin) / span) * rect.plotH;
+    }
+
+    function chartGridSvg(rect, yMin, yMax, yUnit) {
+        const lines = [];
+        const labels = [];
+        for (let i = 0; i <= 2; i++) {
+            const t = i / 2;
+            const yVal = yMin + (yMax - yMin) * (1 - t);
+            const y = rect.t + t * rect.plotH;
+            lines.push(
+                `<line x1="${rect.l}" y1="${y.toFixed(1)}" x2="${(rect.l + rect.plotW).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${CHART_THEME.grid}" stroke-width="1"/>`,
+            );
+            if (i === 0 || i === 2) {
+                const label =
+                    i === 0
+                        ? `${Math.round(yMax)}${yUnit}`
+                        : `${Math.round(yMin)}${yUnit}`;
+                labels.push(
+                    `<text x="${rect.l - 5}" y="${(y + 3).toFixed(1)}" text-anchor="end" class="kri-weather-chart__axis">${escapeXml(label)}</text>`,
+                );
+            }
+        }
+        return lines.join('') + labels.join('');
+    }
+
+    function chartXLabelsSvg(labels, count, rect) {
+        let out = '';
+        for (let i = 0; i < count; i++) {
+            if (!labels[i]) continue;
+            const x = chartX(i, count, rect);
+            out += `<text x="${x.toFixed(1)}" y="${(rect.t + rect.plotH + 14).toFixed(1)}" text-anchor="middle" class="kri-weather-chart__axis">${escapeXml(labels[i])}</text>`;
+        }
+        return out;
+    }
+
+    function buildLineChartSvg({ title, values, labels, yMin, yMax, yUnit }) {
+        const rect = chartPlotRect();
+        const n = values.length;
+        if (n < 1) {
+            return `<svg viewBox="0 0 ${rect.w} ${rect.h}" class="kri-weather-chart__svg" aria-hidden="true"></svg>`;
+        }
+        const y0 = chartY(yMin, yMin, yMax, rect);
+        const pts = values.map((v, i) => ({
+            x: chartX(i, n, rect),
+            y: chartY(v, yMin, yMax, rect),
+        }));
+        const linePath = pts
+            .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+            .join(' ');
+        const areaPath =
+            linePath +
+            ` L${pts[n - 1].x.toFixed(1)},${y0.toFixed(1)} L${pts[0].x.toFixed(1)},${y0.toFixed(1)} Z`;
+
+        return (
+            `<svg viewBox="0 0 ${rect.w} ${rect.h}" class="kri-weather-chart__svg" role="img" aria-label="${escapeXml(title)}">` +
+            `<text x="${rect.l}" y="12" class="kri-weather-chart__title">${escapeXml(title)}</text>` +
+            chartGridSvg(rect, yMin, yMax, yUnit) +
+            `<path d="${areaPath}" fill="${CHART_THEME.fill}"/>` +
+            `<path d="${linePath}" fill="none" stroke="${CHART_THEME.line}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+            pts
+                .map(
+                    (p) =>
+                        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${CHART_THEME.white}" stroke="${CHART_THEME.line}" stroke-width="2"/>`,
+                )
+                .join('') +
+            chartXLabelsSvg(labels, n, rect) +
+            `</svg>`
+        );
+    }
+
+    function buildBarChartSvg({ title, values, labels, yMax, yUnit }) {
+        const rect = chartPlotRect();
+        const n = values.length;
+        if (n < 1) {
+            return `<svg viewBox="0 0 ${rect.w} ${rect.h}" class="kri-weather-chart__svg" aria-hidden="true"></svg>`;
+        }
+        const yMin = 0;
+        const slot = rect.plotW / n;
+        const barW = Math.max(6, slot * 0.62);
+        let bars = '';
+        for (let i = 0; i < n; i++) {
+            const v = Math.min(yMax, Math.max(0, values[i]));
+            const x = rect.l + i * slot + (slot - barW) / 2;
+            const yTop = chartY(v, yMin, yMax, rect);
+            const yBase = chartY(0, yMin, yMax, rect);
+            const h = Math.max(0, yBase - yTop);
+            const fill = v >= yMax * 0.85 ? CHART_THEME.barDeep : CHART_THEME.bar;
+            bars += `<rect x="${x.toFixed(1)}" y="${yTop.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}"/>`;
+        }
+
+        return (
+            `<svg viewBox="0 0 ${rect.w} ${rect.h}" class="kri-weather-chart__svg" role="img" aria-label="${escapeXml(title)}">` +
+            `<text x="${rect.l}" y="12" class="kri-weather-chart__title">${escapeXml(title)}</text>` +
+            chartGridSvg(rect, yMin, yMax, yUnit) +
+            bars +
+            chartXLabelsSvg(labels, n, rect) +
+            `</svg>`
+        );
+    }
+
+    function renderForecastCharts(hourly) {
+        const tempHost = el('kriWeatherChartTemp');
+        const windHost = el('kriWeatherChartWind');
+        const rainHost = el('kriWeatherChartRain');
+        if (!tempHost || !windHost || !rainHost) return;
+
+        const data = sliceHourlyForecast(hourly, FORECAST_CHART_HOURS);
+        if (!data) {
+            tempHost.innerHTML = '';
+            windHost.innerHTML = '';
+            rainHost.innerHTML = '';
+            return;
+        }
+
+        const tempMin = Math.floor(Math.min(...data.temp) - 1);
+        const tempMax = Math.ceil(Math.max(...data.temp) + 1);
+        tempHost.innerHTML = buildLineChartSvg({
+            title: 'Temperature — next 8 hr',
+            values: data.temp,
+            labels: data.labels,
+            yMin: tempMin,
+            yMax: Math.max(tempMin + 1, tempMax),
+            yUnit: '°',
+        });
+
+        const windMax = Math.ceil(Math.max(8, ...data.wind) + 2);
+        windHost.innerHTML = buildLineChartSvg({
+            title: 'Wind (km/h) — next 8 hr',
+            values: data.wind,
+            labels: data.labels,
+            yMin: 0,
+            yMax: windMax,
+            yUnit: '',
+        });
+
+        rainHost.innerHTML = buildBarChartSvg({
+            title: 'Rainfall (0–2 mm/h) — next 8 hr',
+            values: data.rain,
+            labels: data.labels,
+            yMax: RAIN_CHART_MAX_MM,
+            yUnit: ' mm',
+        });
     }
 
     function windSpeedToColor(speedKmh) {
@@ -534,6 +733,7 @@
 
             renderCurrent(centerData.current);
             renderForecast(centerData.hourly);
+            renderForecastCharts(centerData.hourly);
             renderMapOverlays(gridResults, centerData.current);
 
             const updated = el('kriWeatherUpdated');
@@ -695,6 +895,11 @@
             `<span>${WIND_SPEED_MIN_KMH}</span>` +
             `<span>${WIND_SPEED_MAX_KMH}</span>` +
             '</div></div>' +
+            '<div class="kri-weather-charts" id="kriWeatherCharts" aria-hidden="true">' +
+            '<div class="kri-weather-chart" id="kriWeatherChartTemp"></div>' +
+            '<div class="kri-weather-chart" id="kriWeatherChartWind"></div>' +
+            '<div class="kri-weather-chart" id="kriWeatherChartRain"></div>' +
+            '</div>' +
             '<p class="kri-weather-legend" id="kriWeatherLegend">' +
             'Wind arrows = direction at 10 m. Map labels = speed (km/h). Colour: blue (light) → red (strong). Rain streaks = rainfall.' +
             '</p>'
