@@ -415,7 +415,14 @@ body {
     opacity: 0.7;
 }
 
-/* —— KRI (aligned to public/assets/vmix/kri/*.png & KRI_*_Ref.png) —— */
+/* —— KRI (aligned to public/assets/vmix/kri/*.png & kri-safety-map.css) —— */
+[data-vmix-theme='kri'] {
+    --kri-brand-blue: #0079d1;
+    --kri-brand-blue-dark: #0060bf;
+    --kri-brand-blue-light: #38bdf8;
+    --kri-brand-white: #ffffff;
+}
+
 [data-vmix-theme='kri'] .vg-layer--title {
     left: 0;
     right: 0;
@@ -687,11 +694,13 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-schedule-row--current {
-    color: #d4af37;
+    color: var(--kri-brand-blue-light);
+    background: rgba(0, 121, 209, 0.12);
+    box-shadow: inset 3px 0 0 var(--kri-brand-blue);
 }
 
 [data-vmix-theme='kri'] .vg-schedule-row--current .vg-schedule-event {
-    color: #fff;
+    color: var(--kri-brand-white);
 }
 
 [data-vmix-theme='kri'] .vg-schedule-time {
@@ -1315,15 +1324,15 @@ body {
     margin: 0 24px 20px;
     padding: 14px 20px 12px;
     border-radius: 12px;
-    border: 1px solid rgba(212, 175, 55, 0.45);
+    border: 1px solid rgba(0, 121, 209, 0.45);
     background: linear-gradient(
         180deg,
-        rgba(26, 39, 68, 0.2) 0%,
-        rgba(10, 22, 40, 0.2) 100%
+        rgba(0, 121, 209, 0.16) 0%,
+        rgba(6, 28, 58, 0.22) 100%
     );
     box-shadow:
         0 -8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(212, 175, 55, 0.15);
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(4px);
     display: flex;
     flex-direction: column;
@@ -1344,7 +1353,7 @@ body {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #d4af37;
+    color: var(--kri-brand-white, #ffffff);
 }
 
 .vg-speed-chart__meta {
@@ -1373,7 +1382,7 @@ body {
 
 .vg-speed-chart__plot-bg {
     fill: rgba(0, 0, 0, 0.12);
-    stroke: rgba(212, 175, 55, 0.2);
+    stroke: rgba(0, 121, 209, 0.28);
     stroke-width: 1;
 }
 
@@ -1384,7 +1393,7 @@ body {
 }
 
 .vg-speed-chart__marker-line {
-    stroke: rgba(212, 175, 55, 0.35);
+    stroke: rgba(0, 121, 209, 0.4);
     stroke-width: 1.2;
 }
 
@@ -1397,7 +1406,7 @@ body {
 }
 
 .vg-speed-chart__axis-title {
-    fill: rgba(212, 175, 55, 0.85);
+    fill: rgba(56, 189, 248, 0.92);
     font-size: 11px;
     font-family: 'Segoe UI', system-ui, sans-serif;
     font-weight: 700;
@@ -1446,6 +1455,6 @@ body {
 
 .vg-speed-chart__legend-rank {
     font-size: 11px;
-    color: rgba(212, 175, 55, 0.9);
+    color: rgba(56, 189, 248, 0.95);
     font-weight: 700;
 }

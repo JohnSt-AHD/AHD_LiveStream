@@ -194,7 +194,7 @@
       "id": "GRE",
       "label": "GRE",
       "rank": 3,
-      "color": "#b91c1c",
+      "color": "#1e40af",
       "points": [
         {
           "distance": 0,
@@ -366,7 +366,7 @@
       "id": "ESP1",
       "label": "ESP1",
       "rank": 1,
-      "color": "#d4af37",
+      "color": "#0079d1",
       "points": [
         {
           "distance": 0,
@@ -538,7 +538,7 @@
       "id": "SLO",
       "label": "SLO",
       "rank": 2,
-      "color": "#e8dcc4",
+      "color": "#e0f2fe",
       "points": [
         {
           "distance": 0,
@@ -882,7 +882,7 @@
       "id": "BRA",
       "label": "BRA",
       "rank": 5,
-      "color": "#f5c542",
+      "color": "#38bdf8",
       "points": [
         {
           "distance": 0,
