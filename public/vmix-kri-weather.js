@@ -18,7 +18,11 @@
     const TIMEZONE = 'Pacific/Auckland';
     const INTRO_MS = 650;
     const OUTRO_MS = 650;
-    const RANDOM_WIND_COUNT = 22;
+    /** Evenly spaced display sites (×4 vs original 22); wind from nearest grid sample. */
+    const WIND_SITE_COUNT = 88;
+    const WIND_ARROW_SCALE = 2;
+    const WIND_SPEED_MIN_KMH = 0;
+    const WIND_SPEED_MAX_KMH = 45;
     const ZOOM_IN_FACTOR = 1.386 * 1.1;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
@@ -236,24 +240,41 @@
         list.innerHTML = items.join('');
     }
 
-    function windArrowHtml(speedKmh, dirFromDeg, ghost) {
-        const len = Math.min(52, Math.max(16, speedKmh * 2.8));
+    function windSpeedToColor(speedKmh) {
+        const span = WIND_SPEED_MAX_KMH - WIND_SPEED_MIN_KMH;
+        const s =
+            typeof speedKmh === 'number' && !Number.isNaN(speedKmh)
+                ? speedKmh
+                : WIND_SPEED_MIN_KMH;
+        const t = Math.min(1, Math.max(0, (s - WIND_SPEED_MIN_KMH) / span));
+        const hue = 240 * (1 - t);
+        return `hsl(${hue}, 88%, 48%)`;
+    }
+
+    function windArrowHtml(speedKmh, dirFromDeg) {
+        const color = windSpeedToColor(speedKmh);
+        const len = Math.min(
+            52 * WIND_ARROW_SCALE,
+            Math.max(16 * WIND_ARROW_SCALE, speedKmh * 2.8 * WIND_ARROW_SCALE),
+        );
+        const shaftW = Math.max(8 * WIND_ARROW_SCALE, len - 10 * WIND_ARROW_SCALE);
         const blowTo = dirFromDeg + 180;
-        const ghostClass = ghost ? ' kri-wind-arrow--ghost' : '';
         return (
-            `<div class="kri-wind-arrow${ghostClass}" style="transform: rotate(${blowTo}deg); width:${len}px">` +
-            `<span class="kri-wind-arrow__shaft" style="width:${Math.max(8, len - 10)}px"></span>` +
-            `<span class="kri-wind-arrow__head"></span>` +
+            `<div class="kri-wind-arrow" style="transform: rotate(${blowTo}deg); width:${len}px">` +
+            `<span class="kri-wind-arrow__shaft" style="width:${shaftW}px;background:${color}"></span>` +
+            `<span class="kri-wind-arrow__head" style="border-left-color:${color}"></span>` +
             `</div>`
         );
     }
 
-    function windIcon(speedKmh, dirFromDeg, ghost) {
+    function windIcon(speedKmh, dirFromDeg) {
+        const w = 56 * WIND_ARROW_SCALE;
+        const h = 16 * WIND_ARROW_SCALE;
         return L.divIcon({
-            className: ghost ? 'kri-wind-arrow-wrap kri-wind-arrow-wrap--ghost' : 'kri-wind-arrow-wrap',
-            html: windArrowHtml(speedKmh, dirFromDeg, ghost),
-            iconSize: [56, 16],
-            iconAnchor: [28, 8],
+            className: 'kri-wind-arrow-wrap',
+            html: windArrowHtml(speedKmh, dirFromDeg),
+            iconSize: [w, h],
+            iconAnchor: [w / 2, h / 2],
         });
     }
 
@@ -299,14 +320,22 @@
         return { south, north, west, east };
     }
 
-    function initRandomWindSites() {
+    function initEvenWindSites() {
         const b = getWindBounds();
+        const count = WIND_SITE_COUNT;
+        const latSpan = b.north - b.south;
+        const lonSpan = b.east - b.west;
+        const aspect = lonSpan / Math.max(latSpan, 1e-9);
+        const cols = Math.max(1, Math.round(Math.sqrt(count * aspect)));
+        const rows = Math.max(1, Math.ceil(count / cols));
         randomWindSites = [];
-        for (let i = 0; i < RANDOM_WIND_COUNT; i++) {
-            randomWindSites.push({
-                lat: b.south + Math.random() * (b.north - b.south),
-                lon: b.west + Math.random() * (b.east - b.west),
-            });
+        for (let r = 0; r < rows && randomWindSites.length < count; r++) {
+            for (let c = 0; c < cols && randomWindSites.length < count; c++) {
+                randomWindSites.push({
+                    lat: b.south + ((r + 0.5) / rows) * latSpan,
+                    lon: b.west + ((c + 0.5) / cols) * lonSpan,
+                });
+            }
         }
     }
 
@@ -390,7 +419,7 @@
             const dir = cur.wind_direction_10m + (Math.random() - 0.5) * 30;
             decorativeWindLayer.addLayer(
                 L.marker([site.lat, site.lon], {
-                    icon: windIcon(speed, dir, true),
+                    icon: windIcon(speed, dir),
                     interactive: false,
                 }),
             );
@@ -408,7 +437,7 @@
             const latlng = [pt.lat, pt.lon];
             windLayer.addLayer(
                 L.marker(latlng, {
-                    icon: windIcon(cur.wind_speed_10m, cur.wind_direction_10m, false),
+                    icon: windIcon(cur.wind_speed_10m, cur.wind_direction_10m),
                     interactive: false,
                 }),
             );
@@ -544,7 +573,7 @@
         }).addTo(map);
 
         mountCourseOverlay();
-        initRandomWindSites();
+        initEvenWindSites();
 
         const b = getWindBounds();
         map.setView([(b.south + b.north) / 2, (b.west + b.east) / 2], LAKE.zoom, {
@@ -603,8 +632,15 @@
             '</section>' +
             '<p class="kri-weather-status" id="kriWeatherStatus"></p>' +
             '</aside>' +
+            '<div class="kri-weather-wind-legend" id="kriWeatherWindLegend" aria-hidden="true">' +
+            '<span class="kri-weather-wind-legend__title">Wind speed (km/h)</span>' +
+            '<div class="kri-weather-wind-legend__bar"></div>' +
+            '<div class="kri-weather-wind-legend__labels">' +
+            `<span>${WIND_SPEED_MIN_KMH}</span>` +
+            `<span>${WIND_SPEED_MAX_KMH}</span>` +
+            '</div></div>' +
             '<p class="kri-weather-legend" id="kriWeatherLegend">' +
-            'Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Animated streaks = rainfall.' +
+            'Wind arrows = direction at 10 m. Map labels = speed (km/h). Colour: blue (light) → red (strong). Rain streaks = rainfall.' +
             '</p>'
         );
     }

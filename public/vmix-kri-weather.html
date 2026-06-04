@@ -38,8 +38,16 @@
             </section>
             <p class="kri-weather-status" id="kriWeatherStatus"></p>
         </aside>
+        <div class="kri-weather-wind-legend" id="kriWeatherWindLegend" aria-hidden="true">
+            <span class="kri-weather-wind-legend__title">Wind speed (km/h)</span>
+            <div class="kri-weather-wind-legend__bar"></div>
+            <div class="kri-weather-wind-legend__labels">
+                <span>0</span>
+                <span>45</span>
+            </div>
+        </div>
         <p class="kri-weather-legend" id="kriWeatherLegend">
-            Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Animated streaks = rainfall.
+            Wind arrows = direction at 10 m. Map labels = speed (km/h). Colour: blue (light) → red (strong). Rain streaks = rainfall.
         </p>
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
