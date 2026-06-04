@@ -1984,18 +1984,33 @@ function vgRenderSchedule(layer, raceParam) {
     const shell = vgKriCreateShell();
     const panel = vgKriCreatePanel('schedule');
 
-    const head = vgEl('div', 'vg-kri-head vg-schedule-head');
-    head.dataset.vgLayout = 'schedule-head';
-    head.appendChild(vgEl('h2', 'vg-kri-heading vg-schedule-title', 'Schedule'));
-    panel.appendChild(head);
+    const metaText = current
+        ? `Race ${current.race} · ${current.round}${current.division ? ` · Div ${current.division}` : ''}`
+        : '';
+    vgKriAppendHead(panel, {
+        kicker: 'Upcoming',
+        title: 'Schedule',
+        meta: metaText,
+        layoutId: 'schedule-head',
+        parts: {
+            kicker: 'schedule-kicker',
+            title: 'schedule-title',
+            meta: 'schedule-meta',
+        },
+    });
 
-    const cols = vgEl('div', 'vg-kri-cols vg-schedule-cols');
-    cols.dataset.vgLayout = 'schedule-cols';
-    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--time', 'Time'));
-    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--race', 'Race'));
-    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--event', 'Event'));
-    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--round', 'Round'));
-    panel.appendChild(cols);
+    const body = vgEl('div', 'vg-kri-draw-body');
+    body.dataset.vgLayout = 'schedule-body';
+    vgKriAppendCols(
+        body,
+        [
+            { text: 'Time', className: 'vg-schedule-col--time' },
+            { text: 'Race', className: 'vg-schedule-col--race' },
+            { text: 'Event', className: 'vg-schedule-col--event' },
+            { text: 'Round', className: 'vg-schedule-col--round' },
+        ],
+        { layoutId: 'schedule-cols' },
+    );
 
     const list = vgEl('ul', 'vg-schedule-rows');
     list.dataset.vgLayout = 'schedule-rows';
@@ -2025,7 +2040,8 @@ function vgRenderSchedule(layer, raceParam) {
             list.appendChild(li);
         }
     }
-    panel.appendChild(list);
+    body.appendChild(list);
+    panel.appendChild(body);
     shell.appendChild(panel);
     layer.appendChild(shell);
 }

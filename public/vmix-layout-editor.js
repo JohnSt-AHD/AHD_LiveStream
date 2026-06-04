@@ -34,6 +34,15 @@
             { id: 'results-logo', label: 'Results — school logos', target: 'results-logo' },
             { id: 'results-crew', label: 'Results — crew names', target: 'results-crew' },
         ],
+        schedule: [
+            { id: 'schedule-head', label: 'Schedule — header block (all)', posMode: 'absolute' },
+            { id: 'schedule-kicker', label: 'Schedule — kicker', posMode: 'transform' },
+            { id: 'schedule-title', label: 'Schedule — title', posMode: 'transform' },
+            { id: 'schedule-meta', label: 'Schedule — current race line', posMode: 'transform' },
+            { id: 'schedule-body', label: 'Schedule — columns + rows block', posMode: 'transform' },
+            { id: 'schedule-cols', label: 'Schedule — column headers', posMode: 'transform' },
+            { id: 'schedule-rows', label: 'Schedule — race list', posMode: 'transform' },
+        ],
         leader: [
             { id: 'leader-wrap', label: 'Leader — overlay root' },
             { id: 'leader-logo', label: 'Leader — school logo' },
@@ -54,6 +63,11 @@
             'kri-head': 'results-head',
             'kri-cols': 'results-cols',
             'kri-draw-body': 'results-body',
+        },
+        schedule: {
+            'kri-head': 'schedule-head',
+            'kri-cols': 'schedule-cols',
+            'kri-draw-body': 'schedule-body',
         },
     };
 
@@ -686,6 +700,7 @@
                 <option value="lower">Lower third</option>
                 <option value="draw">Draw</option>
                 <option value="results">Results</option>
+                <option value="schedule">Schedule</option>
             </select>
             <label for="vgLayoutRegion">Region</label>
             <select id="vgLayoutRegion"></select>
@@ -820,7 +835,7 @@
             l: 'lower',
             d: 'draw',
             r: 'results',
-            w: 'leader',
+            w: editor.theme === 'kri' ? 'schedule' : 'leader',
             g: 'speed',
         };
         editor.graphic = aliases[g] || g;

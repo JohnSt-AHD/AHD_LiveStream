@@ -604,17 +604,20 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-kicker,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-kicker {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-kicker,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-kicker {
     color: #0c1f3d;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-heading,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-heading {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-heading,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-heading {
     color: #0c1f3d;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw,
-[data-vmix-theme='kri'] .vg-kri-panel--results {
+[data-vmix-theme='kri'] .vg-kri-panel--results,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule {
     --kri-lane-logo-box: 35px;
     --kri-draw-grid-cols: 40px var(--kri-lane-logo-box) max-content;
     --kri-results-grid-cols: 40px var(--kri-lane-logo-box) minmax(0, 1fr) 84px;
@@ -623,7 +626,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-cols,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-cols {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-cols,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-cols {
     grid-template-columns: var(--kri-draw-grid-cols);
     column-gap: 20px;
     margin-top: 20px;
@@ -634,7 +638,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body {
     width: fit-content;
     margin-top: 30px;
     transform: translate(
@@ -644,7 +649,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-cols,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-cols {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-cols,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-kri-cols {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -686,7 +692,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-lanes,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-rows {
     margin-top: 0;
     padding-left: 20px;
     padding-right: 20px;
@@ -964,28 +971,56 @@ body {
 }
 
 /* Schedule */
-[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-heading {
-    margin: 0 0 20px;
+[data-vmix-theme='kri'] .vg-kri-panel--schedule {
+    --kri-schedule-col-time: 100px;
+    --kri-schedule-col-race: 108px;
+    --kri-schedule-col-round: 140px;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-cols {
-    grid-template-columns: 100px 108px minmax(0, 1fr) 140px;
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--time,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-time {
+    flex: 0 0 var(--kri-schedule-col-time);
+    grid-column: auto;
 }
 
-[data-vmix-theme='kri'] .vg-schedule-rows {
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--race,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-race {
+    flex: 0 0 var(--kri-schedule-col-race);
+    grid-column: auto;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--event,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-event {
+    flex: 1 1 auto;
+    min-width: 0;
+    grid-column: auto;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--round,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-round {
+    flex: 0 0 var(--kri-schedule-col-round);
+    grid-column: auto;
+    text-align: right;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-rows {
     flex: 1;
     min-height: 0;
     list-style: none;
     margin: 8px 0 0;
     padding: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
-[data-vmix-theme='kri'] .vg-schedule-row {
-    display: grid;
-    grid-template-columns: 100px 108px minmax(0, 1fr) 140px;
-    column-gap: 14px;
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-row {
+    display: flex;
+    flex-direction: row;
     align-items: center;
+    gap: 14px;
+    width: fit-content;
     min-height: 48px;
     font-size: 20px;
     font-weight: 700;
@@ -1001,11 +1036,6 @@ body {
 
 [data-vmix-theme='kri'] .vg-schedule-row--current .vg-schedule-event {
     color: var(--kri-brand-white);
-}
-
-[data-vmix-theme='kri'] .vg-schedule-col--round,
-[data-vmix-theme='kri'] .vg-schedule-round {
-    text-align: right;
 }
 
 [data-vmix-theme='kri'] .vg-schedule-time {
@@ -1030,7 +1060,7 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-schedule-row--empty {
-    grid-column: 1 / -1;
+    width: 100%;
     justify-content: center;
     font-size: 24px;
     opacity: 0.75;

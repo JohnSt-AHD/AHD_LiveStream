@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 3;
+    const LAYOUT_BUILD = 4;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -98,6 +98,40 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-crew': {
+                    color: 'rgb(255, 255, 255)',
+                },
+            },
+            schedule: {
+                'schedule-head': {
+                    left: '401px',
+                    top: '298px',
+                    width: '935px',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'schedule-kicker': {
+                    transform: 'translate(-345px, -236px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'schedule-title': {
+                    width: '900px',
+                    transform: 'translate(-345px, -226px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'schedule-meta': {
+                    transform: 'translate(-345px, -216px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'schedule-body': {
+                    transform: 'translate(-200px, -100px)',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'schedule-cols': {
+                    transform: 'translate(212px, 239px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'schedule-rows': {
+                    width: '900px',
+                    transform: 'translate(212px, 258px)',
                     color: 'rgb(255, 255, 255)',
                 },
             },
@@ -256,6 +290,12 @@
         'results-body',
         'results-cols',
         'results-lanes',
+        'schedule-kicker',
+        'schedule-title',
+        'schedule-meta',
+        'schedule-body',
+        'schedule-cols',
+        'schedule-rows',
     ]);
 
     function sanitizeRegionProps(id, props, isTarget = false) {
