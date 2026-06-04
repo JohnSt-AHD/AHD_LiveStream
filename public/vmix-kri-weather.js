@@ -19,7 +19,7 @@
     const INTRO_MS = 650;
     const OUTRO_MS = 650;
     const RANDOM_WIND_COUNT = 22;
-    const ZOOM_IN_FACTOR = 1.26;
+    const ZOOM_IN_FACTOR = 1.386;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
     const WMO_LABELS = {
@@ -256,11 +256,16 @@
     }
 
     function windSpeedIcon(speedKmh) {
+        const speed = Math.round(speedKmh);
         return L.divIcon({
             className: 'kri-weather-wind-speed-wrap',
-            html: `<div class="kri-weather-wind-speed-label">${Math.round(speedKmh)}</div>`,
-            iconSize: [44, 22],
-            iconAnchor: [22, 11],
+            html:
+                `<div class="kri-weather-wind-speed-label">` +
+                `<span class="kri-weather-wind-speed-value">${speed}</span>` +
+                `<span class="kri-weather-wind-speed-unit">km/h</span>` +
+                `</div>`,
+            iconSize: [54, 34],
+            iconAnchor: [27, 17],
         });
     }
 
@@ -312,26 +317,45 @@
         return max;
     }
 
+    function isRainyWeatherCode(code) {
+        const w = Number(code);
+        if (!Number.isFinite(w)) return false;
+        return (w >= 51 && w <= 67) || (w >= 80 && w <= 82) || w >= 95;
+    }
+
+    function rainFxIntensity(gridData, centerCurrent) {
+        const maxMm = maxPrecipMm(gridData, centerCurrent);
+        if (maxMm > 0.01) {
+            return { show: true, intensity: Math.min(1, Math.max(0.35, maxMm / 1.8)) };
+        }
+        const samples = [centerCurrent, ...gridData.map((pt) => pt.data?.current)].filter(Boolean);
+        if (samples.some((c) => isRainyWeatherCode(c.weather_code))) {
+            return { show: true, intensity: 0.4 };
+        }
+        return { show: false, intensity: 0 };
+    }
+
     function createRainCluster(intensity) {
         const cluster = document.createElement('div');
         cluster.className = 'kri-weather-rain-cluster';
-        cluster.style.left = `${4 + Math.random() * 88}%`;
-        cluster.style.top = `${4 + Math.random() * 88}%`;
-        cluster.style.setProperty('--drift-x', `${24 + Math.random() * 48}px`);
-        cluster.style.setProperty('--drift-y', `${12 + Math.random() * 22}px`);
-        cluster.style.setProperty('--drift-duration', `${12 + Math.random() * 12}s`);
-        cluster.style.setProperty('--cluster-opacity', String(0.3 + intensity * 0.5));
+        cluster.style.left = `${2 + Math.random() * 90}%`;
+        cluster.style.top = `${2 + Math.random() * 90}%`;
+        cluster.style.setProperty('--drift-x', `${30 + Math.random() * 55}px`);
+        cluster.style.setProperty('--drift-y', `${14 + Math.random() * 28}px`);
+        cluster.style.setProperty('--drift-duration', `${10 + Math.random() * 10}s`);
+        cluster.style.setProperty('--cluster-opacity', String(0.55 + intensity * 0.4));
 
-        const streaks = Math.round(4 + intensity * 16);
+        const streaks = Math.round(6 + intensity * 22);
         for (let i = 0; i < streaks; i++) {
             const streak = document.createElement('span');
             streak.className = 'kri-weather-rain-streak';
             streak.style.left = `${Math.random() * 100}%`;
             streak.style.top = `${Math.random() * 100}%`;
-            streak.style.height = `${6 + Math.random() * 10}px`;
-            streak.style.setProperty('--pulse-duration', `${0.8 + Math.random() * 1.2}s`);
-            streak.style.setProperty('--streak-opacity', String(0.35 + intensity * 0.55));
-            streak.style.animationDelay = `${Math.random() * 2}s`;
+            streak.style.width = `${3 + Math.random() * 2}px`;
+            streak.style.height = `${16 + Math.random() * 20}px`;
+            streak.style.setProperty('--pulse-duration', `${0.7 + Math.random() * 1}s`);
+            streak.style.setProperty('--streak-opacity', String(0.55 + intensity * 0.4));
+            streak.style.animationDelay = `${Math.random() * 1.8}s`;
             cluster.appendChild(streak);
         }
         return cluster;
@@ -341,12 +365,11 @@
         const fx = el('kriWeatherRainFx');
         if (!fx) return;
         fx.replaceChildren('');
-        const maxMm = maxPrecipMm(gridData, centerCurrent);
-        if (maxMm <= 0.05) return;
-        const intensity = Math.min(1, maxMm / 2.5);
-        const clusterCount = Math.round(3 + intensity * 11);
+        const { show, intensity } = rainFxIntensity(gridData, centerCurrent);
+        if (!show) return;
+        const clusterCount = Math.round(5 + intensity * 14);
         for (let c = 0; c < clusterCount; c++) {
-            fx.appendChild(createRainCluster(intensity * (0.85 + Math.random() * 0.3)));
+            fx.appendChild(createRainCluster(intensity * (0.88 + Math.random() * 0.24)));
         }
     }
 
