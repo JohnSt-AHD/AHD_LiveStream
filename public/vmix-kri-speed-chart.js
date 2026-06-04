@@ -13,7 +13,9 @@
     const POST_RACE_MS = 2000;
     const TRACE_OPACITY = 0.92;
     const LOGO_PLACEHOLDER = 'assets/school-logos/placeholder-white.svg';
-    const LEGEND_ROW_PX = 28;
+    const LEGEND_ROW_PX = 38;
+    const LEGEND_MIN_GAP_PX = 40;
+    const LEGEND_EDGE_PAD_PX = 16;
 
     let panel = null;
     let activeRaceContext = null;
@@ -160,18 +162,26 @@
             };
         });
         const raceDurationSec = Math.max(0, ...boats.map((b) => b.finishTime));
+        const w = 1680;
+        const h = 260;
+        const padLeft = 52;
+        const padRight = Math.round(w * 0.02) + 36;
+        const padBottom = 28;
+        const chartTop = 8;
         return {
             data,
             boats,
             raceDurationSec,
             raceDurationMs: raceDurationSec * 1000,
             layout: {
-                w: 1680,
-                h: 260,
-                padLeft: 52,
-                padBottom: 28,
-                chartW: 1680 - 52 - 12,
-                chartH: 260 - 28 - 8,
+                w,
+                h,
+                padLeft,
+                padRight,
+                padBottom,
+                chartTop,
+                chartW: w - padLeft - padRight,
+                chartH: h - padBottom - chartTop,
             },
         };
     }
@@ -259,6 +269,42 @@
         return `+${m} m`;
     }
 
+    function getPlotYPxBounds(svg, layout) {
+        const { padLeft, chartW, chartH, chartTop = 0 } = layout;
+        return {
+            top: mapViewToPlotPx(padLeft, chartTop + LEGEND_EDGE_PAD_PX, svg, layout).y,
+            bottom: mapViewToPlotPx(
+                padLeft,
+                chartH - LEGEND_EDGE_PAD_PX,
+                svg,
+                layout,
+            ).y,
+        };
+    }
+
+    function resolveLegendTops(desiredTops, minY, maxY, minGap) {
+        if (!desiredTops.length) return [];
+        const sorted = desiredTops.map((top, i) => ({ top, i })).sort((a, b) => a.top - b.top);
+        for (let j = 1; j < sorted.length; j++) {
+            if (sorted[j].top < sorted[j - 1].top + minGap) {
+                sorted[j].top = sorted[j - 1].top + minGap;
+            }
+        }
+        const overflow = sorted[sorted.length - 1].top - maxY;
+        if (overflow > 0) {
+            for (const row of sorted) row.top -= overflow;
+        }
+        const underflow = minY - sorted[0].top;
+        if (underflow > 0) {
+            for (const row of sorted) row.top += underflow;
+        }
+        const tops = new Array(desiredTops.length);
+        sorted.forEach((row) => {
+            tops[row.i] = row.top;
+        });
+        return tops;
+    }
+
     function updateLegendPositions(tSec, opts = {}) {
         if (!panel || !chartState) return;
         const legend = document.getElementById('vgSpeedChartLegend');
@@ -270,21 +316,35 @@
         const standings = liveStandings(boats, tSec);
         const leaderDistance = standings[0]?.distance ?? 0;
         const rowCount = standings.length;
+        const yBounds = getPlotYPxBounds(svg, layout);
+        const placements = standings.map((entry, rank) => {
+            const head = headViewCoords(entry.boat, tSec, layout);
+            const px = mapViewToPlotPx(head.x, head.y, svg, layout);
+            return {
+                entry,
+                rank,
+                left: px.x + 12,
+                desiredTop: px.y + (rank - (rowCount - 1) / 2) * LEGEND_ROW_PX,
+            };
+        });
+        const resolvedTops = resolveLegendTops(
+            placements.map((p) => p.desiredTop),
+            yBounds.top,
+            yBounds.bottom,
+            LEGEND_MIN_GAP_PX,
+        );
 
-        standings.forEach((entry, rank) => {
-            const item = legend.querySelector(`.vg-speed-chart__legend-item[data-boat-idx="${entry.idx}"]`);
+        placements.forEach((place, idx) => {
+            const { entry, rank, left } = place;
+            const item = legend.querySelector(
+                `.vg-speed-chart__legend-item[data-boat-idx="${entry.idx}"]`,
+            );
             if (!item) return;
 
             if (!animate) item.style.transition = 'none';
 
-            const head = headViewCoords(entry.boat, tSec, layout);
-            const px = mapViewToPlotPx(head.x, head.y, svg, layout);
-            const left = px.x + 12;
-            const top =
-                px.y + (rank - (rowCount - 1) / 2) * LEGEND_ROW_PX;
-
             item.style.left = `${left}px`;
-            item.style.top = `${top}px`;
+            item.style.top = `${resolvedTops[idx]}px`;
             item.style.zIndex = String(100 - rank);
 
             if (!animate) {
@@ -346,8 +406,11 @@
                 `<line x1="${px}" y1="0" x2="${px}" y2="${chartH}" class="vg-speed-chart__marker-line" />`,
             );
             const label = dist === 0 ? 'Start' : dist === 2000 ? 'Finish' : `${dist}m`;
+            const anchor = dist === 0 ? 'start' : dist === 2000 ? 'end' : 'middle';
+            const labelX =
+                dist === 0 ? px + 2 : dist === 2000 ? px - 2 : px;
             parts.push(
-                `<text x="${px}" y="${chartH + 20}" class="vg-speed-chart__xlabel" text-anchor="middle">${label}</text>`,
+                `<text x="${labelX}" y="${chartH + 20}" class="vg-speed-chart__xlabel" text-anchor="${anchor}">${label}</text>`,
             );
         }
 
