@@ -107,16 +107,20 @@
       "category": "gps",
       "date": "2026-06-04",
       "title": "H6 dual-upload test — Recorder vs Traccar",
-      "summary": "Same ~22 km drive (~45 min) logged to RNZ Recorder (device H6) and Traccar (John Start) between 11:30–12:15 NZ time. Both tracks overlay on the map below; positions agree to within GPS noise.",
+      "summary": "Same ~22 km drive (~45 min) logged to RNZ Recorder (device H6) and Traccar (John Start) between 11:30–12:15 NZ time. Both tracks overlay on the map below; positions agree to within GPS noise. Fix spacing was ~1 Hz on both systems; Recorder had one 3.8 s gap in the whole session.",
       "metrics": [
         { "label": "Window (NZ)", "value": "11:30–12:15, 4 Jun" },
         { "label": "Distance", "value": "~22.1 km" },
         { "label": "Duration", "value": "~45 min" },
         { "label": "Recorder points", "value": "2,686" },
         { "label": "Traccar points", "value": "2,703" },
+        { "label": "Median fix gap (both)", "value": "1.0 s" },
         { "label": "Median position error", "value": "0 m" },
-        { "label": "Max fix gap (Recorder)", "value": "3.8 s" },
-        { "label": "Max fix gap (Traccar)", "value": "1.1 s" }
+        { "label": "Max fix gap (Recorder)", "value": "3.8 s (once)" },
+        { "label": "Max fix gap (Traccar)", "value": "1.1 s" },
+        { "label": "Recorder gaps > 2 s", "value": "3 (0.11% of fixes)" },
+        { "label": "Recorder gaps > 1.5 s", "value": "6 (~1 per 7 min)" },
+        { "label": "Traccar gaps > 1.5 s", "value": "0" }
       ],
       "map": {
         "tracksUrl": "data/documents-h6-traccar-2026-06-04.json",
@@ -138,12 +142,26 @@
           "labels": ["Recorder", "Traccar"],
           "values": [3.8, 1.1],
           "unit": "s"
+        },
+        {
+          "id": "gap-thresholds",
+          "type": "bar",
+          "title": "Long fix intervals in session (count)",
+          "labels": ["> 1.5 s", "> 2 s", "> 3 s"],
+          "datasets": [
+            { "label": "Recorder H6", "values": [6, 3, 1] },
+            { "label": "Traccar", "values": [0, 0, 0] }
+          ]
         }
       ],
       "notes": [
         "Traccar device John Start (id 36) received the same phone upload path as Recorder H6 — not a separate Traccar hardware unit named H6.",
         "Traccar speed is stored in knots; overlay maps convert to m/s (× 0.514).",
         "Tracks are nearly identical (~1 Hz). Traccar had slightly more points and shorter max gaps; median position difference was 0 m.",
+        "Gap rarity (Recorder): 99.9% of intervals were normal ~1 s spacing. The 3.81 s max gap occurred once at 12:11:24 NZ; two other gaps were ~2.0 s (11:44:12 and 11:50:37). Traccar had no gaps above 1.5 s.",
+        "Live map: you would not see two different trails — Altitude HD shows one source at a time (Traccar or Recorder toggle). The rare Recorder gap would look like a brief stick-and-jump, not a constant lag.",
+        "Perceived live lag on overlay maps is dominated by browser poll interval (default 10 s, min 3 s in hub settings), not the ~0.5 s timestamp difference between backends.",
+        "RNZ Recorder monitor dashboard (H6) uses predict-to-now smoothing; Altitude HD live maps show the raw last fix for either source.",
         "Closest approach to hub start pin (~186 m) at ~12:13 NZ — useful reference for geofence tuning.",
         "Choose platform by workflow: Traccar for geofences and fleet maps; Recorder for RNZ Postgres history and device id H6."
       ]
