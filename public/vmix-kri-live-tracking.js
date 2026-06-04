@@ -8,6 +8,8 @@
     const OUTRO_MS = 900;
     const POST_RACE_MS = 2000;
     const SWAP_MS = 3000;
+    const SPLIT_HOLD_SEC = 15;
+    const SPLIT_MARKERS_M = [500, 1000, 1500];
     const ROW_HEIGHT_PX = 48;
     const ROW_GAP_PX = 8;
     const ROW_STEP_PX = ROW_HEIGHT_PX + ROW_GAP_PX;
@@ -82,7 +84,7 @@
                 ...boat,
                 shortLabel: boat.shortLabel || boat.id || boat.label,
             }));
-            return { ...base, boats };
+            return { ...base, boats: enrichBoatsWithSplits(boats, courseLength({ data: base.data, boats })) };
         }
         const lanes = Array.isArray(raceContext.lanes) ? raceContext.lanes : [];
         const boats = base.boats.map((boat, idx) => {
@@ -106,11 +108,74 @@
             race: raceContext.race ?? base.data.race,
             venue: raceContext.venue ?? base.data.venue,
         };
-        return { ...base, data, boats };
+        return { ...base, data, boats: enrichBoatsWithSplits(boats, courseLength({ data: base.data, boats })) };
     }
 
     function courseLength(state) {
         return state?.data?.courseLength || global.KriVmixSpeedChart?.COURSE_LENGTH || 2000;
+    }
+
+    function formatSplitTime(sec) {
+        const s = Math.max(0, Number(sec));
+        if (!Number.isFinite(s)) return '';
+        const m = Math.floor(s / 60);
+        const r = s - m * 60;
+        const rStr = r < 10 ? `0${r.toFixed(1)}` : r.toFixed(1);
+        return `${m}:${rStr}`;
+    }
+
+    /** Interpolate race clock when a boat reaches target distance (m). */
+    function timeAtDistance(timeline, targetDist) {
+        if (!timeline?.length || targetDist <= 0) return 0;
+        const last = timeline[timeline.length - 1];
+        if (last.distance < targetDist) return null;
+        for (let i = 1; i < timeline.length; i++) {
+            const b = timeline[i];
+            if (b.distance >= targetDist) {
+                const a = timeline[i - 1];
+                if (b.distance <= a.distance) return b.t;
+                const f = (targetDist - a.distance) / (b.distance - a.distance);
+                return a.t + f * (b.t - a.t);
+            }
+        }
+        return last.t;
+    }
+
+    function buildSplitMarkers(timeline, length) {
+        const markers = SPLIT_MARKERS_M.filter((d) => d > 0 && d < length);
+        const rows = [];
+        let prevTime = 0;
+        for (const distance of markers) {
+            const crossTime = timeAtDistance(timeline, distance);
+            if (crossTime == null) break;
+            rows.push({
+                distance,
+                crossTime,
+                segmentSec: crossTime - prevTime,
+                hideAtSec: crossTime + SPLIT_HOLD_SEC,
+            });
+            prevTime = crossTime;
+        }
+        return rows;
+    }
+
+    function enrichBoatsWithSplits(boats, length) {
+        return boats.map((boat) => ({
+            ...boat,
+            splitMarkers: buildSplitMarkers(boat.timeline, length),
+        }));
+    }
+
+    function activeSplitText(boat, tSec) {
+        const markers = boat.splitMarkers;
+        if (!markers?.length) return '';
+        let text = '';
+        for (const split of markers) {
+            if (tSec >= split.crossTime && tSec < split.hideAtSec) {
+                text = formatSplitTime(split.segmentSec);
+            }
+        }
+        return text;
     }
 
     function formatToGo(leaderDistance, length) {
@@ -126,6 +191,7 @@
             `<span class="kri-live-tracking__rank"></span>` +
             `<img class="kri-live-tracking__logo" src="${escapeHtml(src)}" alt="">` +
             `<span class="kri-live-tracking__name">${escapeHtml(name)}</span>` +
+            `<span class="kri-live-tracking__split"></span>` +
             `<span class="kri-live-tracking__gap"></span>` +
             `</div>`
         );
@@ -176,6 +242,11 @@
                     leaderDistance - entry.distance,
                     rank === 0,
                 );
+            }
+
+            const splitEl = row.querySelector('.kri-live-tracking__split');
+            if (splitEl) {
+                splitEl.textContent = activeSplitText(entry.boat, tSec);
             }
         });
 
@@ -306,6 +377,7 @@
         INTRO_MS,
         OUTRO_MS,
         POST_RACE_MS,
+        SPLIT_HOLD_SEC,
         SWAP_MS,
         ROW_STEP_PX,
         show,

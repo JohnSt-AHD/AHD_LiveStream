@@ -2012,6 +2012,21 @@ body {
     white-space: nowrap;
 }
 
+.kri-live-tracking__split {
+    flex-shrink: 0;
+    min-width: 3.8em;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #0c1f3d;
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+.kri-live-tracking__split:empty {
+    display: none;
+}
+
 .kri-live-tracking__gap {
     flex-shrink: 0;
     min-width: 3.6em;
