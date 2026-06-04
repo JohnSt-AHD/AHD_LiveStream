@@ -13,6 +13,7 @@
     const POST_RACE_MS = 2000;
     const TRACE_OPACITY = 0.92;
     const LOGO_PLACEHOLDER = 'assets/school-logos/placeholder-white.svg';
+    const LEGEND_ROW_PX = 28;
 
     let panel = null;
     let activeRaceContext = null;
@@ -219,6 +220,7 @@
             `<span class="vg-speed-chart__legend-swatch" style="background:${boat.color}"></span>` +
             legendLogoHtml(boat) +
             `<span class="vg-speed-chart__legend-label">${escapeHtml(boat.label || boat.id)}</span>` +
+            `<span class="vg-speed-chart__legend-gap"></span>` +
             `</li>`
         );
     }
@@ -251,39 +253,55 @@
         };
     }
 
-    function updateLegendPositions(tSec) {
+    function formatGapFromLeader(meters, isLeader) {
+        if (isLeader) return '';
+        const m = Math.max(0, Math.round(meters));
+        return `+${m} m`;
+    }
+
+    function updateLegendPositions(tSec, opts = {}) {
         if (!panel || !chartState) return;
         const legend = document.getElementById('vgSpeedChartLegend');
         const svg = document.getElementById('vgSpeedChartSvg');
         if (!legend || !svg) return;
 
+        const animate = opts.animate !== false && chartState.legendLayoutReady;
         const { boats, layout } = chartState;
         const standings = liveStandings(boats, tSec);
-        const placed = [];
+        const leaderDistance = standings[0]?.distance ?? 0;
+        const rowCount = standings.length;
 
         standings.forEach((entry, rank) => {
             const item = legend.querySelector(`.vg-speed-chart__legend-item[data-boat-idx="${entry.idx}"]`);
             if (!item) return;
 
+            if (!animate) item.style.transition = 'none';
+
             const head = headViewCoords(entry.boat, tSec, layout);
             const px = mapViewToPlotPx(head.x, head.y, svg, layout);
-            let top = px.y;
-
-            for (const prior of placed) {
-                if (Math.abs(prior.top - top) < 22 && Math.abs(prior.left - px.x) < 140) {
-                    top += 22;
-                }
-            }
-
             const left = px.x + 12;
-            placed.push({ left, top });
+            const top =
+                px.y + (rank - (rowCount - 1) / 2) * LEGEND_ROW_PX;
 
             item.style.left = `${left}px`;
             item.style.top = `${top}px`;
             item.style.zIndex = String(100 - rank);
 
+            if (!animate) {
+                void item.offsetWidth;
+                item.style.transition = '';
+            }
+
             const rankEl = item.querySelector('.vg-speed-chart__legend-rank');
             if (rankEl) rankEl.textContent = String(rank + 1);
+
+            const gapEl = item.querySelector('.vg-speed-chart__legend-gap');
+            if (gapEl) {
+                gapEl.textContent = formatGapFromLeader(
+                    leaderDistance - entry.distance,
+                    rank === 0,
+                );
+            }
         });
 
         for (let i = standings.length - 1; i >= 0; i--) {
@@ -291,6 +309,8 @@
             const item = legend.querySelector(`.vg-speed-chart__legend-item[data-boat-idx="${entry.idx}"]`);
             if (item) legend.appendChild(item);
         }
+
+        chartState.legendLayoutReady = true;
     }
 
     function renderStaticLayers(state) {
@@ -359,7 +379,8 @@
                 )
                 .join('');
         }
-        updateLegendPositions(0);
+        state.legendLayoutReady = false;
+        updateLegendPositions(0, { animate: false });
     }
 
     function speedAtMarker(timeline, dist) {
@@ -403,7 +424,7 @@
                 }
             });
         });
-        updateLegendPositions(tSec);
+        updateLegendPositions(tSec, { animate: true });
     }
 
     function escapeHtml(s) {
