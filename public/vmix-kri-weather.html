@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+    <title>vMix — KRI Lake Karāpiro weather</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="vmix-kri-weather.css">
+</head>
+<body class="vmix-page kri-weather-page">
+    <div class="kri-weather-stage" id="kriWeatherStage">
+        <div class="kri-weather-map" id="kriWeatherMap" aria-hidden="true"></div>
+        <div class="kri-weather-vignette" aria-hidden="true"></div>
+        <img
+            class="kri-weather-logo"
+            src="assets/kri/kri-logo-full.png"
+            alt=""
+            width="360"
+            height="80"
+        >
+        <aside class="kri-weather-panel" aria-live="polite">
+            <header class="kri-weather-panel__head">
+                <p class="kri-weather-panel__kicker">Lake Karāpiro</p>
+                <h1 class="kri-weather-panel__title">Live weather</h1>
+                <p class="kri-weather-panel__updated" id="kriWeatherUpdated">Loading…</p>
+            </header>
+            <section class="kri-weather-current" id="kriWeatherCurrent">
+                <h2 class="kri-weather-section-title">Current</h2>
+                <div class="kri-weather-current-grid" id="kriWeatherCurrentGrid"></div>
+            </section>
+            <section class="kri-weather-forecast" id="kriWeatherForecast">
+                <h2 class="kri-weather-section-title">Next 3 hours</h2>
+                <ul class="kri-weather-forecast-list" id="kriWeatherForecastList"></ul>
+            </section>
+            <p class="kri-weather-status" id="kriWeatherStatus"></p>
+        </aside>
+        <p class="kri-weather-legend" id="kriWeatherLegend">
+            Wind arrows show direction and strength (10 m). Rain circles = current rainfall intensity.
+        </p>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="vmix-kri-weather.js"></script>
+</body>
+</html>

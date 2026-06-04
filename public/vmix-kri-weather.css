@@ -1,0 +1,317 @@
+/**
+ * KRI full-screen weather overlay for vMix (1920×1080, ~90% transparent).
+ */
+html,
+body.kri-weather-page {
+    margin: 0;
+    padding: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.kri-weather-stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: rgba(238, 244, 251, 0.06);
+}
+
+.kri-weather-map {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.kri-weather-map .leaflet-container {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+.kri-weather-map .leaflet-tile-pane {
+    opacity: 0.42;
+}
+
+.kri-weather-map .leaflet-control-attribution {
+    display: none;
+}
+
+.kri-weather-vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(
+        135deg,
+        rgba(147, 197, 253, 0.12) 0%,
+        rgba(0, 121, 209, 0.08) 40%,
+        rgba(7, 20, 40, 0.14) 100%
+    );
+}
+
+.kri-weather-logo {
+    position: absolute;
+    top: 40px;
+    right: 44px;
+    height: 72px;
+    width: auto;
+    max-width: 400px;
+    object-fit: contain;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.kri-weather-panel {
+    position: absolute;
+    left: 44px;
+    bottom: 44px;
+    z-index: 6;
+    width: min(520px, 34%);
+    box-sizing: border-box;
+    padding: 28px 32px 24px;
+    border-top: 2px solid rgba(255, 255, 255, 0.88);
+    border-right: 2px solid rgba(255, 255, 255, 0.88);
+    border-radius: 0 20px 0 0;
+    background: linear-gradient(
+        135deg,
+        rgba(147, 197, 253, 0.28) 0%,
+        rgba(56, 189, 248, 0.34) 22%,
+        rgba(0, 121, 209, 0.42) 52%,
+        rgba(7, 20, 40, 0.72) 100%
+    );
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    color: #0c1f3d;
+    pointer-events: none;
+}
+
+.kri-weather-panel__kicker {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(12, 31, 61, 0.75);
+}
+
+.kri-weather-panel__title {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #0c1f3d;
+}
+
+.kri-weather-panel__updated {
+    margin: 8px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0060bf;
+}
+
+.kri-weather-section-title {
+    margin: 18px 0 10px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(12, 31, 61, 0.72);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.75);
+    padding-bottom: 8px;
+}
+
+.kri-weather-current-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+}
+
+.kri-weather-stat {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 1px 3px rgba(12, 31, 61, 0.08);
+}
+
+.kri-weather-stat__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #0060bf;
+    margin-bottom: 4px;
+}
+
+.kri-weather-stat__value {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #0c1f3d;
+}
+
+.kri-weather-stat__sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(12, 31, 61, 0.72);
+}
+
+.kri-weather-forecast-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kri-weather-forecast-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.48);
+    font-size: 14px;
+    font-weight: 600;
+    color: #0c1f3d;
+}
+
+.kri-weather-forecast-item__time {
+    font-variant-numeric: tabular-nums;
+    color: #0060bf;
+    font-weight: 700;
+}
+
+.kri-weather-forecast-item__rain {
+    text-align: right;
+    font-size: 13px;
+    color: #0060bf;
+}
+
+.kri-weather-status {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: rgba(12, 31, 61, 0.65);
+}
+
+.kri-weather-legend {
+    position: absolute;
+    right: 44px;
+    bottom: 44px;
+    z-index: 6;
+    margin: 0;
+    max-width: 380px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: rgba(12, 31, 61, 0.82);
+    text-align: right;
+    pointer-events: none;
+}
+
+/* Map overlays */
+.kri-wind-arrow-wrap {
+    background: transparent;
+    border: none;
+}
+
+.kri-wind-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.85));
+}
+
+.kri-wind-arrow__shaft {
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, #0c1f3d 0%, #0079d1 100%);
+    border-radius: 2px;
+}
+
+.kri-wind-arrow__head {
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 10px solid #0079d1;
+    margin-left: -1px;
+}
+
+.kri-weather-temp-label {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(0, 121, 209, 0.35);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0c1f3d;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(12, 31, 61, 0.12);
+}
+
+.kri-weather-rain-dot {
+    border-radius: 50%;
+    border: 1px solid rgba(0, 96, 191, 0.5);
+    background: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 0 8px rgba(0, 121, 209, 0.35);
+}
+
+.kri-weather-page--error .kri-weather-panel {
+    border-color: rgba(220, 38, 38, 0.5);
+}
+
+/* Embedded in vmix-kri.html (shortcut M) */
+.vg-kri-weather {
+    position: absolute;
+    inset: 0;
+    z-index: 24;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vg-kri-weather--visible {
+    opacity: 1;
+}
+
+.vg-kri-weather--intro {
+    animation: vg-kri-weather-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.vg-kri-weather--hold {
+    opacity: 1;
+}
+
+.vg-kri-weather--outro {
+    animation: vg-kri-weather-out 0.65s cubic-bezier(0.55, 0, 0.85, 0.36) forwards;
+}
+
+@keyframes vg-kri-weather-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes vg-kri-weather-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

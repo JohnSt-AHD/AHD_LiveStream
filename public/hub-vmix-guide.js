@@ -16,6 +16,7 @@ const VMIX_TRIGGERS = [
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'v', graphic: 'Speed chart', desc: 'KRI only — lower-third speed vs distance replay in real time (~7 min demo); ease in/out; add &loop=1 to repeat' },
+    { key: 'm', graphic: 'Weather map', desc: 'KRI only — full-screen Lake Karāpiro live weather (wind, temp, rain, 3 hr forecast); o to fade out' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
     { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },
     { key: 'p', graphic: 'Previous race', desc: 'Live race number −1 on daysheet (updates draw/LT/results on air)' },
@@ -107,6 +108,16 @@ function hubRenderVmixGuide() {
             block.appendChild(ul);
             examples.appendChild(block);
         }
+
+        const weatherNote = document.createElement('p');
+        weatherNote.className = 'hub-vmix-map-note';
+        weatherNote.innerHTML =
+            '<strong>KRI weather map (<code>m</code>):</strong> on <a href="' +
+            hubVmixBaseUrl('vmix-kri.html') +
+            '" target="_blank" rel="noopener">vmix-kri.html</a> or standalone <a href="' +
+            hubVmixBaseUrl('vmix-kri-weather.html') +
+            '" target="_blank" rel="noopener">vmix-kri-weather.html</a> · Open-Meteo live data, wind arrows, temperature, rainfall, 3 hr forecast (10 min refresh). ~90% transparent for overlay on vision.';
+        examples.appendChild(weatherNote);
 
         const mapNote = document.createElement('p');
         mapNote.className = 'hub-vmix-map-note';
