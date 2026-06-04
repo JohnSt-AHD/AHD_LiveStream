@@ -46,11 +46,58 @@ body.kri-weather-page {
     z-index: 2;
     pointer-events: none;
     background: linear-gradient(
-        135deg,
-        rgba(147, 197, 253, 0.12) 0%,
-        rgba(0, 121, 209, 0.08) 40%,
-        rgba(7, 20, 40, 0.14) 100%
+        315deg,
+        rgba(7, 20, 40, 0.14) 0%,
+        rgba(0, 121, 209, 0.08) 45%,
+        rgba(147, 197, 253, 0.12) 100%
     );
+}
+
+.kri-weather-rain-fx {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.kri-weather-rain-cluster {
+    position: absolute;
+    width: 110px;
+    height: 72px;
+    opacity: var(--cluster-opacity, 0.6);
+    animation: kri-weather-rain-drift var(--drift-duration, 16s) linear infinite;
+}
+
+.kri-weather-rain-streak {
+    position: absolute;
+    width: 2px;
+    height: 10px;
+    border-radius: 1px;
+    background: linear-gradient(180deg, transparent 0%, #0060bf 35%, #004a99 100%);
+    transform: rotate(72deg);
+    opacity: 0;
+    animation: kri-weather-rain-pulse var(--pulse-duration, 1.4s) ease-in-out infinite;
+}
+
+@keyframes kri-weather-rain-pulse {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    45%,
+    55% {
+        opacity: var(--streak-opacity, 0.75);
+    }
+}
+
+@keyframes kri-weather-rain-drift {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(var(--drift-x, 36px), var(--drift-y, 18px));
+    }
 }
 
 .kri-weather-logo {
@@ -77,11 +124,11 @@ body.kri-weather-page {
     border-right: 2px solid rgba(255, 255, 255, 0.88);
     border-radius: 0 20px 0 0;
     background: linear-gradient(
-        135deg,
-        rgba(147, 197, 253, 0.28) 0%,
-        rgba(56, 189, 248, 0.34) 22%,
-        rgba(0, 121, 209, 0.42) 52%,
-        rgba(7, 20, 40, 0.72) 100%
+        315deg,
+        rgba(7, 20, 40, 0.72) 0%,
+        rgba(0, 121, 209, 0.42) 48%,
+        rgba(56, 189, 248, 0.34) 78%,
+        rgba(147, 197, 253, 0.28) 100%
     );
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
     color: #0c1f3d;
@@ -111,12 +158,12 @@ body.kri-weather-page {
 
 .kri-weather-condition-icon {
     flex-shrink: 0;
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(0, 121, 209, 0.28);
-    box-shadow: 0 2px 8px rgba(12, 31, 61, 0.1);
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.38);
+    border: 1px solid rgba(0, 121, 209, 0.22);
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -124,8 +171,9 @@ body.kri-weather-page {
 
 .kri-weather-condition-icon__svg {
     display: block;
-    width: 44px;
-    height: 44px;
+    width: 58px;
+    height: 58px;
+    opacity: 0.88;
 }
 
 .kri-weather-panel__title {
@@ -372,9 +420,6 @@ body.kri-weather-page {
     background: #1e40af;
 }
 
-.kri-weather-map .kri-weather-rain-cell {
-    pointer-events: none;
-}
 
 .kri-weather-page--error .kri-weather-panel {
     border-color: rgba(220, 38, 38, 0.5);

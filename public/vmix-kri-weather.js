@@ -19,7 +19,7 @@
     const INTRO_MS = 650;
     const OUTRO_MS = 650;
     const RANDOM_WIND_COUNT = 22;
-    const ZOOM_IN_FACTOR = 1.8;
+    const ZOOM_IN_FACTOR = 1.26;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
     const WMO_LABELS = {
@@ -52,7 +52,6 @@
     let windLayer = null;
     let windLabelLayer = null;
     let decorativeWindLayer = null;
-    let rainLayer = null;
     let randomWindSites = [];
     let refreshTimer = null;
     let fadeTimer = null;
@@ -304,26 +303,57 @@
         }
     }
 
-    function rainCellBounds(lat, lon) {
-        const b = getWindBounds();
-        const dLat = (b.north - b.south) / Math.max(1, LAKE.gridRows - 1) / 2;
-        const dLon = (b.east - b.west) / Math.max(1, LAKE.gridCols - 1) / 2;
-        return [
-            [lat - dLat, lon - dLon],
-            [lat + dLat, lon + dLon],
-        ];
+    function maxPrecipMm(gridData, centerCurrent) {
+        let max = centerCurrent?.precipitation ?? 0;
+        for (const pt of gridData) {
+            const p = pt.data?.current?.precipitation ?? 0;
+            if (p > max) max = p;
+        }
+        return max;
     }
 
-    function rainCellOpacity(mm) {
-        if (mm <= 0) return 0;
-        return Math.min(0.42, 0.1 + mm * 0.18);
+    function createRainCluster(intensity) {
+        const cluster = document.createElement('div');
+        cluster.className = 'kri-weather-rain-cluster';
+        cluster.style.left = `${4 + Math.random() * 88}%`;
+        cluster.style.top = `${4 + Math.random() * 88}%`;
+        cluster.style.setProperty('--drift-x', `${24 + Math.random() * 48}px`);
+        cluster.style.setProperty('--drift-y', `${12 + Math.random() * 22}px`);
+        cluster.style.setProperty('--drift-duration', `${12 + Math.random() * 12}s`);
+        cluster.style.setProperty('--cluster-opacity', String(0.3 + intensity * 0.5));
+
+        const streaks = Math.round(4 + intensity * 16);
+        for (let i = 0; i < streaks; i++) {
+            const streak = document.createElement('span');
+            streak.className = 'kri-weather-rain-streak';
+            streak.style.left = `${Math.random() * 100}%`;
+            streak.style.top = `${Math.random() * 100}%`;
+            streak.style.height = `${6 + Math.random() * 10}px`;
+            streak.style.setProperty('--pulse-duration', `${0.8 + Math.random() * 1.2}s`);
+            streak.style.setProperty('--streak-opacity', String(0.35 + intensity * 0.55));
+            streak.style.animationDelay = `${Math.random() * 2}s`;
+            cluster.appendChild(streak);
+        }
+        return cluster;
+    }
+
+    function renderRainFx(gridData, centerCurrent) {
+        const fx = el('kriWeatherRainFx');
+        if (!fx) return;
+        fx.replaceChildren('');
+        const maxMm = maxPrecipMm(gridData, centerCurrent);
+        if (maxMm <= 0.05) return;
+        const intensity = Math.min(1, maxMm / 2.5);
+        const clusterCount = Math.round(3 + intensity * 11);
+        for (let c = 0; c < clusterCount; c++) {
+            fx.appendChild(createRainCluster(intensity * (0.85 + Math.random() * 0.3)));
+        }
     }
 
     function clearMapLayers() {
         if (windLayer) windLayer.clearLayers();
         if (windLabelLayer) windLabelLayer.clearLayers();
         if (decorativeWindLayer) decorativeWindLayer.clearLayers();
-        if (rainLayer) rainLayer.clearLayers();
     }
 
     function renderDecorativeWind(gridData, fallbackCurrent) {
@@ -365,21 +395,10 @@
                 }),
             );
 
-            const rainOpacity = rainCellOpacity(cur.precipitation);
-            if (rainOpacity > 0) {
-                rainLayer.addLayer(
-                    L.rectangle(rainCellBounds(pt.lat, pt.lon), {
-                        stroke: false,
-                        fillColor: '#475569',
-                        fillOpacity: rainOpacity,
-                        className: 'kri-weather-rain-cell',
-                        interactive: false,
-                    }),
-                );
-            }
         }
 
         renderDecorativeWind(gridData, centerCurrent);
+        renderRainFx(gridData, centerCurrent);
     }
 
     function setStatus(msg, isError) {
@@ -425,8 +444,9 @@
         windLayer = null;
         windLabelLayer = null;
         decorativeWindLayer = null;
-        rainLayer = null;
         courseLayer = null;
+        const rainFx = el('kriWeatherRainFx');
+        if (rainFx) rainFx.replaceChildren('');
         randomWindSites = [];
     }
 
@@ -492,15 +512,9 @@
             map.createPane('kriDecorativeWindPane');
             map.getPane('kriDecorativeWindPane').style.zIndex = 448;
         }
-        if (!map.getPane('kriRainPane')) {
-            map.createPane('kriRainPane');
-            map.getPane('kriRainPane').style.zIndex = 410;
-        }
-
         windLayer = L.layerGroup([], { pane: 'kriWindPane' }).addTo(map);
         windLabelLayer = L.layerGroup([], { pane: 'kriWindLabelPane' }).addTo(map);
         decorativeWindLayer = L.layerGroup([], { pane: 'kriDecorativeWindPane' }).addTo(map);
-        rainLayer = L.layerGroup([], { pane: 'kriRainPane' }).addTo(map);
     }
 
     function startRefreshTimer() {
@@ -516,6 +530,7 @@
     function buildPanelMarkup() {
         return (
             '<div class="kri-weather-map" id="kriWeatherMap" aria-hidden="true"></div>' +
+            '<div class="kri-weather-rain-fx" id="kriWeatherRainFx" aria-hidden="true"></div>' +
             '<div class="kri-weather-vignette" aria-hidden="true"></div>' +
             '<img class="kri-weather-logo" src="assets/kri/kri-logo-full.png" alt="" width="360" height="80">' +
             '<aside class="kri-weather-panel" aria-live="polite">' +
@@ -538,7 +553,7 @@
             '<p class="kri-weather-status" id="kriWeatherStatus"></p>' +
             '</aside>' +
             '<p class="kri-weather-legend" id="kriWeatherLegend">' +
-            'Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Shaded areas = rainfall intensity.' +
+            'Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Animated streaks = rainfall.' +
             '</p>'
         );
     }

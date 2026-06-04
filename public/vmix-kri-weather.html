@@ -10,6 +10,7 @@
 <body class="vmix-page kri-weather-page">
     <div class="kri-weather-stage" id="kriWeatherStage">
         <div class="kri-weather-map" id="kriWeatherMap" aria-hidden="true"></div>
+        <div class="kri-weather-rain-fx" id="kriWeatherRainFx" aria-hidden="true"></div>
         <div class="kri-weather-vignette" aria-hidden="true"></div>
         <img
             class="kri-weather-logo"
@@ -38,7 +39,7 @@
             <p class="kri-weather-status" id="kriWeatherStatus"></p>
         </aside>
         <p class="kri-weather-legend" id="kriWeatherLegend">
-            Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Shaded areas = rainfall intensity.
+            Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Animated streaks = rainfall.
         </p>
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

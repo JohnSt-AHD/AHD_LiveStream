@@ -1604,8 +1604,8 @@ function vgKriCreateLowerLogoBox() {
     img.className = 'vg-kri-lower-logo-mark';
     img.src = KRI_LOGO_MARK_SRC;
     img.alt = '';
-    img.width = 66;
-    img.height = 66;
+    img.width = 73;
+    img.height = 73;
     img.dataset.vgLayout = 'kri-lower-logo-mark';
     box.appendChild(img);
     return box;
