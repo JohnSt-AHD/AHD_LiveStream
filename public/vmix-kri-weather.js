@@ -20,7 +20,9 @@
     const OUTRO_MS = 650;
     /** Evenly spaced display sites (×4 vs original 22); wind from nearest grid sample. */
     const WIND_SITE_COUNT = 88;
-    const WIND_ARROW_SCALE = 2;
+    /** Was 2× base; reduced 25% → 1.5× base. */
+    const WIND_ARROW_SCALE = 1.5;
+    const WIND_ARROW_OPACITY = 0.42;
     const WIND_SPEED_MIN_KMH = 0;
     const WIND_SPEED_MAX_KMH = 45;
     const ZOOM_IN_FACTOR = 1.386 * 1.1;
@@ -260,7 +262,7 @@
         const shaftW = Math.max(8 * WIND_ARROW_SCALE, len - 10 * WIND_ARROW_SCALE);
         const blowTo = dirFromDeg + 180;
         return (
-            `<div class="kri-wind-arrow" style="transform: rotate(${blowTo}deg); width:${len}px">` +
+            `<div class="kri-wind-arrow" style="transform: rotate(${blowTo}deg); width:${len}px;opacity:${WIND_ARROW_OPACITY}">` +
             `<span class="kri-wind-arrow__shaft" style="width:${shaftW}px;background:${color}"></span>` +
             `<span class="kri-wind-arrow__head" style="border-left-color:${color}"></span>` +
             `</div>`
@@ -320,22 +322,76 @@
         return { south, north, west, east };
     }
 
-    function initEvenWindSites() {
+    function siteDistSq(a, b, lonScale) {
+        const dLat = a.lat - b.lat;
+        const dLon = (a.lon - b.lon) * lonScale;
+        return dLat * dLat + dLon * dLon;
+    }
+
+    /** Jittered, minimum-spacing placement — even coverage without visible rows. */
+    function initScatteredWindSites() {
         const b = getWindBounds();
         const count = WIND_SITE_COUNT;
         const latSpan = b.north - b.south;
         const lonSpan = b.east - b.west;
+        const lonScale = latSpan / Math.max(lonSpan, 1e-9);
+        const area = latSpan * lonSpan;
+        const minDist = Math.sqrt(area / (count * 1.15)) * 0.9;
+        const minDistSq = minDist * minDist;
+
         const aspect = lonSpan / Math.max(latSpan, 1e-9);
         const cols = Math.max(1, Math.round(Math.sqrt(count * aspect)));
         const rows = Math.max(1, Math.ceil(count / cols));
-        randomWindSites = [];
-        for (let r = 0; r < rows && randomWindSites.length < count; r++) {
-            for (let c = 0; c < cols && randomWindSites.length < count; c++) {
-                randomWindSites.push({
-                    lat: b.south + ((r + 0.5) / rows) * latSpan,
-                    lon: b.west + ((c + 0.5) / cols) * lonSpan,
+        const cellLat = latSpan / rows;
+        const cellLon = lonSpan / cols;
+
+        const candidates = [];
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const jLat = (Math.random() - 0.5) * 0.88 * cellLat;
+                const jLon = (Math.random() - 0.5) * 0.88 * cellLon;
+                candidates.push({
+                    lat: b.south + (r + 0.5) * cellLat + jLat,
+                    lon: b.west + (c + 0.5) * cellLon + jLon,
                 });
             }
+        }
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = candidates[i];
+            candidates[i] = candidates[j];
+            candidates[j] = tmp;
+        }
+
+        randomWindSites = [];
+        for (const cand of candidates) {
+            if (randomWindSites.length >= count) break;
+            let ok = true;
+            for (const s of randomWindSites) {
+                if (siteDistSq(cand, s, lonScale) < minDistSq) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) randomWindSites.push(cand);
+        }
+
+        let attempts = 0;
+        const maxAttempts = count * 100;
+        while (randomWindSites.length < count && attempts < maxAttempts) {
+            attempts += 1;
+            const cand = {
+                lat: b.south + Math.random() * latSpan,
+                lon: b.west + Math.random() * lonSpan,
+            };
+            let ok = true;
+            for (const s of randomWindSites) {
+                if (siteDistSq(cand, s, lonScale) < minDistSq) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) randomWindSites.push(cand);
         }
     }
 
@@ -573,7 +629,7 @@
         }).addTo(map);
 
         mountCourseOverlay();
-        initEvenWindSites();
+        initScatteredWindSites();
 
         const b = getWindBounds();
         map.setView([(b.south + b.north) / 2, (b.west + b.east) / 2], LAKE.zoom, {
