@@ -21,7 +21,10 @@
         <aside class="kri-weather-panel" aria-live="polite">
             <header class="kri-weather-panel__head">
                 <p class="kri-weather-panel__kicker">Lake Karāpiro</p>
-                <h1 class="kri-weather-panel__title">Live weather</h1>
+                <div class="kri-weather-panel__title-row">
+                    <div class="kri-weather-condition-icon" id="kriWeatherConditionIcon" aria-hidden="true"></div>
+                    <h1 class="kri-weather-panel__title">Live weather</h1>
+                </div>
                 <p class="kri-weather-panel__updated" id="kriWeatherUpdated">Loading…</p>
             </header>
             <section class="kri-weather-current" id="kriWeatherCurrent">
@@ -35,10 +38,11 @@
             <p class="kri-weather-status" id="kriWeatherStatus"></p>
         </aside>
         <p class="kri-weather-legend" id="kriWeatherLegend">
-            Wind arrows show direction and strength (10 m). Rain circles = current rainfall intensity.
+            Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Rain circles = current rainfall.
         </p>
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="kri-rowing-course-overlay.js"></script>
     <script src="vmix-kri-weather.js"></script>
 </body>
 </html>

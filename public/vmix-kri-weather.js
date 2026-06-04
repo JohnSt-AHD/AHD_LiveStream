@@ -18,6 +18,9 @@
     const TIMEZONE = 'Pacific/Auckland';
     const INTRO_MS = 650;
     const OUTRO_MS = 650;
+    const RANDOM_WIND_COUNT = 22;
+    const ZOOM_IN_FACTOR = 1.2;
+    const COURSE_BOUNDS_MARGIN = 0.0026;
 
     const WMO_LABELS = {
         0: 'Clear',
@@ -45,9 +48,12 @@
 
     let panel = null;
     let map = null;
+    let courseLayer = null;
     let windLayer = null;
-    let tempLayer = null;
+    let windLabelLayer = null;
+    let decorativeWindLayer = null;
     let rainLayer = null;
+    let randomWindSites = [];
     let refreshTimer = null;
     let fadeTimer = null;
 
@@ -63,6 +69,52 @@
 
     function wmoLabel(code) {
         return WMO_LABELS[code] || 'Mixed';
+    }
+
+    function wmoIconKind(code) {
+        const c = Number(code);
+        if (c === 0) return 'sun';
+        if (c === 1) return 'sun-cloud';
+        if (c === 2 || c === 3 || c === 45 || c === 48) return 'cloud';
+        if (c >= 51 && c <= 67) return 'rain';
+        if (c >= 71 && c <= 77) return 'snow';
+        if (c >= 80 && c <= 82) return 'rain';
+        if (c >= 95) return 'storm';
+        return 'cloud';
+    }
+
+    function weatherIconSvg(kind) {
+        const sun = '<circle cx="32" cy="32" r="14" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5"/>';
+        const cloud =
+            '<path d="M22 42c0-8 6-14 14-14 2 0 4 .4 6 1.2 2.5-5 7.5-8.5 13.5-8.5 8 0 14.5 6 15 13.5 5 1 8.5 5.5 8.5 11 0 6.2-5 11.3-11.3 11.3H24c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.8 8-9.5z" fill="#94a3b8" stroke="#64748b" stroke-width="1.2"/>';
+        const rain =
+            '<path d="M28 50v8M36 48v10M44 50v8" stroke="#0079d1" stroke-width="2.5" stroke-linecap="round"/>';
+        const snow =
+            '<path d="M32 48v10M28 52h8M29 56l6-4M29 48l6 4" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>';
+        const bolt =
+            '<path d="M38 26l-8 14h6l-4 12 14-18h-7l3-8z" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/>';
+
+        let body = cloud;
+        if (kind === 'sun') body = sun;
+        else if (kind === 'sun-cloud') body = sun + cloud;
+        else if (kind === 'rain') body = cloud + rain;
+        else if (kind === 'snow') body = cloud + snow;
+        else if (kind === 'storm') body = cloud + bolt + rain;
+
+        return (
+            `<svg class="kri-weather-condition-icon__svg" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">` +
+            body +
+            `</svg>`
+        );
+    }
+
+    function renderConditionIcon(weatherCode) {
+        const iconEl = el('kriWeatherConditionIcon');
+        if (!iconEl) return;
+        const kind = wmoIconKind(weatherCode);
+        iconEl.innerHTML = weatherIconSvg(kind);
+        iconEl.dataset.weatherKind = kind;
+        iconEl.title = wmoLabel(weatherCode);
     }
 
     function windCompass(deg) {
@@ -154,6 +206,7 @@
         const dir = Math.round(current.wind_direction_10m);
         const rain = current.precipitation ?? 0;
         const hum = current.relative_humidity_2m;
+        renderConditionIcon(current.weather_code);
         grid.innerHTML =
             statHtml('Temperature', `${temp}°C`, wmoLabel(current.weather_code)) +
             statHtml('Wind', `${wind} km/h`, `${windCompass(dir)} · ${dir}°`) +
@@ -182,33 +235,73 @@
         list.innerHTML = items.join('');
     }
 
-    function windArrowHtml(speedKmh, dirFromDeg) {
+    function windArrowHtml(speedKmh, dirFromDeg, ghost) {
         const len = Math.min(52, Math.max(16, speedKmh * 2.8));
         const blowTo = dirFromDeg + 180;
+        const ghostClass = ghost ? ' kri-wind-arrow--ghost' : '';
         return (
-            `<div class="kri-wind-arrow" style="transform: rotate(${blowTo}deg); width:${len}px">` +
+            `<div class="kri-wind-arrow${ghostClass}" style="transform: rotate(${blowTo}deg); width:${len}px">` +
             `<span class="kri-wind-arrow__shaft" style="width:${Math.max(8, len - 10)}px"></span>` +
             `<span class="kri-wind-arrow__head"></span>` +
             `</div>`
         );
     }
 
-    function windIcon(speedKmh, dirFromDeg) {
+    function windIcon(speedKmh, dirFromDeg, ghost) {
         return L.divIcon({
-            className: 'kri-wind-arrow-wrap',
-            html: windArrowHtml(speedKmh, dirFromDeg),
+            className: ghost ? 'kri-wind-arrow-wrap kri-wind-arrow-wrap--ghost' : 'kri-wind-arrow-wrap',
+            html: windArrowHtml(speedKmh, dirFromDeg, ghost),
             iconSize: [56, 16],
             iconAnchor: [28, 8],
         });
     }
 
-    function tempIcon(tempC) {
+    function windSpeedIcon(speedKmh) {
         return L.divIcon({
-            className: 'kri-weather-temp-wrap',
-            html: `<div class="kri-weather-temp-label">${Math.round(tempC)}°</div>`,
-            iconSize: [40, 22],
-            iconAnchor: [20, 11],
+            className: 'kri-weather-wind-speed-wrap',
+            html: `<div class="kri-weather-wind-speed-label">${Math.round(speedKmh)}</div>`,
+            iconSize: [44, 22],
+            iconAnchor: [22, 11],
         });
+    }
+
+    function nearestGridSample(gridData, lat, lon) {
+        if (!gridData?.length) return null;
+        let best = null;
+        let bestD = Infinity;
+        for (const pt of gridData) {
+            const d = (pt.lat - lat) ** 2 + (pt.lon - lon) ** 2;
+            if (d < bestD) {
+                bestD = d;
+                best = pt;
+            }
+        }
+        return best?.data?.current || null;
+    }
+
+    function getWindBounds() {
+        if (global.KriRowingCourseOverlay) {
+            const { start, finish } = global.KriRowingCourseOverlay.loadStartFinish();
+            return {
+                south: Math.min(start.lat, finish.lat) - COURSE_BOUNDS_MARGIN,
+                north: Math.max(start.lat, finish.lat) + COURSE_BOUNDS_MARGIN,
+                west: Math.min(start.lng, finish.lng) - COURSE_BOUNDS_MARGIN,
+                east: Math.max(start.lng, finish.lng) + COURSE_BOUNDS_MARGIN,
+            };
+        }
+        const [[south, west], [north, east]] = LAKE.bounds;
+        return { south, north, west, east };
+    }
+
+    function initRandomWindSites() {
+        const b = getWindBounds();
+        randomWindSites = [];
+        for (let i = 0; i < RANDOM_WIND_COUNT; i++) {
+            randomWindSites.push({
+                lat: b.south + Math.random() * (b.north - b.south),
+                lon: b.west + Math.random() * (b.east - b.west),
+            });
+        }
     }
 
     function rainRadiusMm(mm) {
@@ -218,11 +311,28 @@
 
     function clearMapLayers() {
         if (windLayer) windLayer.clearLayers();
-        if (tempLayer) tempLayer.clearLayers();
+        if (windLabelLayer) windLabelLayer.clearLayers();
+        if (decorativeWindLayer) decorativeWindLayer.clearLayers();
         if (rainLayer) rainLayer.clearLayers();
     }
 
-    function renderMapOverlays(gridData) {
+    function renderDecorativeWind(gridData, fallbackCurrent) {
+        if (!decorativeWindLayer || !randomWindSites.length) return;
+        for (const site of randomWindSites) {
+            const cur = nearestGridSample(gridData, site.lat, site.lon) || fallbackCurrent;
+            if (!cur) continue;
+            const speed = cur.wind_speed_10m * (0.88 + Math.random() * 0.22);
+            const dir = cur.wind_direction_10m + (Math.random() - 0.5) * 30;
+            decorativeWindLayer.addLayer(
+                L.marker([site.lat, site.lon], {
+                    icon: windIcon(speed, dir, true),
+                    interactive: false,
+                }),
+            );
+        }
+    }
+
+    function renderMapOverlays(gridData, centerCurrent) {
         if (!map) return;
         clearMapLayers();
 
@@ -233,14 +343,14 @@
             const latlng = [pt.lat, pt.lon];
             windLayer.addLayer(
                 L.marker(latlng, {
-                    icon: windIcon(cur.wind_speed_10m, cur.wind_direction_10m),
+                    icon: windIcon(cur.wind_speed_10m, cur.wind_direction_10m, false),
                     interactive: false,
                 }),
             );
 
-            tempLayer.addLayer(
+            windLabelLayer.addLayer(
                 L.marker([pt.lat + 0.0018, pt.lon], {
-                    icon: tempIcon(cur.temperature_2m),
+                    icon: windSpeedIcon(cur.wind_speed_10m),
                     interactive: false,
                 }),
             );
@@ -261,6 +371,8 @@
                 );
             }
         }
+
+        renderDecorativeWind(gridData, centerCurrent);
     }
 
     function setStatus(msg, isError) {
@@ -286,7 +398,7 @@
 
             renderCurrent(centerData.current);
             renderForecast(centerData.hourly);
-            renderMapOverlays(gridResults);
+            renderMapOverlays(gridResults, centerData.current);
 
             const updated = el('kriWeatherUpdated');
             if (updated) {
@@ -304,8 +416,37 @@
             map = null;
         }
         windLayer = null;
-        tempLayer = null;
+        windLabelLayer = null;
+        decorativeWindLayer = null;
         rainLayer = null;
+        courseLayer = null;
+        randomWindSites = [];
+    }
+
+    function fitMapToCourse() {
+        if (!map) return;
+        const b = getWindBounds();
+        map.fitBounds(
+            [
+                [b.south, b.west],
+                [b.north, b.east],
+            ],
+            { padding: [24, 24] },
+        );
+        const z = map.getZoom();
+        if (Number.isFinite(z)) {
+            map.setZoom(z + Math.log2(ZOOM_IN_FACTOR));
+        }
+    }
+
+    function mountCourseOverlay() {
+        if (!map || !global.KriRowingCourseOverlay || courseLayer) return;
+        if (!map.getPane('kriCoursePane')) {
+            map.createPane('kriCoursePane');
+            map.getPane('kriCoursePane').style.zIndex = 420;
+        }
+        courseLayer = L.layerGroup([], { pane: 'kriCoursePane' }).addTo(map);
+        global.KriRowingCourseOverlay.mount(map, courseLayer);
     }
 
     function initMap() {
@@ -328,15 +469,21 @@
             opacity: 0.85,
         }).addTo(map);
 
-        map.fitBounds(LAKE.bounds, { padding: [40, 40] });
+        mountCourseOverlay();
+        initRandomWindSites();
+        fitMapToCourse();
 
         if (!map.getPane('kriWindPane')) {
             map.createPane('kriWindPane');
             map.getPane('kriWindPane').style.zIndex = 450;
         }
-        if (!map.getPane('kriTempPane')) {
-            map.createPane('kriTempPane');
-            map.getPane('kriTempPane').style.zIndex = 460;
+        if (!map.getPane('kriWindLabelPane')) {
+            map.createPane('kriWindLabelPane');
+            map.getPane('kriWindLabelPane').style.zIndex = 465;
+        }
+        if (!map.getPane('kriDecorativeWindPane')) {
+            map.createPane('kriDecorativeWindPane');
+            map.getPane('kriDecorativeWindPane').style.zIndex = 448;
         }
         if (!map.getPane('kriRainPane')) {
             map.createPane('kriRainPane');
@@ -344,7 +491,8 @@
         }
 
         windLayer = L.layerGroup([], { pane: 'kriWindPane' }).addTo(map);
-        tempLayer = L.layerGroup([], { pane: 'kriTempPane' }).addTo(map);
+        windLabelLayer = L.layerGroup([], { pane: 'kriWindLabelPane' }).addTo(map);
+        decorativeWindLayer = L.layerGroup([], { pane: 'kriDecorativeWindPane' }).addTo(map);
         rainLayer = L.layerGroup([], { pane: 'kriRainPane' }).addTo(map);
     }
 
@@ -366,7 +514,10 @@
             '<aside class="kri-weather-panel" aria-live="polite">' +
             '<header class="kri-weather-panel__head">' +
             '<p class="kri-weather-panel__kicker">Lake Karāpiro</p>' +
+            '<div class="kri-weather-panel__title-row">' +
+            '<div class="kri-weather-condition-icon" id="kriWeatherConditionIcon" aria-hidden="true"></div>' +
             '<h1 class="kri-weather-panel__title">Live weather</h1>' +
+            '</div>' +
             '<p class="kri-weather-panel__updated" id="kriWeatherUpdated">Loading…</p>' +
             '</header>' +
             '<section class="kri-weather-current" id="kriWeatherCurrent">' +
@@ -380,7 +531,7 @@
             '<p class="kri-weather-status" id="kriWeatherStatus"></p>' +
             '</aside>' +
             '<p class="kri-weather-legend" id="kriWeatherLegend">' +
-            'Wind arrows show direction and strength (10 m). Rain circles = current rainfall intensity.' +
+            'Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Rain circles = current rainfall.' +
             '</p>'
         );
     }
@@ -421,7 +572,10 @@
         await wait(INTRO_MS);
         panel.classList.remove('vg-kri-weather--intro');
         panel.classList.add('vg-kri-weather--hold');
-        if (map) map.invalidateSize();
+        if (map) {
+            fitMapToCourse();
+            map.invalidateSize();
+        }
     }
 
     async function hide() {
@@ -459,7 +613,10 @@
         refreshWeather();
         startRefreshTimer();
         panel.classList.add('vg-kri-weather--visible', 'vg-kri-weather--hold');
-        if (map) map.invalidateSize();
+        if (map) {
+            fitMapToCourse();
+            map.invalidateSize();
+        }
     }
 
     if (document.body.classList.contains('kri-weather-page')) {

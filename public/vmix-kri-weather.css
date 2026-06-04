@@ -97,6 +97,31 @@ body.kri-weather-page {
     color: rgba(12, 31, 61, 0.75);
 }
 
+.kri-weather-panel__title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.kri-weather-condition-icon {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(0, 121, 209, 0.28);
+    box-shadow: 0 2px 8px rgba(12, 31, 61, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kri-weather-condition-icon__svg {
+    display: block;
+    width: 44px;
+    height: 44px;
+}
+
 .kri-weather-panel__title {
     margin: 0;
     font-size: 34px;
@@ -248,17 +273,97 @@ body.kri-weather-page {
     margin-left: -1px;
 }
 
-.kri-weather-temp-label {
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(0, 121, 209, 0.35);
+.kri-weather-wind-speed-label {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(0, 121, 209, 0.4);
     border-radius: 6px;
-    padding: 2px 6px;
+    padding: 2px 7px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     color: #0c1f3d;
     text-align: center;
     white-space: nowrap;
     box-shadow: 0 1px 4px rgba(12, 31, 61, 0.12);
+}
+
+.kri-weather-wind-speed-label::after {
+    content: ' km/h';
+    font-size: 9px;
+    font-weight: 700;
+    opacity: 0.75;
+}
+
+.kri-wind-arrow-wrap--ghost,
+.kri-wind-arrow--ghost {
+    opacity: 0.2;
+}
+
+.kri-wind-arrow-wrap--ghost {
+    filter: none;
+}
+
+/* KRI rowing course overlay (shared with safety map) */
+.kri-weather-map .kri-course-label {
+    background: transparent !important;
+    border: none !important;
+}
+
+.kri-weather-map .leaflet-marker-icon.kri-course-label--fixed {
+    width: 1px !important;
+    height: 1px !important;
+}
+
+.kri-weather-map .kri-course-label__text,
+.kri-weather-map .kri-course-label span {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+}
+
+.kri-weather-map .kri-course-label--fixed .kri-course-label__text {
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+}
+
+.kri-weather-map .kri-course-label--lane .kri-course-label__text,
+.kri-weather-map .kri-course-label--lane span {
+    background: rgba(30, 64, 175, 0.92);
+    color: #fff;
+    border: 1px solid rgba(147, 197, 253, 0.45);
+}
+
+.kri-weather-map .kri-course-label--distance .kri-course-label__text,
+.kri-weather-map .kri-course-label--distance span {
+    background: rgba(255, 255, 255, 0.94);
+    color: #1e40af;
+    border: 1px solid rgba(59, 130, 246, 0.55);
+}
+
+.kri-weather-map .kri-course-label--endpoint .kri-course-label__text,
+.kri-weather-map .kri-course-label--endpoint span {
+    background: #0f172a;
+    color: #fff;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.kri-weather-map .kri-course-label--start .kri-course-label__text,
+.kri-weather-map .kri-course-label--start span {
+    background: #2563eb;
+}
+
+.kri-weather-map .kri-course-label--finish .kri-course-label__text,
+.kri-weather-map .kri-course-label--finish span {
+    background: #1e40af;
 }
 
 .kri-weather-rain-dot {
