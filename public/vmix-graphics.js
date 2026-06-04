@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t/w = play in · g = tracker (Milford) · 1–8 = leader lane (Milford) · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = schedule (KRI) or leader (Milford) · v = speed chart (KRI) · g = tracker (Milford) · 1–8 = leader lane (Milford) · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -20,7 +20,21 @@ const VG_GRAPHIC_ALIASES = {
     v: 'speedchart',
     speedchart: 'speedchart',
     chart: 'speedchart',
+    schedule: 'schedule',
+    upcoming: 'schedule',
 };
+
+/** Theme-aware shortcut → graphic (KRI uses w for upcoming schedule). */
+function vgGraphicFromShortcut(key) {
+    const k = String(key || '').toLowerCase();
+    if (k === 'w' && vgIsKriTheme()) return 'schedule';
+    return VG_GRAPHIC_ALIASES[k] || null;
+}
+
+function vgResolveGraphicAlias(raw) {
+    const key = String(raw || '').toLowerCase();
+    return vgGraphicFromShortcut(key) || VG_GRAPHIC_ALIASES[key] || raw;
+}
 
 const VG_HOLD_MS = 3000;
 const VG_OUTRO_MS = 3000;
@@ -45,6 +59,7 @@ const VG_THEMES = {
             lower: 'assets/vmix/kri/lower.png',
             draw: 'assets/vmix/kri/draw.png',
             results: 'assets/vmix/kri/results.png',
+            schedule: 'assets/vmix/kri/draw.png',
         },
     },
     'rnz-milford': {
@@ -420,6 +435,23 @@ function vgFindRace(raceParam) {
     return found || vgState.races.find((r) => r.raceNum === num) || vgState.races[0];
 }
 
+/** Upcoming races from live/dashboard race (includes current), daysheet order. */
+function vgGetUpcomingRaces(raceParam, count = 10) {
+    const races = vgState.races;
+    if (!races.length) return { current: null, upcoming: [] };
+    const current = vgFindRace(raceParam);
+    if (!current) return { current: null, upcoming: races.slice(0, count) };
+    let startIdx = races.findIndex((r) => r.race === current.race);
+    if (startIdx < 0) {
+        startIdx = races.findIndex((r) => r.raceNum === current.raceNum);
+    }
+    if (startIdx < 0) startIdx = 0;
+    return {
+        current,
+        upcoming: races.slice(startIdx, startIdx + count),
+    };
+}
+
 function vgCurrentRaceNumber(raceParam) {
     const current = vgFindRace(raceParam);
     if (current && Number.isFinite(current.raceNum)) return current.raceNum;
@@ -617,6 +649,10 @@ function vgIsSpeedGraphic(graphic) {
 
 function vgIsSpeedChartGraphic(graphic) {
     return graphic === 'speedchart';
+}
+
+function vgIsScheduleGraphic(graphic) {
+    return graphic === 'schedule';
 }
 
 function vgSpeedChartEnabled() {
@@ -1284,6 +1320,7 @@ function vgTriggerIn(graphic) {
     if (vgPlayback.state !== 'idle') return;
     if (vgIsSpeedGraphic(graphic) && !vgSpeedEnabled()) return;
     if (vgIsSpeedChartGraphic(graphic) && !vgSpeedChartEnabled()) return;
+    if (vgIsScheduleGraphic(graphic) && !vgIsKriTheme()) return;
 
     vgPlayback.graphic = graphic;
     vgSetStageState('intro');
@@ -1386,7 +1423,7 @@ function vgPrepareContent(graphic, raceParam) {
 
     const race = vgFindRace(raceParam);
 
-    if (!race && graphic !== 'title') {
+    if (!race && graphic !== 'title' && graphic !== 'schedule') {
         if (err) {
             err.hidden = false;
             err.textContent = 'No race data — check regatta code and daysheet.';
@@ -1401,6 +1438,7 @@ function vgPrepareContent(graphic, raceParam) {
     else if (graphic === 'lower') vgRenderLower(layer, race);
     else if (graphic === 'draw') vgRenderDraw(layer, race);
     else if (graphic === 'results') vgRenderResults(layer, race);
+    else if (graphic === 'schedule') vgRenderSchedule(layer, raceParam);
     else if (graphic === 'leader') {
         vgSetLayerGraphicClass(layer, 'vg-layer--leader');
     }
@@ -1612,6 +1650,52 @@ function vgRenderDraw(layer, race) {
     layer.appendChild(list);
 }
 
+function vgRenderSchedule(layer, raceParam) {
+    vgSetLayerGraphicClass(layer, 'vg-layer--schedule');
+    layer.dataset.vgLayout = 'schedule';
+
+    const { current, upcoming } = vgGetUpcomingRaces(raceParam, 10);
+
+    const head = vgEl('div', 'vg-draw-head vg-schedule-head');
+    head.dataset.vgLayout = 'schedule-head';
+    head.appendChild(vgEl('h2', 'vg-draw-event vg-schedule-title', 'Upcoming races'));
+    const metaText = current
+        ? `From race ${current.race} · ${vgFormatTime(current.startAt)}`
+        : 'Daysheet order';
+    head.appendChild(vgEl('p', 'vg-draw-meta vg-schedule-meta', metaText));
+    layer.appendChild(head);
+
+    const list = vgEl('ul', 'vg-schedule-rows');
+    list.dataset.vgLayout = 'schedule-rows';
+
+    if (!upcoming.length) {
+        list.appendChild(
+            vgEl('li', 'vg-schedule-row vg-schedule-row--empty', 'No races on daysheet'),
+        );
+    } else {
+        for (const race of upcoming) {
+            const li = vgEl('li', 'vg-schedule-row');
+            if (
+                current &&
+                race.race === current.race &&
+                race.raceNum === current.raceNum
+            ) {
+                li.classList.add('vg-schedule-row--current');
+            }
+            const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+            li.appendChild(vgEl('span', 'vg-schedule-time', vgFormatTime(race.startAt)));
+            li.appendChild(vgEl('span', 'vg-schedule-race', `Race ${race.race}`));
+            li.appendChild(vgEl('span', 'vg-schedule-event', fullName));
+            const round = [race.round, race.division ? `Div ${race.division}` : '']
+                .filter(Boolean)
+                .join(' · ');
+            li.appendChild(vgEl('span', 'vg-schedule-round', round || '—'));
+            list.appendChild(li);
+        }
+    }
+    layer.appendChild(list);
+}
+
 function vgRenderResults(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--results');
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
@@ -1669,7 +1753,7 @@ function vgHandleRemoteTrigger(raw) {
             return;
         }
         if (msg.action === 'in' && msg.graphic) {
-            const g = VG_GRAPHIC_ALIASES[msg.graphic] || msg.graphic;
+            const g = vgResolveGraphicAlias(msg.graphic);
             vgTriggerIn(g);
         }
     } catch {
@@ -1714,7 +1798,7 @@ function vgBindKeyboard() {
                 return;
             }
         }
-        const graphic = VG_GRAPHIC_ALIASES[key];
+        const graphic = vgGraphicFromShortcut(key) || VG_GRAPHIC_ALIASES[key];
         if (graphic) {
             e.preventDefault();
             vgTriggerIn(graphic);
@@ -1764,7 +1848,7 @@ function vgBindRemoteTriggers() {
     }
     const g = params.get('g') || params.get('graphic');
     if (!g) return;
-    const graphic = VG_GRAPHIC_ALIASES[g.toLowerCase()];
+    const graphic = vgResolveGraphicAlias(g);
     if (!graphic) return;
     if (params.get('autoplay') === '1' || params.get('play') === '1') {
         vgTriggerIn(graphic);

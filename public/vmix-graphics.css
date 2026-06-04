@@ -299,9 +299,10 @@ body {
     opacity: 0.88;
 }
 
-/* —— Draw / Results —— */
+/* —— Draw / Results / Schedule —— */
 .vg-layer--draw,
-.vg-layer--results {
+.vg-layer--results,
+.vg-layer--schedule {
     inset: 0;
     width: auto;
     height: auto;
@@ -628,6 +629,95 @@ body {
     min-width: 161px;
     text-align: center;
     color: #fff;
+}
+
+/* KRI upcoming schedule (draw PNG theme) */
+[data-vmix-theme='kri'] .vg-layer--schedule .vg-draw-head {
+    left: 156px;
+    top: 180px;
+    width: 935px;
+    color: #fff;
+}
+
+[data-vmix-theme='kri'] .vg-layer--schedule .vg-schedule-title {
+    box-sizing: border-box;
+    width: 935px;
+    height: 66px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fff;
+}
+
+[data-vmix-theme='kri'] .vg-layer--schedule .vg-schedule-meta {
+    box-sizing: border-box;
+    width: 935px;
+    height: 40px;
+    margin: 8px 0 0;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-rows {
+    position: absolute;
+    left: 156px;
+    top: 320px;
+    width: 980px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-row {
+    display: grid;
+    grid-template-columns: 88px 108px minmax(0, 1fr) 140px;
+    column-gap: 14px;
+    align-items: center;
+    min-height: 48px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+[data-vmix-theme='kri'] .vg-schedule-row--current {
+    color: #d4af37;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-row--current .vg-schedule-event {
+    color: #fff;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-time {
+    font-variant-numeric: tabular-nums;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-event {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-round {
+    font-size: 16px;
+    font-weight: 700;
+    text-align: right;
+    opacity: 0.92;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-row--empty {
+    grid-column: 1 / -1;
+    justify-content: center;
+    font-size: 24px;
+    opacity: 0.75;
+    border-bottom: none;
 }
 
 /* —— RNZ Milford (Milford_*_Ref.png, LT_Traccar_Milford_overlay.png) —— */
