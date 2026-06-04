@@ -46,10 +46,18 @@
                 <span>45</span>
             </div>
         </div>
-        <div class="kri-weather-charts" id="kriWeatherCharts" aria-hidden="true">
-            <div class="kri-weather-chart" id="kriWeatherChartTemp"></div>
-            <div class="kri-weather-chart" id="kriWeatherChartWind"></div>
-            <div class="kri-weather-chart" id="kriWeatherChartRain"></div>
+        <div class="kri-weather-stack" id="kriWeatherStack" aria-hidden="true">
+            <div class="kri-weather-rowing" id="kriWeatherRowing">
+                <h3 class="kri-weather-rowing__title">Rowing conditions</h3>
+                <div class="kri-weather-rowing__scene" id="kriWeatherRowingScene"></div>
+                <p class="kri-weather-rowing__pace" id="kriWeatherRowingPace">—</p>
+                <p class="kri-weather-rowing__wind" id="kriWeatherRowingWind">—</p>
+            </div>
+            <div class="kri-weather-charts" id="kriWeatherCharts">
+                <div class="kri-weather-chart" id="kriWeatherChartTemp"></div>
+                <div class="kri-weather-chart" id="kriWeatherChartWind"></div>
+                <div class="kri-weather-chart" id="kriWeatherChartRain"></div>
+            </div>
         </div>
         <p class="kri-weather-legend" id="kriWeatherLegend">
             Wind arrows = direction at 10 m. Map labels = speed (km/h). Colour: blue (light) → red (strong). Rain streaks = rainfall.

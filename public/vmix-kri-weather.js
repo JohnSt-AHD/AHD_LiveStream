@@ -445,6 +445,95 @@
         });
     }
 
+    function normalizeDeg(deg) {
+        return ((deg % 360) + 360) % 360;
+    }
+
+    function getCourseBearing() {
+        if (global.KriRowingCourseOverlay?.buildCourseFrame) {
+            return global.KriRowingCourseOverlay.buildCourseFrame().bearing;
+        }
+        return 0;
+    }
+
+    /** Wind FROM direction relative to course bearing (bow = 0°). */
+    function relativeWindDeg(windFromDeg, courseBearing) {
+        return normalizeDeg(Number(windFromDeg) - courseBearing);
+    }
+
+    function windRelativeToBoat(relativeDeg) {
+        const d = normalizeDeg(relativeDeg);
+        if (d >= 337.5 || d < 22.5) return { type: 'head', label: 'Head wind' };
+        if (d >= 22.5 && d < 67.5) return { type: 'side', label: 'Side wind' };
+        if (d >= 67.5 && d < 112.5) return { type: 'tail', label: 'Tail wind' };
+        if (d >= 112.5 && d < 157.5) return { type: 'side', label: 'Side wind' };
+        if (d >= 157.5 && d < 247.5) return { type: 'tail', label: 'Tail wind' };
+        return { type: 'side', label: 'Side wind' };
+    }
+
+    function rowingPaceLabel(speedKmh, isTailwind) {
+        const speed = Number(speedKmh);
+        if (!Number.isFinite(speed)) return '—';
+        if (speed > 20) return 'Rough conditions';
+        if (speed < 5 || (isTailwind && speed <= 20)) return 'Fast conditions';
+        if (speed >= 5 && speed < 10) return 'Moderate conditions';
+        if (speed >= 10 && speed <= 20) return 'Slow conditions';
+        return 'Moderate conditions';
+    }
+
+    function rowingScullSvg(courseBearing, windFromDeg) {
+        const rel = relativeWindDeg(windFromDeg, courseBearing);
+        const rad = (rel * Math.PI) / 180;
+        const wx1 = 100 + 82 * Math.sin(rad);
+        const wy1 = 100 - 82 * Math.cos(rad);
+        const wx2 = 100 + 46 * Math.sin(rad);
+        const wy2 = 100 - 46 * Math.cos(rad);
+        const boatRotate = normalizeDeg(courseBearing);
+        return (
+            `<svg class="kri-weather-rowing__svg" viewBox="0 0 200 200" aria-hidden="true">` +
+            `<circle cx="100" cy="100" r="92" fill="rgba(0, 121, 209, 0.08)" stroke="rgba(0, 121, 209, 0.2)" stroke-width="1"/>` +
+            `<line x1="${wx1.toFixed(1)}" y1="${wy1.toFixed(1)}" x2="${wx2.toFixed(1)}" y2="${wy2.toFixed(1)}" class="kri-weather-rowing__wind-line"/>` +
+            `<polygon points="${wx2.toFixed(1)},${wy2.toFixed(1)} ${(wx2 - 6 * Math.cos(rad)).toFixed(1)},${(wy2 - 6 * Math.sin(rad)).toFixed(1)} ${(wx2 + 6 * Math.sin(rad)).toFixed(1)},${(wy2 - 6 * Math.cos(rad)).toFixed(1)}" class="kri-weather-rowing__wind-head"/>` +
+            `<g class="kri-weather-rowing__boat" transform="rotate(${boatRotate.toFixed(1)} 100 100)">` +
+            `<ellipse cx="100" cy="100" rx="14" ry="52" fill="#ffffff" stroke="#0079d1" stroke-width="3"/>` +
+            `<ellipse cx="100" cy="78" rx="9" ry="16" fill="rgba(0, 121, 209, 0.12)"/>` +
+            `<circle cx="100" cy="96" r="5" fill="#0079d1"/>` +
+            `<line x1="100" y1="88" x2="100" y2="108" stroke="#0079d1" stroke-width="2.5"/>` +
+            `<line x1="62" y1="96" x2="138" y2="96" stroke="#0060bf" stroke-width="2.5" stroke-linecap="round"/>` +
+            `<line x1="62" y1="96" x2="38" y2="88" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
+            `<line x1="62" y1="96" x2="38" y2="104" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
+            `<line x1="138" y1="96" x2="162" y2="88" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
+            `<line x1="138" y1="96" x2="162" y2="104" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
+            `<path d="M100 48 L94 58 L106 58 Z" fill="#0079d1"/>` +
+            `</g>` +
+            `</svg>`
+        );
+    }
+
+    function renderRowingConditions(current) {
+        const scene = el('kriWeatherRowingScene');
+        const paceEl = el('kriWeatherRowingPace');
+        const windEl = el('kriWeatherRowingWind');
+        if (!scene || !paceEl || !windEl) return;
+
+        if (!current) {
+            scene.innerHTML = '';
+            paceEl.textContent = '—';
+            windEl.textContent = '—';
+            return;
+        }
+
+        const speed = current.wind_speed_10m;
+        const windFrom = current.wind_direction_10m;
+        const courseBearing = getCourseBearing();
+        const rel = windRelativeToBoat(relativeWindDeg(windFrom, courseBearing));
+        const isTailwind = rel.type === 'tail';
+
+        scene.innerHTML = rowingScullSvg(courseBearing, windFrom);
+        paceEl.textContent = rowingPaceLabel(speed, isTailwind);
+        windEl.textContent = rel.label;
+    }
+
     function windSpeedToColor(speedKmh) {
         const span = WIND_SPEED_MAX_KMH - WIND_SPEED_MIN_KMH;
         const s =
@@ -753,6 +842,7 @@
             );
 
             renderCurrent(centerData.current);
+            renderRowingConditions(centerData.current);
             renderForecast(centerData.hourly);
             renderForecastCharts(centerData.hourly);
             renderMapOverlays(gridResults, centerData.current);
@@ -914,11 +1004,18 @@
             `<span>${WIND_SPEED_MIN_KMH}</span>` +
             `<span>${WIND_SPEED_MAX_KMH}</span>` +
             '</div></div>' +
-            '<div class="kri-weather-charts" id="kriWeatherCharts" aria-hidden="true">' +
+            '<div class="kri-weather-stack" id="kriWeatherStack" aria-hidden="true">' +
+            '<div class="kri-weather-rowing" id="kriWeatherRowing">' +
+            '<h3 class="kri-weather-rowing__title">Rowing conditions</h3>' +
+            '<div class="kri-weather-rowing__scene" id="kriWeatherRowingScene"></div>' +
+            '<p class="kri-weather-rowing__pace" id="kriWeatherRowingPace">—</p>' +
+            '<p class="kri-weather-rowing__wind" id="kriWeatherRowingWind">—</p>' +
+            '</div>' +
+            '<div class="kri-weather-charts" id="kriWeatherCharts">' +
             '<div class="kri-weather-chart" id="kriWeatherChartTemp"></div>' +
             '<div class="kri-weather-chart" id="kriWeatherChartWind"></div>' +
             '<div class="kri-weather-chart" id="kriWeatherChartRain"></div>' +
-            '</div>' +
+            '</div></div>' +
             '<p class="kri-weather-legend" id="kriWeatherLegend">' +
             'Wind arrows = direction at 10 m. Map labels = speed (km/h). Colour: blue (light) → red (strong). Rain streaks = rainfall.' +
             '</p>'
