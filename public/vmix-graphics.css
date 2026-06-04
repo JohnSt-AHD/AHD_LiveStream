@@ -463,11 +463,11 @@ body {
     border-right: 2px solid rgba(255, 255, 255, 0.88);
     border-radius: 0 22px 0 0;
     background: linear-gradient(
-        315deg,
-        rgba(7, 20, 40, 0.84) 0%,
-        rgba(0, 121, 209, 0.58) 48%,
-        rgba(56, 189, 248, 0.42) 78%,
-        rgba(147, 197, 253, 0.34) 100%
+        135deg,
+        rgba(147, 197, 253, 0.34) 0%,
+        rgba(56, 189, 248, 0.42) 22%,
+        rgba(0, 121, 209, 0.58) 52%,
+        rgba(7, 20, 40, 0.84) 100%
     );
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
     z-index: 1;
@@ -605,28 +605,33 @@ body {
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw,
 [data-vmix-theme='kri'] .vg-kri-panel--results {
-    --kri-lane-logo-box: 30px;
+    --kri-lane-logo-box: 33px;
+    --kri-draw-grid-cols: 40px minmax(0, 1fr) var(--kri-lane-logo-box) minmax(0, 32%);
+    --kri-results-grid-cols: 40px minmax(0, 1fr) var(--kri-lane-logo-box) minmax(0, 28%) 84px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-cols,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-cols {
-    grid-template-columns: 48px minmax(0, 1fr) var(--kri-lane-logo-box) minmax(160px, 34%);
-    column-gap: 20px;
+    grid-template-columns: var(--kri-draw-grid-cols);
+    column-gap: 10px;
     margin-top: 20px;
+    align-items: end;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-cols {
-    grid-template-columns: 48px minmax(0, 1fr) var(--kri-lane-logo-box) minmax(160px, 30%) 108px;
+    grid-template-columns: var(--kri-results-grid-cols);
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-col--lane,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-col--lane {
+    grid-column: 1;
+    text-align: center;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-col--crew,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-col--crew {
     grid-column: 3 / 5;
     text-align: right;
-}
-
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-col--crew {
-    grid-column: 3 / 5;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-col--time {
@@ -659,21 +664,26 @@ body {
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane,
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane--draw {
-    grid-template-columns: 48px minmax(0, 1fr) var(--kri-lane-logo-box) minmax(160px, 34%);
-    column-gap: 20px;
-    min-height: 62px;
+    grid-template-columns: var(--kri-draw-grid-cols);
+    column-gap: 10px;
+    min-height: 58px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes.vg-draw-lanes--results .vg-lane {
-    grid-template-columns: 48px minmax(0, 1fr) var(--kri-lane-logo-box) minmax(160px, 30%) 108px;
-    column-gap: 20px;
-    min-height: 62px;
+    grid-template-columns: var(--kri-results-grid-cols);
+    column-gap: 10px;
+    min-height: 58px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-n,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-n {
     grid-column: 1;
+    justify-self: center;
+    align-self: center;
+    text-align: center;
+    font-size: 24px;
+    line-height: 1;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-logo-wrap,
@@ -687,11 +697,14 @@ body {
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-crew,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-crew {
     grid-column: 4;
+    justify-self: stretch;
     text-align: right;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-time {
     grid-column: 5;
+    justify-self: end;
+    text-align: right;
 }
 
 [data-vmix-theme='kri'] .vg-kri-lanes .vg-lane-n {
@@ -776,8 +789,11 @@ body {
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-club,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-club {
+    display: block;
+    width: 100%;
     font-size: 18px;
     line-height: 1.2;
+    text-align: right;
 }
 
 [data-vmix-theme='kri'] .vg-kri-lanes .vg-lane-time {
@@ -1526,10 +1542,11 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(0, 121, 209, 0.45);
     background: linear-gradient(
-        315deg,
-        rgba(7, 20, 40, 0.28) 0%,
-        rgba(0, 121, 209, 0.18) 50%,
-        rgba(147, 197, 253, 0.14) 100%
+        135deg,
+        rgba(147, 197, 253, 0.2) 0%,
+        rgba(56, 189, 248, 0.18) 35%,
+        rgba(0, 121, 209, 0.2) 65%,
+        rgba(7, 20, 40, 0.28) 100%
     );
     box-shadow:
         0 -8px 32px rgba(0, 0, 0, 0.25),

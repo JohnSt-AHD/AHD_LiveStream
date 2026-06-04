@@ -46,10 +46,10 @@ body.kri-weather-page {
     z-index: 2;
     pointer-events: none;
     background: linear-gradient(
-        315deg,
-        rgba(7, 20, 40, 0.14) 0%,
+        135deg,
+        rgba(147, 197, 253, 0.12) 0%,
         rgba(0, 121, 209, 0.08) 45%,
-        rgba(147, 197, 253, 0.12) 100%
+        rgba(7, 20, 40, 0.14) 100%
     );
 }
 
@@ -123,11 +123,11 @@ body.kri-weather-page {
     border-right: 2px solid rgba(255, 255, 255, 0.88);
     border-radius: 0 20px 0 0;
     background: linear-gradient(
-        315deg,
-        rgba(7, 20, 40, 0.72) 0%,
-        rgba(0, 121, 209, 0.42) 48%,
-        rgba(56, 189, 248, 0.34) 78%,
-        rgba(147, 197, 253, 0.28) 100%
+        135deg,
+        rgba(147, 197, 253, 0.28) 0%,
+        rgba(56, 189, 248, 0.34) 22%,
+        rgba(0, 121, 209, 0.42) 52%,
+        rgba(7, 20, 40, 0.72) 100%
     );
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
     color: #0c1f3d;
