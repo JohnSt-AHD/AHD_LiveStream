@@ -512,16 +512,24 @@
             `<line x1="${wx1.toFixed(1)}" y1="${wy1.toFixed(1)}" x2="${wx2.toFixed(1)}" y2="${wy2.toFixed(1)}" class="kri-weather-rowing__wind-line"/>` +
             `<polygon points="${wx2.toFixed(1)},${wy2.toFixed(1)} ${(wx2 - 6 * Math.cos(rad)).toFixed(1)},${(wy2 - 6 * Math.sin(rad)).toFixed(1)} ${(wx2 + 6 * Math.sin(rad)).toFixed(1)},${(wy2 - 6 * Math.cos(rad)).toFixed(1)}" class="kri-weather-rowing__wind-head"/>` +
             `<g class="kri-weather-rowing__boat" transform="rotate(${boatRotate.toFixed(1)} 100 100)">` +
-            `<ellipse cx="100" cy="100" rx="14" ry="52" fill="#ffffff" stroke="#0079d1" stroke-width="3"/>` +
-            `<ellipse cx="100" cy="78" rx="9" ry="16" fill="rgba(0, 121, 209, 0.12)"/>` +
-            `<circle cx="100" cy="96" r="5" fill="#0079d1"/>` +
-            `<line x1="100" y1="88" x2="100" y2="108" stroke="#0079d1" stroke-width="2.5"/>` +
-            `<line x1="62" y1="96" x2="138" y2="96" stroke="#0060bf" stroke-width="2.5" stroke-linecap="round"/>` +
-            `<line x1="62" y1="96" x2="38" y2="88" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
-            `<line x1="62" y1="96" x2="38" y2="104" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
-            `<line x1="138" y1="96" x2="162" y2="88" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
-            `<line x1="138" y1="96" x2="162" y2="104" stroke="#0079d1" stroke-width="3" stroke-linecap="round"/>` +
-            `<path d="M100 48 L94 58 L106 58 Z" fill="#0079d1"/>` +
+            `<path class="kri-weather-rowing__hull" d="M100 34 C108 38 114 52 115 70 L116 88 C117 96 117 104 116 112 L115 130 C113 146 108 156 100 158 C92 156 87 146 85 130 L84 112 C83 104 83 96 84 88 L85 70 C86 52 92 38 100 34 Z"/>` +
+            `<path class="kri-weather-rowing__deck" d="M100 42 C106 45 110 56 110 70 L111 88 C111 96 111 104 110 112 L109 128 C108 140 105 148 100 150 C95 148 92 140 91 128 L90 112 C89 104 89 96 90 88 L91 70 C92 56 94 45 100 42 Z"/>` +
+            `<ellipse class="kri-weather-rowing__bow-cap" cx="100" cy="38" rx="4.5" ry="3"/>` +
+            `<path class="kri-weather-rowing__footwell" d="M100 50 C104 52 106 58 106 64 C106 70 104 74 100 74 C96 74 94 70 94 64 C94 58 96 52 100 50 Z"/>` +
+            `<rect class="kri-weather-rowing__seat" x="92" y="82" width="16" height="22" rx="4"/>` +
+            `<line class="kri-weather-rowing__seat-rail" x1="94" y1="88" x2="106" y2="88"/>` +
+            `<line class="kri-weather-rowing__seat-rail" x1="94" y1="98" x2="106" y2="98"/>` +
+            `<path class="kri-weather-rowing__rigger" d="M84 94 L56 90 L54 96 L84 100 Z"/>` +
+            `<path class="kri-weather-rowing__rigger" d="M116 94 L144 90 L146 96 L116 100 Z"/>` +
+            `<circle class="kri-weather-rowing__oarlock" cx="54" cy="93" r="3.2"/>` +
+            `<circle class="kri-weather-rowing__oarlock" cx="146" cy="93" r="3.2"/>` +
+            `<line class="kri-weather-rowing__oar" x1="54" y1="93" x2="24" y2="91"/>` +
+            `<line class="kri-weather-rowing__oar" x1="146" y1="93" x2="176" y2="91"/>` +
+            `<rect class="kri-weather-rowing__blade" x="17" y="84" width="8" height="14" rx="2"/>` +
+            `<rect class="kri-weather-rowing__blade" x="175" y="84" width="8" height="14" rx="2"/>` +
+            `<circle class="kri-weather-rowing__handle" cx="68" cy="95" r="2.8"/>` +
+            `<circle class="kri-weather-rowing__handle" cx="132" cy="95" r="2.8"/>` +
+            `<ellipse class="kri-weather-rowing__skeg" cx="100" cy="154" rx="2.5" ry="5"/>` +
             `</g>` +
             `</svg>`
         );

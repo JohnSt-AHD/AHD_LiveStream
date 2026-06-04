@@ -431,6 +431,78 @@ body.kri-weather-page {
     fill: rgba(0, 96, 191, 0.7);
 }
 
+.kri-weather-rowing__hull {
+    fill: #ffffff;
+    stroke: #0079d1;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+}
+
+.kri-weather-rowing__deck {
+    fill: rgba(0, 121, 209, 0.1);
+    stroke: none;
+}
+
+.kri-weather-rowing__bow-cap {
+    fill: #f5c518;
+    stroke: #c49a00;
+    stroke-width: 0.8;
+}
+
+.kri-weather-rowing__footwell {
+    fill: rgba(0, 96, 191, 0.14);
+    stroke: rgba(0, 96, 191, 0.35);
+    stroke-width: 1;
+}
+
+.kri-weather-rowing__seat {
+    fill: rgba(0, 96, 191, 0.22);
+    stroke: #0060bf;
+    stroke-width: 1.2;
+}
+
+.kri-weather-rowing__seat-rail {
+    stroke: rgba(0, 96, 191, 0.45);
+    stroke-width: 1;
+    stroke-linecap: round;
+}
+
+.kri-weather-rowing__rigger {
+    fill: rgba(0, 96, 191, 0.18);
+    stroke: #0060bf;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.kri-weather-rowing__oarlock {
+    fill: #ffffff;
+    stroke: #0079d1;
+    stroke-width: 1.5;
+}
+
+.kri-weather-rowing__oar {
+    stroke: #0079d1;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+}
+
+.kri-weather-rowing__blade {
+    fill: #0079d1;
+    stroke: #0060bf;
+    stroke-width: 1;
+}
+
+.kri-weather-rowing__handle {
+    fill: #0060bf;
+    stroke: #ffffff;
+    stroke-width: 0.8;
+}
+
+.kri-weather-rowing__skeg {
+    fill: rgba(0, 121, 209, 0.55);
+    stroke: none;
+}
+
 .kri-weather-rowing__bow-label {
     font-size: 9px;
     font-weight: 700;
