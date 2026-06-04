@@ -59,7 +59,6 @@ const VG_THEMES = {
             lower: 'assets/vmix/kri/lower.png',
             draw: 'assets/vmix/kri/draw.png',
             results: 'assets/vmix/kri/results.png',
-            schedule: 'assets/vmix/kri/schedule.png',
         },
     },
     'rnz-milford': {
@@ -365,6 +364,30 @@ function vgClubInfo(clubId, lookup) {
     return { name: c.name, logoUrl };
 }
 
+/** Live-race labels for KRI speed chart legend (demo traces unchanged). */
+function vgBuildSpeedChartRaceContext() {
+    const race = vgFindRace(vgGetRaceParam());
+    if (!race) return null;
+    const lanes = (race.lanes || [])
+        .filter((entry) => entry.code)
+        .sort((a, b) => a.lane - b.lane)
+        .map((entry) => {
+            const club = vgParseClubCode(entry.code);
+            const info = vgClubInfo(club.id, vgState.lookup);
+            return {
+                lane: entry.lane,
+                label: info.name,
+                logoUrl: info.logoUrl,
+            };
+        });
+    return {
+        event: vgExpandEventName(race.eventType, vgState.lookup),
+        round: race.round || '',
+        race: race.race,
+        lanes,
+    };
+}
+
 const VG_LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
 const VG_LS_LEADER_LANE = 'altitudeHdLeaderLane_v1';
 const VG_LS_TRIGGER = 'altitudeHdVmixTrigger_v1';
@@ -655,6 +678,11 @@ function vgIsScheduleGraphic(graphic) {
     return graphic === 'schedule';
 }
 
+/** KRI schedule — CSS panel + logo (no PNG background). */
+function vgKriScheduleCssLayout(graphic) {
+    return vgIsKriTheme() && vgIsScheduleGraphic(graphic ?? vgPlayback.graphic);
+}
+
 function vgSpeedChartEnabled() {
     return vgIsKriTheme() && !!window.KriVmixSpeedChart;
 }
@@ -690,7 +718,9 @@ async function vgStartSpeedChartIntro() {
         }, window.KriVmixSpeedChart.INTRO_MS);
         vgPlayback.profileTimers.push(holdTimer);
 
-        await window.KriVmixSpeedChart.show();
+        await window.KriVmixSpeedChart.show({
+            raceContext: vgBuildSpeedChartRaceContext(),
+        });
         if (!vgIsSpeedChartGraphic(vgPlayback.graphic)) return;
         vgSetStageState('hold');
         vgStartSpeedChartOutro();
@@ -1214,7 +1244,7 @@ function vgStartIntroPlayback(isVideo, video) {
         return;
     }
 
-    vgShowBackground(!vgKriDefersBackgroundFade());
+    vgShowBackground(!vgKriDefersBackgroundFade() && !vgKriScheduleCssLayout());
     vgShowTextLayer(false);
     vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
 }
@@ -1224,7 +1254,9 @@ function vgEnterHold() {
     vgClearPlaybackTimers();
     vgPauseVideoAtHoldPoint(vgGetBgVideo());
     vgSetStageState('hold');
-    if (vgKriDefersBackgroundFade()) {
+    if (vgKriScheduleCssLayout()) {
+        vgShowBackground(false);
+    } else if (vgKriDefersBackgroundFade()) {
         vgShowBackground(true);
         const bg = vgGetBgEl();
         if (bg) bg.classList.add('vg-bg--fade-in');
@@ -1346,6 +1378,10 @@ function vgTriggerIn(graphic) {
     }
 
     vgPrepareContent(graphic, vgGetRaceParam());
+    if (vgKriScheduleCssLayout(graphic)) {
+        vgStartIntroPlayback(false, null);
+        return;
+    }
     const { isVideo, video } = vgLoadBackgroundAsset(graphic);
     vgStartIntroPlayback(isVideo, video);
 }
@@ -1653,17 +1689,36 @@ function vgRenderDraw(layer, race) {
 function vgRenderSchedule(layer, raceParam) {
     vgSetLayerGraphicClass(layer, 'vg-layer--schedule');
     layer.dataset.vgLayout = 'schedule';
+    layer.replaceChildren();
 
     const { current, upcoming } = vgGetUpcomingRaces(raceParam, 10);
 
-    const head = vgEl('div', 'vg-draw-head vg-schedule-head');
+    const shell = vgEl('div', 'vg-schedule-shell');
+    shell.dataset.vgLayout = 'schedule-shell';
+
+    const logo = document.createElement('img');
+    logo.className = 'vg-schedule-logo';
+    logo.src = 'assets/kri/kri-logo-full.png';
+    logo.alt = '';
+    logo.dataset.vgLayout = 'schedule-logo';
+    shell.appendChild(logo);
+
+    const panel = vgEl('div', 'vg-schedule-panel');
+    panel.dataset.vgLayout = 'schedule-panel';
+
+    const head = vgEl('div', 'vg-schedule-head');
     head.dataset.vgLayout = 'schedule-head';
-    head.appendChild(vgEl('h2', 'vg-draw-event vg-schedule-title', 'Upcoming races'));
-    const metaText = current
-        ? `From race ${current.race} · ${vgFormatTime(current.startAt)}`
-        : 'Daysheet order';
-    head.appendChild(vgEl('p', 'vg-draw-meta vg-schedule-meta', metaText));
-    layer.appendChild(head);
+    head.appendChild(vgEl('h2', 'vg-schedule-title', 'Upcoming Races'));
+    head.appendChild(vgEl('hr', 'vg-schedule-rule'));
+    panel.appendChild(head);
+
+    const cols = vgEl('div', 'vg-schedule-cols');
+    cols.dataset.vgLayout = 'schedule-cols';
+    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--time', 'Time'));
+    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--race', 'Race'));
+    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--event', 'Event'));
+    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--round', 'Round'));
+    panel.appendChild(cols);
 
     const list = vgEl('ul', 'vg-schedule-rows');
     list.dataset.vgLayout = 'schedule-rows';
@@ -1693,7 +1748,9 @@ function vgRenderSchedule(layer, raceParam) {
             list.appendChild(li);
         }
     }
-    layer.appendChild(list);
+    panel.appendChild(list);
+    shell.appendChild(panel);
+    layer.appendChild(shell);
 }
 
 function vgRenderResults(layer, race) {
@@ -1934,7 +1991,9 @@ function vgDevPreviewHold(graphic) {
         vgSetStageState('hold');
         vgShowBackground(false);
         vgShowTextLayer(false);
-        window.KriVmixSpeedChart?.show().catch(() => {});
+        window.KriVmixSpeedChart?.show({
+            raceContext: vgBuildSpeedChartRaceContext(),
+        }).catch(() => {});
         return;
     }
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
@@ -1947,9 +2006,15 @@ function vgDevPreviewHold(graphic) {
         vgPrepareContent(graphic, vgGetRaceParam());
     }
     const assetKey = vgIsSpeedGraphic(graphic) ? 'speed' : graphic;
-    const { isVideo, video } = vgLoadBackgroundAsset(assetKey);
+    let isVideo = false;
+    let video = null;
+    if (!vgKriScheduleCssLayout(graphic)) {
+        const loaded = vgLoadBackgroundAsset(assetKey);
+        isVideo = loaded.isVideo;
+        video = loaded.video;
+    }
     vgSetStageState('hold');
-    vgShowBackground(true);
+    vgShowBackground(!vgKriScheduleCssLayout(graphic));
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgShowTextLayer(false);
         vgLoadSpeedFrame();

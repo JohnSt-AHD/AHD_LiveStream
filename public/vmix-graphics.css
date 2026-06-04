@@ -638,47 +638,96 @@ body {
     color: #fff;
 }
 
-/* KRI upcoming schedule (schedule.png theme) */
-[data-vmix-theme='kri'] .vg-layer--schedule .vg-draw-head {
-    left: 156px;
-    top: 211px;
-    width: 935px;
-    color: #fff;
+/* KRI upcoming schedule — CSS gradient panel (no PNG) */
+[data-vmix-theme='kri'] .vg-layer--schedule {
+    inset: 0;
 }
 
-[data-vmix-theme='kri'] .vg-layer--schedule .vg-schedule-title {
+[data-vmix-theme='kri'] .vg-schedule-shell {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-logo {
+    position: absolute;
+    top: 44px;
+    right: 44px;
+    height: 76px;
+    width: auto;
+    max-width: 420px;
+    object-fit: contain;
+    z-index: 2;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-panel {
+    position: absolute;
+    top: 44px;
+    left: 44px;
+    bottom: 44px;
+    width: min(1040px, 68%);
     box-sizing: border-box;
-    width: 935px;
-    height: 66px;
-    margin: 0;
+    padding: 36px 44px 28px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    border-top: 2px solid rgba(255, 255, 255, 0.88);
+    border-right: 2px solid rgba(255, 255, 255, 0.88);
+    border-radius: 0 22px 0 0;
+    background: linear-gradient(
+        135deg,
+        rgba(147, 197, 253, 0.34) 0%,
+        rgba(56, 189, 248, 0.42) 22%,
+        rgba(0, 121, 209, 0.58) 52%,
+        rgba(7, 20, 40, 0.84) 100%
+    );
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
+    z-index: 1;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-head {
+    flex-shrink: 0;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-title {
+    margin: 0;
     font-size: 48px;
     font-weight: 700;
     line-height: 1.1;
-    color: #fff;
+    color: var(--kri-brand-white);
 }
 
-[data-vmix-theme='kri'] .vg-layer--schedule .vg-schedule-meta {
-    box-sizing: border-box;
-    width: 935px;
-    height: 40px;
-    margin: 8px 0 0;
-    display: flex;
-    align-items: center;
-    font-size: 18px;
+[data-vmix-theme='kri'] .vg-schedule-rule {
+    margin: 18px 0 22px;
+    border: none;
+    border-top: 2px solid rgba(255, 255, 255, 0.9);
+    width: 100%;
+    height: 0;
+}
+
+[data-vmix-theme='kri'] .vg-schedule-cols {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 88px 108px minmax(0, 1fr) 140px;
+    column-gap: 14px;
+    margin-bottom: 10px;
+    font-size: 14px;
     font-weight: 700;
-    color: #fff;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+[data-vmix-theme='kri'] .vg-schedule-col--round {
+    text-align: right;
 }
 
 [data-vmix-theme='kri'] .vg-schedule-rows {
-    position: absolute;
-    left: 156px;
-    top: 434px;
-    width: 980px;
+    flex: 1;
+    min-height: 0;
     list-style: none;
     margin: 0;
     padding: 0;
+    overflow: hidden;
 }
 
 [data-vmix-theme='kri'] .vg-schedule-row {
@@ -1430,16 +1479,18 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-width: 108px;
+    min-width: 168px;
+    max-width: 220px;
 }
 
 .vg-speed-chart__legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 13px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.75);
+    min-width: 0;
 }
 
 .vg-speed-chart__legend-swatch {
@@ -1449,8 +1500,23 @@ body {
     flex-shrink: 0;
 }
 
+.vg-speed-chart__legend-logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 3px;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
 .vg-speed-chart__legend-label {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .vg-speed-chart__legend-rank {

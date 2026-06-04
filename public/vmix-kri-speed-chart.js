@@ -12,8 +12,10 @@
     const OUTRO_MS = 900;
     const POST_RACE_MS = 2000;
     const TRACE_OPACITY = 0.92;
+    const LOGO_PLACEHOLDER = 'assets/school-logos/placeholder-white.svg';
 
     let panel = null;
+    let activeRaceContext = null;
     let timers = [];
     let rafId = null;
     let cachedData = null;
@@ -171,6 +173,43 @@
         };
     }
 
+    /** Overlay hub live-race draw onto demo traces (labels/logos only). */
+    function applyRaceContext(state, raceContext) {
+        if (!raceContext) return state;
+        const lanes = Array.isArray(raceContext.lanes) ? raceContext.lanes : [];
+        const boats = state.boats.map((boat, idx) => {
+            const lane = lanes[idx];
+            if (!lane) return boat;
+            return {
+                ...boat,
+                label: lane.label || boat.label || boat.id,
+                logoUrl: lane.logoUrl || null,
+                lane: lane.lane,
+            };
+        });
+        const data = {
+            ...state.data,
+            event: raceContext.event || state.data.event,
+            round: raceContext.round ?? state.data.round,
+            race: raceContext.race ?? state.data.race,
+            venue: raceContext.venue ?? state.data.venue,
+            title: raceContext.title || state.data.title,
+        };
+        return { ...state, data, boats };
+    }
+
+    function raceMetaLine(data, clock) {
+        const bits = [data.event, data.round, data.race ? `Race ${data.race}` : '']
+            .filter(Boolean)
+            .join(' · ');
+        return clock != null && clock !== '' ? `${bits} · ${clock}` : bits;
+    }
+
+    function legendLogoHtml(boat) {
+        const src = boat.logoUrl || LOGO_PLACEHOLDER;
+        return `<img class="vg-speed-chart__legend-logo" src="${escapeHtml(src)}" alt="">`;
+    }
+
     function renderStaticLayers(state) {
         const svg = document.getElementById('vgSpeedChartSvg');
         const legend = document.getElementById('vgSpeedChartLegend');
@@ -182,12 +221,7 @@
         const { w, h, padLeft, chartW, chartH } = layout;
 
         if (title) title.textContent = data.title || 'Speed vs distance';
-        if (meta) {
-            const bits = [data.event, data.round, data.race ? `Race ${data.race}` : '']
-                .filter(Boolean)
-                .join(' · ');
-            meta.textContent = bits;
-        }
+        if (meta) meta.textContent = raceMetaLine(data);
 
         const parts = [
             `<rect x="${padLeft}" y="0" width="${chartW}" height="${chartH}" class="vg-speed-chart__plot-bg" />`,
@@ -227,6 +261,7 @@
                 (boat, idx) =>
                     `<li class="vg-speed-chart__legend-item" data-boat-idx="${idx}">` +
                     `<span class="vg-speed-chart__legend-swatch" style="background:${boat.color}"></span>` +
+                    legendLogoHtml(boat) +
                     `<span class="vg-speed-chart__legend-label">${escapeHtml(boat.label || boat.id)}</span>` +
                     (boat.rank != null ? `<span class="vg-speed-chart__legend-rank">P${boat.rank}</span>` : '') +
                     `</li>`,
@@ -264,12 +299,7 @@
         const { boats, layout, data } = chartState;
         const { chartW, chartH } = layout;
         const meta = document.getElementById('vgSpeedChartMeta');
-        if (meta) {
-            const bits = [data.event, data.round, data.race ? `Race ${data.race}` : '']
-                .filter(Boolean)
-                .join(' · ');
-            meta.textContent = `${bits} · ${formatRaceClock(tSec)}`;
-        }
+        if (meta) meta.textContent = raceMetaLine(data, formatRaceClock(tSec));
 
         const markerDists = MARKERS.filter((d) => d > 0);
 
@@ -360,7 +390,8 @@
         if (!panel) return { raceDurationMs: 0, playbackDurationMs: 0 };
 
         const data = opts.data || (await loadData(opts.dataUrl));
-        chartState = prepareChartState(data);
+        activeRaceContext = opts.raceContext || null;
+        chartState = applyRaceContext(prepareChartState(data), activeRaceContext);
         renderStaticLayers(chartState);
         updateFrame(0);
 
@@ -386,6 +417,7 @@
     async function hide() {
         clearTimers();
         chartState = null;
+        activeRaceContext = null;
         if (!panel) return;
         panel.classList.remove('vg-speed-chart--hold', 'vg-speed-chart--intro');
         panel.classList.add('vg-speed-chart--outro');
@@ -396,6 +428,7 @@
     function destroy() {
         clearTimers();
         chartState = null;
+        activeRaceContext = null;
         if (panel) {
             panel.classList.remove(
                 'vg-speed-chart--visible',
@@ -409,6 +442,7 @@
     function remove() {
         clearTimers();
         chartState = null;
+        activeRaceContext = null;
         if (panel) {
             panel.remove();
             panel = null;
@@ -426,6 +460,7 @@
         remove,
         loadData,
         prepareChartState,
+        applyRaceContext,
         getPlaybackDurationMs,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
