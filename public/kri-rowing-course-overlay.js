@@ -26,6 +26,7 @@
 
     let mapRef = null;
     let layerRef = null;
+    let renderOpts = {};
 
     function toRad(deg) {
         return (deg * Math.PI) / 180;
@@ -215,13 +216,15 @@
                 interactive: false,
             }).addTo(layerRef);
 
-            const labelPt = destination(
-                startPt.lat,
-                startPt.lng,
-                courseBearing + 180,
-                35,
-            );
-            addLineLabel(labelPt.lat, labelPt.lng, `Lane ${lane}`, 'kri-course-label--lane');
+            if (!renderOpts.hideLaneLabels) {
+                const labelPt = destination(
+                    startPt.lat,
+                    startPt.lng,
+                    courseBearing + 180,
+                    35,
+                );
+                addLineLabel(labelPt.lat, labelPt.lng, `Lane ${lane}`, 'kri-course-label--lane');
+            }
         }
 
         const outerOffsets = [-halfWidth, halfWidth];
@@ -288,9 +291,10 @@
         }
     }
 
-    function mount(map, layerGroup) {
+    function mount(map, layerGroup, opts) {
         mapRef = map;
         layerRef = layerGroup;
+        renderOpts = opts && typeof opts === 'object' ? opts : {};
         renderCourse();
 
         if (!global.__kriCourseStorageBound) {

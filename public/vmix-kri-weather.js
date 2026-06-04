@@ -19,7 +19,7 @@
     const INTRO_MS = 650;
     const OUTRO_MS = 650;
     const RANDOM_WIND_COUNT = 22;
-    const ZOOM_IN_FACTOR = 1.2;
+    const ZOOM_IN_FACTOR = 1.8;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
     const WMO_LABELS = {
@@ -304,9 +304,19 @@
         }
     }
 
-    function rainRadiusMm(mm) {
+    function rainCellBounds(lat, lon) {
+        const b = getWindBounds();
+        const dLat = (b.north - b.south) / Math.max(1, LAKE.gridRows - 1) / 2;
+        const dLon = (b.east - b.west) / Math.max(1, LAKE.gridCols - 1) / 2;
+        return [
+            [lat - dLat, lon - dLon],
+            [lat + dLat, lon + dLon],
+        ];
+    }
+
+    function rainCellOpacity(mm) {
         if (mm <= 0) return 0;
-        return Math.min(28, 8 + mm * 12);
+        return Math.min(0.42, 0.1 + mm * 0.18);
     }
 
     function clearMapLayers() {
@@ -355,17 +365,14 @@
                 }),
             );
 
-            const r = rainRadiusMm(cur.precipitation);
-            if (r > 0) {
+            const rainOpacity = rainCellOpacity(cur.precipitation);
+            if (rainOpacity > 0) {
                 rainLayer.addLayer(
-                    L.circle(latlng, {
-                        radius: r * 8,
-                        stroke: true,
-                        weight: 1,
-                        color: 'rgba(0, 96, 191, 0.55)',
-                        fillColor: '#38bdf8',
-                        fillOpacity: 0.35,
-                        className: 'kri-weather-rain-dot',
+                    L.rectangle(rainCellBounds(pt.lat, pt.lon), {
+                        stroke: false,
+                        fillColor: '#475569',
+                        fillOpacity: rainOpacity,
+                        className: 'kri-weather-rain-cell',
                         interactive: false,
                     }),
                 );
@@ -446,7 +453,7 @@
             map.getPane('kriCoursePane').style.zIndex = 420;
         }
         courseLayer = L.layerGroup([], { pane: 'kriCoursePane' }).addTo(map);
-        global.KriRowingCourseOverlay.mount(map, courseLayer);
+        global.KriRowingCourseOverlay.mount(map, courseLayer, { hideLaneLabels: true });
     }
 
     function initMap() {
@@ -487,7 +494,7 @@
         }
         if (!map.getPane('kriRainPane')) {
             map.createPane('kriRainPane');
-            map.getPane('kriRainPane').style.zIndex = 440;
+            map.getPane('kriRainPane').style.zIndex = 410;
         }
 
         windLayer = L.layerGroup([], { pane: 'kriWindPane' }).addTo(map);
@@ -515,8 +522,8 @@
             '<header class="kri-weather-panel__head">' +
             '<p class="kri-weather-panel__kicker">Lake Karāpiro</p>' +
             '<div class="kri-weather-panel__title-row">' +
-            '<div class="kri-weather-condition-icon" id="kriWeatherConditionIcon" aria-hidden="true"></div>' +
             '<h1 class="kri-weather-panel__title">Live weather</h1>' +
+            '<div class="kri-weather-condition-icon" id="kriWeatherConditionIcon" aria-hidden="true"></div>' +
             '</div>' +
             '<p class="kri-weather-panel__updated" id="kriWeatherUpdated">Loading…</p>' +
             '</header>' +
@@ -531,7 +538,7 @@
             '<p class="kri-weather-status" id="kriWeatherStatus"></p>' +
             '</aside>' +
             '<p class="kri-weather-legend" id="kriWeatherLegend">' +
-            'Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Rain circles = current rainfall.' +
+            'Wind arrows show direction and strength (10 m). Labels = wind speed (km/h). Shaded areas = rainfall intensity.' +
             '</p>'
         );
     }

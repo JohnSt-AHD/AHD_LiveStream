@@ -100,7 +100,13 @@ body.kri-weather-page {
 .kri-weather-panel__title-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 14px;
+}
+
+.kri-weather-panel__title-row .kri-weather-panel__title {
+    flex: 1;
+    min-width: 0;
 }
 
 .kri-weather-condition-icon {
@@ -366,11 +372,8 @@ body.kri-weather-page {
     background: #1e40af;
 }
 
-.kri-weather-rain-dot {
-    border-radius: 50%;
-    border: 1px solid rgba(0, 96, 191, 0.5);
-    background: rgba(56, 189, 248, 0.45);
-    box-shadow: 0 0 8px rgba(0, 121, 209, 0.35);
+.kri-weather-map .kri-weather-rain-cell {
+    pointer-events: none;
 }
 
 .kri-weather-page--error .kri-weather-panel {
