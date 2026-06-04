@@ -1675,13 +1675,23 @@ function vgEl(tag, className, text) {
 
 const KRI_LOGO_SRC = 'assets/kri/kri-logo-full.png';
 const KRI_LOGO_MARK_SRC = 'assets/kri/kri-logo.png';
+const KRI_SPONSOR_IMAGES_URL = 'data/kri-sponsor-images.json';
+const KRI_SPONSOR_ASSETS = 'assets/kri/sponsors/';
 
-function vgKriCreateShell() {
+/** @type {string[]} */
+let vgKriSponsorImages = [];
+
+function vgKriCreateShell(opts = {}) {
     const shell = vgEl('div', 'vg-kri-shell');
     shell.dataset.vgLayout = 'kri-shell';
     const logo = document.createElement('img');
     logo.className = 'vg-kri-logo';
-    logo.src = KRI_LOGO_SRC;
+    if (opts.useMarkLogo) {
+        logo.classList.add('vg-kri-logo--mark');
+        logo.src = KRI_LOGO_MARK_SRC;
+    } else {
+        logo.src = KRI_LOGO_SRC;
+    }
     logo.alt = '';
     logo.dataset.vgLayout = 'kri-logo';
     shell.appendChild(logo);
@@ -1705,6 +1715,44 @@ function vgKriCreateLowerLogoBox() {
     img.height = 73;
     img.dataset.vgLayout = 'kri-lower-logo-mark';
     box.appendChild(img);
+    return box;
+}
+
+async function vgLoadKriSponsorImages() {
+    if (vgKriSponsorImages.length) return vgKriSponsorImages;
+    try {
+        const res = await fetch(KRI_SPONSOR_IMAGES_URL);
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                vgKriSponsorImages = data.filter((name) => typeof name === 'string' && name.trim());
+            }
+        }
+    } catch {
+        /* ignore — sponsor box hidden if list empty */
+    }
+    return vgKriSponsorImages;
+}
+
+function vgKriRandomSponsorUrl() {
+    if (!vgKriSponsorImages.length) return '';
+    const file = vgKriSponsorImages[Math.floor(Math.random() * vgKriSponsorImages.length)];
+    return `${KRI_SPONSOR_ASSETS}${encodeURIComponent(file)}`;
+}
+
+function vgKriCreateLowerSponsorBox() {
+    const box = vgEl('div', 'vg-kri-lower-sponsor-box');
+    box.dataset.vgLayout = 'kri-lower-sponsor';
+    box.appendChild(vgEl('span', 'vg-kri-lower-sponsor-label', 'Race Sponsor'));
+    const src = vgKriRandomSponsorUrl();
+    if (src) {
+        const img = document.createElement('img');
+        img.className = 'vg-kri-lower-sponsor-img';
+        img.src = src;
+        img.alt = '';
+        img.dataset.vgLayout = 'kri-lower-sponsor-img';
+        box.appendChild(img);
+    }
     return box;
 }
 
@@ -1825,11 +1873,13 @@ function vgRenderLower(layer, race) {
     layer.dataset.vgLayout = 'lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     if (vgIsKriTheme()) {
-        const shell = vgKriCreateShell();
+        const shell = vgKriCreateShell({ useMarkLogo: true });
         shell.classList.add('vg-kri-shell--lower');
         const wrap = vgEl('div', 'vg-kri-lower-wrap');
         wrap.dataset.vgLayout = 'kri-lower-wrap';
         wrap.appendChild(vgKriCreateLowerLogoBox());
+        const main = vgEl('div', 'vg-kri-lower-main');
+        main.dataset.vgLayout = 'kri-lower-main';
         const panel = vgKriCreatePanel('lower');
         if (race.progression) {
             const progBox = vgEl('div', 'vg-kri-lower-progression-box');
@@ -1850,7 +1900,9 @@ function vgRenderLower(layer, race) {
         body.appendChild(raceEl);
         body.appendChild(vgEl('h2', 'vg-lower-event', fullName));
         panel.appendChild(body);
-        wrap.appendChild(panel);
+        main.appendChild(panel);
+        main.appendChild(vgKriCreateLowerSponsorBox());
+        wrap.appendChild(main);
         shell.appendChild(wrap);
         layer.appendChild(shell);
         return;
@@ -1979,7 +2031,7 @@ function vgRenderDraw(layer, race) {
     const metaText = `Race ${race.race} · ${race.round}${race.division ? ` · Div ${race.division}` : ''}`;
 
     if (vgIsKriTheme()) {
-        const shell = vgKriCreateShell();
+        const shell = vgKriCreateShell({ useMarkLogo: true });
         const panel = vgKriCreatePanel('draw');
         vgKriAppendHead(panel, {
             kicker: 'Start list',
@@ -2065,7 +2117,7 @@ function vgRenderSchedule(layer, raceParam) {
 
     const { current, upcoming } = vgGetUpcomingRaces(raceParam, 10);
 
-    const shell = vgKriCreateShell();
+    const shell = vgKriCreateShell({ useMarkLogo: true });
     const panel = vgKriCreatePanel('schedule');
 
     const metaText = current
@@ -2137,7 +2189,7 @@ function vgRenderResults(layer, race) {
     const metaText = `Race ${race.race} · ${race.round} · Results`;
 
     if (vgIsKriTheme()) {
-        const shell = vgKriCreateShell();
+        const shell = vgKriCreateShell({ useMarkLogo: true });
         const panel = vgKriCreatePanel('results');
         vgKriAppendHead(panel, {
             kicker: 'Results',
@@ -2345,6 +2397,7 @@ async function vgReload() {
             vgFetchCsv(vgGetCsvUrl('daysheet')),
             vgFetchCsv(vgGetCsvUrl('competitors')).catch(() => ''),
             vgFetchCsv(vgGetCsvUrl('results')).catch(() => ''),
+            vgLoadKriSponsorImages(),
         ]);
     vgState.lookup = lookup;
     vgState.races = vgParseDaysheet(daysheetText);

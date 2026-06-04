@@ -449,6 +449,11 @@ body {
     z-index: 2;
 }
 
+[data-vmix-theme='kri'] .vg-kri-logo--mark {
+    width: 76px;
+    max-width: 76px;
+}
+
 [data-vmix-theme='kri'] .vg-kri-panel {
     position: absolute;
     top: 44px;
@@ -515,17 +520,69 @@ body {
     display: block;
 }
 
+[data-vmix-theme='kri'] .vg-kri-lower-main {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+}
+
 [data-vmix-theme='kri'] .vg-kri-lower-wrap .vg-kri-panel--lower {
     position: relative;
     top: auto;
     bottom: auto;
     left: auto;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-width: 0;
+    width: fit-content;
+    max-width: min(1104px, 100%);
     min-height: 126px;
-    width: min(1104px, 100%);
-    padding: 21px 28px 16px;
+    padding: 21px 48px 16px 28px;
     border-radius: 0 22px 0 0;
+}
+
+[data-vmix-theme='kri'] .vg-kri-lower-sponsor-box {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    z-index: 3;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 132px;
+    height: 50%;
+    min-height: 63px;
+    padding: 8px 10px;
+    transform: translate(40%, -50%);
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(12, 31, 61, 0.14);
+    pointer-events: none;
+}
+
+[data-vmix-theme='kri'] .vg-kri-lower-sponsor-label {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0060bf;
+    text-align: center;
+    line-height: 1.2;
+}
+
+[data-vmix-theme='kri'] .vg-kri-lower-sponsor-img {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower {
@@ -942,7 +999,11 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower:has(.vg-kri-lower-progression-box) .vg-kri-lower-body {
-    padding-right: min(300px, 42%);
+    padding-right: max(88px, min(300px, 42%));
+}
+
+[data-vmix-theme='kri'] .vg-kri-lower-main .vg-kri-lower-body {
+    padding-right: 88px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower .vg-lower-meta {
