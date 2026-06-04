@@ -25,6 +25,9 @@
     const WIND_ARROW_OPACITY = 0.42;
     const WIND_SPEED_MIN_KMH = 0;
     const WIND_SPEED_MAX_KMH = 45;
+    /** Wind colour scale — RGB lerp (avoids green when HSL hue wraps 240°→0°). */
+    const WIND_COLOR_LOW = { r: 0, g: 121, b: 209 };
+    const WIND_COLOR_HIGH = { r: 235, g: 59, b: 59 };
     const FORECAST_CHART_HOURS = 8;
     const RAIN_CHART_MAX_MM = 2;
 
@@ -449,8 +452,10 @@
                 ? speedKmh
                 : WIND_SPEED_MIN_KMH;
         const t = Math.min(1, Math.max(0, (s - WIND_SPEED_MIN_KMH) / span));
-        const hue = 240 * (1 - t);
-        return `hsl(${hue}, 88%, 48%)`;
+        const r = Math.round(WIND_COLOR_LOW.r + t * (WIND_COLOR_HIGH.r - WIND_COLOR_LOW.r));
+        const g = Math.round(WIND_COLOR_LOW.g + t * (WIND_COLOR_HIGH.g - WIND_COLOR_LOW.g));
+        const b = Math.round(WIND_COLOR_LOW.b + t * (WIND_COLOR_HIGH.b - WIND_COLOR_LOW.b));
+        return `rgb(${r}, ${g}, ${b})`;
     }
 
     /**
