@@ -434,12 +434,28 @@
         return computeWorldRowingHeatProgression(options);
     }
 
+    function isMisassignedRepFormat(format) {
+        return /repechage/i.test(String(format || ''));
+    }
+
     function computeRepProgression(repResults) {
         const reps = repResults || [];
         if (!reps.length) return { reps: [], summary: '' };
+
+        let sharedFormat = '';
+        for (const rep of reps) {
+            const fmt = String(rep.format || '').trim();
+            if (fmt && parseRowitProgressionRules(fmt) && !isMisassignedRepFormat(fmt)) {
+                sharedFormat = fmt;
+                break;
+            }
+        }
+
         const blocks = reps.map((rep) => {
             const valid = (rep.placings || []).filter((p) => p.place < 90 && p.competitor).sort((a, b) => a.place - b.place);
-            const rules = parseRowitProgressionRules(rep.format);
+            let format = String(rep.format || '').trim();
+            if (!format || isMisassignedRepFormat(format)) format = sharedFormat;
+            const rules = parseRowitProgressionRules(format);
             const rows = valid.map((p) => {
                 let progression = progPill('—', 'out');
                 if (rules) {
@@ -458,7 +474,7 @@
             return {
                 repNum: rep.division || rep.raceNum,
                 raceNum: rep.raceNum,
-                format: rep.format,
+                format,
                 rows,
             };
         });

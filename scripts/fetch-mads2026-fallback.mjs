@@ -221,7 +221,12 @@ async function main() {
                 eventNum: race.eventNum,
                 round: race.round,
                 division: race.division,
-                format: race.format || ds.progression,
+                format:
+                    race.round === 'r' && ds.progression
+                        ? ds.progression
+                        : race.format && !/repechage/i.test(race.format)
+                          ? race.format
+                          : ds.progression || race.format,
                 placings: race.placings,
             });
         }

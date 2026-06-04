@@ -484,6 +484,42 @@
         return primaryProgressionFormat(group);
     }
 
+    /** RowIT result pages often attach heat progression to repechage tables — prefer daysheet. */
+    function isMisassignedRepFormat(format) {
+        return /repechage/i.test(String(format || ''));
+    }
+
+    function formatForRepRace(group, repResult) {
+        const division = String(repResult.division ?? '');
+        const ds = state.races.find(
+            (r) =>
+                eventMatchesNum(r, group.eventNum) &&
+                classifyRound(r.round) === 'rep' &&
+                String(r.division) === division,
+        );
+        if (ds?.progression) return ds.progression;
+
+        const scheduled = getRacesForEvent(group).find(
+            (r) => classifyRound(r.round) === 'rep' && String(r.division) === division,
+        );
+        if (scheduled?.progression) return scheduled.progression;
+
+        const fmt = String(repResult.format || '').trim();
+        if (fmt && !isMisassignedRepFormat(fmt)) return fmt;
+
+        for (const r of state.races) {
+            if (!eventMatchesNum(r, group.eventNum)) continue;
+            if (classifyRound(r.round) !== 'rep') continue;
+            if (r.progression) return r.progression;
+        }
+        for (const res of state.results.values()) {
+            if (!eventMatchesNum(res, group.eventNum)) continue;
+            if (classifyRound(res.round) !== 'rep') continue;
+            if (res.format && !isMisassignedRepFormat(res.format)) return res.format;
+        }
+        return primaryProgressionFormat(group);
+    }
+
     async function fetchRegattaCsv(code, file) {
         const candidates = csvUrlCandidates(code, file);
         let lastErr = null;
@@ -966,7 +1002,7 @@
             reps.push({
                 raceNum,
                 division: res.division,
-                format: res.format || primaryProgressionFormat(group),
+                format: formatForRepRace(group, { division: res.division, format: res.format }),
                 placings: res.placings || [],
             });
         }
@@ -978,7 +1014,10 @@
             reps.push({
                 raceNum: race.raceNum,
                 division: race.division,
-                format: res?.format || race.progression || primaryProgressionFormat(group),
+                format: formatForRepRace(group, {
+                    division: race.division,
+                    format: res?.format || race.progression || '',
+                }),
                 placings: res?.placings || [],
             });
         }
