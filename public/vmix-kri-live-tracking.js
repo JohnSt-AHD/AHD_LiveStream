@@ -8,7 +8,7 @@
     const OUTRO_MS = 900;
     const POST_RACE_MS = 2000;
     const SWAP_MS = 3000;
-    const SPLIT_HOLD_SEC = 15;
+    const SPLIT_HOLD_SEC = 20;
     const SPLIT_MARKERS_M = [500, 1000, 1500];
     const ROW_HEIGHT_PX = 48;
     const ROW_GAP_PX = 8;
