@@ -616,8 +616,10 @@ body {
 [data-vmix-theme='kri'] .vg-kri-panel--draw,
 [data-vmix-theme='kri'] .vg-kri-panel--results {
     --kri-lane-logo-box: 35px;
-    --kri-draw-grid-cols: 40px var(--kri-lane-logo-box) minmax(0, 1fr);
+    --kri-draw-grid-cols: 40px var(--kri-lane-logo-box) max-content;
     --kri-results-grid-cols: 40px var(--kri-lane-logo-box) minmax(0, 1fr) 84px;
+    --kri-draw-lanes-offset-x: -200px;
+    --kri-draw-lanes-offset-y: -100px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-cols,
@@ -629,6 +631,14 @@ body {
     padding-right: 20px;
     box-sizing: border-box;
     align-items: center;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-cols {
+    width: fit-content;
+    transform: translate(
+        var(--kri-draw-lanes-offset-x),
+        var(--kri-draw-lanes-offset-y)
+    );
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-cols {
@@ -682,11 +692,35 @@ body {
     box-sizing: border-box;
 }
 
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes {
+    width: fit-content;
+    transform: translate(
+        var(--kri-draw-lanes-offset-x),
+        var(--kri-draw-lanes-offset-y)
+    );
+}
+
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane,
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane--draw {
-    grid-template-columns: var(--kri-draw-grid-cols);
-    column-gap: 20px;
-    min-height: 58px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    width: fit-content;
+    min-height: 78px;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-n {
+    flex: 0 0 40px;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-logo-wrap {
+    flex: 0 0 var(--kri-lane-logo-box);
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-crew {
+    flex: 0 1 auto;
+    max-width: none;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane,
@@ -814,6 +848,12 @@ body {
     font-size: 18px;
     line-height: 1.2;
     text-align: right;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-club {
+    width: auto;
+    text-align: left;
+    white-space: nowrap;
 }
 
 [data-vmix-theme='kri'] .vg-kri-lanes .vg-lane-time {

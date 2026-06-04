@@ -619,8 +619,9 @@ function vgRefreshLiveRaceContent() {
     }
 
     if (!profile.noText && layer) {
-        layer.classList.add('vg-layer--visible', 'vg-layer--fade-in');
+        layer.classList.add('vg-layer--visible');
         layer.classList.remove('vg-layer--fade-out');
+        /* Keep hold stable on CSV refresh — fade-in is only for intro (see vgEnterHold). */
     }
 }
 
