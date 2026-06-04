@@ -844,11 +844,6 @@
         mountCourseOverlay();
         initScatteredWindSites();
 
-        const b = getWindBounds();
-        map.setView([(b.south + b.north) / 2, (b.west + b.east) / 2], LAKE.zoom, {
-            animate: false,
-        });
-
         if (!map.getPane('kriWindPane')) {
             map.createPane('kriWindPane');
             map.getPane('kriWindPane').style.zIndex = 450;
@@ -864,6 +859,9 @@
         windLayer = L.layerGroup([], { pane: 'kriWindPane' }).addTo(map);
         windLabelLayer = L.layerGroup([], { pane: 'kriWindLabelPane' }).addTo(map);
         decorativeWindLayer = L.layerGroup([], { pane: 'kriDecorativeWindPane' }).addTo(map);
+
+        /* Fit once the container has layout — avoids a visible zoom after intro fade-in. */
+        requestAnimationFrame(() => syncMapLayout(true));
     }
 
     function startRefreshTimer() {
@@ -947,6 +945,10 @@
         await refreshWeather();
         startRefreshTimer();
 
+        /* Lock map view before fade-in so course fit is not visible as a late zoom. */
+        void panel.offsetWidth;
+        syncMapLayout(true);
+
         panel.classList.remove('vg-kri-weather--outro', 'vg-kri-weather--hold');
         panel.classList.add('vg-kri-weather--intro');
         void panel.offsetWidth;
@@ -955,7 +957,6 @@
         await wait(INTRO_MS);
         panel.classList.remove('vg-kri-weather--intro');
         panel.classList.add('vg-kri-weather--hold');
-        syncMapLayout(true);
     }
 
     async function hide() {
@@ -992,8 +993,9 @@
         initMap();
         refreshWeather();
         startRefreshTimer();
-        panel.classList.add('vg-kri-weather--visible', 'vg-kri-weather--hold');
+        void panel.offsetWidth;
         syncMapLayout(true);
+        panel.classList.add('vg-kri-weather--visible', 'vg-kri-weather--hold');
     }
 
     if (document.body.classList.contains('kri-weather-page')) {
