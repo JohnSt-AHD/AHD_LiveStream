@@ -545,19 +545,20 @@ body {
 [data-vmix-theme='kri'] .vg-kri-lower-sponsor-box {
     position: absolute;
     right: 0;
-    top: 50%;
+    bottom: 0;
+    top: auto;
     z-index: 3;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    width: 132px;
-    height: 50%;
-    min-height: 63px;
-    padding: 8px 10px;
-    transform: translate(40%, -50%);
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 2px;
+    width: 165px;
+    height: 62.5%;
+    min-height: 79px;
+    padding: 4px 6px 6px;
+    transform: translateX(40%);
     background: rgba(255, 255, 255, 0.8);
     border: 2px solid rgba(255, 255, 255, 0.8);
     border-radius: 8px;
@@ -567,20 +568,20 @@ body {
 
 [data-vmix-theme='kri'] .vg-kri-lower-sponsor-label {
     flex-shrink: 0;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 800;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: #0060bf;
     text-align: center;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 [data-vmix-theme='kri'] .vg-kri-lower-sponsor-img {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
     width: 100%;
-    max-height: 100%;
+    height: 100%;
     object-fit: contain;
     display: block;
 }
@@ -999,11 +1000,11 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower:has(.vg-kri-lower-progression-box) .vg-kri-lower-body {
-    padding-right: max(88px, min(300px, 42%));
+    padding-right: max(110px, min(300px, 42%));
 }
 
 [data-vmix-theme='kri'] .vg-kri-lower-main .vg-kri-lower-body {
-    padding-right: 88px;
+    padding-right: 110px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower .vg-lower-meta {
