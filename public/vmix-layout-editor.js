@@ -13,7 +13,7 @@
         draw: [
             { id: 'draw-head', label: 'Draw — header block (all)', posMode: 'absolute' },
             { id: 'draw-kicker', label: 'Draw — “Start list” kicker', posMode: 'transform' },
-            { id: 'draw-title', label: 'Draw — event title', posMode: 'absolute' },
+            { id: 'draw-title', label: 'Draw — event title', posMode: 'transform' },
             { id: 'draw-meta', label: 'Draw — race / round line', posMode: 'transform' },
             { id: 'draw-body', label: 'Draw — columns + rows block', posMode: 'transform' },
             { id: 'draw-cols', label: 'Draw — Lane / Crew header row', posMode: 'transform' },
@@ -25,7 +25,7 @@
         results: [
             { id: 'results-head', label: 'Results — header block (all)' },
             { id: 'results-kicker', label: 'Results — kicker' },
-            { id: 'results-title', label: 'Results — event title' },
+            { id: 'results-title', label: 'Results — event title', posMode: 'transform' },
             { id: 'results-meta', label: 'Results — race line' },
             { id: 'results-cols', label: 'Results — column headers', posMode: 'transform' },
             { id: 'results-lanes', label: 'Results — lane list', posMode: 'transform' },
@@ -61,6 +61,7 @@
         drag: null,
         panel: null,
         statusEl: null,
+        syncingFields: false,
     };
 
     function isDevMode() {
@@ -226,39 +227,50 @@
         const el = findRegionEl(def);
         if (!el) return;
 
-        const pos = elPositionPx(el);
-        const transformPos = usesTransformPos(def, el);
-        const set = (name, val) => {
-            const input = panel.querySelector(`[data-field="${name}"]`);
-            if (input) input.value = val ?? '';
-        };
-        if (transformPos) {
-            set('left', '');
-            set('top', '');
-        } else {
-            set('left', Math.round(pos.left));
-            set('top', Math.round(pos.top));
+        editor.syncingFields = true;
+        try {
+            const pos = elPositionPx(el);
+            const transformPos = usesTransformPos(def, el);
+            const set = (name, val) => {
+                const input = panel.querySelector(`[data-field="${name}"]`);
+                if (input) input.value = val ?? '';
+            };
+            if (transformPos) {
+                set('left', '');
+                set('top', '');
+            } else {
+                set('left', Math.round(pos.left));
+                set('top', Math.round(pos.top));
+            }
+            const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, def.id);
+            const tr = readTranslate(el);
+            const liveTransform =
+                el.style.transform ||
+                (tr.x || tr.y ? formatTranslate(tr.x, tr.y) : '');
+            set(
+                'transform',
+                liveTransform === 'translate(0px, 0px)' ? '' : liveTransform || saved?.transform || '',
+            );
+            set('width', el.style.width || saved?.width || '');
+            set('gap', el.style.gap || saved?.gap || '');
+            set('fontSize', el.style.fontSize || saved?.fontSize || '');
+            set('scale', saved?.scale ?? '');
+            const computedColor = global.getComputedStyle(el).color || '';
+            set(
+                'color',
+                el.style.color || rgbToHex(computedColor) || saved?.color || '',
+            );
+
+            const modeEl = panel.querySelector('[data-field="posMode"]');
+            if (modeEl) modeEl.textContent = regionPosMode(def, el);
+
+            const leftInput = panel.querySelector('[data-field="left"]');
+            const topInput = panel.querySelector('[data-field="top"]');
+            if (leftInput) leftInput.disabled = transformPos;
+            if (topInput) topInput.disabled = transformPos;
+        } finally {
+            editor.syncingFields = false;
         }
-        const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, def.id);
-        set('width', saved?.width || el.style.width || '');
-        set('gap', saved?.gap || el.style.gap || '');
-        set('fontSize', saved?.fontSize || el.style.fontSize || '');
-        const tr =
-            saved?.transform ||
-            el.style.transform ||
-            formatTranslate(readTranslate(el).x, readTranslate(el).y);
-        set('transform', tr === 'translate(0px, 0px)' ? '' : tr);
-        set('scale', saved?.scale ?? '');
-        const computedColor = global.getComputedStyle(el).color || '';
-        set('color', saved?.color || el.style.color || rgbToHex(computedColor) || '');
-
-        const modeEl = panel.querySelector('[data-field="posMode"]');
-        if (modeEl) modeEl.textContent = regionPosMode(def, el);
-
-        const leftInput = panel.querySelector('[data-field="left"]');
-        const topInput = panel.querySelector('[data-field="top"]');
-        if (leftInput) leftInput.disabled = transformPos;
-        if (topInput) topInput.disabled = transformPos;
     }
 
     function rgbToHex(rgb) {
@@ -312,6 +324,7 @@
     }
 
     function applyFieldsToSelection() {
+        if (editor.syncingFields) return;
         const def = getSelectedDef();
         const panel = editor.panel;
         if (!def || !panel) return;
@@ -348,6 +361,7 @@
             const pos = elPositionPx(el);
             props.left = `${Math.round(pos.left)}px`;
             props.top = `${Math.round(pos.top)}px`;
+            delete props.transform;
         }
         return global.VmixLayout.sanitizeRegionProps(def.id, props, !!def.target);
     }
@@ -437,6 +451,12 @@
         const mode = regionPosMode(def, dragEl);
         const pos = elPositionPx(dragEl);
         const pt = stagePoint(e.clientX, e.clientY);
+        if (mode !== 'transform' && !def.target) {
+            dragEl.style.position = 'absolute';
+            dragEl.style.transform = '';
+            dragEl.style.left = `${Math.round(pos.left)}px`;
+            dragEl.style.top = `${Math.round(pos.top)}px`;
+        }
         editor.drag = {
             el: dragEl,
             def,
@@ -539,7 +559,7 @@
         editor.panel.className = 'vg-layout-panel';
         editor.panel.innerHTML = `
             <h2>Layout dev mode</h2>
-            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). KRI flex layouts use transform mode.</p>
+            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). Header block uses Left/Top; title, kicker, meta, columns, and lanes use Transform.</p>
             <label for="vgLayoutGraphic">Graphic</label>
             <select id="vgLayoutGraphic">
                 <option value="title">Title</option>

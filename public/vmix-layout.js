@@ -15,7 +15,6 @@
                     left: '263px',
                     top: '215px',
                     width: '935px',
-                    transform: 'translate(7px, 0px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
@@ -23,8 +22,6 @@
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
-                    left: '102px',
-                    top: '134px',
                     width: '900px',
                     transform: 'translate(7px, 0px)',
                     color: 'rgb(49, 62, 80)',
@@ -219,11 +216,13 @@
     /** Strip properties that Save all accidentally copied from the wrong region. */
     const TRANSFORM_ONLY_REGIONS = new Set([
         'draw-kicker',
+        'draw-title',
         'draw-meta',
         'draw-body',
         'draw-cols',
         'draw-lanes',
         'results-kicker',
+        'results-title',
         'results-meta',
         'results-cols',
         'results-lanes',
@@ -322,32 +321,32 @@
         const hasLeft = props.left != null && props.left !== '';
         const hasTop = props.top != null && props.top !== '';
         const hasTransform = props.transform != null && props.transform !== '';
+        const useAbsolute = hasLeft || hasTop;
 
         for (const key of STYLE_KEYS) {
             if (props[key] == null || props[key] === '') continue;
             if (key === 'scale') continue;
+            if (key === 'transform' && useAbsolute) continue;
             if (key === 'left' || key === 'top') {
-                if (hasTransform && !hasLeft && !hasTop) continue;
+                if (!useAbsolute) continue;
             }
             const v = props[key];
             el.style[key] =
                 typeof v === 'number' && key !== 'scale' ? `${v}px` : String(v);
         }
-        let transform = props.transform || '';
-        if (props.scale != null && props.scale !== '' && Number(props.scale) !== 1) {
+        let transform = useAbsolute ? '' : props.transform || '';
+        if (!useAbsolute && props.scale != null && props.scale !== '' && Number(props.scale) !== 1) {
             const s = `scale(${props.scale})`;
             transform = transform ? `${s} ${transform}` : s;
         }
-        if (transform) {
-            el.style.transform = transform;
-        }
-
-        if (hasLeft || hasTop) {
+        if (useAbsolute) {
+            el.style.transform = '';
             const cs = global.getComputedStyle(el);
             if (cs.position === 'static') {
                 el.style.position = 'absolute';
             }
-        } else if (hasTransform) {
+        } else if (transform) {
+            el.style.transform = transform;
             el.style.left = '';
             el.style.top = '';
             if (el.style.position === 'absolute') {
@@ -356,6 +355,7 @@
         }
 
         if (props.color) {
+            el.style.color = String(props.color);
             el.querySelectorAll('h1, h2, h3, h4, p, span, li, ul, div').forEach((node) => {
                 node.style.color = String(props.color);
             });
@@ -365,7 +365,16 @@
     function getRegions(theme, graphic) {
         const defaults = DEFAULT_LAYOUTS[theme]?.[graphic] || {};
         const saved = readAll()[theme]?.[graphic] || {};
-        return { ...defaults, ...saved };
+        const out = {};
+        const ids = new Set([...Object.keys(defaults), ...Object.keys(saved)]);
+        for (const id of ids) {
+            const merged = { ...(defaults[id] || {}), ...(saved[id] || {}) };
+            const targets = global.document.querySelectorAll(
+                `[data-vg-layout-target="${id}"]`,
+            );
+            out[id] = sanitizeRegionProps(id, merged, targets.length > 0);
+        }
+        return out;
     }
 
     function apply(theme, graphic) {
