@@ -219,6 +219,75 @@
         return regionPosMode(def, el) === 'transform' || !!def?.target;
     }
 
+    function formatPositionReadout(def, el) {
+        if (!el || !def) return '—';
+        const pos = elPositionPx(el);
+        const l = Math.round(pos.left);
+        const t = Math.round(pos.top);
+        if (usesTransformPos(def, el)) {
+            const tr = readTranslate(el);
+            return `On stage: left ${l} px · top ${t} px · transform X ${Math.round(tr.x)} px · Y ${Math.round(tr.y)} px`;
+        }
+        const left = parseFloat(el.style.left);
+        const top = parseFloat(el.style.top);
+        const leftPx = Number.isFinite(left) ? Math.round(left) : l;
+        const topPx = Number.isFinite(top) ? Math.round(top) : t;
+        return `Left ${leftPx} px · Top ${topPx} px`;
+    }
+
+    function formatPositionBadge(def, el) {
+        if (!el || !def) return '';
+        const pos = elPositionPx(el);
+        const l = Math.round(pos.left);
+        const t = Math.round(pos.top);
+        if (usesTransformPos(def, el)) {
+            const tr = readTranslate(el);
+            return `L ${l} · T ${t} · ΔX ${Math.round(tr.x)} · ΔY ${Math.round(tr.y)}`;
+        }
+        const left = parseFloat(el.style.left);
+        const top = parseFloat(el.style.top);
+        const leftPx = Number.isFinite(left) ? Math.round(left) : l;
+        const topPx = Number.isFinite(top) ? Math.round(top) : t;
+        return `L ${leftPx} · T ${topPx}`;
+    }
+
+    function hidePosBadge() {
+        if (editor.posBadge) editor.posBadge.hidden = true;
+    }
+
+    function updatePositionReadout(def, el) {
+        const panel = editor.panel;
+        const live = panel?.querySelector('[data-field="livePos"]');
+        if (!def || !el) {
+            if (live) live.textContent = '—';
+            hidePosBadge();
+            return;
+        }
+        if (live) live.textContent = formatPositionReadout(def, el);
+        const stage = getStage();
+        if (!stage) return;
+        let badge = editor.posBadge;
+        if (!badge) {
+            badge = global.document.createElement('div');
+            badge.className = 'vg-layout-pos-badge';
+            badge.setAttribute('aria-live', 'polite');
+            editor.posBadge = badge;
+            stage.appendChild(badge);
+        }
+        const er = el.getBoundingClientRect();
+        const sr = stage.getBoundingClientRect();
+        const scaleX = sr.width / 1920;
+        const scaleY = sr.height / 1080;
+        const x = (er.left - sr.left) / scaleX;
+        const y = (er.top - sr.top) / scaleY;
+        badge.textContent = formatPositionBadge(def, el);
+        badge.hidden = false;
+        const badgeH = 26;
+        const above = y - badgeH - 6;
+        badge.style.left = `${Math.max(0, x)}px`;
+        badge.style.top = `${above >= 0 ? above : y + er.height / scaleY + 6}px`;
+    }
+
     function syncFieldsFromSelection() {
         const panel = editor.panel;
         const def = getSelectedDef();
@@ -268,6 +337,7 @@
             const topInput = panel.querySelector('[data-field="top"]');
             if (leftInput) leftInput.disabled = transformPos;
             if (topInput) topInput.disabled = transformPos;
+            updatePositionReadout(def, el);
         } finally {
             editor.syncingFields = false;
         }
@@ -499,10 +569,14 @@
             if (leftInput) leftInput.value = String(Math.round(editor.drag.origLeft + dx));
             if (topInput) topInput.value = String(Math.round(editor.drag.origTop + dy));
         }
+        updatePositionReadout(editor.drag.def, editor.drag.el);
     }
 
     function onPointerUp() {
         editor.drag = null;
+        const def = getSelectedDef();
+        const el = findRegionEl(def);
+        if (def && el) updatePositionReadout(def, el);
     }
 
     function onKeyDown(e) {
@@ -570,6 +644,7 @@
             <label for="vgLayoutRegion">Region</label>
             <select id="vgLayoutRegion"></select>
             <p class="vg-layout-pos-mode">Move mode: <span data-field="posMode">—</span></p>
+            <p class="vg-layout-live-pos">Position: <span data-field="livePos">—</span></p>
             <div class="vg-layout-fields">
                 <div><label>Left (px)</label><input data-field="left" type="number" step="1"></div>
                 <div><label>Top (px)</label><input data-field="top" type="number" step="1"></div>
@@ -682,6 +757,10 @@
         api.devPreviewHold(graphic);
         global.VmixLayout.apply(editor.theme, graphic);
         updateRegionSelectHighlight();
+        const def = getSelectedDef();
+        const el = findRegionEl(def);
+        if (def && el) updatePositionReadout(def, el);
+        else hidePosBadge();
     }
 
     function boot() {

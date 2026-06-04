@@ -81,6 +81,36 @@ body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
     color: #fff;
 }
 
+.vg-layout-live-pos {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 122, 24, 0.45);
+    font-size: 12px;
+    font-family: 'Consolas', 'Cascadia Mono', ui-monospace, monospace;
+    color: #fde68a;
+    line-height: 1.45;
+}
+
+.vg-layout-live-pos span {
+    font-weight: 600;
+    color: #fff;
+}
+
+.vg-layout-pos-badge {
+    position: absolute;
+    z-index: 900;
+    pointer-events: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 122, 24, 0.92);
+    color: #0c0c0c;
+    font: 600 12px/1.2 'Consolas', 'Cascadia Mono', ui-monospace, monospace;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
 .vg-layout-panel select option:disabled {
     opacity: 0.45;
 }

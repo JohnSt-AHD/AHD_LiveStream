@@ -12,22 +12,22 @@
             /* Dev-tuned draw layout (1920×1080) — vmix-kri.html?dev=1&g=d */
             draw: {
                 'draw-head': {
-                    left: '263px',
-                    top: '215px',
+                    left: '313px',
+                    top: '202px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
-                    transform: 'translate(-160px, -112px)',
+                    transform: 'translate(-215px, -135px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
                     width: '900px',
-                    transform: 'translate(7px, 0px)',
+                    transform: 'translate(-213px, -123px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-160px, -44px)',
+                    transform: 'translate(-213px, -116px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
@@ -35,12 +35,12 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    transform: 'translate(213px, 228px)',
+                    transform: 'translate(211px, 207px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
                     width: '900px',
-                    transform: 'translate(213px, 244px)',
+                    transform: 'translate(211px, 245px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
