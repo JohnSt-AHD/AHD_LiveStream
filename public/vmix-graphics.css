@@ -1318,28 +1318,10 @@ body {
 .vg-speed-chart__trace {
     opacity: 0.92;
     filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.35));
-    transition: opacity 0.35s ease, stroke-width 0.35s ease;
-}
-
-.vg-speed-chart__trace--dim {
-    opacity: 0.22;
-}
-
-.vg-speed-chart__trace--active {
-    opacity: 1;
-    stroke-width: 3.6;
 }
 
 .vg-speed-chart__dot {
-    transition: opacity 0.35s ease, r 0.35s ease;
-}
-
-.vg-speed-chart__dot--dim {
-    opacity: 0.25;
-}
-
-.vg-speed-chart__dot--active {
-    opacity: 1;
+    /* fixed opacity — no highlight cycling */
 }
 
 .vg-speed-chart__legend {
@@ -1359,12 +1341,6 @@ body {
     font-size: 13px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.75);
-    transition: color 0.35s ease, transform 0.35s ease;
-}
-
-.vg-speed-chart__legend-item--active {
-    color: #fff;
-    transform: translateX(4px);
 }
 
 .vg-speed-chart__legend-swatch {

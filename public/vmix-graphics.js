@@ -26,7 +26,6 @@ const VG_HOLD_MS = 3000;
 const VG_OUTRO_MS = 3000;
 const VG_KRI_FADE_MS = 650;
 const VG_MILFORD_FADE_MS = 500;
-const VG_SPEED_CHART_HOLD_MS = 15000;
 
 const vgPlayback = {
     state: 'idle',
@@ -648,10 +647,17 @@ async function vgStartSpeedChartIntro() {
         if (!window.KriVmixSpeedChart) {
             throw new Error('Speed chart module not loaded');
         }
+        const holdTimer = setTimeout(() => {
+            if (vgPlayback.state === 'intro' && vgIsSpeedChartGraphic(vgPlayback.graphic)) {
+                vgSetStageState('hold');
+            }
+        }, window.KriVmixSpeedChart.INTRO_MS);
+        vgPlayback.profileTimers.push(holdTimer);
+
         await window.KriVmixSpeedChart.show();
-        if (vgPlayback.state !== 'intro' || !vgIsSpeedChartGraphic(vgPlayback.graphic)) return;
+        if (!vgIsSpeedChartGraphic(vgPlayback.graphic)) return;
         vgSetStageState('hold');
-        vgPlayback.introTimer = setTimeout(() => vgStartSpeedChartOutro(), VG_SPEED_CHART_HOLD_MS);
+        vgStartSpeedChartOutro();
     } catch (e) {
         const err = document.getElementById('vgError');
         if (err) {
@@ -664,7 +670,7 @@ async function vgStartSpeedChartIntro() {
 
 async function vgStartSpeedChartOutro() {
     if (!vgIsSpeedChartGraphic(vgPlayback.graphic)) return;
-    if (vgPlayback.state !== 'hold' && vgPlayback.state !== 'intro') return;
+    if (vgPlayback.state !== 'hold' && vgPlayback.state !== 'intro' && vgPlayback.state !== 'outro') return;
     vgClearPlaybackTimers();
     vgSetStageState('outro');
     try {
