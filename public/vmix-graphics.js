@@ -654,6 +654,16 @@ function vgFormatTime(d) {
     });
 }
 
+function vgFormatScheduleTime(d) {
+    return d
+        .toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        })
+        .toLowerCase();
+}
+
 function vgFormatDayLabel(dayLabel) {
     return dayLabel.replace(/^DAY\s+\d+:\s*/i, '').trim();
 }
@@ -1708,8 +1718,7 @@ function vgRenderSchedule(layer, raceParam) {
 
     const head = vgEl('div', 'vg-schedule-head');
     head.dataset.vgLayout = 'schedule-head';
-    head.appendChild(vgEl('h2', 'vg-schedule-title', 'Upcoming Races'));
-    head.appendChild(vgEl('hr', 'vg-schedule-rule'));
+    head.appendChild(vgEl('h2', 'vg-schedule-title', 'Schedule'));
     panel.appendChild(head);
 
     const cols = vgEl('div', 'vg-schedule-cols');
@@ -1738,7 +1747,7 @@ function vgRenderSchedule(layer, raceParam) {
                 li.classList.add('vg-schedule-row--current');
             }
             const fullName = vgExpandEventName(race.eventType, vgState.lookup);
-            li.appendChild(vgEl('span', 'vg-schedule-time', vgFormatTime(race.startAt)));
+            li.appendChild(vgEl('span', 'vg-schedule-time', vgFormatScheduleTime(race.startAt)));
             li.appendChild(vgEl('span', 'vg-schedule-race', `Race ${race.race}`));
             li.appendChild(vgEl('span', 'vg-schedule-event', fullName));
             const round = [race.round, race.division ? `Div ${race.division}` : '']
