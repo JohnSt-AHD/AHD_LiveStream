@@ -9,8 +9,54 @@
     const DEFAULT_LAYOUTS = {
         /* Positions from KRI GT templates (1920×1080) in gt-templates/extracted/kri/ */
         kri: {
-            /* CSS flex layout — no GT absolute positions (see vmix-graphics.css) */
-            draw: {},
+            /* Dev-tuned draw layout (1920×1080) — vmix-kri.html?dev=1&g=d */
+            draw: {
+                'draw-head': {
+                    left: '109px',
+                    top: '128px',
+                    transform: 'translate(7px, 0px)',
+                    color: 'rgb(255, 255, 255)',
+                    width: '935px',
+                },
+                'draw-kicker': {
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-title': {
+                    left: '109px',
+                    top: '196px',
+                    transform: 'translate(7px, 0px)',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-meta': {
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-body': {
+                    transform: 'translate(-200px, -100px)',
+                    color: '#ffffff',
+                },
+                'draw-cols': {
+                    transform: 'translate(221px, 260px)',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-lanes': {
+                    transform: 'translate(-44px, -93px)',
+                    color: 'rgb(255, 255, 255)',
+                    width: '900px',
+                    gap: '0px',
+                    columnGap: '0px',
+                },
+                'draw-lane-n': {
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-logo': {
+                    width: '37px',
+                    height: '35px',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'draw-crew': {
+                    color: 'rgb(255, 255, 255)',
+                },
+            },
             results: {
                 'results-head': {
                     left: '156px',
@@ -269,10 +315,11 @@
         if (!Object.keys(regions).length) return;
 
         for (const [id, props] of Object.entries(regions)) {
-            if (id.endsWith('-logo') || id.endsWith('-crew')) {
-                global.document
-                    .querySelectorAll(`[data-vg-layout-target="${id}"]`)
-                    .forEach((el) => applyStyle(el, props));
+            const targets = global.document.querySelectorAll(
+                `[data-vg-layout-target="${id}"]`,
+            );
+            if (targets.length) {
+                targets.forEach((el) => applyStyle(el, props));
                 continue;
             }
             const el = global.document.querySelector(`[data-vg-layout="${id}"]`);
