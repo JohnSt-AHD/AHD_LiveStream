@@ -1577,6 +1577,7 @@ function vgEl(tag, className, text) {
 }
 
 const KRI_LOGO_SRC = 'assets/kri/kri-logo-full.png';
+const KRI_LOGO_MARK_SRC = 'assets/kri/kri-logo.png';
 
 function vgKriCreateShell() {
     const shell = vgEl('div', 'vg-kri-shell');
@@ -1594,6 +1595,20 @@ function vgKriCreatePanel(modifier) {
     const panel = vgEl('div', `vg-kri-panel${modifier ? ` vg-kri-panel--${modifier}` : ''}`);
     panel.dataset.vgLayout = modifier ? `kri-panel-${modifier}` : 'kri-panel';
     return panel;
+}
+
+function vgKriCreateLowerLogoBox() {
+    const box = vgEl('div', 'vg-kri-lower-logo-box');
+    box.dataset.vgLayout = 'kri-lower-logo-box';
+    const img = document.createElement('img');
+    img.className = 'vg-kri-lower-logo-mark';
+    img.src = KRI_LOGO_MARK_SRC;
+    img.alt = '';
+    img.width = 44;
+    img.height = 44;
+    img.dataset.vgLayout = 'kri-lower-logo-mark';
+    box.appendChild(img);
+    return box;
 }
 
 function vgKriAppendHead(panel, { kicker, title, meta }) {
@@ -1698,6 +1713,10 @@ function vgRenderLower(layer, race) {
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell();
+        shell.classList.add('vg-kri-shell--lower');
+        const wrap = vgEl('div', 'vg-kri-lower-wrap');
+        wrap.dataset.vgLayout = 'kri-lower-wrap';
+        wrap.appendChild(vgKriCreateLowerLogoBox());
         const panel = vgKriCreatePanel('lower');
         const body = vgEl('div', 'vg-kri-lower-body');
         body.dataset.vgLayout = 'kri-lower-body';
@@ -1713,7 +1732,8 @@ function vgRenderLower(layer, race) {
         body.appendChild(raceEl);
         body.appendChild(vgEl('h2', 'vg-lower-event', fullName));
         panel.appendChild(body);
-        shell.appendChild(panel);
+        wrap.appendChild(panel);
+        shell.appendChild(wrap);
         layer.appendChild(shell);
         return;
     }
