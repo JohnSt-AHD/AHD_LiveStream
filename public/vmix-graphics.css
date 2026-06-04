@@ -638,10 +638,10 @@ body {
     color: #fff;
 }
 
-/* KRI upcoming schedule (draw PNG theme) */
+/* KRI upcoming schedule (schedule.png theme) */
 [data-vmix-theme='kri'] .vg-layer--schedule .vg-draw-head {
     left: 156px;
-    top: 180px;
+    top: 211px;
     width: 935px;
     color: #fff;
 }
@@ -674,7 +674,7 @@ body {
 [data-vmix-theme='kri'] .vg-schedule-rows {
     position: absolute;
     left: 156px;
-    top: 320px;
+    top: 434px;
     width: 980px;
     list-style: none;
     margin: 0;

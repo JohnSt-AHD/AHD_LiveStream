@@ -59,7 +59,7 @@ const VG_THEMES = {
             lower: 'assets/vmix/kri/lower.png',
             draw: 'assets/vmix/kri/draw.png',
             results: 'assets/vmix/kri/results.png',
-            schedule: 'assets/vmix/kri/draw.png',
+            schedule: 'assets/vmix/kri/schedule.png',
         },
     },
     'rnz-milford': {
