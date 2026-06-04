@@ -17,12 +17,16 @@ const VG_GRAPHIC_ALIASES = {
     g: 'speed',
     map: 'speed',
     gps: 'speed',
+    v: 'speedchart',
+    speedchart: 'speedchart',
+    chart: 'speedchart',
 };
 
 const VG_HOLD_MS = 3000;
 const VG_OUTRO_MS = 3000;
 const VG_KRI_FADE_MS = 650;
 const VG_MILFORD_FADE_MS = 500;
+const VG_SPEED_CHART_HOLD_MS = 15000;
 
 const vgPlayback = {
     state: 'idle',
@@ -610,6 +614,65 @@ function vgThemeConfig() {
 
 function vgIsSpeedGraphic(graphic) {
     return graphic === 'speed';
+}
+
+function vgIsSpeedChartGraphic(graphic) {
+    return graphic === 'speedchart';
+}
+
+function vgSpeedChartEnabled() {
+    return vgIsKriTheme() && !!window.KriVmixSpeedChart;
+}
+
+function vgMaybeLoopSpeedChart() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('loop') !== '1') return;
+    const g = params.get('g') || 'v';
+    const graphic = VG_GRAPHIC_ALIASES[g.toLowerCase()];
+    if (graphic !== 'speedchart') return;
+    setTimeout(() => {
+        if (vgPlayback.state === 'idle') vgTriggerIn('speedchart');
+    }, 1200);
+}
+
+async function vgStartSpeedChartIntro() {
+    vgShowBackground(false);
+    vgShowTextLayer(false);
+    vgHideMap();
+    const layer = vgGetLayerEl();
+    if (layer) {
+        layer.replaceChildren();
+        layer.className = 'vg-layer';
+    }
+    try {
+        if (!window.KriVmixSpeedChart) {
+            throw new Error('Speed chart module not loaded');
+        }
+        await window.KriVmixSpeedChart.show();
+        if (vgPlayback.state !== 'intro' || !vgIsSpeedChartGraphic(vgPlayback.graphic)) return;
+        vgSetStageState('hold');
+        vgPlayback.introTimer = setTimeout(() => vgStartSpeedChartOutro(), VG_SPEED_CHART_HOLD_MS);
+    } catch (e) {
+        const err = document.getElementById('vgError');
+        if (err) {
+            err.hidden = false;
+            err.textContent = e instanceof Error ? e.message : 'Speed chart failed';
+        }
+        vgResetToIdle();
+    }
+}
+
+async function vgStartSpeedChartOutro() {
+    if (!vgIsSpeedChartGraphic(vgPlayback.graphic)) return;
+    if (vgPlayback.state !== 'hold' && vgPlayback.state !== 'intro') return;
+    vgClearPlaybackTimers();
+    vgSetStageState('outro');
+    try {
+        if (window.KriVmixSpeedChart) await window.KriVmixSpeedChart.hide();
+    } finally {
+        vgResetToIdle();
+        vgMaybeLoopSpeedChart();
+    }
 }
 
 function vgSpeedEnabled() {
@@ -1201,6 +1264,7 @@ function vgResetToIdle() {
     vgPlayback.videoHoldTime = null;
     vgPlayback.graphic = null;
     vgLeaderLane = null;
+    if (window.KriVmixSpeedChart) window.KriVmixSpeedChart.remove();
     vgSetStageState('idle');
     vgShowTextLayer(false);
     vgShowBackground(false);
@@ -1213,11 +1277,17 @@ function vgResetToIdle() {
 function vgTriggerIn(graphic) {
     if (vgPlayback.state !== 'idle') return;
     if (vgIsSpeedGraphic(graphic) && !vgSpeedEnabled()) return;
+    if (vgIsSpeedChartGraphic(graphic) && !vgSpeedChartEnabled()) return;
 
     vgPlayback.graphic = graphic;
     vgSetStageState('intro');
     vgHideMap();
     vgUpdateBgGraphicClass();
+
+    if (vgIsSpeedChartGraphic(graphic)) {
+        vgStartSpeedChartIntro();
+        return;
+    }
 
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgPrepareTrackerContent();
@@ -1239,6 +1309,10 @@ function vgTriggerIn(graphic) {
 
 function vgTriggerOut() {
     const graphic = vgPlayback.graphic;
+    if (vgIsSpeedChartGraphic(graphic)) {
+        vgStartSpeedChartOutro();
+        return;
+    }
     const video = vgGetBgVideo();
     const isThemeVideo =
         !!video &&
@@ -1302,7 +1376,7 @@ function vgPrepareContent(graphic, raceParam) {
     const layer = vgGetLayerEl();
     const err = document.getElementById('vgError');
     if (!layer) return;
-    if (vgIsSpeedGraphic(graphic)) return;
+    if (vgIsSpeedGraphic(graphic) || vgIsSpeedChartGraphic(graphic)) return;
 
     const race = vgFindRace(raceParam);
 
@@ -1766,6 +1840,13 @@ async function vgInit() {
 function vgDevPreviewHold(graphic) {
     vgClearPlaybackTimers();
     vgPlayback.graphic = graphic;
+    if (vgIsSpeedChartGraphic(graphic)) {
+        vgSetStageState('hold');
+        vgShowBackground(false);
+        vgShowTextLayer(false);
+        window.KriVmixSpeedChart?.show().catch(() => {});
+        return;
+    }
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgPrepareTrackerContent();
     } else if (graphic === 'leader') {

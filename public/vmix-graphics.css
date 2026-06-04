@@ -1165,3 +1165,221 @@ body {
     font-size: 22px;
     color: #1a1a1a;
 }
+
+/* —— KRI speed vs distance chart (lower third) —— */
+.vg-speed-chart {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 360px;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(100%);
+    visibility: hidden;
+}
+
+.vg-speed-chart--visible {
+    visibility: visible;
+}
+
+.vg-speed-chart--intro {
+    animation: vg-speed-chart-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.vg-speed-chart--hold {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.vg-speed-chart--outro {
+    animation: vg-speed-chart-out 0.9s cubic-bezier(0.55, 0, 0.85, 0.36) forwards;
+}
+
+@keyframes vg-speed-chart-in {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes vg-speed-chart-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+}
+
+.vg-speed-chart__panel {
+    box-sizing: border-box;
+    height: 100%;
+    margin: 0 24px 20px;
+    padding: 14px 20px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    background: linear-gradient(
+        180deg,
+        rgba(26, 39, 68, 0.2) 0%,
+        rgba(10, 22, 40, 0.2) 100%
+    );
+    box-shadow:
+        0 -8px 32px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(212, 175, 55, 0.15);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vg-speed-chart__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 4px;
+}
+
+.vg-speed-chart__title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #d4af37;
+}
+
+.vg-speed-chart__meta {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.82);
+    text-align: right;
+}
+
+.vg-speed-chart__body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px 18px;
+    align-items: stretch;
+    min-height: 0;
+}
+
+.vg-speed-chart__svg {
+    width: 100%;
+    height: 100%;
+    min-height: 240px;
+    display: block;
+}
+
+.vg-speed-chart__plot-bg {
+    fill: rgba(0, 0, 0, 0.12);
+    stroke: rgba(212, 175, 55, 0.2);
+    stroke-width: 1;
+}
+
+.vg-speed-chart__grid {
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 1;
+    stroke-dasharray: 4 6;
+}
+
+.vg-speed-chart__marker-line {
+    stroke: rgba(212, 175, 55, 0.35);
+    stroke-width: 1.2;
+}
+
+.vg-speed-chart__ylabel,
+.vg-speed-chart__xlabel {
+    fill: rgba(255, 255, 255, 0.72);
+    font-size: 11px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-weight: 600;
+}
+
+.vg-speed-chart__axis-title {
+    fill: rgba(212, 175, 55, 0.85);
+    font-size: 11px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.vg-speed-chart__trace {
+    opacity: 0.92;
+    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.35));
+    transition: opacity 0.35s ease, stroke-width 0.35s ease;
+}
+
+.vg-speed-chart__trace--dim {
+    opacity: 0.22;
+}
+
+.vg-speed-chart__trace--active {
+    opacity: 1;
+    stroke-width: 3.6;
+}
+
+.vg-speed-chart__dot {
+    transition: opacity 0.35s ease, r 0.35s ease;
+}
+
+.vg-speed-chart__dot--dim {
+    opacity: 0.25;
+}
+
+.vg-speed-chart__dot--active {
+    opacity: 1;
+}
+
+.vg-speed-chart__legend {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 108px;
+}
+
+.vg-speed-chart__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.35s ease, transform 0.35s ease;
+}
+
+.vg-speed-chart__legend-item--active {
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.vg-speed-chart__legend-swatch {
+    width: 18px;
+    height: 4px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.vg-speed-chart__legend-label {
+    flex: 1;
+}
+
+.vg-speed-chart__legend-rank {
+    font-size: 11px;
+    color: rgba(212, 175, 55, 0.9);
+    font-weight: 700;
+}

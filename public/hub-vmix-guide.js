@@ -15,6 +15,7 @@ const VMIX_TRIGGERS = [
     { key: 'w', graphic: 'Leader', desc: 'Milford only — leader video + hub lane text (fade at 1s); pause at 6s; 1–8 switch lane; o out' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
+    { key: 'v', graphic: 'Speed chart', desc: 'KRI only — lower-third speed vs distance (sample WR M1x H1); ease in, 15s hold, ease out; add &loop=1 to repeat' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
     { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },
     { key: 'p', graphic: 'Previous race', desc: 'Live race number −1 on daysheet (updates draw/LT/results on air)' },

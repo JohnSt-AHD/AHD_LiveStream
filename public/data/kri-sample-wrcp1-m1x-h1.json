@@ -1,0 +1,1054 @@
+{
+  "source": "WCp1_2026_1_ROWMSCULL1------------HEAT000100--_C77X2406.pdf",
+  "event": "Men's Single Sculls",
+  "round": "H1",
+  "race": "5",
+  "venue": "Seville, ESP · 29 May 2026",
+  "courseLength": 2000,
+  "markers": [
+    0,
+    500,
+    1000,
+    1500,
+    2000
+  ],
+  "yAxis": {
+    "min": 3.5,
+    "max": 6,
+    "unit": "m/s"
+  },
+  "boats": [
+    {
+      "id": "ARG1",
+      "label": "ARG1",
+      "rank": 6,
+      "color": "#94a3b8",
+      "points": [
+        {
+          "distance": 0,
+          "speed": 5.4
+        },
+        {
+          "distance": 50,
+          "speed": 5.4
+        },
+        {
+          "distance": 100,
+          "speed": 5.2
+        },
+        {
+          "distance": 150,
+          "speed": 5.1
+        },
+        {
+          "distance": 200,
+          "speed": 5
+        },
+        {
+          "distance": 250,
+          "speed": 5
+        },
+        {
+          "distance": 300,
+          "speed": 4.9
+        },
+        {
+          "distance": 350,
+          "speed": 4.8
+        },
+        {
+          "distance": 400,
+          "speed": 4.8
+        },
+        {
+          "distance": 450,
+          "speed": 4.8
+        },
+        {
+          "distance": 500,
+          "speed": 4.7
+        },
+        {
+          "distance": 550,
+          "speed": 4.6
+        },
+        {
+          "distance": 600,
+          "speed": 4.6
+        },
+        {
+          "distance": 650,
+          "speed": 4.6
+        },
+        {
+          "distance": 700,
+          "speed": 4.5
+        },
+        {
+          "distance": 750,
+          "speed": 4.5
+        },
+        {
+          "distance": 800,
+          "speed": 4.4
+        },
+        {
+          "distance": 850,
+          "speed": 4.5
+        },
+        {
+          "distance": 900,
+          "speed": 4.5
+        },
+        {
+          "distance": 950,
+          "speed": 4.4
+        },
+        {
+          "distance": 1000,
+          "speed": 4.4
+        },
+        {
+          "distance": 1050,
+          "speed": 4.5
+        },
+        {
+          "distance": 1100,
+          "speed": 4.5
+        },
+        {
+          "distance": 1150,
+          "speed": 4.4
+        },
+        {
+          "distance": 1200,
+          "speed": 4.3
+        },
+        {
+          "distance": 1250,
+          "speed": 4.3
+        },
+        {
+          "distance": 1300,
+          "speed": 4.6
+        },
+        {
+          "distance": 1350,
+          "speed": 4.6
+        },
+        {
+          "distance": 1400,
+          "speed": 4.4
+        },
+        {
+          "distance": 1450,
+          "speed": 4.3
+        },
+        {
+          "distance": 1500,
+          "speed": 4.5
+        },
+        {
+          "distance": 1550,
+          "speed": 4.4
+        },
+        {
+          "distance": 1600,
+          "speed": 4.2
+        },
+        {
+          "distance": 1650,
+          "speed": 4.4
+        },
+        {
+          "distance": 1700,
+          "speed": 4.4
+        },
+        {
+          "distance": 1750,
+          "speed": 4.4
+        },
+        {
+          "distance": 1800,
+          "speed": 4.3
+        },
+        {
+          "distance": 1850,
+          "speed": 4.6
+        },
+        {
+          "distance": 1900,
+          "speed": 4.6
+        },
+        {
+          "distance": 1950,
+          "speed": 3.9
+        },
+        {
+          "distance": 2000,
+          "speed": 4.3
+        }
+      ]
+    },
+    {
+      "id": "GRE",
+      "label": "GRE",
+      "rank": 3,
+      "color": "#b91c1c",
+      "points": [
+        {
+          "distance": 0,
+          "speed": 5.6
+        },
+        {
+          "distance": 50,
+          "speed": 5.6
+        },
+        {
+          "distance": 100,
+          "speed": 5.4
+        },
+        {
+          "distance": 150,
+          "speed": 5.2
+        },
+        {
+          "distance": 200,
+          "speed": 5.1
+        },
+        {
+          "distance": 250,
+          "speed": 5
+        },
+        {
+          "distance": 300,
+          "speed": 4.9
+        },
+        {
+          "distance": 350,
+          "speed": 4.8
+        },
+        {
+          "distance": 400,
+          "speed": 4.7
+        },
+        {
+          "distance": 450,
+          "speed": 4.8
+        },
+        {
+          "distance": 500,
+          "speed": 4.8
+        },
+        {
+          "distance": 550,
+          "speed": 4.8
+        },
+        {
+          "distance": 600,
+          "speed": 4.7
+        },
+        {
+          "distance": 650,
+          "speed": 4.7
+        },
+        {
+          "distance": 700,
+          "speed": 4.7
+        },
+        {
+          "distance": 750,
+          "speed": 4.7
+        },
+        {
+          "distance": 800,
+          "speed": 4.7
+        },
+        {
+          "distance": 850,
+          "speed": 4.5
+        },
+        {
+          "distance": 900,
+          "speed": 4.6
+        },
+        {
+          "distance": 950,
+          "speed": 4.6
+        },
+        {
+          "distance": 1000,
+          "speed": 4.6
+        },
+        {
+          "distance": 1050,
+          "speed": 4.6
+        },
+        {
+          "distance": 1100,
+          "speed": 4.6
+        },
+        {
+          "distance": 1150,
+          "speed": 4.5
+        },
+        {
+          "distance": 1200,
+          "speed": 4.5
+        },
+        {
+          "distance": 1250,
+          "speed": 4.5
+        },
+        {
+          "distance": 1300,
+          "speed": 4.5
+        },
+        {
+          "distance": 1350,
+          "speed": 4.6
+        },
+        {
+          "distance": 1400,
+          "speed": 5
+        },
+        {
+          "distance": 1450,
+          "speed": 4.7
+        },
+        {
+          "distance": 1500,
+          "speed": 4.4
+        },
+        {
+          "distance": 1550,
+          "speed": 4.5
+        },
+        {
+          "distance": 1600,
+          "speed": 4.6
+        },
+        {
+          "distance": 1650,
+          "speed": 4.4
+        },
+        {
+          "distance": 1700,
+          "speed": 4.4
+        },
+        {
+          "distance": 1750,
+          "speed": 4.4
+        },
+        {
+          "distance": 1800,
+          "speed": 4.5
+        },
+        {
+          "distance": 1850,
+          "speed": 4.6
+        },
+        {
+          "distance": 1900,
+          "speed": 4.6
+        },
+        {
+          "distance": 1950,
+          "speed": 4.5
+        },
+        {
+          "distance": 2000,
+          "speed": 4.4
+        }
+      ]
+    },
+    {
+      "id": "ESP1",
+      "label": "ESP1",
+      "rank": 1,
+      "color": "#d4af37",
+      "points": [
+        {
+          "distance": 0,
+          "speed": 5.5
+        },
+        {
+          "distance": 50,
+          "speed": 5.5
+        },
+        {
+          "distance": 100,
+          "speed": 5.3
+        },
+        {
+          "distance": 150,
+          "speed": 5.2
+        },
+        {
+          "distance": 200,
+          "speed": 5.1
+        },
+        {
+          "distance": 250,
+          "speed": 5
+        },
+        {
+          "distance": 300,
+          "speed": 4.9
+        },
+        {
+          "distance": 350,
+          "speed": 4.9
+        },
+        {
+          "distance": 400,
+          "speed": 4.8
+        },
+        {
+          "distance": 450,
+          "speed": 4.8
+        },
+        {
+          "distance": 500,
+          "speed": 4.7
+        },
+        {
+          "distance": 550,
+          "speed": 4.7
+        },
+        {
+          "distance": 600,
+          "speed": 4.7
+        },
+        {
+          "distance": 650,
+          "speed": 4.8
+        },
+        {
+          "distance": 700,
+          "speed": 4.8
+        },
+        {
+          "distance": 750,
+          "speed": 4.7
+        },
+        {
+          "distance": 800,
+          "speed": 4.6
+        },
+        {
+          "distance": 850,
+          "speed": 4.7
+        },
+        {
+          "distance": 900,
+          "speed": 4.7
+        },
+        {
+          "distance": 950,
+          "speed": 4.7
+        },
+        {
+          "distance": 1000,
+          "speed": 4.8
+        },
+        {
+          "distance": 1050,
+          "speed": 4.8
+        },
+        {
+          "distance": 1100,
+          "speed": 4.6
+        },
+        {
+          "distance": 1150,
+          "speed": 4.6
+        },
+        {
+          "distance": 1200,
+          "speed": 4.6
+        },
+        {
+          "distance": 1250,
+          "speed": 4.6
+        },
+        {
+          "distance": 1300,
+          "speed": 4.9
+        },
+        {
+          "distance": 1350,
+          "speed": 4.6
+        },
+        {
+          "distance": 1400,
+          "speed": 4.5
+        },
+        {
+          "distance": 1450,
+          "speed": 4.6
+        },
+        {
+          "distance": 1500,
+          "speed": 4.6
+        },
+        {
+          "distance": 1550,
+          "speed": 4.7
+        },
+        {
+          "distance": 1600,
+          "speed": 4.7
+        },
+        {
+          "distance": 1650,
+          "speed": 4.5
+        },
+        {
+          "distance": 1700,
+          "speed": 4.6
+        },
+        {
+          "distance": 1750,
+          "speed": 4.6
+        },
+        {
+          "distance": 1800,
+          "speed": 4.6
+        },
+        {
+          "distance": 1850,
+          "speed": 4.6
+        },
+        {
+          "distance": 1900,
+          "speed": 4.5
+        },
+        {
+          "distance": 1950,
+          "speed": 4.5
+        },
+        {
+          "distance": 2000,
+          "speed": 3.7
+        }
+      ]
+    },
+    {
+      "id": "SLO",
+      "label": "SLO",
+      "rank": 2,
+      "color": "#e8dcc4",
+      "points": [
+        {
+          "distance": 0,
+          "speed": 5.6
+        },
+        {
+          "distance": 50,
+          "speed": 5.6
+        },
+        {
+          "distance": 100,
+          "speed": 5.3
+        },
+        {
+          "distance": 150,
+          "speed": 5.1
+        },
+        {
+          "distance": 200,
+          "speed": 5
+        },
+        {
+          "distance": 250,
+          "speed": 4.9
+        },
+        {
+          "distance": 300,
+          "speed": 4.8
+        },
+        {
+          "distance": 350,
+          "speed": 4.8
+        },
+        {
+          "distance": 400,
+          "speed": 4.8
+        },
+        {
+          "distance": 450,
+          "speed": 4.8
+        },
+        {
+          "distance": 500,
+          "speed": 4.8
+        },
+        {
+          "distance": 550,
+          "speed": 4.7
+        },
+        {
+          "distance": 600,
+          "speed": 4.7
+        },
+        {
+          "distance": 650,
+          "speed": 4.6
+        },
+        {
+          "distance": 700,
+          "speed": 4.6
+        },
+        {
+          "distance": 750,
+          "speed": 4.6
+        },
+        {
+          "distance": 800,
+          "speed": 4.5
+        },
+        {
+          "distance": 850,
+          "speed": 4.6
+        },
+        {
+          "distance": 900,
+          "speed": 4.6
+        },
+        {
+          "distance": 950,
+          "speed": 4.7
+        },
+        {
+          "distance": 1000,
+          "speed": 4.6
+        },
+        {
+          "distance": 1050,
+          "speed": 4.8
+        },
+        {
+          "distance": 1100,
+          "speed": 4.6
+        },
+        {
+          "distance": 1150,
+          "speed": 4.6
+        },
+        {
+          "distance": 1200,
+          "speed": 4.5
+        },
+        {
+          "distance": 1250,
+          "speed": 4.6
+        },
+        {
+          "distance": 1300,
+          "speed": 4.9
+        },
+        {
+          "distance": 1350,
+          "speed": 4.7
+        },
+        {
+          "distance": 1400,
+          "speed": 4.9
+        },
+        {
+          "distance": 1450,
+          "speed": 5
+        },
+        {
+          "distance": 1500,
+          "speed": 4.6
+        },
+        {
+          "distance": 1550,
+          "speed": 4.5
+        },
+        {
+          "distance": 1600,
+          "speed": 4.6
+        },
+        {
+          "distance": 1650,
+          "speed": 4.7
+        },
+        {
+          "distance": 1700,
+          "speed": 4.5
+        },
+        {
+          "distance": 1750,
+          "speed": 4.7
+        },
+        {
+          "distance": 1800,
+          "speed": 4.6
+        },
+        {
+          "distance": 1850,
+          "speed": 4.7
+        },
+        {
+          "distance": 1900,
+          "speed": 4.6
+        },
+        {
+          "distance": 1950,
+          "speed": 4.5
+        },
+        {
+          "distance": 2000,
+          "speed": 3.9
+        }
+      ]
+    },
+    {
+      "id": "JPN",
+      "label": "JPN",
+      "rank": 4,
+      "color": "#6eb5ff",
+      "points": [
+        {
+          "distance": 0,
+          "speed": 5.3
+        },
+        {
+          "distance": 50,
+          "speed": 5.3
+        },
+        {
+          "distance": 100,
+          "speed": 5.2
+        },
+        {
+          "distance": 150,
+          "speed": 5.1
+        },
+        {
+          "distance": 200,
+          "speed": 4.9
+        },
+        {
+          "distance": 250,
+          "speed": 4.9
+        },
+        {
+          "distance": 300,
+          "speed": 4.8
+        },
+        {
+          "distance": 350,
+          "speed": 4.7
+        },
+        {
+          "distance": 400,
+          "speed": 4.8
+        },
+        {
+          "distance": 450,
+          "speed": 4.8
+        },
+        {
+          "distance": 500,
+          "speed": 4.6
+        },
+        {
+          "distance": 550,
+          "speed": 4.6
+        },
+        {
+          "distance": 600,
+          "speed": 4.6
+        },
+        {
+          "distance": 650,
+          "speed": 4.7
+        },
+        {
+          "distance": 700,
+          "speed": 4.8
+        },
+        {
+          "distance": 750,
+          "speed": 4.7
+        },
+        {
+          "distance": 800,
+          "speed": 4.6
+        },
+        {
+          "distance": 850,
+          "speed": 4.6
+        },
+        {
+          "distance": 900,
+          "speed": 4.6
+        },
+        {
+          "distance": 950,
+          "speed": 4.5
+        },
+        {
+          "distance": 1000,
+          "speed": 4.5
+        },
+        {
+          "distance": 1050,
+          "speed": 4.5
+        },
+        {
+          "distance": 1100,
+          "speed": 4.4
+        },
+        {
+          "distance": 1150,
+          "speed": 4.4
+        },
+        {
+          "distance": 1200,
+          "speed": 4.5
+        },
+        {
+          "distance": 1250,
+          "speed": 4.4
+        },
+        {
+          "distance": 1300,
+          "speed": 4.6
+        },
+        {
+          "distance": 1350,
+          "speed": 5.1
+        },
+        {
+          "distance": 1400,
+          "speed": 4.3
+        },
+        {
+          "distance": 1450,
+          "speed": 4.4
+        },
+        {
+          "distance": 1500,
+          "speed": 4.4
+        },
+        {
+          "distance": 1550,
+          "speed": 4.4
+        },
+        {
+          "distance": 1600,
+          "speed": 4.4
+        },
+        {
+          "distance": 1650,
+          "speed": 4.5
+        },
+        {
+          "distance": 1700,
+          "speed": 4.5
+        },
+        {
+          "distance": 1750,
+          "speed": 4.5
+        },
+        {
+          "distance": 1800,
+          "speed": 4.7
+        },
+        {
+          "distance": 1850,
+          "speed": 4.6
+        },
+        {
+          "distance": 1900,
+          "speed": 4.7
+        },
+        {
+          "distance": 1950,
+          "speed": 4.7
+        },
+        {
+          "distance": 2000,
+          "speed": 4.7
+        }
+      ]
+    },
+    {
+      "id": "BRA",
+      "label": "BRA",
+      "rank": 5,
+      "color": "#f5c542",
+      "points": [
+        {
+          "distance": 0,
+          "speed": 5.6
+        },
+        {
+          "distance": 50,
+          "speed": 5.6
+        },
+        {
+          "distance": 100,
+          "speed": 5.2
+        },
+        {
+          "distance": 150,
+          "speed": 5
+        },
+        {
+          "distance": 200,
+          "speed": 4.7
+        },
+        {
+          "distance": 250,
+          "speed": 4.8
+        },
+        {
+          "distance": 300,
+          "speed": 4.8
+        },
+        {
+          "distance": 350,
+          "speed": 4.6
+        },
+        {
+          "distance": 400,
+          "speed": 4.7
+        },
+        {
+          "distance": 450,
+          "speed": 4.6
+        },
+        {
+          "distance": 500,
+          "speed": 4.8
+        },
+        {
+          "distance": 550,
+          "speed": 4.6
+        },
+        {
+          "distance": 600,
+          "speed": 4.6
+        },
+        {
+          "distance": 650,
+          "speed": 4.7
+        },
+        {
+          "distance": 700,
+          "speed": 4.6
+        },
+        {
+          "distance": 750,
+          "speed": 4.7
+        },
+        {
+          "distance": 800,
+          "speed": 4.6
+        },
+        {
+          "distance": 850,
+          "speed": 4.6
+        },
+        {
+          "distance": 900,
+          "speed": 4.6
+        },
+        {
+          "distance": 950,
+          "speed": 4.6
+        },
+        {
+          "distance": 1000,
+          "speed": 4.6
+        },
+        {
+          "distance": 1050,
+          "speed": 4.6
+        },
+        {
+          "distance": 1100,
+          "speed": 4.6
+        },
+        {
+          "distance": 1150,
+          "speed": 4.5
+        },
+        {
+          "distance": 1200,
+          "speed": 4.4
+        },
+        {
+          "distance": 1250,
+          "speed": 4.5
+        },
+        {
+          "distance": 1300,
+          "speed": 4.9
+        },
+        {
+          "distance": 1350,
+          "speed": 5
+        },
+        {
+          "distance": 1400,
+          "speed": 4.6
+        },
+        {
+          "distance": 1450,
+          "speed": 4.4
+        },
+        {
+          "distance": 1500,
+          "speed": 4.5
+        },
+        {
+          "distance": 1550,
+          "speed": 4.4
+        },
+        {
+          "distance": 1600,
+          "speed": 4.5
+        },
+        {
+          "distance": 1650,
+          "speed": 4.6
+        },
+        {
+          "distance": 1700,
+          "speed": 4.6
+        },
+        {
+          "distance": 1750,
+          "speed": 4.7
+        },
+        {
+          "distance": 1800,
+          "speed": 4.6
+        },
+        {
+          "distance": 1850,
+          "speed": 4.5
+        },
+        {
+          "distance": 1900,
+          "speed": 4.5
+        },
+        {
+          "distance": 1950,
+          "speed": 4.6
+        },
+        {
+          "distance": 2000,
+          "speed": 3.8
+        }
+      ]
+    }
+  ]
+}
