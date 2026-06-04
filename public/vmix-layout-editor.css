@@ -2,6 +2,16 @@ body.vg-layout-dev {
     cursor: default;
 }
 
+body.vg-layout-dev .vg-kri-shell,
+body.vg-layout-dev .vg-kri-panel,
+body.vg-layout-dev .vg-kri-draw-body,
+body.vg-layout-dev .vg-kri-head,
+body.vg-layout-dev .vg-kri-cols,
+body.vg-layout-dev .vg-kri-lanes,
+body.vg-layout-dev .vg-lane {
+    pointer-events: auto;
+}
+
 body.vg-layout-dev .vg-layer--visible,
 body.vg-layout-dev .vg-layer--fade-out {
     animation: none;
@@ -20,6 +30,7 @@ body.vg-layout-dev [data-vg-layout-target] {
     outline: 2px dashed rgba(0, 230, 255, 0.85);
     outline-offset: 2px;
     cursor: move;
+    pointer-events: auto;
 }
 
 body.vg-layout-dev [data-vg-layout].vg-layout-selected,
@@ -57,6 +68,21 @@ body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
     margin: 0 0 10px;
     opacity: 0.88;
     font-size: 12px;
+}
+
+.vg-layout-pos-mode {
+    margin: 4px 0 10px;
+    font-size: 11px;
+    color: rgba(125, 211, 252, 0.9);
+}
+
+.vg-layout-pos-mode span {
+    font-weight: 700;
+    color: #fff;
+}
+
+.vg-layout-panel select option:disabled {
+    opacity: 0.45;
 }
 
 .vg-layout-panel label {

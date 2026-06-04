@@ -1612,19 +1612,31 @@ function vgKriCreateLowerLogoBox() {
     return box;
 }
 
-function vgKriAppendHead(panel, { kicker, title, meta }) {
+function vgKriAppendHead(panel, { kicker, title, meta, layoutId = 'kri-head', parts = null }) {
     const head = vgEl('div', 'vg-kri-head');
-    head.dataset.vgLayout = 'kri-head';
-    if (kicker) head.appendChild(vgEl('p', 'vg-kri-kicker', kicker));
-    if (title) head.appendChild(vgEl('h2', 'vg-kri-heading', title));
-    if (meta) head.appendChild(vgEl('p', 'vg-kri-meta', meta));
+    head.dataset.vgLayout = layoutId;
+    if (kicker) {
+        const p = vgEl('p', 'vg-kri-kicker', kicker);
+        if (parts?.kicker) p.dataset.vgLayout = parts.kicker;
+        head.appendChild(p);
+    }
+    if (title) {
+        const h = vgEl('h2', 'vg-kri-heading', title);
+        if (parts?.title) h.dataset.vgLayout = parts.title;
+        head.appendChild(h);
+    }
+    if (meta) {
+        const p = vgEl('p', 'vg-kri-meta', meta);
+        if (parts?.meta) p.dataset.vgLayout = parts.meta;
+        head.appendChild(p);
+    }
     panel.appendChild(head);
     return head;
 }
 
-function vgKriAppendCols(panel, labels) {
+function vgKriAppendCols(panel, labels, { layoutId = 'kri-cols' } = {}) {
     const cols = vgEl('div', 'vg-kri-cols');
-    cols.dataset.vgLayout = 'kri-cols';
+    cols.dataset.vgLayout = layoutId;
     for (const { text, className } of labels) {
         cols.appendChild(vgEl('span', className ? `vg-kri-col ${className}` : 'vg-kri-col', text));
     }
@@ -1653,7 +1665,9 @@ function vgKriBuildLaneLogo(info, layoutTarget) {
 
 function vgBuildKriDrawLaneRow(entry, lookup) {
     const li = vgEl('li', 'vg-lane vg-lane--draw');
-    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
+    const laneN = vgEl('span', 'vg-lane-n', String(entry.lane));
+    laneN.dataset.vgLayoutTarget = 'draw-lane-n';
+    li.appendChild(laneN);
     const club = vgParseClubCode(entry.code);
     const info = vgClubInfo(club.id, lookup);
     li.appendChild(vgKriBuildLaneLogo(info, 'draw-logo'));
@@ -1869,14 +1883,28 @@ function vgRenderDraw(layer, race) {
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell();
         const panel = vgKriCreatePanel('draw');
-        vgKriAppendHead(panel, { kicker: 'Start list', title: fullName, meta: metaText });
+        vgKriAppendHead(panel, {
+            kicker: 'Start list',
+            title: fullName,
+            meta: metaText,
+            layoutId: 'draw-head',
+            parts: {
+                kicker: 'draw-kicker',
+                title: 'draw-title',
+                meta: 'draw-meta',
+            },
+        });
         const body = vgEl('div', 'vg-kri-draw-body');
-        body.dataset.vgLayout = 'kri-draw-body';
-        vgKriAppendCols(body, [
-            { text: 'Lane', className: 'vg-kri-col--lane' },
-            { text: '', className: 'vg-kri-col--logo' },
-            { text: 'Crew', className: 'vg-kri-col--crew' },
-        ]);
+        body.dataset.vgLayout = 'draw-body';
+        vgKriAppendCols(
+            body,
+            [
+                { text: 'Lane', className: 'vg-kri-col--lane' },
+                { text: '', className: 'vg-kri-col--logo' },
+                { text: 'Crew', className: 'vg-kri-col--crew' },
+            ],
+            { layoutId: 'draw-cols' },
+        );
         const list = vgEl('ul', 'vg-kri-lanes vg-draw-lanes');
         list.dataset.vgLayout = 'draw-lanes';
         for (const lane of race.lanes) {
@@ -1997,12 +2025,26 @@ function vgRenderResults(layer, race) {
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell();
         const panel = vgKriCreatePanel('results');
-        vgKriAppendHead(panel, { kicker: 'Results', title: fullName, meta: metaText });
-        vgKriAppendCols(panel, [
-            { text: 'Placing', className: 'vg-kri-col--lane' },
-            { text: 'Crew', className: 'vg-kri-col--crew' },
-            { text: 'Time', className: 'vg-kri-col--time' },
-        ]);
+        vgKriAppendHead(panel, {
+            kicker: 'Results',
+            title: fullName,
+            meta: metaText,
+            layoutId: 'results-head',
+            parts: {
+                kicker: 'results-kicker',
+                title: 'results-title',
+                meta: 'results-meta',
+            },
+        });
+        vgKriAppendCols(
+            panel,
+            [
+                { text: 'Placing', className: 'vg-kri-col--lane' },
+                { text: 'Crew', className: 'vg-kri-col--crew' },
+                { text: 'Time', className: 'vg-kri-col--time' },
+            ],
+            { layoutId: 'results-cols' },
+        );
         const list = vgEl('ul', 'vg-kri-lanes vg-draw-lanes vg-draw-lanes--results');
         list.dataset.vgLayout = 'results-lanes';
         const result = vgState.results.get(race.raceNum);

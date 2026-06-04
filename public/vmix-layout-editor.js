@@ -11,16 +11,26 @@
             { id: 'lower-event', label: 'Lower — event title' },
         ],
         draw: [
-            { id: 'draw-head', label: 'Draw — header text' },
-            { id: 'draw-lanes', label: 'Draw — lane list' },
+            { id: 'draw-head', label: 'Draw — header block (all)' },
+            { id: 'draw-kicker', label: 'Draw — “Start list” kicker' },
+            { id: 'draw-title', label: 'Draw — event title' },
+            { id: 'draw-meta', label: 'Draw — race / round line' },
+            { id: 'draw-body', label: 'Draw — columns + rows block', posMode: 'transform' },
+            { id: 'draw-cols', label: 'Draw — Lane / Crew header row', posMode: 'transform' },
+            { id: 'draw-lanes', label: 'Draw — lane list', posMode: 'transform' },
+            { id: 'draw-lane-n', label: 'Draw — lane numbers (1–8)', target: 'draw-lane-n' },
             { id: 'draw-logo', label: 'Draw — school logos', target: 'draw-logo' },
-            { id: 'draw-crew', label: 'Draw — crew text', target: 'draw-crew' },
+            { id: 'draw-crew', label: 'Draw — crew names', target: 'draw-crew' },
         ],
         results: [
-            { id: 'results-head', label: 'Results — header text' },
-            { id: 'results-lanes', label: 'Results — lane list' },
+            { id: 'results-head', label: 'Results — header block (all)' },
+            { id: 'results-kicker', label: 'Results — kicker' },
+            { id: 'results-title', label: 'Results — event title' },
+            { id: 'results-meta', label: 'Results — race line' },
+            { id: 'results-cols', label: 'Results — column headers', posMode: 'transform' },
+            { id: 'results-lanes', label: 'Results — lane list', posMode: 'transform' },
             { id: 'results-logo', label: 'Results — school logos', target: 'results-logo' },
-            { id: 'results-crew', label: 'Results — crew text', target: 'results-crew' },
+            { id: 'results-crew', label: 'Results — crew names', target: 'results-crew' },
         ],
         leader: [
             { id: 'leader-wrap', label: 'Leader — overlay root' },
@@ -29,6 +39,19 @@
             { id: 'leader-badge-lane', label: 'Leader — lane number' },
             { id: 'leader-crew', label: 'Leader — crew name' },
         ],
+    };
+
+    /** Map legacy / child ids to editor region ids. */
+    const REGION_ALIASES = {
+        draw: {
+            'kri-head': 'draw-head',
+            'kri-draw-body': 'draw-body',
+            'kri-cols': 'draw-cols',
+        },
+        results: {
+            'kri-head': 'results-head',
+            'kri-cols': 'results-cols',
+        },
     };
 
     const editor = {
@@ -55,6 +78,75 @@
 
     function findBlockEl(id) {
         return global.document.querySelector(`[data-vg-layout="${id}"]`);
+    }
+
+    function findRegionEl(def) {
+        if (!def) return null;
+        if (def.target) return findTargetEls(def.target)[0] || null;
+        return findBlockEl(def.id);
+    }
+
+    function resolveRegionId(el) {
+        if (!el) return null;
+        const defs = regionDefs(editor.graphic);
+        const targetKey = el.getAttribute('data-vg-layout-target');
+        if (targetKey) {
+            const byTarget = defs.find((d) => d.target === targetKey);
+            if (byTarget) return byTarget.id;
+            if (defs.some((d) => d.id === targetKey)) return targetKey;
+        }
+        const layoutId = el.getAttribute('data-vg-layout');
+        if (layoutId) {
+            if (defs.some((d) => d.id === layoutId)) return layoutId;
+            const alias = REGION_ALIASES[editor.graphic]?.[layoutId];
+            if (alias) return alias;
+        }
+        return null;
+    }
+
+    function findSelectableFromEvent(e) {
+        if (editor.panel?.contains(e.target)) return null;
+        let node = e.target;
+        const stage = getStage();
+        while (node && node !== stage) {
+            const id = resolveRegionId(node);
+            if (id) return { regionId: id, hit: node };
+            node = node.parentElement;
+        }
+        return null;
+    }
+
+    function regionPosMode(def, el) {
+        if (def?.posMode) return def.posMode;
+        if (def?.target) return 'transform';
+        if (!el) return 'absolute';
+        const pos = global.getComputedStyle(el).position;
+        if (pos === 'absolute' || el.style.left) return 'absolute';
+        return 'transform';
+    }
+
+    function parseTranslate(transformStr) {
+        if (!transformStr || transformStr === 'none') return { x: 0, y: 0 };
+        const m = String(transformStr).match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+        if (m) return { x: parseFloat(m[1]), y: parseFloat(m[2]) };
+        const m2 = String(transformStr).match(/translate\(([-\d.]+)px\)/);
+        if (m2) return { x: parseFloat(m2[1]), y: 0 };
+        const mat = String(transformStr).match(/matrix\(([^)]+)\)/);
+        if (mat) {
+            const p = mat[1].split(',').map((s) => parseFloat(s.trim()));
+            if (p.length >= 6) return { x: p[4], y: p[5] };
+        }
+        return { x: 0, y: 0 };
+    }
+
+    function readTranslate(el) {
+        if (!el) return { x: 0, y: 0 };
+        if (el.style.transform) return parseTranslate(el.style.transform);
+        return parseTranslate(global.getComputedStyle(el).transform);
+    }
+
+    function formatTranslate(x, y) {
+        return `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     }
 
     function findTargetEls(targetKey) {
@@ -104,14 +196,22 @@
         });
         const def = getSelectedDef();
         if (!def) return;
-        if (def.target) {
-            const first = findTargetEls(def.target)[0];
-            if (first) first.classList.add('vg-layout-selected');
-        } else {
-            const el = findBlockEl(def.id);
-            if (el) el.classList.add('vg-layout-selected');
-        }
+        const el = findRegionEl(def);
+        if (el) el.classList.add('vg-layout-selected');
         syncFieldsFromSelection();
+        updateRegionSelectHighlight();
+    }
+
+    function updateRegionSelectHighlight() {
+        const sel = editor.panel?.querySelector('#vgLayoutRegion');
+        if (!sel) return;
+        for (const opt of sel.options) {
+            const def = regionDefs(editor.graphic).find((d) => d.id === opt.value);
+            const found = def ? !!findRegionEl(def) : false;
+            const plain = def?.label?.replace(/^[●○]\s*/, '') || opt.value;
+            opt.textContent = `${found ? '● ' : '○ '}${plain}`;
+            opt.disabled = !found;
+        }
     }
 
     function syncFieldsFromSelection() {
@@ -119,7 +219,7 @@
         const def = getSelectedDef();
         if (!panel || !def) return;
 
-        const el = def.target ? findTargetEls(def.target)[0] : findBlockEl(def.id);
+        const el = findRegionEl(def);
         if (!el) return;
 
         const pos = elPositionPx(el);
@@ -133,10 +233,14 @@
         set('width', saved?.width || el.style.width || '');
         set('gap', saved?.gap || el.style.gap || '');
         set('fontSize', saved?.fontSize || el.style.fontSize || '');
-        set('transform', saved?.transform || el.style.transform || '');
+        const tr = saved?.transform || el.style.transform || formatTranslate(readTranslate(el).x, readTranslate(el).y);
+        set('transform', tr === 'translate(0px, 0px)' ? '' : tr);
         set('scale', saved?.scale ?? '');
         const computedColor = global.getComputedStyle(el).color || '';
         set('color', saved?.color || el.style.color || rgbToHex(computedColor) || '');
+
+        const modeEl = panel.querySelector('[data-field="posMode"]');
+        if (modeEl) modeEl.textContent = regionPosMode(def, el);
     }
 
     function rgbToHex(rgb) {
@@ -194,9 +298,15 @@
             return;
         }
         applyFieldsToSelection();
-        const el = def.target ? findTargetEls(def.target)[0] : findBlockEl(def.id);
+        const el = findRegionEl(def);
         const props = el ? readPropsFromEl(el) : {};
         Object.assign(props, collectFieldProps());
+        if (el && regionPosMode(def, el) === 'transform') {
+            const tr = readTranslate(el);
+            props.transform = formatTranslate(tr.x, tr.y);
+            delete props.left;
+            delete props.top;
+        }
 
         global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
         setStatus(`Saved ${editor.theme} / ${editor.graphic} / ${def.id}`);
@@ -204,16 +314,17 @@
 
     function saveAllVisible() {
         for (const def of regionDefs(editor.graphic)) {
+            const el = findRegionEl(def);
+            if (!el) continue;
+            const props = readPropsFromEl(el);
             if (def.target) {
-                const el = findTargetEls(def.target)[0];
-                if (!el) continue;
-                const props = readPropsFromEl(el);
+                global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
+            } else if (regionPosMode(def, el) === 'transform') {
+                const tr = readTranslate(el);
+                props.transform = formatTranslate(tr.x, tr.y);
                 global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
             } else {
-                const el = findBlockEl(def.id);
-                if (!el) continue;
                 const pos = elPositionPx(el);
-                const props = readPropsFromEl(el);
                 props.left = `${Math.round(pos.left)}px`;
                 props.top = `${Math.round(pos.top)}px`;
                 global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
@@ -246,33 +357,43 @@
     }
 
     function onPointerDown(e) {
-        const block = e.target.closest('[data-vg-layout]');
-        const logo = e.target.closest('[data-vg-layout-target]');
-        const target = block || logo;
-        if (!target) return;
+        const pick = findSelectableFromEvent(e);
+        if (!pick) return;
         e.preventDefault();
 
-        if (block) {
-            editor.selectedId = block.getAttribute('data-vg-layout');
-        } else {
-            editor.selectedId = logo.getAttribute('data-vg-layout-target');
-        }
+        editor.selectedId = pick.regionId;
         const regionSel = editor.panel?.querySelector('#vgLayoutRegion');
         if (regionSel) regionSel.value = editor.selectedId;
         selectRegion(editor.selectedId);
 
-        const pos = elPositionPx(target);
+        const def = getSelectedDef();
+        if (!def) return;
+
+        let dragEl;
+        if (def.target) {
+            dragEl =
+                pick.hit.closest(`[data-vg-layout-target="${def.target}"]`) ||
+                findTargetEls(def.target)[0];
+        } else {
+            dragEl = findBlockEl(def.id);
+        }
+        if (!dragEl) return;
+
+        const mode = regionPosMode(def, dragEl);
+        const pos = elPositionPx(dragEl);
         const pt = stagePoint(e.clientX, e.clientY);
         editor.drag = {
-            el: target,
-            isLogo: !!logo,
+            el: dragEl,
+            def,
+            mode,
+            isTarget: !!def.target,
             startX: pt.x,
             startY: pt.y,
             origLeft: pos.left,
             origTop: pos.top,
-            origTransform: target.style.transform || '',
+            origTranslate: readTranslate(dragEl),
         };
-        target.setPointerCapture?.(e.pointerId);
+        dragEl.setPointerCapture?.(e.pointerId);
     }
 
     function onPointerMove(e) {
@@ -280,26 +401,30 @@
         const pt = stagePoint(e.clientX, e.clientY);
         const dx = Math.round(pt.x - editor.drag.startX);
         const dy = Math.round(pt.y - editor.drag.startY);
+        const panel = editor.panel;
 
-        if (editor.drag.isLogo) {
-            const key = editor.drag.el.getAttribute('data-vg-layout-target');
-            findTargetEls(key).forEach((node) => {
-                node.style.transform = `translate(${dx}px, ${dy}px)`;
-            });
+        if (editor.drag.mode === 'transform' || editor.drag.isTarget) {
+            const x = editor.drag.origTranslate.x + dx;
+            const y = editor.drag.origTranslate.y + dy;
+            const transform = formatTranslate(x, y);
+            if (editor.drag.isTarget && editor.drag.def?.target) {
+                findTargetEls(editor.drag.def.target).forEach((node) => {
+                    node.style.transform = transform;
+                });
+            } else {
+                editor.drag.el.style.transform = transform;
+            }
+            const transformInput = panel?.querySelector('[data-field="transform"]');
+            if (transformInput) transformInput.value = transform;
         } else {
             editor.drag.el.style.left = `${Math.round(editor.drag.origLeft + dx)}px`;
             editor.drag.el.style.top = `${Math.round(editor.drag.origTop + dy)}px`;
         }
 
-        const panel = editor.panel;
         const leftInput = panel?.querySelector('[data-field="left"]');
         const topInput = panel?.querySelector('[data-field="top"]');
         if (leftInput) leftInput.value = String(Math.round(editor.drag.origLeft + dx));
         if (topInput) topInput.value = String(Math.round(editor.drag.origTop + dy));
-        if (editor.drag.isLogo) {
-            const transformInput = panel?.querySelector('[data-field="transform"]');
-            if (transformInput) transformInput.value = `translate(${dx}px, ${dy}px)`;
-        }
     }
 
     function onPointerUp() {
@@ -307,13 +432,37 @@
     }
 
     function onKeyDown(e) {
-        if (!editor.selectedId) return;
+        if (!editor.selectedId || e.target.closest('.vg-layout-panel')) return;
         const def = getSelectedDef();
-        if (!def || def.target) return;
-        const el = findBlockEl(def.id);
+        if (!def) return;
+        const el = findRegionEl(def);
         if (!el) return;
 
         const step = e.shiftKey ? 10 : 1;
+        const mode = regionPosMode(def, el);
+
+        if (mode === 'transform' || def.target) {
+            const tr = readTranslate(def.target ? findTargetEls(def.target)[0] || el : el);
+            let x = tr.x;
+            let y = tr.y;
+            if (e.key === 'ArrowLeft') x -= step;
+            else if (e.key === 'ArrowRight') x += step;
+            else if (e.key === 'ArrowUp') y -= step;
+            else if (e.key === 'ArrowDown') y += step;
+            else return;
+            e.preventDefault();
+            const transform = formatTranslate(x, y);
+            if (def.target) {
+                findTargetEls(def.target).forEach((node) => {
+                    node.style.transform = transform;
+                });
+            } else {
+                el.style.transform = transform;
+            }
+            syncFieldsFromSelection();
+            return;
+        }
+
         let left = parseFloat(el.style.left);
         let top = parseFloat(el.style.top);
         if (!Number.isFinite(left)) left = elPositionPx(el).left;
@@ -336,7 +485,7 @@
         editor.panel.className = 'vg-layout-panel';
         editor.panel.innerHTML = `
             <h2>Layout dev mode</h2>
-            <p>Drag blocks or logos. Saved in this browser only — vMix Web Browser on the same PC uses the same store. Arrow keys nudge (Shift = 10px).</p>
+            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). KRI flex layouts use transform mode.</p>
             <label for="vgLayoutGraphic">Graphic</label>
             <select id="vgLayoutGraphic">
                 <option value="title">Title</option>
@@ -346,6 +495,7 @@
             </select>
             <label for="vgLayoutRegion">Region</label>
             <select id="vgLayoutRegion"></select>
+            <p class="vg-layout-pos-mode">Move mode: <span data-field="posMode">—</span></p>
             <div class="vg-layout-fields">
                 <div><label>Left (px)</label><input data-field="left" type="number" step="1"></div>
                 <div><label>Top (px)</label><input data-field="top" type="number" step="1"></div>
@@ -449,6 +599,7 @@
         }
         editor.selectedId = sel.value;
         selectRegion(editor.selectedId);
+        updateRegionSelectHighlight();
     }
 
     function previewGraphic(graphic) {
@@ -456,6 +607,7 @@
         if (!api?.devPreviewHold) return;
         api.devPreviewHold(graphic);
         global.VmixLayout.apply(editor.theme, graphic);
+        updateRegionSelectHighlight();
     }
 
     function boot() {
