@@ -103,9 +103,8 @@ body.kri-weather-page {
     position: absolute;
     top: 40px;
     right: 44px;
+    width: 72px;
     height: 72px;
-    width: auto;
-    max-width: 400px;
     object-fit: contain;
     z-index: 6;
     pointer-events: none;

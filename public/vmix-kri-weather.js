@@ -668,7 +668,7 @@
             '<div class="kri-weather-map" id="kriWeatherMap" aria-hidden="true"></div>' +
             '<div class="kri-weather-rain-fx" id="kriWeatherRainFx" aria-hidden="true"></div>' +
             '<div class="kri-weather-vignette" aria-hidden="true"></div>' +
-            '<img class="kri-weather-logo" src="assets/kri/kri-logo-full.png" alt="" width="360" height="80">' +
+            '<img class="kri-weather-logo" src="assets/kri/kri-logo.png" alt="" width="72" height="72">' +
             '<aside class="kri-weather-panel" aria-live="polite">' +
             '<header class="kri-weather-panel__head">' +
             '<p class="kri-weather-panel__kicker">Lake Karāpiro</p>' +
