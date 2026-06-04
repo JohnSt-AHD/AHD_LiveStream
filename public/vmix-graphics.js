@@ -1870,8 +1870,11 @@ function vgRenderDraw(layer, race) {
         const shell = vgKriCreateShell();
         const panel = vgKriCreatePanel('draw');
         vgKriAppendHead(panel, { kicker: 'Start list', title: fullName, meta: metaText });
-        vgKriAppendCols(panel, [
+        const body = vgEl('div', 'vg-kri-draw-body');
+        body.dataset.vgLayout = 'kri-draw-body';
+        vgKriAppendCols(body, [
             { text: 'Lane', className: 'vg-kri-col--lane' },
+            { text: '', className: 'vg-kri-col--logo' },
             { text: 'Crew', className: 'vg-kri-col--crew' },
         ]);
         const list = vgEl('ul', 'vg-kri-lanes vg-draw-lanes');
@@ -1882,7 +1885,8 @@ function vgRenderDraw(layer, race) {
                 vgBuildKriDrawLaneRow({ lane: lane.lane, code: lane.code }, vgState.lookup),
             );
         }
-        panel.appendChild(list);
+        body.appendChild(list);
+        panel.appendChild(body);
         shell.appendChild(panel);
         layer.appendChild(shell);
         return;

@@ -19,7 +19,7 @@
     const INTRO_MS = 650;
     const OUTRO_MS = 650;
     const RANDOM_WIND_COUNT = 22;
-    const ZOOM_IN_FACTOR = 1.386;
+    const ZOOM_IN_FACTOR = 1.386 * 1.1;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
     const WMO_LABELS = {
@@ -55,6 +55,8 @@
     let randomWindSites = [];
     let refreshTimer = null;
     let fadeTimer = null;
+    /** Fixed center/zoom after first stable layout — stops fitBounds jumping on resize/intro. */
+    let lockedMapView = null;
 
     function el(id) {
         return document.getElementById(id);
@@ -468,25 +470,47 @@
         windLabelLayer = null;
         decorativeWindLayer = null;
         courseLayer = null;
+        lockedMapView = null;
         const rainFx = el('kriWeatherRainFx');
         if (rainFx) rainFx.replaceChildren('');
         randomWindSites = [];
     }
 
-    function fitMapToCourse() {
+    function applyLockedMapView() {
+        if (!map || !lockedMapView) return;
+        map.setView(lockedMapView.center, lockedMapView.zoom, { animate: false });
+    }
+
+    function fitMapToCourse(forceRecalc = false) {
         if (!map) return;
+        if (lockedMapView && !forceRecalc) {
+            applyLockedMapView();
+            return;
+        }
+
         const b = getWindBounds();
         map.fitBounds(
             [
                 [b.south, b.west],
                 [b.north, b.east],
             ],
-            { padding: [24, 24] },
+            { padding: [24, 24], animate: false },
         );
         const z = map.getZoom();
         if (Number.isFinite(z)) {
-            map.setZoom(z + Math.log2(ZOOM_IN_FACTOR));
+            map.setZoom(z + Math.log2(ZOOM_IN_FACTOR), { animate: false });
         }
+        lockedMapView = {
+            center: map.getCenter(),
+            zoom: map.getZoom(),
+        };
+    }
+
+    function syncMapLayout(forceRecalc = false) {
+        if (!map) return;
+        map.invalidateSize();
+        fitMapToCourse(forceRecalc);
+        applyLockedMapView();
     }
 
     function mountCourseOverlay() {
@@ -521,7 +545,11 @@
 
         mountCourseOverlay();
         initRandomWindSites();
-        fitMapToCourse();
+
+        const b = getWindBounds();
+        map.setView([(b.south + b.north) / 2, (b.west + b.east) / 2], LAKE.zoom, {
+            animate: false,
+        });
 
         if (!map.getPane('kriWindPane')) {
             map.createPane('kriWindPane');
@@ -617,10 +645,7 @@
         await wait(INTRO_MS);
         panel.classList.remove('vg-kri-weather--intro');
         panel.classList.add('vg-kri-weather--hold');
-        if (map) {
-            fitMapToCourse();
-            map.invalidateSize();
-        }
+        syncMapLayout(true);
     }
 
     async function hide() {
@@ -658,10 +683,7 @@
         refreshWeather();
         startRefreshTimer();
         panel.classList.add('vg-kri-weather--visible', 'vg-kri-weather--hold');
-        if (map) {
-            fitMapToCourse();
-            map.invalidateSize();
-        }
+        syncMapLayout(true);
     }
 
     if (document.body.classList.contains('kri-weather-page')) {
