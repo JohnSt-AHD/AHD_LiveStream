@@ -186,6 +186,31 @@
         };
     }
 
+    /** Absolute left/top for KRI regions are relative to .vg-kri-panel, not the 1920×1080 stage. */
+    function layoutContainerFor(el) {
+        return el?.closest?.('.vg-kri-panel') || null;
+    }
+
+    function positionInContainerPx(el, container) {
+        if (!el || !container) return elPositionPx(el);
+        const er = el.getBoundingClientRect();
+        const cr = container.getBoundingClientRect();
+        const stage = getStage();
+        if (!stage) return { left: 0, top: 0 };
+        const sr = stage.getBoundingClientRect();
+        return {
+            left: ((er.left - cr.left) / sr.width) * 1920,
+            top: ((er.top - cr.top) / sr.height) * 1080,
+        };
+    }
+
+    function layoutPositionPx(def, el) {
+        if (!usesTransformPos(def, el) && layoutContainerFor(el)) {
+            return positionInContainerPx(el, layoutContainerFor(el));
+        }
+        return elPositionPx(el);
+    }
+
     function getSelectedDef() {
         return regionDefs(editor.graphic).find((d) => d.id === editor.selectedId);
     }
@@ -232,9 +257,9 @@
         }
         const left = parseFloat(el.style.left);
         const top = parseFloat(el.style.top);
-        const leftPx = Number.isFinite(left) ? Math.round(left) : l;
-        const topPx = Number.isFinite(top) ? Math.round(top) : t;
-        return `Left ${leftPx} px · Top ${topPx} px`;
+        const leftPx = Number.isFinite(left) ? Math.round(left) : Math.round(layoutPositionPx(def, el).left);
+        const topPx = Number.isFinite(top) ? Math.round(top) : Math.round(layoutPositionPx(def, el).top);
+        return `Panel: left ${leftPx} px · top ${topPx} px · stage ${l} × ${t}`;
     }
 
     function formatPositionBadge(def, el) {
@@ -310,8 +335,8 @@
                 set('left', '');
                 set('top', '');
             } else {
-                set('left', Math.round(pos.left));
-                set('top', Math.round(pos.top));
+                set('left', Math.round(layoutPositionPx(def, el).left));
+                set('top', Math.round(layoutPositionPx(def, el).top));
             }
             const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, def.id);
             const tr = readTranslate(el);
@@ -434,7 +459,8 @@
             delete props.left;
             delete props.top;
         } else {
-            const pos = elPositionPx(el);
+            const container = layoutContainerFor(el) || getStage();
+            const pos = positionInContainerPx(el, container);
             props.left = `${Math.round(pos.left)}px`;
             props.top = `${Math.round(pos.top)}px`;
             delete props.transform;
@@ -531,7 +557,11 @@
         if (!dragEl) return;
 
         const mode = regionPosMode(def, dragEl);
-        const pos = elPositionPx(dragEl);
+        const container = layoutContainerFor(dragEl) || getStage();
+        const pos =
+            mode !== 'transform' && !def.target
+                ? positionInContainerPx(dragEl, container)
+                : elPositionPx(dragEl);
         const pt = stagePoint(e.clientX, e.clientY);
         if (mode !== 'transform' && !def.target) {
             dragEl.style.position = 'absolute';
@@ -625,8 +655,9 @@
 
         let left = parseFloat(el.style.left);
         let top = parseFloat(el.style.top);
-        if (!Number.isFinite(left)) left = elPositionPx(el).left;
-        if (!Number.isFinite(top)) top = elPositionPx(el).top;
+        const container = layoutContainerFor(el) || getStage();
+        if (!Number.isFinite(left)) left = positionInContainerPx(el, container).left;
+        if (!Number.isFinite(top)) top = positionInContainerPx(el, container).top;
 
         if (e.key === 'ArrowLeft') left -= step;
         else if (e.key === 'ArrowRight') left += step;
@@ -645,7 +676,7 @@
         editor.panel.className = 'vg-layout-panel';
         editor.panel.innerHTML = `
             <h2>Layout dev mode</h2>
-            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). <strong>Copy JSON</strong> exports what you see now; <strong>Save all</strong> stores it in this browser for vMix on the same PC.</p>
+            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). <strong>Copy JSON</strong> exports on-screen layout. Header <strong>left/top</strong> are panel-local; transforms are offsets. Layout build <span data-field="layoutBuild">—</span>.</p>
             <label for="vgLayoutGraphic">Graphic</label>
             <select id="vgLayoutGraphic">
                 <option value="title">Title</option>
@@ -799,8 +830,14 @@
                 return;
             }
             mountPanel();
+            const buildEl = editor.panel?.querySelector('[data-field="layoutBuild"]');
+            if (buildEl) {
+                buildEl.textContent = String(global.VmixLayout?.LAYOUT_BUILD ?? '?');
+            }
             previewGraphic(editor.graphic);
-            setStatus('Live CSV refresh paused — drag positions stay until you save or reload the page.');
+            setStatus(
+                'Layout v2 — reset graphic once to clear old browser overrides. Header left/top are panel-local.',
+            );
 
             getStage()?.addEventListener('pointerdown', onPointerDown);
             global.addEventListener('pointermove', onPointerMove);

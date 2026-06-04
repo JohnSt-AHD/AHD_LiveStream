@@ -3,17 +3,18 @@
  * Dev editor: ?dev=1 on vmix-kri.html / vmix-rnz-milford.html
  */
 (function (global) {
-    const LS_KEY = 'altitudeHdVmixLayout_v1';
+    const LS_KEY = 'altitudeHdVmixLayout_v2';
+    const LAYOUT_BUILD = 2;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
         /* Positions from KRI GT templates (1920×1080) in gt-templates/extracted/kri/ */
         kri: {
-            /* Dev-tuned draw layout (1920×1080) — vmix-kri.html?dev=1&g=d */
+            /* Dev-tuned draw layout — coords are panel-local for absolute regions (see applyLayout). */
             draw: {
                 'draw-head': {
-                    left: '445px',
-                    top: '340px',
+                    left: '401px',
+                    top: '296px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
@@ -414,6 +415,7 @@
 
     global.VmixLayout = {
         LS_KEY,
+        LAYOUT_BUILD,
         DEFAULT_LAYOUTS,
         readAll,
         writeAll,
