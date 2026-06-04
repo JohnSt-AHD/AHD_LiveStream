@@ -54,12 +54,7 @@ const vgPlayback = {
 const VG_THEMES = {
     kri: {
         label: 'KRI',
-        backgrounds: {
-            title: 'assets/vmix/kri/title.png',
-            lower: 'assets/vmix/kri/lower.png',
-            draw: 'assets/vmix/kri/draw.png',
-            results: 'assets/vmix/kri/results.png',
-        },
+        backgrounds: {},
     },
     'rnz-milford': {
         label: 'RNZ Milford',
@@ -688,9 +683,16 @@ function vgIsScheduleGraphic(graphic) {
     return graphic === 'schedule';
 }
 
-/** KRI schedule — CSS panel + logo (no PNG background). */
+/** KRI graphics use CSS panels (no PNG backgrounds), except speed chart overlay. */
+function vgKriUsesCssBackground(graphic) {
+    if (!vgIsKriTheme()) return false;
+    const g = graphic ?? vgPlayback.graphic;
+    return !!g && !vgIsSpeedChartGraphic(g);
+}
+
+/** @deprecated alias */
 function vgKriScheduleCssLayout(graphic) {
-    return vgIsKriTheme() && vgIsScheduleGraphic(graphic ?? vgPlayback.graphic);
+    return vgKriUsesCssBackground(graphic);
 }
 
 function vgSpeedChartEnabled() {
@@ -1254,7 +1256,7 @@ function vgStartIntroPlayback(isVideo, video) {
         return;
     }
 
-    vgShowBackground(!vgKriDefersBackgroundFade() && !vgKriScheduleCssLayout());
+    vgShowBackground(!vgKriDefersBackgroundFade() && !vgKriUsesCssBackground());
     vgShowTextLayer(false);
     vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
 }
@@ -1264,7 +1266,7 @@ function vgEnterHold() {
     vgClearPlaybackTimers();
     vgPauseVideoAtHoldPoint(vgGetBgVideo());
     vgSetStageState('hold');
-    if (vgKriScheduleCssLayout()) {
+    if (vgKriUsesCssBackground()) {
         vgShowBackground(false);
     } else if (vgKriDefersBackgroundFade()) {
         vgShowBackground(true);
@@ -1388,7 +1390,7 @@ function vgTriggerIn(graphic) {
     }
 
     vgPrepareContent(graphic, vgGetRaceParam());
-    if (vgKriScheduleCssLayout(graphic)) {
+    if (vgKriUsesCssBackground(graphic)) {
         vgStartIntroPlayback(false, null);
         return;
     }
@@ -1506,6 +1508,94 @@ function vgEl(tag, className, text) {
     return e;
 }
 
+const KRI_LOGO_SRC = 'assets/kri/kri-logo-full.png';
+
+function vgKriCreateShell() {
+    const shell = vgEl('div', 'vg-kri-shell');
+    shell.dataset.vgLayout = 'kri-shell';
+    const logo = document.createElement('img');
+    logo.className = 'vg-kri-logo';
+    logo.src = KRI_LOGO_SRC;
+    logo.alt = '';
+    logo.dataset.vgLayout = 'kri-logo';
+    shell.appendChild(logo);
+    return shell;
+}
+
+function vgKriCreatePanel(modifier) {
+    const panel = vgEl('div', `vg-kri-panel${modifier ? ` vg-kri-panel--${modifier}` : ''}`);
+    panel.dataset.vgLayout = modifier ? `kri-panel-${modifier}` : 'kri-panel';
+    return panel;
+}
+
+function vgKriAppendHead(panel, { kicker, title, meta }) {
+    const head = vgEl('div', 'vg-kri-head');
+    head.dataset.vgLayout = 'kri-head';
+    if (kicker) head.appendChild(vgEl('p', 'vg-kri-kicker', kicker));
+    if (title) head.appendChild(vgEl('h2', 'vg-kri-heading', title));
+    if (meta) head.appendChild(vgEl('p', 'vg-kri-meta', meta));
+    panel.appendChild(head);
+    return head;
+}
+
+function vgKriAppendCols(panel, labels) {
+    const cols = vgEl('div', 'vg-kri-cols');
+    cols.dataset.vgLayout = 'kri-cols';
+    for (const { text, className } of labels) {
+        cols.appendChild(vgEl('span', className ? `vg-kri-col ${className}` : 'vg-kri-col', text));
+    }
+    panel.appendChild(cols);
+    return cols;
+}
+
+function vgKriBuildLaneLogo(info, layoutTarget) {
+    const wrap = vgEl('span', 'vg-lane-logo-wrap');
+    if (layoutTarget) wrap.dataset.vgLayoutTarget = layoutTarget;
+    wrap.appendChild(vgEl('span', 'vg-lane-logo-halo'));
+    if (info.logoUrl) {
+        const img = document.createElement('img');
+        img.className = 'vg-lane-logo';
+        img.src = info.logoUrl;
+        img.alt = '';
+        if (layoutTarget) img.dataset.vgLayoutTarget = layoutTarget;
+        wrap.appendChild(img);
+    } else {
+        const ph = vgEl('span', 'vg-lane-logo vg-lane-logo--empty');
+        if (layoutTarget) ph.dataset.vgLayoutTarget = layoutTarget;
+        wrap.appendChild(ph);
+    }
+    return wrap;
+}
+
+function vgBuildKriDrawLaneRow(entry, lookup) {
+    const li = vgEl('li', 'vg-lane vg-lane--draw');
+    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
+    const club = vgParseClubCode(entry.code);
+    const info = vgClubInfo(club.id, lookup);
+    li.appendChild(vgKriBuildLaneLogo(info, 'draw-logo'));
+    const crew = vgEl('div', 'vg-lane-crew');
+    crew.dataset.vgLayoutTarget = 'draw-crew';
+    crew.appendChild(vgEl('span', 'vg-lane-club', info.name));
+    li.appendChild(crew);
+    return li;
+}
+
+function vgBuildKriResultsLaneRow(entry, lookup) {
+    const li = vgEl('li', 'vg-lane');
+    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
+    const club = vgParseClubCode(entry.code);
+    const info = vgClubInfo(club.id, lookup);
+    li.appendChild(vgKriBuildLaneLogo(info, 'results-logo'));
+    const crew = vgEl('div', 'vg-lane-crew');
+    crew.dataset.vgLayoutTarget = 'results-crew';
+    crew.appendChild(vgEl('span', 'vg-lane-club', info.name));
+    li.appendChild(crew);
+    if (entry.time) {
+        li.appendChild(vgEl('span', 'vg-lane-time', entry.time));
+    }
+    return li;
+}
+
 function vgRenderTitle(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--title');
     layer.dataset.vgLayout = 'title';
@@ -1515,6 +1605,15 @@ function vgRenderTitle(layer, race) {
         : vgState.races[0]
           ? vgFormatDayLabel(vgState.races[0].dayLabel)
           : '';
+    if (vgIsKriTheme()) {
+        const shell = vgKriCreateShell();
+        const panel = vgKriCreatePanel('title');
+        panel.appendChild(vgEl('h1', 'vg-title-code', code));
+        if (day) panel.appendChild(vgEl('p', 'vg-title-date', day));
+        shell.appendChild(panel);
+        layer.appendChild(shell);
+        return;
+    }
     layer.appendChild(vgEl('h1', 'vg-title-code', code));
     if (day) layer.appendChild(vgEl('p', 'vg-title-date', day));
 }
@@ -1529,6 +1628,27 @@ function vgRenderLower(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--lower');
     layer.dataset.vgLayout = 'lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+    if (vgIsKriTheme()) {
+        const shell = vgKriCreateShell();
+        const panel = vgKriCreatePanel('lower');
+        const body = vgEl('div', 'vg-kri-lower-body');
+        body.dataset.vgLayout = 'kri-lower-body';
+        body.appendChild(vgEl('p', 'vg-lower-meta', `Race ${race.race}`));
+        const raceEl = vgEl('p', 'vg-lower-race');
+        raceEl.appendChild(vgEl('span', 'vg-lower-race-time', vgFormatTime(race.startAt)));
+        if (race.round) {
+            raceEl.appendChild(vgEl('span', 'vg-lower-race-round', race.round));
+        }
+        if (race.progression) {
+            raceEl.appendChild(vgEl('span', 'vg-lower-race-progression', race.progression));
+        }
+        body.appendChild(raceEl);
+        body.appendChild(vgEl('h2', 'vg-lower-event', fullName));
+        panel.appendChild(body);
+        shell.appendChild(panel);
+        layer.appendChild(shell);
+        return;
+    }
     const raceNumber = `Race ${race.race}`;
     const metaEl = vgEl('p', 'vg-lower-meta', raceNumber);
     metaEl.dataset.vgLayout = 'lower-meta';
@@ -1539,9 +1659,7 @@ function vgRenderLower(layer, race) {
     const progressionLabel = race.progression || '';
     raceEl.appendChild(vgEl('span', 'vg-lower-race-time', timeLabel));
     if (roundLabel) {
-        if (!vgIsKriTheme()) {
-            raceEl.appendChild(document.createTextNode(' · '));
-        }
+        raceEl.appendChild(document.createTextNode(' · '));
         raceEl.appendChild(vgEl('span', 'vg-lower-race-round', roundLabel));
     }
     if (progressionLabel) {
@@ -1558,7 +1676,7 @@ function vgThemeId() {
     return document.body?.dataset?.vmixTheme || '';
 }
 
-/** Lane/placing numbers are baked into KRI & Milford PNG/WebM backgrounds. */
+/** Lane/placing numbers are baked into Milford PNG/WebM backgrounds; KRI uses HTML lanes. */
 function vgShowLaneNumber() {
     const theme = vgThemeId();
     return theme !== 'kri' && theme !== 'rnz-milford' && theme !== 'beachsprints-milford';
@@ -1650,13 +1768,34 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
 
 function vgRenderDraw(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--draw');
+    layer.dataset.vgLayout = 'draw';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
-    const head = vgEl('div', 'vg-draw-head');
     const metaText = `Race ${race.race} · ${race.round}${race.division ? ` · Div ${race.division}` : ''}`;
+
     if (vgIsKriTheme()) {
-        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
-        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
-    } else if (vgIsMilfordBroadcastTheme()) {
+        const shell = vgKriCreateShell();
+        const panel = vgKriCreatePanel('draw');
+        vgKriAppendHead(panel, { kicker: 'Start list', title: fullName, meta: metaText });
+        vgKriAppendCols(panel, [
+            { text: 'Lane', className: 'vg-kri-col--lane' },
+            { text: 'Crew', className: 'vg-kri-col--crew' },
+        ]);
+        const list = vgEl('ul', 'vg-kri-lanes vg-draw-lanes');
+        list.dataset.vgLayout = 'draw-lanes';
+        for (const lane of race.lanes) {
+            if (!lane.code) continue;
+            list.appendChild(
+                vgBuildKriDrawLaneRow({ lane: lane.lane, code: lane.code }, vgState.lookup),
+            );
+        }
+        panel.appendChild(list);
+        shell.appendChild(panel);
+        layer.appendChild(shell);
+        return;
+    }
+
+    const head = vgEl('div', 'vg-draw-head');
+    if (vgIsMilfordBroadcastTheme()) {
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
         const meta = vgEl('p', 'vg-draw-meta');
         meta.appendChild(vgEl('span', 'vg-draw-meta-race', `Race ${race.race}`));
@@ -1699,34 +1838,23 @@ function vgRenderDraw(layer, race) {
 function vgRenderSchedule(layer, raceParam) {
     vgSetLayerGraphicClass(layer, 'vg-layer--schedule');
     layer.dataset.vgLayout = 'schedule';
-    layer.replaceChildren();
 
     const { current, upcoming } = vgGetUpcomingRaces(raceParam, 10);
 
-    const shell = vgEl('div', 'vg-schedule-shell');
-    shell.dataset.vgLayout = 'schedule-shell';
+    const shell = vgKriCreateShell();
+    const panel = vgKriCreatePanel('schedule');
 
-    const logo = document.createElement('img');
-    logo.className = 'vg-schedule-logo';
-    logo.src = 'assets/kri/kri-logo-full.png';
-    logo.alt = '';
-    logo.dataset.vgLayout = 'schedule-logo';
-    shell.appendChild(logo);
-
-    const panel = vgEl('div', 'vg-schedule-panel');
-    panel.dataset.vgLayout = 'schedule-panel';
-
-    const head = vgEl('div', 'vg-schedule-head');
+    const head = vgEl('div', 'vg-kri-head vg-schedule-head');
     head.dataset.vgLayout = 'schedule-head';
-    head.appendChild(vgEl('h2', 'vg-schedule-title', 'Schedule'));
+    head.appendChild(vgEl('h2', 'vg-kri-heading vg-schedule-title', 'Schedule'));
     panel.appendChild(head);
 
-    const cols = vgEl('div', 'vg-schedule-cols');
+    const cols = vgEl('div', 'vg-kri-cols vg-schedule-cols');
     cols.dataset.vgLayout = 'schedule-cols';
-    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--time', 'Time'));
-    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--race', 'Race'));
-    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--event', 'Event'));
-    cols.appendChild(vgEl('span', 'vg-schedule-col vg-schedule-col--round', 'Round'));
+    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--time', 'Time'));
+    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--race', 'Race'));
+    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--event', 'Event'));
+    cols.appendChild(vgEl('span', 'vg-kri-col vg-schedule-col--round', 'Round'));
     panel.appendChild(cols);
 
     const list = vgEl('ul', 'vg-schedule-rows');
@@ -1764,16 +1892,47 @@ function vgRenderSchedule(layer, raceParam) {
 
 function vgRenderResults(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--results');
+    layer.dataset.vgLayout = 'results';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
-    const head = vgEl('div', 'vg-draw-head');
     const metaText = `Race ${race.race} · ${race.round} · Results`;
+
     if (vgIsKriTheme()) {
-        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
-        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
-    } else {
-        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
-        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+        const shell = vgKriCreateShell();
+        const panel = vgKriCreatePanel('results');
+        vgKriAppendHead(panel, { kicker: 'Results', title: fullName, meta: metaText });
+        vgKriAppendCols(panel, [
+            { text: 'Placing', className: 'vg-kri-col--lane' },
+            { text: 'Crew', className: 'vg-kri-col--crew' },
+            { text: 'Time', className: 'vg-kri-col--time' },
+        ]);
+        const list = vgEl('ul', 'vg-kri-lanes vg-draw-lanes vg-draw-lanes--results');
+        list.dataset.vgLayout = 'results-lanes';
+        const result = vgState.results.get(race.raceNum);
+        if (result?.placings?.length) {
+            for (const p of result.placings) {
+                list.appendChild(
+                    vgBuildKriResultsLaneRow(
+                        {
+                            lane: p.place,
+                            code: p.competitor,
+                            time: p.time,
+                        },
+                        vgState.lookup,
+                    ),
+                );
+            }
+        } else {
+            list.appendChild(vgEl('li', 'vg-lane vg-lane--empty', 'Results not available'));
+        }
+        panel.appendChild(list);
+        shell.appendChild(panel);
+        layer.appendChild(shell);
+        return;
     }
+
+    const head = vgEl('div', 'vg-draw-head');
+    head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
+    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
     head.dataset.vgLayout = 'results-head';
     layer.appendChild(head);
 
@@ -2017,13 +2176,13 @@ function vgDevPreviewHold(graphic) {
     const assetKey = vgIsSpeedGraphic(graphic) ? 'speed' : graphic;
     let isVideo = false;
     let video = null;
-    if (!vgKriScheduleCssLayout(graphic)) {
+    if (!vgKriUsesCssBackground(graphic)) {
         const loaded = vgLoadBackgroundAsset(assetKey);
         isVideo = loaded.isVideo;
         video = loaded.video;
     }
     vgSetStageState('hold');
-    vgShowBackground(!vgKriScheduleCssLayout(graphic));
+    vgShowBackground(!vgKriUsesCssBackground(graphic));
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgShowTextLayer(false);
         vgLoadSpeedFrame();

@@ -13,7 +13,7 @@ const VMIX_TRIGGERS = [
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Schedule / Leader', desc: 'KRI — upcoming 10 races from hub live race (CSS gradient panel); Milford — leader video + lane text' },
-    { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade PNG out)' },
+    { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'v', graphic: 'Speed chart', desc: 'KRI only — lower-third speed vs distance replay in real time (~7 min demo); ease in/out; add &loop=1 to repeat' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
