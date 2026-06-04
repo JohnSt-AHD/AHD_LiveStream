@@ -230,6 +230,30 @@ body.kri-weather-page {
     color: #0060bf;
 }
 
+.kri-weather-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 18px 0 10px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.75);
+    padding-bottom: 8px;
+}
+
+.kri-weather-section-head .kri-weather-section-title {
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.kri-weather-current-condition {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0060bf;
+    text-align: right;
+    flex-shrink: 0;
+}
+
 .kri-weather-section-title {
     margin: 18px 0 10px;
     font-size: 14px;

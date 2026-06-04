@@ -238,7 +238,11 @@
 
     function renderCurrent(current) {
         const grid = el('kriWeatherCurrentGrid');
+        const conditionEl = el('kriWeatherCurrentCondition');
         if (!grid || !current) return;
+        if (conditionEl) {
+            conditionEl.textContent = wmoLabel(current.weather_code);
+        }
         const temp = Math.round(current.temperature_2m);
         const wind = Math.round(current.wind_speed_10m);
         const dir = Math.round(current.wind_direction_10m);
@@ -1001,7 +1005,10 @@
             '<p class="kri-weather-panel__updated" id="kriWeatherUpdated">Loading…</p>' +
             '</header>' +
             '<section class="kri-weather-current" id="kriWeatherCurrent">' +
+            '<div class="kri-weather-section-head">' +
             '<h2 class="kri-weather-section-title">Current</h2>' +
+            '<span class="kri-weather-current-condition" id="kriWeatherCurrentCondition"></span>' +
+            '</div>' +
             '<div class="kri-weather-current-grid" id="kriWeatherCurrentGrid"></div>' +
             '</section>' +
             '<section class="kri-weather-forecast" id="kriWeatherForecast">' +
