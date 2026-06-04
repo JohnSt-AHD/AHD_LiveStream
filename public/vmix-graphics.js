@@ -1604,8 +1604,8 @@ function vgKriCreateLowerLogoBox() {
     img.className = 'vg-kri-lower-logo-mark';
     img.src = KRI_LOGO_MARK_SRC;
     img.alt = '';
-    img.width = 44;
-    img.height = 44;
+    img.width = 66;
+    img.height = 66;
     img.dataset.vgLayout = 'kri-lower-logo-mark';
     box.appendChild(img);
     return box;
@@ -1718,6 +1718,14 @@ function vgRenderLower(layer, race) {
         wrap.dataset.vgLayout = 'kri-lower-wrap';
         wrap.appendChild(vgKriCreateLowerLogoBox());
         const panel = vgKriCreatePanel('lower');
+        if (race.progression) {
+            const progBox = vgEl('div', 'vg-kri-lower-progression-box');
+            progBox.dataset.vgLayout = 'kri-lower-progression';
+            progBox.appendChild(
+                vgEl('span', 'vg-kri-lower-progression-text', race.progression),
+            );
+            panel.appendChild(progBox);
+        }
         const body = vgEl('div', 'vg-kri-lower-body');
         body.dataset.vgLayout = 'kri-lower-body';
         body.appendChild(vgEl('p', 'vg-lower-meta', `Race ${race.race}`));
@@ -1725,9 +1733,6 @@ function vgRenderLower(layer, race) {
         raceEl.appendChild(vgEl('span', 'vg-lower-race-time', vgFormatTime(race.startAt)));
         if (race.round) {
             raceEl.appendChild(vgEl('span', 'vg-lower-race-round', race.round));
-        }
-        if (race.progression) {
-            raceEl.appendChild(vgEl('span', 'vg-lower-race-progression', race.progression));
         }
         body.appendChild(raceEl);
         body.appendChild(vgEl('h2', 'vg-lower-event', fullName));

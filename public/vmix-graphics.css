@@ -491,7 +491,7 @@ body {
     flex-direction: row;
     align-items: stretch;
     z-index: 1;
-    max-width: min(calc(920px + 168px), 72%);
+    max-width: min(calc(920px + 126px), 72%);
 }
 
 [data-vmix-theme='kri'] .vg-kri-lower-logo-box {
@@ -509,8 +509,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-lower-logo-mark {
-    width: 44px;
-    height: 44px;
+    width: 66px;
+    height: 66px;
     object-fit: contain;
     display: block;
 }
@@ -522,8 +522,9 @@ body {
     left: auto;
     flex: 1 1 auto;
     min-width: 0;
-    min-height: 168px;
+    min-height: 126px;
     width: min(920px, 100%);
+    padding: 21px 28px 16px;
     border-radius: 0 22px 0 0;
 }
 
@@ -531,8 +532,29 @@ body {
     top: auto;
     bottom: 44px;
     height: auto;
-    min-height: 168px;
+    min-height: 126px;
     width: min(920px, 62%);
+}
+
+[data-vmix-theme='kri'] .vg-kri-lower-progression-box {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 2;
+    max-width: min(280px, 45%);
+    padding: 6px 10px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+[data-vmix-theme='kri'] .vg-kri-lower-progression-text {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #0c1f3d;
 }
 
 [data-vmix-theme='kri'] .vg-kri-head {
@@ -736,12 +758,16 @@ body {
 [data-vmix-theme='kri'] .vg-kri-lower-body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--lower:has(.vg-kri-lower-progression-box) .vg-kri-lower-body {
+    padding-right: min(300px, 42%);
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower .vg-lower-meta {
     margin: 0;
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--kri-brand-blue-light);
 }
@@ -751,16 +777,16 @@ body {
     display: flex;
     align-items: center;
     gap: 0.35em;
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower .vg-lower-event {
-    margin: 4px 0 0;
-    font-size: 34px;
+    margin: 2px 0 0;
+    font-size: 26px;
     font-weight: 700;
-    line-height: 1.12;
+    line-height: 1.1;
     color: var(--kri-brand-white);
 }
 
