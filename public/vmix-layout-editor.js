@@ -214,6 +214,10 @@
         }
     }
 
+    function usesTransformPos(def, el) {
+        return regionPosMode(def, el) === 'transform' || !!def?.target;
+    }
+
     function syncFieldsFromSelection() {
         const panel = editor.panel;
         const def = getSelectedDef();
@@ -223,17 +227,26 @@
         if (!el) return;
 
         const pos = elPositionPx(el);
+        const transformPos = usesTransformPos(def, el);
         const set = (name, val) => {
             const input = panel.querySelector(`[data-field="${name}"]`);
             if (input) input.value = val ?? '';
         };
-        set('left', Math.round(pos.left));
-        set('top', Math.round(pos.top));
+        if (transformPos) {
+            set('left', '');
+            set('top', '');
+        } else {
+            set('left', Math.round(pos.left));
+            set('top', Math.round(pos.top));
+        }
         const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, def.id);
         set('width', saved?.width || el.style.width || '');
         set('gap', saved?.gap || el.style.gap || '');
         set('fontSize', saved?.fontSize || el.style.fontSize || '');
-        const tr = saved?.transform || el.style.transform || formatTranslate(readTranslate(el).x, readTranslate(el).y);
+        const tr =
+            saved?.transform ||
+            el.style.transform ||
+            formatTranslate(readTranslate(el).x, readTranslate(el).y);
         set('transform', tr === 'translate(0px, 0px)' ? '' : tr);
         set('scale', saved?.scale ?? '');
         const computedColor = global.getComputedStyle(el).color || '';
@@ -241,6 +254,11 @@
 
         const modeEl = panel.querySelector('[data-field="posMode"]');
         if (modeEl) modeEl.textContent = regionPosMode(def, el);
+
+        const leftInput = panel.querySelector('[data-field="left"]');
+        const topInput = panel.querySelector('[data-field="top"]');
+        if (leftInput) leftInput.disabled = transformPos;
+        if (topInput) topInput.disabled = transformPos;
     }
 
     function rgbToHex(rgb) {
@@ -255,27 +273,15 @@
         return `#${to2(r)}${to2(g)}${to2(b)}`;
     }
 
-    function applyFieldsToSelection() {
-        const def = getSelectedDef();
-        const panel = editor.panel;
-        if (!def || !panel) return;
-
-        const props = collectFieldProps();
-
-        if (def.target) {
-            findTargetEls(def.target).forEach((el) => global.VmixLayout.applyStyle(el, props));
-        } else {
-            const el = findBlockEl(def.id);
-            if (el) global.VmixLayout.applyStyle(el, props);
-        }
-    }
-
-    function collectFieldProps() {
+    function collectFieldProps(def) {
         const panel = editor.panel;
         const get = (name) => panel.querySelector(`[data-field="${name}"]`)?.value?.trim() ?? '';
         const props = {};
-        if (get('left') !== '') props.left = `${get('left')}px`;
-        if (get('top') !== '') props.top = `${get('top')}px`;
+        const transformPos = def && usesTransformPos(def, findRegionEl(def));
+        if (!transformPos) {
+            if (get('left') !== '') props.left = `${get('left')}px`;
+            if (get('top') !== '') props.top = `${get('top')}px`;
+        }
         if (get('width')) props.width = get('width');
         if (get('gap')) props.gap = get('gap');
         if (get('fontSize')) props.fontSize = get('fontSize');
@@ -285,10 +291,61 @@
         return props;
     }
 
+    function applyStyleToRegion(def, el, props) {
+        if (!el || !props) return;
+        const transformPos = usesTransformPos(def, el);
+        const styleProps = { ...props };
+        if (transformPos) {
+            delete styleProps.left;
+            delete styleProps.top;
+            if (!styleProps.transform) {
+                const tr = readTranslate(el);
+                if (tr.x || tr.y) styleProps.transform = formatTranslate(tr.x, tr.y);
+            }
+        }
+        global.VmixLayout.applyStyle(el, styleProps);
+        if (transformPos) {
+            el.style.left = '';
+            el.style.top = '';
+            if (el.style.position === 'absolute') el.style.position = '';
+        }
+    }
+
+    function applyFieldsToSelection() {
+        const def = getSelectedDef();
+        const panel = editor.panel;
+        if (!def || !panel) return;
+
+        const props = collectFieldProps(def);
+
+        if (def.target) {
+            findTargetEls(def.target).forEach((el) => applyStyleToRegion(def, el, props));
+        } else {
+            const el = findBlockEl(def.id);
+            if (el) applyStyleToRegion(def, el, props);
+        }
+    }
+
     function setStatus(msg, isErr) {
         if (!editor.statusEl) return;
         editor.statusEl.textContent = msg;
         editor.statusEl.classList.toggle('vg-layout-status--err', !!isErr);
+    }
+
+    function buildSavedProps(def, el) {
+        const props = { ...collectFieldProps(def), ...readPropsFromEl(el) };
+        if (!el) return props;
+        if (usesTransformPos(def, el)) {
+            const tr = readTranslate(el);
+            props.transform = formatTranslate(tr.x, tr.y);
+            delete props.left;
+            delete props.top;
+        } else {
+            const pos = elPositionPx(el);
+            props.left = `${Math.round(pos.left)}px`;
+            props.top = `${Math.round(pos.top)}px`;
+        }
+        return props;
     }
 
     function saveCurrent() {
@@ -297,17 +354,8 @@
             setStatus('Select a region first.', true);
             return;
         }
-        applyFieldsToSelection();
         const el = findRegionEl(def);
-        const props = el ? readPropsFromEl(el) : {};
-        Object.assign(props, collectFieldProps());
-        if (el && regionPosMode(def, el) === 'transform') {
-            const tr = readTranslate(el);
-            props.transform = formatTranslate(tr.x, tr.y);
-            delete props.left;
-            delete props.top;
-        }
-
+        const props = buildSavedProps(def, el);
         global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
         setStatus(`Saved ${editor.theme} / ${editor.graphic} / ${def.id}`);
     }
@@ -316,19 +364,12 @@
         for (const def of regionDefs(editor.graphic)) {
             const el = findRegionEl(def);
             if (!el) continue;
-            const props = readPropsFromEl(el);
-            if (def.target) {
-                global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
-            } else if (regionPosMode(def, el) === 'transform') {
-                const tr = readTranslate(el);
-                props.transform = formatTranslate(tr.x, tr.y);
-                global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
-            } else {
-                const pos = elPositionPx(el);
-                props.left = `${Math.round(pos.left)}px`;
-                props.top = `${Math.round(pos.top)}px`;
-                global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
-            }
+            global.VmixLayout.setRegion(
+                editor.theme,
+                editor.graphic,
+                def.id,
+                buildSavedProps(def, el),
+            );
         }
         setStatus(`Saved all regions for ${editor.graphic}`);
     }
@@ -419,12 +460,11 @@
         } else {
             editor.drag.el.style.left = `${Math.round(editor.drag.origLeft + dx)}px`;
             editor.drag.el.style.top = `${Math.round(editor.drag.origTop + dy)}px`;
+            const leftInput = panel?.querySelector('[data-field="left"]');
+            const topInput = panel?.querySelector('[data-field="top"]');
+            if (leftInput) leftInput.value = String(Math.round(editor.drag.origLeft + dx));
+            if (topInput) topInput.value = String(Math.round(editor.drag.origTop + dy));
         }
-
-        const leftInput = panel?.querySelector('[data-field="left"]');
-        const topInput = panel?.querySelector('[data-field="top"]');
-        if (leftInput) leftInput.value = String(Math.round(editor.drag.origLeft + dx));
-        if (topInput) topInput.value = String(Math.round(editor.drag.origTop + dy));
     }
 
     function onPointerUp() {

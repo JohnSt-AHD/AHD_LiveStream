@@ -214,9 +214,16 @@
 
     function applyStyle(el, props) {
         if (!el || !props) return;
+        const hasLeft = props.left != null && props.left !== '';
+        const hasTop = props.top != null && props.top !== '';
+        const hasTransform = props.transform != null && props.transform !== '';
+
         for (const key of STYLE_KEYS) {
             if (props[key] == null || props[key] === '') continue;
             if (key === 'scale') continue;
+            if (key === 'left' || key === 'top') {
+                if (hasTransform && !hasLeft && !hasTop) continue;
+            }
             const v = props[key];
             el.style[key] =
                 typeof v === 'number' && key !== 'scale' ? `${v}px` : String(v);
@@ -226,14 +233,20 @@
             const s = `scale(${props.scale})`;
             transform = transform ? `${s} ${transform}` : s;
         }
-        if (transform) el.style.transform = transform;
+        if (transform) {
+            el.style.transform = transform;
+        }
 
-        const hasLeft = props.left != null && props.left !== '';
-        const hasTop = props.top != null && props.top !== '';
         if (hasLeft || hasTop) {
             const cs = global.getComputedStyle(el);
             if (cs.position === 'static') {
                 el.style.position = 'absolute';
+            }
+        } else if (hasTransform) {
+            el.style.left = '';
+            el.style.top = '';
+            if (el.style.position === 'absolute') {
+                el.style.position = '';
             }
         }
 
