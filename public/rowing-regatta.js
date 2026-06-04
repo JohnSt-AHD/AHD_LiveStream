@@ -3,6 +3,10 @@
  * Default regatta: mads2026 (Maadi 2026 — RowIT daysheet + bundled results fallback).
  */
 (function () {
+    function regattaCrewAthletes() {
+        return window.RegattaCrewAthletes || null;
+    }
+
     const DEFAULT_REGATTA = 'mads2026';
     const ROWIT_CSV_BASES = ['https://l.rowit.nz/altitude', 'https://rowit.nz/altitude'];
     const LOCAL_REGATTA_CSV = {
@@ -685,7 +689,7 @@
     }
 
     function competitorNames(race) {
-        const RCA = global.RegattaCrewAthletes;
+        const RCA = regattaCrewAthletes();
         if (RCA?.findCompetitorRow) {
             return RCA.findCompetitorRow(state.competitors, race)?.names || '';
         }
@@ -699,7 +703,7 @@
     }
 
     function athletesForLane(race, lane) {
-        const RCA = global.RegattaCrewAthletes;
+        const RCA = regattaCrewAthletes();
         if (!RCA?.athletesForLane) return [];
         return RCA.athletesForLane(race, lane, state.competitors);
     }
@@ -1686,6 +1690,9 @@
     function selectLane(laneNum) {
         state.selectedLane = state.selectedLane === laneNum ? null : laneNum;
         renderRaceDetail();
+        if (state.selectedLane) {
+            document.getElementById('rrdLaneAthletes')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     function selectRace(raceNum) {
@@ -1909,12 +1916,18 @@
             }
         });
 
-        document.getElementById('rrdRaceDetail')?.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-lane-select]');
-            if (!btn) return;
-            const lane = parseInt(btn.dataset.laneSelect, 10);
-            if (Number.isFinite(lane)) selectLane(lane);
-        });
+        if (!document.documentElement.dataset.rrdLaneSelectBound) {
+            document.documentElement.dataset.rrdLaneSelectBound = '1';
+            document.addEventListener('click', (e) => {
+                const root = document.getElementById('rrdRaceDetail');
+                if (!root?.contains(e.target)) return;
+                const btn = e.target.closest('[data-lane-select]');
+                if (!btn) return;
+                e.preventDefault();
+                const lane = parseInt(btn.dataset.laneSelect, 10);
+                if (Number.isFinite(lane)) selectLane(lane);
+            });
+        }
     }
 
     async function init() {
