@@ -23,12 +23,14 @@
             { id: 'draw-crew', label: 'Draw — crew names', target: 'draw-crew' },
         ],
         results: [
-            { id: 'results-head', label: 'Results — header block (all)' },
-            { id: 'results-kicker', label: 'Results — kicker' },
+            { id: 'results-head', label: 'Results — header block (all)', posMode: 'absolute' },
+            { id: 'results-kicker', label: 'Results — kicker', posMode: 'transform' },
             { id: 'results-title', label: 'Results — event title', posMode: 'transform' },
-            { id: 'results-meta', label: 'Results — race line' },
+            { id: 'results-meta', label: 'Results — race line', posMode: 'transform' },
+            { id: 'results-body', label: 'Results — columns + rows block', posMode: 'transform' },
             { id: 'results-cols', label: 'Results — column headers', posMode: 'transform' },
             { id: 'results-lanes', label: 'Results — lane list', posMode: 'transform' },
+            { id: 'results-lane-n', label: 'Results — placing numbers', target: 'results-lane-n' },
             { id: 'results-logo', label: 'Results — school logos', target: 'results-logo' },
             { id: 'results-crew', label: 'Results — crew names', target: 'results-crew' },
         ],
@@ -51,6 +53,7 @@
         results: {
             'kri-head': 'results-head',
             'kri-cols': 'results-cols',
+            'kri-draw-body': 'results-body',
         },
     };
 

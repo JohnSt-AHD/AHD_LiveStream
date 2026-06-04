@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 2;
+    const LAYOUT_BUILD = 3;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -58,20 +58,48 @@
             },
             results: {
                 'results-head': {
-                    left: '156px',
-                    top: '191px',
+                    left: '401px',
+                    top: '298px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
-                'results-lanes': {
-                    left: '253px',
-                    top: '434px',
+                'results-kicker': {
+                    transform: 'translate(-345px, -236px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'results-title': {
                     width: '900px',
-                    gap: '0',
+                    transform: 'translate(-345px, -226px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'results-meta': {
+                    transform: 'translate(-345px, -216px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'results-body': {
+                    transform: 'translate(-200px, -100px)',
                     color: 'rgb(255, 255, 255)',
                 },
-                'results-logo': { width: '37px', height: '35px' },
-                'results-crew': { color: 'rgb(255, 255, 255)' },
+                'results-cols': {
+                    transform: 'translate(212px, 239px)',
+                    color: 'rgb(49, 62, 80)',
+                },
+                'results-lanes': {
+                    width: '900px',
+                    transform: 'translate(212px, 258px)',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'results-lane-n': {
+                    color: 'rgb(255, 255, 255)',
+                },
+                'results-logo': {
+                    width: '37px',
+                    height: '35px',
+                    color: 'rgb(255, 255, 255)',
+                },
+                'results-crew': {
+                    color: 'rgb(255, 255, 255)',
+                },
             },
             lower: {
                 'lower-meta': {
@@ -225,6 +253,7 @@
         'results-kicker',
         'results-title',
         'results-meta',
+        'results-body',
         'results-cols',
         'results-lanes',
     ]);

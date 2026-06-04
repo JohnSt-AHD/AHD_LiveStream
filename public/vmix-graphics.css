@@ -633,7 +633,8 @@ body {
     align-items: center;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body {
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body {
     width: fit-content;
     margin-top: 30px;
     transform: translate(
@@ -642,7 +643,8 @@ body {
     );
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-cols {
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-cols,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-cols {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -653,27 +655,38 @@ body {
     padding-right: 20px;
     box-sizing: border-box;
     transform: none;
+    grid-template-columns: none;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-col--lane {
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-col--lane,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-col--lane {
     flex: 0 0 40px;
     grid-column: auto;
     text-align: center;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-col--logo {
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-col--logo,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-col--logo {
     flex: 0 0 var(--kri-lane-logo-box);
     visibility: hidden;
     pointer-events: none;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-col--crew {
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-col--crew,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-col--crew {
     flex: 0 1 auto;
     grid-column: auto;
     text-align: left;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-lanes {
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-col--time {
+    flex: 0 0 84px;
+    grid-column: auto;
+    text-align: right;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-lanes,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes {
     margin-top: 0;
     padding-left: 20px;
     padding-right: 20px;
@@ -732,7 +745,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane,
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane--draw {
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane--draw,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes .vg-lane {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -741,30 +755,11 @@ body {
     min-height: 78px;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-n {
-    flex: 0 0 40px;
-}
-
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-logo-wrap {
-    flex: 0 0 var(--kri-lane-logo-box);
-}
-
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-crew {
-    flex: 0 1 auto;
-    max-width: none;
-}
-
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes.vg-draw-lanes--results .vg-lane {
-    grid-template-columns: var(--kri-results-grid-cols);
-    column-gap: 20px;
-    min-height: 58px;
-}
-
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-n,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-n {
-    grid-column: 1;
-    justify-self: center;
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes .vg-lane-n {
+    flex: 0 0 40px;
+    grid-column: auto;
+    justify-self: auto;
     align-self: center;
     text-align: center;
     font-size: 24px;
@@ -772,24 +767,30 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-logo-wrap,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-logo-wrap {
-    grid-column: 2;
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes .vg-lane-logo-wrap {
+    flex: 0 0 var(--kri-lane-logo-box);
+    grid-column: auto;
     justify-self: center;
     width: var(--kri-lane-logo-box);
     height: var(--kri-lane-logo-box);
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-lanes .vg-lane-crew,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-crew {
-    grid-column: 3;
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes .vg-lane-crew {
+    flex: 0 1 auto;
+    max-width: none;
+    grid-column: auto;
     justify-self: stretch;
-    text-align: right;
+    text-align: left;
 }
 
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-lanes .vg-lane-time {
-    grid-column: 4;
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-lanes .vg-lane-time {
+    flex: 0 0 84px;
+    grid-column: auto;
     justify-self: end;
     text-align: right;
+    font-size: 24px;
+    font-weight: 700;
 }
 
 [data-vmix-theme='kri'] .vg-kri-lanes .vg-lane-n {

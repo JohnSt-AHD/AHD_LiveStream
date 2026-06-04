@@ -1692,7 +1692,9 @@ function vgBuildKriDrawLaneRow(entry, lookup) {
 
 function vgBuildKriResultsLaneRow(entry, lookup) {
     const li = vgEl('li', 'vg-lane');
-    li.appendChild(vgEl('span', 'vg-lane-n', String(entry.lane)));
+    const laneN = vgEl('span', 'vg-lane-n', String(entry.lane));
+    laneN.dataset.vgLayoutTarget = 'results-lane-n';
+    li.appendChild(laneN);
     const club = vgParseClubCode(entry.code);
     const info = vgClubInfo(club.id, lookup);
     li.appendChild(vgKriBuildLaneLogo(info, 'results-logo'));
@@ -2048,8 +2050,10 @@ function vgRenderResults(layer, race) {
                 meta: 'results-meta',
             },
         });
+        const body = vgEl('div', 'vg-kri-draw-body');
+        body.dataset.vgLayout = 'results-body';
         vgKriAppendCols(
-            panel,
+            body,
             [
                 { text: 'Placing', className: 'vg-kri-col--lane' },
                 { text: 'Crew', className: 'vg-kri-col--crew' },
@@ -2076,7 +2080,8 @@ function vgRenderResults(layer, race) {
         } else {
             list.appendChild(vgEl('li', 'vg-lane vg-lane--empty', 'Results not available'));
         }
-        panel.appendChild(list);
+        body.appendChild(list);
+        panel.appendChild(body);
         shell.appendChild(panel);
         layer.appendChild(shell);
         return;
