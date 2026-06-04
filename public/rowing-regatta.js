@@ -919,12 +919,18 @@
     function matchingPlacing(crew, placings) {
         if (!placings?.length) return null;
         const crewKey = normalizeClubKey(crew);
+        const exact = placings.find((p) => normalizeClubKey(p.competitor) === crewKey);
+        if (exact) return exact;
         const resolved = resolveClubFromCrew(crew);
+        const parsed = parseClubFromCrew(crew);
         return (
             placings.find((p) => {
                 const pr = resolveClubFromCrew(p.competitor);
+                const pc = parseClubFromCrew(p.competitor);
+                if (parsed.crewNum && pc.crewNum && parsed.id === pc.id) return parsed.crewNum === pc.crewNum;
+                if (parsed.crewNum || pc.crewNum) return false;
                 if (resolved.clubId && pr.clubId && resolved.clubId === pr.clubId) return true;
-                return normalizeClubKey(p.competitor) === crewKey;
+                return false;
             }) || null
         );
     }
@@ -1288,6 +1294,7 @@
             progMark +
             logoImgHtml('bsr-tree-crew-logo', slot.info.logoUrl, slot.info.name) +
             `<span class="bsr-tree-crew-name">${escapeHtml(slot.info.name)}</span>` +
+            (slot.crew ? `<span class="bsr-note bsr-tree-crew-code">${escapeHtml(slot.crew)}</span>` : '') +
             (slot.time ? `<span class="bsr-tree-crew-time">${escapeHtml(slot.time)}</span>` : '') +
             `</span>`
         );
