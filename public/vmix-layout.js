@@ -14,7 +14,7 @@
             draw: {
                 'draw-head': {
                     left: '401px',
-                    top: '296px',
+                    top: '298px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
