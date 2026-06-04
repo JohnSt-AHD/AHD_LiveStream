@@ -9,23 +9,8 @@
     const DEFAULT_LAYOUTS = {
         /* Positions from KRI GT templates (1920×1080) in gt-templates/extracted/kri/ */
         kri: {
-            draw: {
-                'draw-head': {
-                    left: '156px',
-                    top: '211px',
-                    width: '935px',
-                    color: 'rgb(255, 255, 255)',
-                },
-                'draw-lanes': {
-                    left: '253px',
-                    top: '434px',
-                    width: '900px',
-                    gap: '0',
-                    color: 'rgb(255, 255, 255)',
-                },
-                'draw-logo': { width: '37px', height: '35px' },
-                'draw-crew': { color: 'rgb(255, 255, 255)' },
-            },
+            /* CSS flex layout — no GT absolute positions (see vmix-graphics.css) */
+            draw: {},
             results: {
                 'results-head': {
                     left: '156px',
