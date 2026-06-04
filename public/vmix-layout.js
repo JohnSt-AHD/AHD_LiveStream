@@ -12,38 +12,39 @@
             /* Dev-tuned draw layout (1920×1080) — vmix-kri.html?dev=1&g=d */
             draw: {
                 'draw-head': {
+                    left: '263px',
+                    top: '215px',
                     width: '935px',
                     transform: 'translate(7px, 0px)',
                     color: 'rgb(255, 255, 255)',
-                    left: '160px',
-                    top: '174px',
                 },
                 'draw-kicker': {
-                    transform: 'translate(-65px, -93px)',
-                    color: 'rgb(255, 255, 255)',
+                    transform: 'translate(-160px, -112px)',
+                    color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
+                    left: '102px',
+                    top: '134px',
+                    width: '900px',
                     transform: 'translate(7px, 0px)',
-                    color: 'rgb(255, 255, 255)',
-                    left: '96px',
-                    top: '114px',
+                    color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-65px, -20px)',
-                    color: 'rgb(255, 255, 255)',
+                    transform: 'translate(-160px, -44px)',
+                    color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
                     transform: 'translate(-200px, -100px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    transform: 'translate(206px, 218px)',
-                    color: 'rgb(255, 255, 255)',
+                    transform: 'translate(213px, 228px)',
+                    color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
-                    transform: 'translate(204px, 241px)',
-                    color: 'rgb(255, 255, 255)',
                     width: '900px',
+                    transform: 'translate(213px, 244px)',
+                    color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
                     color: 'rgb(255, 255, 255)',
