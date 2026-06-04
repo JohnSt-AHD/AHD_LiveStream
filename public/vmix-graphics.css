@@ -975,32 +975,49 @@ body {
     --kri-schedule-col-time: 100px;
     --kri-schedule-col-race: 108px;
     --kri-schedule-col-round: 140px;
+    --kri-schedule-gap: 20px;
+    --kri-schedule-grid-cols: var(--kri-schedule-col-time) var(--kri-schedule-col-race) minmax(0, 1fr)
+        var(--kri-schedule-col-round);
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-kri-cols,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-row {
+    display: grid;
+    grid-template-columns: var(--kri-schedule-grid-cols);
+    column-gap: var(--kri-schedule-gap);
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-kri-cols {
+    gap: 0 var(--kri-schedule-gap);
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--time,
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-time {
-    flex: 0 0 var(--kri-schedule-col-time);
-    grid-column: auto;
+    grid-column: 1;
+    min-width: 0;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--race,
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-race {
-    flex: 0 0 var(--kri-schedule-col-race);
-    grid-column: auto;
+    grid-column: 2;
+    min-width: 0;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--event,
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-event {
-    flex: 1 1 auto;
+    grid-column: 3;
     min-width: 0;
-    grid-column: auto;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-col--round,
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-round {
-    flex: 0 0 var(--kri-schedule-col-round);
-    grid-column: auto;
+    grid-column: 4;
+    min-width: 0;
     text-align: right;
+    justify-self: stretch;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-rows {
@@ -1016,11 +1033,6 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-schedule-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 14px;
-    width: fit-content;
     min-height: 48px;
     font-size: 20px;
     font-weight: 700;
@@ -1032,6 +1044,9 @@ body {
     color: var(--kri-brand-blue-light);
     background: rgba(0, 121, 209, 0.12);
     box-shadow: inset -3px 0 0 var(--kri-brand-blue);
+    width: calc(100% + 20px);
+    padding-right: 20px;
+    box-sizing: border-box;
 }
 
 [data-vmix-theme='kri'] .vg-schedule-row--current .vg-schedule-event {
@@ -1060,6 +1075,7 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-schedule-row--empty {
+    grid-column: 1 / -1;
     width: 100%;
     justify-content: center;
     font-size: 24px;
