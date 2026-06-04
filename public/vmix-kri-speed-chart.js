@@ -56,8 +56,10 @@
                     <p class="vg-speed-chart__meta" id="vgSpeedChartMeta"></p>
                 </div>
                 <div class="vg-speed-chart__body">
-                    <svg class="vg-speed-chart__svg" id="vgSpeedChartSvg" viewBox="0 0 1680 260" preserveAspectRatio="none" aria-hidden="true"></svg>
-                    <ul class="vg-speed-chart__legend" id="vgSpeedChartLegend"></ul>
+                    <div class="vg-speed-chart__plot-wrap">
+                        <svg class="vg-speed-chart__svg" id="vgSpeedChartSvg" viewBox="0 0 1680 260" preserveAspectRatio="none" aria-hidden="true"></svg>
+                        <ul class="vg-speed-chart__legend" id="vgSpeedChartLegend"></ul>
+                    </div>
                 </div>
             </div>
         `;
@@ -210,6 +212,87 @@
         return `<img class="vg-speed-chart__legend-logo" src="${escapeHtml(src)}" alt="">`;
     }
 
+    function legendItemHtml(boat, idx) {
+        return (
+            `<li class="vg-speed-chart__legend-item" data-boat-idx="${idx}">` +
+            `<span class="vg-speed-chart__legend-rank"></span>` +
+            `<span class="vg-speed-chart__legend-swatch" style="background:${boat.color}"></span>` +
+            legendLogoHtml(boat) +
+            `<span class="vg-speed-chart__legend-label">${escapeHtml(boat.label || boat.id)}</span>` +
+            `</li>`
+        );
+    }
+
+    function liveStandings(boats, tSec) {
+        return boats
+            .map((boat, idx) => {
+                const cur = stateAtTime(boat.timeline, tSec);
+                return { idx, boat, distance: cur.distance, speed: cur.speed };
+            })
+            .sort((a, b) => b.distance - a.distance || b.speed - a.speed);
+    }
+
+    function headViewCoords(boat, tSec, layout) {
+        const { padLeft, chartW, chartH } = layout;
+        const cur = stateAtTime(boat.timeline, tSec);
+        return {
+            x: padLeft + xScale(cur.distance, chartW),
+            y: yScale(cur.speed, chartH),
+        };
+    }
+
+    function mapViewToPlotPx(viewX, viewY, svgEl, layout) {
+        if (!svgEl) return { x: viewX, y: viewY };
+        const rect = svgEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return { x: viewX, y: viewY };
+        return {
+            x: (viewX / layout.w) * rect.width,
+            y: (viewY / layout.h) * rect.height,
+        };
+    }
+
+    function updateLegendPositions(tSec) {
+        if (!panel || !chartState) return;
+        const legend = document.getElementById('vgSpeedChartLegend');
+        const svg = document.getElementById('vgSpeedChartSvg');
+        if (!legend || !svg) return;
+
+        const { boats, layout } = chartState;
+        const standings = liveStandings(boats, tSec);
+        const placed = [];
+
+        standings.forEach((entry, rank) => {
+            const item = legend.querySelector(`.vg-speed-chart__legend-item[data-boat-idx="${entry.idx}"]`);
+            if (!item) return;
+
+            const head = headViewCoords(entry.boat, tSec, layout);
+            const px = mapViewToPlotPx(head.x, head.y, svg, layout);
+            let top = px.y;
+
+            for (const prior of placed) {
+                if (Math.abs(prior.top - top) < 22 && Math.abs(prior.left - px.x) < 140) {
+                    top += 22;
+                }
+            }
+
+            const left = px.x + 12;
+            placed.push({ left, top });
+
+            item.style.left = `${left}px`;
+            item.style.top = `${top}px`;
+            item.style.zIndex = String(100 - rank);
+
+            const rankEl = item.querySelector('.vg-speed-chart__legend-rank');
+            if (rankEl) rankEl.textContent = String(rank + 1);
+        });
+
+        for (let i = standings.length - 1; i >= 0; i--) {
+            const entry = standings[i];
+            const item = legend.querySelector(`.vg-speed-chart__legend-item[data-boat-idx="${entry.idx}"]`);
+            if (item) legend.appendChild(item);
+        }
+    }
+
     function renderStaticLayers(state) {
         const svg = document.getElementById('vgSpeedChartSvg');
         const legend = document.getElementById('vgSpeedChartLegend');
@@ -220,7 +303,7 @@
         const { data, layout } = state;
         const { w, h, padLeft, chartW, chartH } = layout;
 
-        if (title) title.textContent = data.title || 'Speed vs distance';
+        if (title) title.textContent = 'Speed vs distance';
         if (meta) meta.textContent = raceMetaLine(data);
 
         const parts = [
@@ -256,17 +339,7 @@
 
         svg.innerHTML = parts.join('');
 
-        legend.innerHTML = state.boats
-            .map(
-                (boat, idx) =>
-                    `<li class="vg-speed-chart__legend-item" data-boat-idx="${idx}">` +
-                    `<span class="vg-speed-chart__legend-swatch" style="background:${boat.color}"></span>` +
-                    legendLogoHtml(boat) +
-                    `<span class="vg-speed-chart__legend-label">${escapeHtml(boat.label || boat.id)}</span>` +
-                    (boat.rank != null ? `<span class="vg-speed-chart__legend-rank">P${boat.rank}</span>` : '') +
-                    `</li>`,
-            )
-            .join('');
+        legend.innerHTML = state.boats.map((boat, idx) => legendItemHtml(boat, idx)).join('');
 
         const group = document.getElementById('vgSpeedChartBoats');
         if (group) {
@@ -286,6 +359,7 @@
                 )
                 .join('');
         }
+        updateLegendPositions(0);
     }
 
     function speedAtMarker(timeline, dist) {
@@ -329,6 +403,7 @@
                 }
             });
         });
+        updateLegendPositions(tSec);
     }
 
     function escapeHtml(s) {

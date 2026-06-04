@@ -1416,26 +1416,30 @@ body {
     margin: 0;
     font-size: 22px;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--kri-brand-white, #ffffff);
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: #0c1f3d;
 }
 
 .vg-speed-chart__meta {
     margin: 0;
     font-size: 15px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.82);
+    color: #0c1f3d;
     text-align: right;
 }
 
 .vg-speed-chart__body {
     flex: 1;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px 18px;
-    align-items: stretch;
     min-height: 0;
+    display: flex;
+}
+
+.vg-speed-chart__plot-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
 }
 
 .vg-speed-chart__svg {
@@ -1464,14 +1468,14 @@ body {
 
 .vg-speed-chart__ylabel,
 .vg-speed-chart__xlabel {
-    fill: rgba(255, 255, 255, 0.72);
+    fill: #0c1f3d;
     font-size: 11px;
     font-family: 'Segoe UI', system-ui, sans-serif;
     font-weight: 600;
 }
 
 .vg-speed-chart__axis-title {
-    fill: rgba(56, 189, 248, 0.92);
+    fill: #0c1f3d;
     font-size: 11px;
     font-family: 'Segoe UI', system-ui, sans-serif;
     font-weight: 700;
@@ -1489,24 +1493,31 @@ body {
 }
 
 .vg-speed-chart__legend {
+    position: absolute;
+    inset: 0;
     list-style: none;
     margin: 0;
-    padding: 8px 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 168px;
-    max-width: 220px;
+    padding: 0;
+    pointer-events: none;
+    overflow: visible;
 }
 
 .vg-speed-chart__legend-item {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.75);
-    min-width: 0;
+    color: #0c1f3d;
+    white-space: nowrap;
+    padding: 2px 8px 2px 4px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 1px 4px rgba(12, 31, 61, 0.12);
 }
 
 .vg-speed-chart__legend-swatch {
@@ -1537,6 +1548,8 @@ body {
 
 .vg-speed-chart__legend-rank {
     font-size: 11px;
-    color: rgba(56, 189, 248, 0.95);
-    font-weight: 700;
+    color: #0060bf;
+    font-weight: 800;
+    min-width: 1.1em;
+    text-align: center;
 }
