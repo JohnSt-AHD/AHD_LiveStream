@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 56" aria-hidden="true">
+  <defs>
+    <linearGradient id="ribbon-b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdba74"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <radialGradient id="disc-b" cx="38%" cy="32%" r="62%">
+      <stop offset="0%" stop-color="#fed7aa"/>
+      <stop offset="45%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </radialGradient>
+  </defs>
+  <path fill="url(#ribbon-b)" d="M14 2 24 12 34 2 30 18 18 18Z"/>
+  <circle cx="24" cy="36" r="17" fill="url(#disc-b)" stroke="#78350f" stroke-width="1.2"/>
+  <circle cx="24" cy="36" r="12" fill="none" stroke="#fdba74" stroke-width="1.5" opacity="0.75"/>
+  <path fill="#fdba74" opacity="0.9" d="M24 28.5 26.2 33.2 31.2 33.6 27.4 36.8 28.6 41.8 24 39 19.4 41.8 20.6 36.8 16.8 33.6 21.8 33.2Z"/>
+</svg>

@@ -212,8 +212,8 @@ body.rrd-page .bsr-tree-col--medalists .bsr-tree-col-title {
 .rrd-medalist {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 6px;
+    gap: 10px;
+    padding: 10px 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
 }
@@ -238,10 +238,21 @@ body.rrd-page .bsr-tree-col--medalists .bsr-tree-col-title {
 }
 
 .rrd-medal-icon {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 42px;
     object-fit: contain;
     flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+
+.rrd-medal-icon--medalist {
+    width: 36px;
+    height: 42px;
+}
+
+.rrd-medal-icon--tree {
+    width: 18px;
+    height: 21px;
 }
 
 .rrd-medalist-rank {
@@ -273,7 +284,6 @@ body.rrd-page .bsr-tree-col--medalists .bsr-tree-col-title {
 body.rrd-page .bsr-tree-crew--advances {
     background: rgba(59, 130, 246, 0.12);
     border-left: 3px solid var(--rrd-accent);
-    position: relative;
 }
 
 body.rrd-page .rrd-tree-crew--medal-gold {
@@ -293,19 +303,69 @@ body.rrd-page .rrd-tree-crew--medal-bronze {
 }
 
 .rrd-tree-advance-mark {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    width: 8px;
-    height: 8px;
-    margin-top: -4px;
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    margin-left: 4px;
     border-radius: 50%;
     background: var(--rrd-accent);
     box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);
 }
 
 body.rrd-page .bsr-tree-crew {
-    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+}
+
+body.rrd-page .bsr-tree-crew-name {
+    flex: 1 1 8em;
+    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+body.rrd-page .bsr-tree-crew-code {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+body.rrd-page .bsr-tree-crew-time {
+    flex-shrink: 0;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+body.rrd-page .bsr-knockout-tree {
+    min-width: min(100%, 1200px);
+}
+
+body.rrd-page .bsr-tree-col {
+    min-width: 272px;
+    flex: 1 1 272px;
+}
+
+body.rrd-page .bsr-tree-col--medalists {
+    min-width: 300px;
+    flex: 1 1 300px;
+}
+
+body.rrd-page .bsr-tree-match {
+    min-width: 252px;
+    max-width: none;
+    width: 100%;
+    padding: 8px 12px;
+}
+
+body.rrd-page .bsr-bracket-arena-wrap {
+    overflow-x: auto;
+    padding: 12px 4px 20px;
 }
 
 .rrd-tree-prog-hint {

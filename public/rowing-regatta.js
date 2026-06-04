@@ -31,9 +31,9 @@
         },
     };
     const MEDAL_ICONS = {
-        gold: 'https://s.rowit.nz/i/m/medal_nz-g.png',
-        silver: 'https://s.rowit.nz/i/m/medal_nz-s.png',
-        bronze: 'https://s.rowit.nz/i/m/medal_nz-b.png',
+        gold: 'assets/rowing/medal-gold.svg',
+        silver: 'assets/rowing/medal-silver.svg',
+        bronze: 'assets/rowing/medal-bronze.svg',
     };
     const LS_REGATTA = 'rrdRegattaCode_v1';
     const LS_LIVE_REFRESH = 'rrdLiveRefresh_v1';
@@ -1271,11 +1271,12 @@
         return WR?.advancingPlacesForRound?.(roundKind, getRaceProgressionFormat(raceNum)) || new Set([1, 2, 3, 4]);
     }
 
-    function medalIconHtml(medalKey, alt) {
+    function medalIconHtml(medalKey, alt, sizeClass = '') {
         const src = MEDAL_ICONS[medalKey];
         if (!src) return '';
+        const cls = sizeClass ? `rrd-medal-icon ${sizeClass}` : 'rrd-medal-icon';
         return (
-            `<img class="rrd-medal-icon" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" width="28" height="28" ` +
+            `<img class="${cls}" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" width="36" height="42" ` +
             `onerror="this.style.display='none'">`
         );
     }
@@ -1288,14 +1289,16 @@
         if (win && !medalClass) cls += ' bsr-tree-crew--winner';
         if (advances) cls += ' bsr-tree-crew--advances';
         if (medalClass) cls += ` rrd-tree-crew--medal-${medalClass}`;
-        const progMark = advances ? '<span class="rrd-tree-advance-mark" aria-hidden="true"></span>' : '';
+        const progMark = advances ? '<span class="rrd-tree-advance-mark" aria-hidden="true" title="Advances"></span>' : '';
+        const medalIcon = medalClass ? medalIconHtml(medalClass, `${medalClass} medal`, 'rrd-medal-icon--tree') : '';
         return (
             `<span class="${cls}">` +
-            progMark +
+            medalIcon +
             logoImgHtml('bsr-tree-crew-logo', slot.info.logoUrl, slot.info.name) +
             `<span class="bsr-tree-crew-name">${escapeHtml(slot.info.name)}</span>` +
             (slot.crew ? `<span class="bsr-note bsr-tree-crew-code">${escapeHtml(slot.crew)}</span>` : '') +
             (slot.time ? `<span class="bsr-tree-crew-time">${escapeHtml(slot.time)}</span>` : '') +
+            progMark +
             `</span>`
         );
     }
@@ -1374,8 +1377,7 @@
                 const info = clubInfo(p.competitor);
                 return (
                     `<div class="rrd-medalist rrd-medalist--${medalClass[idx]}">` +
-                    medalIconHtml(medalClass[idx], `${medalLabel[idx]} medal`) +
-                    `<span class="rrd-medalist-rank">${p.place}</span>` +
+                    medalIconHtml(medalClass[idx], `${medalLabel[idx]} medal`, 'rrd-medal-icon--medalist') +
                     logoImgHtml('rrd-medalist-logo', info.logoUrl, info.name) +
                     `<span class="rrd-medalist-name">${escapeHtml(info.name)}</span>` +
                     (p.time ? `<span class="rrd-medalist-time">${escapeHtml(p.time)}</span>` : '') +
