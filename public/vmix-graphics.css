@@ -1864,3 +1864,164 @@ body {
     min-width: 1.1em;
     text-align: center;
 }
+
+/* —— KRI live tracking (bottom-right) —— */
+.kri-live-tracking {
+    position: absolute;
+    right: 44px;
+    bottom: 44px;
+    width: 320px;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(24px);
+    visibility: hidden;
+}
+
+.kri-live-tracking--visible {
+    visibility: visible;
+}
+
+.kri-live-tracking--intro {
+    animation: kri-live-tracking-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.kri-live-tracking--hold {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.kri-live-tracking--outro {
+    animation: kri-live-tracking-out 0.9s cubic-bezier(0.55, 0, 0.85, 0.36) forwards;
+}
+
+@keyframes kri-live-tracking-in {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes kri-live-tracking-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+}
+
+.kri-live-tracking__panel {
+    box-sizing: border-box;
+    padding: 14px 16px 16px;
+    border-radius: 14px;
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.94) 0%,
+        rgba(147, 197, 253, 0.42) 48%,
+        rgba(0, 121, 209, 0.28) 100%
+    );
+    border: 2px solid rgba(0, 121, 209, 0.5);
+    box-shadow: 0 8px 24px rgba(12, 31, 61, 0.18);
+}
+
+.kri-live-tracking__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.75);
+}
+
+.kri-live-tracking__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0060bf;
+}
+
+.kri-live-tracking__to-go {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0c1f3d;
+    white-space: nowrap;
+}
+
+.kri-live-tracking__list {
+    position: relative;
+    width: 100%;
+}
+
+.kri-live-tracking__row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    box-sizing: border-box;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 2px 8px rgba(12, 31, 61, 0.1);
+    transition: top 3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kri-live-tracking__rank {
+    flex-shrink: 0;
+    width: 1.4em;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0060bf;
+    text-align: center;
+}
+
+.kri-live-tracking__logo {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 4px;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+.kri-live-tracking__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #0c1f3d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kri-live-tracking__gap {
+    flex-shrink: 0;
+    min-width: 3.6em;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0060bf;
+    text-align: right;
+    letter-spacing: 0.02em;
+}
+
+.kri-live-tracking__gap:empty {
+    display: none;
+}

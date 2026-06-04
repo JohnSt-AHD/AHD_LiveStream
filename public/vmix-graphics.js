@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = schedule (KRI) or leader (Milford) · v = speed chart (KRI) · m = weather map (KRI) · g = tracker (Milford) · 1–8 = leader lane (Milford) · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = schedule (KRI) or leader (Milford) · v = speed chart (KRI) · k = live tracking (KRI) · m = weather map (KRI) · g = tracker (Milford) · 1–8 = leader lane (Milford) · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -23,6 +23,10 @@ const VG_GRAPHIC_ALIASES = {
     m: 'weather',
     weather: 'weather',
     meteo: 'weather',
+    k: 'livetracking',
+    livetracking: 'livetracking',
+    track: 'livetracking',
+    tracking: 'livetracking',
     schedule: 'schedule',
     upcoming: 'schedule',
 };
@@ -363,7 +367,7 @@ function vgClubInfo(clubId, lookup) {
     return { name: c.name, logoUrl };
 }
 
-/** Live-race labels for KRI speed chart legend (demo traces unchanged). */
+/** Live-race labels for KRI speed chart / live tracking (demo traces unchanged). */
 function vgBuildSpeedChartRaceContext() {
     const race = vgFindRace(vgGetRaceParam());
     if (!race) return null;
@@ -376,6 +380,7 @@ function vgBuildSpeedChartRaceContext() {
             return {
                 lane: entry.lane,
                 label: info.name,
+                shortLabel: club.id ? club.id.toUpperCase() : String(entry.code || '').trim(),
                 logoUrl: info.logoUrl,
             };
         });
@@ -696,6 +701,10 @@ function vgIsSpeedChartGraphic(graphic) {
     return graphic === 'speedchart';
 }
 
+function vgIsLiveTrackingGraphic(graphic) {
+    return graphic === 'livetracking';
+}
+
 function vgIsScheduleGraphic(graphic) {
     return graphic === 'schedule';
 }
@@ -708,7 +717,7 @@ function vgIsWeatherGraphic(graphic) {
 function vgKriUsesCssBackground(graphic) {
     if (!vgIsKriTheme()) return false;
     const g = graphic ?? vgPlayback.graphic;
-    return !!g && !vgIsSpeedChartGraphic(g) && !vgIsWeatherGraphic(g);
+    return !!g && !vgIsSpeedChartGraphic(g) && !vgIsLiveTrackingGraphic(g) && !vgIsWeatherGraphic(g);
 }
 
 /** @deprecated alias */
@@ -718,6 +727,10 @@ function vgKriScheduleCssLayout(graphic) {
 
 function vgSpeedChartEnabled() {
     return vgIsKriTheme() && !!window.KriVmixSpeedChart;
+}
+
+function vgLiveTrackingEnabled() {
+    return vgIsKriTheme() && !!window.KriVmixLiveTracking && !!window.KriVmixSpeedChart;
 }
 
 function vgWeatherEnabled() {
@@ -732,6 +745,17 @@ function vgMaybeLoopSpeedChart() {
     if (graphic !== 'speedchart') return;
     setTimeout(() => {
         if (vgPlayback.state === 'idle') vgTriggerIn('speedchart');
+    }, 1200);
+}
+
+function vgMaybeLoopLiveTracking() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('loop') !== '1') return;
+    const g = params.get('g') || 'k';
+    const graphic = VG_GRAPHIC_ALIASES[g.toLowerCase()];
+    if (graphic !== 'livetracking') return;
+    setTimeout(() => {
+        if (vgPlayback.state === 'idle') vgTriggerIn('livetracking');
     }, 1200);
 }
 
@@ -781,6 +805,55 @@ async function vgStartSpeedChartOutro() {
     } finally {
         vgResetToIdle();
         vgMaybeLoopSpeedChart();
+    }
+}
+
+async function vgStartLiveTrackingIntro() {
+    vgShowBackground(false);
+    vgShowTextLayer(false);
+    vgHideMap();
+    const layer = vgGetLayerEl();
+    if (layer) {
+        layer.replaceChildren();
+        layer.className = 'vg-layer';
+    }
+    try {
+        if (!window.KriVmixLiveTracking) {
+            throw new Error('Live tracking module not loaded');
+        }
+        const holdTimer = setTimeout(() => {
+            if (vgPlayback.state === 'intro' && vgIsLiveTrackingGraphic(vgPlayback.graphic)) {
+                vgSetStageState('hold');
+            }
+        }, window.KriVmixLiveTracking.INTRO_MS);
+        vgPlayback.profileTimers.push(holdTimer);
+
+        await window.KriVmixLiveTracking.show({
+            raceContext: vgBuildSpeedChartRaceContext(),
+        });
+        if (!vgIsLiveTrackingGraphic(vgPlayback.graphic)) return;
+        vgSetStageState('hold');
+        vgStartLiveTrackingOutro();
+    } catch (e) {
+        const err = document.getElementById('vgError');
+        if (err) {
+            err.hidden = false;
+            err.textContent = e instanceof Error ? e.message : 'Live tracking failed';
+        }
+        vgResetToIdle();
+    }
+}
+
+async function vgStartLiveTrackingOutro() {
+    if (!vgIsLiveTrackingGraphic(vgPlayback.graphic)) return;
+    if (vgPlayback.state !== 'hold' && vgPlayback.state !== 'intro' && vgPlayback.state !== 'outro') return;
+    vgClearPlaybackTimers();
+    vgSetStageState('outro');
+    try {
+        if (window.KriVmixLiveTracking) await window.KriVmixLiveTracking.hide();
+    } finally {
+        vgResetToIdle();
+        vgMaybeLoopLiveTracking();
     }
 }
 
@@ -1421,6 +1494,7 @@ function vgResetToIdle() {
     vgPlayback.graphic = null;
     vgLeaderLane = null;
     if (window.KriVmixSpeedChart) window.KriVmixSpeedChart.remove();
+    if (window.KriVmixLiveTracking) window.KriVmixLiveTracking.remove();
     if (window.KriVmixWeather) window.KriVmixWeather.remove();
     vgSetStageState('idle');
     vgShowTextLayer(false);
@@ -1435,6 +1509,7 @@ function vgTriggerIn(graphic) {
     if (vgPlayback.state !== 'idle') return;
     if (vgIsSpeedGraphic(graphic) && !vgSpeedEnabled()) return;
     if (vgIsSpeedChartGraphic(graphic) && !vgSpeedChartEnabled()) return;
+    if (vgIsLiveTrackingGraphic(graphic) && !vgLiveTrackingEnabled()) return;
     if (vgIsWeatherGraphic(graphic) && !vgWeatherEnabled()) return;
     if (vgIsScheduleGraphic(graphic) && !vgIsKriTheme()) return;
 
@@ -1445,6 +1520,11 @@ function vgTriggerIn(graphic) {
 
     if (vgIsSpeedChartGraphic(graphic)) {
         vgStartSpeedChartIntro();
+        return;
+    }
+
+    if (vgIsLiveTrackingGraphic(graphic)) {
+        vgStartLiveTrackingIntro();
         return;
     }
 
@@ -1479,6 +1559,10 @@ function vgTriggerOut() {
     const graphic = vgPlayback.graphic;
     if (vgIsSpeedChartGraphic(graphic)) {
         vgStartSpeedChartOutro();
+        return;
+    }
+    if (vgIsLiveTrackingGraphic(graphic)) {
+        vgStartLiveTrackingOutro();
         return;
     }
     if (vgIsWeatherGraphic(graphic)) {
@@ -1548,7 +1632,7 @@ function vgPrepareContent(graphic, raceParam) {
     const layer = vgGetLayerEl();
     const err = document.getElementById('vgError');
     if (!layer) return;
-    if (vgIsSpeedGraphic(graphic) || vgIsSpeedChartGraphic(graphic) || vgIsWeatherGraphic(graphic)) return;
+    if (vgIsSpeedGraphic(graphic) || vgIsSpeedChartGraphic(graphic) || vgIsLiveTrackingGraphic(graphic) || vgIsWeatherGraphic(graphic)) return;
 
     const race = vgFindRace(raceParam);
 
@@ -2335,6 +2419,15 @@ function vgDevPreviewHold(graphic) {
         vgShowBackground(false);
         vgShowTextLayer(false);
         window.KriVmixSpeedChart?.show({
+            raceContext: vgBuildSpeedChartRaceContext(),
+        }).catch(() => {});
+        return;
+    }
+    if (vgIsLiveTrackingGraphic(graphic)) {
+        vgSetStageState('hold');
+        vgShowBackground(false);
+        vgShowTextLayer(false);
+        window.KriVmixLiveTracking?.show({
             raceContext: vgBuildSpeedChartRaceContext(),
         }).catch(() => {});
         return;

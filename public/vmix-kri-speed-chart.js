@@ -610,6 +610,7 @@
 
     global.KriVmixSpeedChart = {
         DATA_URL,
+        COURSE_LENGTH: X_MAX,
         INTRO_MS,
         OUTRO_MS,
         POST_RACE_MS,
@@ -620,6 +621,8 @@
         loadData,
         prepareChartState,
         applyRaceContext,
+        liveStandings,
+        formatGapFromLeader,
         getPlaybackDurationMs,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
