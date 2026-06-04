@@ -13,65 +13,47 @@
             draw: {
                 'draw-head': {
                     width: '935px',
-                    gap: '0px',
                     transform: 'translate(7px, 0px)',
                     color: 'rgb(255, 255, 255)',
                     left: '160px',
                     top: '174px',
                 },
                 'draw-kicker': {
-                    width: '900px',
-                    gap: '0px',
                     transform: 'translate(-65px, -93px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-title': {
-                    width: '900px',
-                    gap: '0px',
                     transform: 'translate(7px, 0px)',
                     color: 'rgb(255, 255, 255)',
                     left: '96px',
                     top: '114px',
                 },
                 'draw-meta': {
-                    width: '900px',
-                    gap: '0px',
                     transform: 'translate(-65px, -20px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-body': {
-                    width: '900px',
-                    gap: '0px',
                     transform: 'translate(-200px, -100px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    width: '900px',
-                    gap: '0px',
                     transform: 'translate(206px, 218px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lanes': {
-                    width: '900px',
-                    gap: '0px',
                     transform: 'translate(204px, 241px)',
                     color: 'rgb(255, 255, 255)',
-                    columnGap: '0px',
+                    width: '900px',
                 },
                 'draw-lane-n': {
-                    width: '900px',
-                    gap: '0px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-logo': {
                     width: '37px',
-                    gap: '0px',
-                    color: 'rgb(255, 255, 255)',
                     height: '35px',
+                    color: 'rgb(255, 255, 255)',
                 },
                 'draw-crew': {
-                    width: '900px',
-                    gap: '0px',
                     color: 'rgb(255, 255, 255)',
                 },
             },
@@ -233,6 +215,57 @@
         'color',
     ];
 
+    /** Strip properties that Save all accidentally copied from the wrong region. */
+    const TRANSFORM_ONLY_REGIONS = new Set([
+        'draw-kicker',
+        'draw-meta',
+        'draw-body',
+        'draw-cols',
+        'draw-lanes',
+        'results-kicker',
+        'results-meta',
+        'results-cols',
+        'results-lanes',
+    ]);
+
+    function sanitizeRegionProps(id, props, isTarget = false) {
+        if (!props || typeof props !== 'object') return {};
+        const allowed = new Set(['color']);
+        if (isTarget) {
+            allowed.add('transform');
+            if (String(id).includes('logo')) {
+                allowed.add('width');
+                allowed.add('height');
+            }
+        } else {
+            for (const key of [
+                'transform',
+                'left',
+                'top',
+                'width',
+                'height',
+                'gap',
+                'columnGap',
+                'rowGap',
+                'fontSize',
+                'scale',
+            ]) {
+                allowed.add(key);
+            }
+        }
+        const out = {};
+        for (const [key, value] of Object.entries(props)) {
+            if (!allowed.has(key) || value == null || value === '') continue;
+            if (key === 'transform' && value === 'translate(0px, 0px)') continue;
+            out[key] = value;
+        }
+        if (TRANSFORM_ONLY_REGIONS.has(id)) {
+            delete out.left;
+            delete out.top;
+        }
+        return out;
+    }
+
     function readAll() {
         try {
             const raw = global.localStorage.getItem(LS_KEY);
@@ -263,7 +296,14 @@
         if (props == null) {
             delete all[theme][graphic][id];
         } else {
-            all[theme][graphic][id] = { ...props };
+            const targets = global.document.querySelectorAll(
+                `[data-vg-layout-target="${id}"]`,
+            );
+            all[theme][graphic][id] = sanitizeRegionProps(
+                id,
+                props,
+                targets.length > 0,
+            );
         }
         writeAll(all);
     }
@@ -336,12 +376,13 @@
             const targets = global.document.querySelectorAll(
                 `[data-vg-layout-target="${id}"]`,
             );
+            const clean = sanitizeRegionProps(id, props, targets.length > 0);
             if (targets.length) {
-                targets.forEach((el) => applyStyle(el, props));
+                targets.forEach((el) => applyStyle(el, clean));
                 continue;
             }
             const el = global.document.querySelector(`[data-vg-layout="${id}"]`);
-            if (el) applyStyle(el, props);
+            if (el) applyStyle(el, clean);
         }
     }
 
@@ -366,5 +407,6 @@
         apply,
         clearInline,
         applyStyle,
+        sanitizeRegionProps,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -609,6 +609,8 @@ function vgShowLeaderForConfiguredLane(fadeIn = false) {
 function vgRefreshLiveRaceContent() {
     const graphic = vgPlayback.graphic;
     if (!graphic || vgPlayback.state === 'idle') return;
+    /* Dev layout tuning uses inline styles; CSV refresh would wipe unsaved drags. */
+    if (vgIsLayoutDevMode()) return;
 
     const profile = vgGetVideoProfile(graphic);
     const layer = vgGetLayerEl();
@@ -670,6 +672,16 @@ function vgFormatDayLabel(dayLabel) {
 
 function vgResolveTheme() {
     return document.body.dataset.vmixTheme || 'kri';
+}
+
+/** Layout dev editor (?dev=1) — skip live CSV refresh that rebuilds the DOM. */
+function vgIsLayoutDevMode() {
+    const p = new URLSearchParams(location.search);
+    return (
+        p.get('dev') === '1' ||
+        p.get('layout') === 'edit' ||
+        document.body.classList.contains('vg-layout-dev')
+    );
 }
 
 function vgThemeConfig() {
@@ -2284,7 +2296,9 @@ async function vgInit() {
     setInterval(async () => {
         try {
             await vgReload();
-            vgRefreshHoldContent();
+            if (!vgIsLayoutDevMode()) {
+                vgRefreshHoldContent();
+            }
         } catch {
             /* ignore refresh errors */
         }

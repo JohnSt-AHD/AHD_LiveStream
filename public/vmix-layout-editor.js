@@ -11,10 +11,10 @@
             { id: 'lower-event', label: 'Lower — event title' },
         ],
         draw: [
-            { id: 'draw-head', label: 'Draw — header block (all)' },
-            { id: 'draw-kicker', label: 'Draw — “Start list” kicker' },
-            { id: 'draw-title', label: 'Draw — event title' },
-            { id: 'draw-meta', label: 'Draw — race / round line' },
+            { id: 'draw-head', label: 'Draw — header block (all)', posMode: 'absolute' },
+            { id: 'draw-kicker', label: 'Draw — “Start list” kicker', posMode: 'transform' },
+            { id: 'draw-title', label: 'Draw — event title', posMode: 'absolute' },
+            { id: 'draw-meta', label: 'Draw — race / round line', posMode: 'transform' },
             { id: 'draw-body', label: 'Draw — columns + rows block', posMode: 'transform' },
             { id: 'draw-cols', label: 'Draw — Lane / Crew header row', posMode: 'transform' },
             { id: 'draw-lanes', label: 'Draw — lane list', posMode: 'transform' },
@@ -332,9 +332,13 @@
         editor.statusEl.classList.toggle('vg-layout-status--err', !!isErr);
     }
 
-    function buildSavedProps(def, el) {
-        const props = { ...collectFieldProps(def), ...readPropsFromEl(el) };
-        if (!el) return props;
+    function buildSavedProps(def, el, { includeForm = false } = {}) {
+        const props = includeForm
+            ? { ...readPropsFromEl(el), ...collectFieldProps(def) }
+            : { ...readPropsFromEl(el) };
+        if (!el) {
+            return global.VmixLayout.sanitizeRegionProps(def.id, props, !!def.target);
+        }
         if (usesTransformPos(def, el)) {
             const tr = readTranslate(el);
             props.transform = formatTranslate(tr.x, tr.y);
@@ -345,7 +349,7 @@
             props.left = `${Math.round(pos.left)}px`;
             props.top = `${Math.round(pos.top)}px`;
         }
-        return props;
+        return global.VmixLayout.sanitizeRegionProps(def.id, props, !!def.target);
     }
 
     function saveCurrent() {
@@ -355,7 +359,7 @@
             return;
         }
         const el = findRegionEl(def);
-        const props = buildSavedProps(def, el);
+        const props = buildSavedProps(def, el, { includeForm: true });
         global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
         setStatus(`Saved ${editor.theme} / ${editor.graphic} / ${def.id}`);
     }
@@ -368,7 +372,7 @@
                 editor.theme,
                 editor.graphic,
                 def.id,
-                buildSavedProps(def, el),
+                buildSavedProps(def, el, { includeForm: false }),
             );
         }
         setStatus(`Saved all regions for ${editor.graphic}`);
@@ -383,9 +387,19 @@
 
     async function copyJson() {
         const all = global.VmixLayout.readAll();
+        const raw = all[editor.theme]?.[editor.graphic] || {};
+        const cleaned = {};
+        for (const [id, props] of Object.entries(raw)) {
+            const def = regionDefs(editor.graphic).find((d) => d.id === id);
+            cleaned[id] = global.VmixLayout.sanitizeRegionProps(
+                id,
+                props,
+                !!def?.target,
+            );
+        }
         const slice = {
             [editor.theme]: {
-                [editor.graphic]: all[editor.theme]?.[editor.graphic] || {},
+                [editor.graphic]: cleaned,
             },
         };
         const text = JSON.stringify(slice, null, 2);
@@ -675,6 +689,7 @@
             }
             mountPanel();
             previewGraphic(editor.graphic);
+            setStatus('Live CSV refresh paused — drag positions stay until you save or reload the page.');
 
             getStage()?.addEventListener('pointerdown', onPointerDown);
             global.addEventListener('pointermove', onPointerMove);
