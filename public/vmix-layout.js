@@ -12,22 +12,22 @@
             /* Dev-tuned draw layout (1920×1080) — vmix-kri.html?dev=1&g=d */
             draw: {
                 'draw-head': {
-                    left: '357px',
-                    top: '248px',
+                    left: '401px',
+                    top: '294px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
-                    transform: 'translate(-255px, -148px)',
+                    transform: 'translate(-302px, -184px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
                     width: '900px',
-                    transform: 'translate(-255px, -137px)',
+                    transform: 'translate(-301px, -169px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-256px, -137px)',
+                    transform: 'translate(-301px, -162px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
@@ -35,12 +35,12 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    transform: 'translate(211px, 227px)',
+                    transform: 'translate(212px, 248px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
                     width: '900px',
-                    transform: 'translate(211px, 245px)',
+                    transform: 'translate(211px, 257px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
@@ -286,7 +286,14 @@
     }
 
     function getRegion(theme, graphic, id) {
-        return readAll()[theme]?.[graphic]?.[id] || null;
+        const defaults = DEFAULT_LAYOUTS[theme]?.[graphic]?.[id];
+        const saved = readAll()[theme]?.[graphic]?.[id];
+        if (!defaults && !saved) return null;
+        const merged = { ...(defaults || {}), ...(saved || {}) };
+        const targets = global.document.querySelectorAll(
+            `[data-vg-layout-target="${id}"]`,
+        );
+        return sanitizeRegionProps(id, merged, targets.length > 0);
     }
 
     function setRegion(theme, graphic, id, props) {

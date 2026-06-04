@@ -216,6 +216,8 @@
     }
 
     function usesTransformPos(def, el) {
+        if (def?.posMode === 'transform') return true;
+        if (def?.posMode === 'absolute') return false;
         return regionPosMode(def, el) === 'transform' || !!def?.target;
     }
 
@@ -423,8 +425,12 @@
             return global.VmixLayout.sanitizeRegionProps(def.id, props, !!def.target);
         }
         if (usesTransformPos(def, el)) {
-            const tr = readTranslate(el);
-            props.transform = formatTranslate(tr.x, tr.y);
+            if (el.style.transform) {
+                props.transform = el.style.transform;
+            } else {
+                const tr = readTranslate(el);
+                props.transform = formatTranslate(tr.x, tr.y);
+            }
             delete props.left;
             delete props.top;
         } else {
@@ -433,7 +439,21 @@
             props.top = `${Math.round(pos.top)}px`;
             delete props.transform;
         }
+        if (!props.color) {
+            const c = global.getComputedStyle(el).color;
+            if (c) props.color = c;
+        }
         return global.VmixLayout.sanitizeRegionProps(def.id, props, !!def.target);
+    }
+
+    function snapshotGraphicLayout() {
+        const snapshot = {};
+        for (const def of regionDefs(editor.graphic)) {
+            const el = findRegionEl(def);
+            if (!el) continue;
+            snapshot[def.id] = buildSavedProps(def, el, { includeForm: false });
+        }
+        return snapshot;
     }
 
     function saveCurrent() {
@@ -470,17 +490,7 @@
     }
 
     async function copyJson() {
-        const all = global.VmixLayout.readAll();
-        const raw = all[editor.theme]?.[editor.graphic] || {};
-        const cleaned = {};
-        for (const [id, props] of Object.entries(raw)) {
-            const def = regionDefs(editor.graphic).find((d) => d.id === id);
-            cleaned[id] = global.VmixLayout.sanitizeRegionProps(
-                id,
-                props,
-                !!def?.target,
-            );
-        }
+        const cleaned = snapshotGraphicLayout();
         const slice = {
             [editor.theme]: {
                 [editor.graphic]: cleaned,
@@ -489,7 +499,9 @@
         const text = JSON.stringify(slice, null, 2);
         try {
             await global.navigator.clipboard.writeText(text);
-            setStatus('Layout JSON copied to clipboard');
+            setStatus(
+                `Copied ${Object.keys(cleaned).length} regions from on-screen positions (paste into vmix-layout.js)`,
+            );
         } catch {
             global.prompt('Copy layout JSON:', text);
         }
@@ -633,7 +645,7 @@
         editor.panel.className = 'vg-layout-panel';
         editor.panel.innerHTML = `
             <h2>Layout dev mode</h2>
-            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). Header block uses Left/Top; title, kicker, meta, columns, and lanes use Transform.</p>
+            <p>Click any outlined element to select it. ● = on screen, ○ = not found. Drag or arrow keys (Shift = 10px). <strong>Copy JSON</strong> exports what you see now; <strong>Save all</strong> stores it in this browser for vMix on the same PC.</p>
             <label for="vgLayoutGraphic">Graphic</label>
             <select id="vgLayoutGraphic">
                 <option value="title">Title</option>
@@ -663,7 +675,7 @@
                 <button type="button" class="primary" data-action="save">Save region</button>
                 <button type="button" class="secondary" data-action="save-all">Save all</button>
                 <button type="button" class="secondary" data-action="apply">Apply fields</button>
-                <button type="button" class="secondary" data-action="copy">Copy JSON</button>
+                <button type="button" class="secondary" data-action="copy">Copy JSON (on-screen)</button>
                 <button type="button" class="danger" data-action="reset">Reset graphic</button>
             </div>
             <p class="vg-layout-status" id="vgLayoutStatus"></p>
