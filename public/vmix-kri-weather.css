@@ -292,8 +292,8 @@ body.kri-weather-page {
 
 .kri-weather-forecast-item {
     display: grid;
-    grid-template-columns: 56px 1fr auto;
-    gap: 10px;
+    grid-template-columns: 52px 32px 1fr auto;
+    gap: 8px;
     align-items: center;
     padding: 8px 10px;
     border-radius: 8px;
@@ -301,6 +301,25 @@ body.kri-weather-page {
     font-size: 14px;
     font-weight: 600;
     color: #0c1f3d;
+}
+
+.kri-weather-forecast-item__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.kri-weather-forecast-item__icon .kri-weather-condition-icon__svg {
+    display: block;
+    width: 28px;
+    height: 28px;
+}
+
+.kri-weather-forecast-item__detail {
+    min-width: 0;
 }
 
 .kri-weather-forecast-item__time {

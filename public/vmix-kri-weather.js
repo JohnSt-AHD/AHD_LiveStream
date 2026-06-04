@@ -110,7 +110,7 @@
         return 'cloud';
     }
 
-    function weatherIconSvg(kind) {
+    function weatherIconSvg(kind, size = 64) {
         const sun = '<circle cx="32" cy="32" r="14" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5"/>';
         const cloud =
             '<path d="M22 42c0-8 6-14 14-14 2 0 4 .4 6 1.2 2.5-5 7.5-8.5 13.5-8.5 8 0 14.5 6 15 13.5 5 1 8.5 5.5 8.5 11 0 6.2-5 11.3-11.3 11.3H24c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.8 8-9.5z" fill="#94a3b8" stroke="#64748b" stroke-width="1.2"/>';
@@ -129,9 +129,19 @@
         else if (kind === 'storm') body = cloud + bolt + rain;
 
         return (
-            `<svg class="kri-weather-condition-icon__svg" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">` +
+            `<svg class="kri-weather-condition-icon__svg" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">` +
             body +
             `</svg>`
+        );
+    }
+
+    function forecastIconHtml(weatherCode) {
+        const kind = wmoIconKind(weatherCode);
+        const label = wmoLabel(weatherCode);
+        return (
+            `<span class="kri-weather-forecast-item__icon" title="${label}" aria-label="${label}">` +
+            weatherIconSvg(kind, 28) +
+            `</span>`
         );
     }
 
@@ -203,6 +213,7 @@
                 'precipitation',
                 'wind_speed_10m',
                 'wind_direction_10m',
+                'weather_code',
             ].join(','),
             forecast_hours: String(FORECAST_CHART_HOURS),
             timezone: TIMEZONE,
@@ -251,10 +262,12 @@
             const dir = windCompass(hourly.wind_direction_10m[i]);
             const rainProb = hourly.precipitation_probability[i];
             const rainMm = hourly.precipitation[i];
+            const weatherCode = hourly.weather_code?.[i];
             items.push(
                 `<li class="kri-weather-forecast-item">` +
                 `<span class="kri-weather-forecast-item__time">${formatHour(hourly.time[i])}</span>` +
-                `<span>${temp}°C · ${wind} km/h ${dir}</span>` +
+                forecastIconHtml(weatherCode) +
+                `<span class="kri-weather-forecast-item__detail">${temp}°C · ${wind} km/h ${dir}</span>` +
                 `<span class="kri-weather-forecast-item__rain">${rainProb}% · ${Number(rainMm).toFixed(1)} mm</span>` +
                 `</li>`,
             );
