@@ -559,8 +559,8 @@ body {
     min-height: 79px;
     padding: 4px 6px 6px;
     transform: translateX(40%);
-    background: rgba(255, 255, 255, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    background: #ffffff;
+    border: 2px solid #ffffff;
     border-radius: 8px;
     box-shadow: 0 4px 14px rgba(12, 31, 61, 0.14);
     pointer-events: none;
@@ -1011,7 +1011,7 @@ body {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: var(--kri-brand-blue-light);
+    color: var(--kri-brand-blue-dark);
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--lower .vg-lower-race {
