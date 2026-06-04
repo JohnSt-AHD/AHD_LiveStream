@@ -28,8 +28,9 @@
     const FORECAST_CHART_HOURS = 8;
     const RAIN_CHART_MAX_MM = 2;
 
-    const CHART_SIZE = { w: 328, h: 76 };
-    const CHART_PAD = { l: 38, r: 8, t: 18, b: 22 };
+    const CHART_SCALE = 1.2;
+    const CHART_SIZE = { w: Math.round(328 * CHART_SCALE), h: Math.round(76 * CHART_SCALE) };
+    const CHART_PAD = { l: 46, r: 10, t: 22, b: 26 };
     const CHART_THEME = {
         line: '#0079d1',
         lineSoft: 'rgba(0, 121, 209, 0.45)',
@@ -452,6 +453,16 @@
         return `hsl(${hue}, 88%, 48%)`;
     }
 
+    /**
+     * Open-Meteo wind_direction_10m = degrees wind is coming FROM (0° = north).
+     * Arrow glyph points east by default; rotate to where wind blows TO on the map.
+     */
+    function windDirectionToArrowRotate(dirFromDeg) {
+        const from = Number(dirFromDeg);
+        if (!Number.isFinite(from)) return 0;
+        return ((from + 90) % 360 + 360) % 360;
+    }
+
     function windArrowHtml(speedKmh, dirFromDeg) {
         const color = windSpeedToColor(speedKmh);
         const len = Math.min(
@@ -459,9 +470,9 @@
             Math.max(16 * WIND_ARROW_SCALE, speedKmh * 2.8 * WIND_ARROW_SCALE),
         );
         const shaftW = Math.max(8 * WIND_ARROW_SCALE, len - 10 * WIND_ARROW_SCALE);
-        const blowTo = dirFromDeg + 180;
+        const rotateDeg = windDirectionToArrowRotate(dirFromDeg);
         return (
-            `<div class="kri-wind-arrow" style="transform: rotate(${blowTo}deg); width:${len}px;opacity:${WIND_ARROW_OPACITY}">` +
+            `<div class="kri-wind-arrow" style="transform: rotate(${rotateDeg}deg); width:${len}px;opacity:${WIND_ARROW_OPACITY}">` +
             `<span class="kri-wind-arrow__shaft" style="width:${shaftW}px;background:${color}"></span>` +
             `<span class="kri-wind-arrow__head" style="border-left-color:${color}"></span>` +
             `</div>`
@@ -671,7 +682,7 @@
             const cur = nearestGridSample(gridData, site.lat, site.lon) || fallbackCurrent;
             if (!cur) continue;
             const speed = cur.wind_speed_10m * (0.88 + Math.random() * 0.22);
-            const dir = cur.wind_direction_10m + (Math.random() - 0.5) * 30;
+            const dir = cur.wind_direction_10m;
             decorativeWindLayer.addLayer(
                 L.marker([site.lat, site.lon], {
                     icon: windIcon(speed, dir),
