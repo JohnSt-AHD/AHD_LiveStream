@@ -871,14 +871,23 @@ function isKriDemoBoatDevice(device) {
     return isKriDemoMode() && window.KriSafetyMarkers?.isDemoBoatDevice?.(device);
 }
 
+function resolvePositionHeading(position) {
+    const compass = position?.attributes?.compass;
+    if (typeof compass === 'number' && Number.isFinite(compass)) return compass;
+    if (typeof position?.courseHeading === 'number' && Number.isFinite(position.courseHeading)) {
+        return position.courseHeading;
+    }
+    if (typeof position?.course === 'number' && Number.isFinite(position.course)) {
+        return position.course;
+    }
+    return 0;
+}
+
 function updateKriDemoBoatMarker(device, position, latlng, fill, stroke, capsizeAlert) {
     const markersApi = window.KriSafetyMarkers;
     if (!markersApi?.createIcon) return null;
 
-    const heading =
-        typeof position.courseHeading === 'number' && Number.isFinite(position.courseHeading)
-            ? position.courseHeading
-            : 0;
+    const heading = resolvePositionHeading(position);
     const scale = markersApi.getZoomScale?.(map?.getZoom()) ?? 1;
     const icon = markersApi.createIcon({
         kind: device.demoMarkerKind === 'safety' ? 'safety' : 'shell',
