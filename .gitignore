@@ -3,3 +3,6 @@
 
 # Milford ProRes masters (web copies in public/assets/vmix/milford/)
 /Milford/
+
+# Regatta archive run reports (manifest + CSVs are committed)
+public/data/archives/_snapshot-*.json

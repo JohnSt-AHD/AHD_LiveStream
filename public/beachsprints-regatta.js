@@ -427,6 +427,11 @@
     }
 
     async function fetchRegattaCsv(code, file) {
+        const archive = window.RegattaCsvArchive;
+        const localPath = LOCAL_REGATTA_CSV[normalizeRegattaCode(code)]?.[file];
+        if (archive?.fetchRegattaCsv) {
+            return archive.fetchRegattaCsv(code, file, { legacyPath: localPath });
+        }
         const candidates = csvUrlCandidates(code, file);
         let lastErr = null;
         for (const url of candidates) {
@@ -436,7 +441,6 @@
                 lastErr = err;
             }
         }
-        const localPath = LOCAL_REGATTA_CSV[normalizeRegattaCode(code)]?.[file];
         if (localPath) {
             const res = await fetch(localPath);
             if (res.ok) return res.text();

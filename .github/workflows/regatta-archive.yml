@@ -1,0 +1,36 @@
+# Daily snapshot of RowIT altitude CSVs into public/data/archives/
+name: Regatta CSV archive
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 14:05 UTC ≈ 02:05 NZST — after typical RowIT publish window
+    - cron: '5 14 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Snapshot RowIT CSVs
+        run: node scripts/snapshot-regatta-csvs.mjs
+
+      - name: Commit archive updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/archives public/data/regatta-archives.json
+          if git diff --staged --quiet; then
+            echo "No archive changes."
+            exit 0
+          fi
+          git commit -m "Archive RowIT regatta CSVs ($(date -u +%Y-%m-%d))."
+          git push

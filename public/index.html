@@ -46,7 +46,7 @@
             <div class="hub-dashboard-sidebar">
             <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
                 <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
-                <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. A ✓ means the CSV responded.</p>
+                <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. A ✓ means the CSV responded. Daily snapshots are kept in <code class="hub-csv-code-inline">data/archives/</code> if RowIT links go offline.</p>
                 <label class="hub-regatta-code-field">
                     <span class="hub-regatta-code-label">Regatta code</span>
                     <input
@@ -485,6 +485,7 @@
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
     <script src="hub-csv.js"></script>
+    <script src="regatta-csv-archive.js"></script>
     <script src="hub-live-race.js"></script>
     <script src="hub-calendar.js"></script>
     <script src="hub-regatta.js"></script>

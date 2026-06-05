@@ -341,6 +341,10 @@ async function fetchCsvText(url) {
     const trimmed = (url || '').trim();
     if (!trimmed) throw new Error('No URL configured');
 
+    if (window.RegattaCsvArchive?.fetchCsvUrl) {
+        return window.RegattaCsvArchive.fetchCsvUrl(trimmed);
+    }
+
     try {
         const res = await fetch(
             `/api/fetch-csv?url=${encodeURIComponent(trimmed)}`,
