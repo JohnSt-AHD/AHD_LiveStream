@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 4;
+    const LAYOUT_BUILD = 5;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -14,7 +14,7 @@
             draw: {
                 'draw-head': {
                     left: '401px',
-                    top: '298px',
+                    top: '299px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
@@ -24,11 +24,11 @@
                 },
                 'draw-title': {
                     width: '900px',
-                    transform: 'translate(-345px, -226px)',
+                    transform: 'translate(-345px, -235px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-345px, -216px)',
+                    transform: 'translate(-345px, -231px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
@@ -59,7 +59,7 @@
             results: {
                 'results-head': {
                     left: '401px',
-                    top: '298px',
+                    top: '299px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
@@ -69,11 +69,11 @@
                 },
                 'results-title': {
                     width: '900px',
-                    transform: 'translate(-345px, -226px)',
+                    transform: 'translate(-345px, -235px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-meta': {
-                    transform: 'translate(-345px, -216px)',
+                    transform: 'translate(-345px, -231px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-body': {
