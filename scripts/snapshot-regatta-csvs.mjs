@@ -173,6 +173,9 @@ async function main() {
   manifest.configSource = 'scripts/regatta-archive-codes.json';
   writeJson(MANIFEST_PATH, manifest);
 
+  const publicConfig = path.join(PUBLIC, 'data', 'regatta-archive-codes.json');
+  fs.copyFileSync(CONFIG_PATH, publicConfig);
+
   const reportPath = path.join(ARCHIVES_DIR, `_snapshot-${date}.json`);
   writeJson(reportPath, { date, summary });
 

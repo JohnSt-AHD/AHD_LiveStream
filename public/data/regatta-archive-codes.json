@@ -1,0 +1,14 @@
+{
+  "comment": "Regatta codes to snapshot daily from RowIT altitude feeds.",
+  "updated": "2026-06-05",
+  "regattas": [
+    { "code": "nzmm2025", "name": "NZ Masters Multi-lane 2025", "snapshot": true },
+    { "code": "nicc2026", "name": "NICC 2026", "snapshot": true },
+    { "code": "nzcc2026", "name": "NZ Club Champs 2026", "snapshot": true },
+    { "code": "niss2026", "name": "North Island Secondary Schools 2026", "snapshot": true },
+    { "code": "siss2026", "name": "South Island Secondary Schools 2026", "snapshot": true },
+    { "code": "mads2026", "name": "Maadi Cup 2026", "snapshot": true },
+    { "code": "nzuu2026", "name": "NZ University Championships 2026", "snapshot": true },
+    { "code": "cnzb2026", "name": "NZ Coastal Beach Sprint Champs 2026", "snapshot": true }
+  ]
+}

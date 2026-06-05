@@ -1800,6 +1800,8 @@
         }
 
         let statusMsg = `Loaded ${state.races.length} races · ${state.results.size} results · ${state.events.length} events · ${code}`;
+        const schedule = await window.RegattaCsvArchive?.getRegattaSchedule?.(code);
+        if (schedule?.sourceLabel) statusMsg += ` · ${schedule.sourceLabel}`;
         if (options.refreshedAt) statusMsg = `Updated ${options.refreshedAt} · ${statusMsg}`;
         if (state.liveRefresh) statusMsg += ' · live refresh 1 min';
         if (state.results.size === 0) statusMsg += ' — no results loaded.';
