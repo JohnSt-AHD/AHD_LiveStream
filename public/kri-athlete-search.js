@@ -80,6 +80,7 @@
             map.set(`${info.label}|${division}`, {
                 race: info.label,
                 raceNum: info.raceNum,
+                eventNum: cols[2] ? cols[2].trim() : '',
                 eventType: cols[3] ? cols[3].trim() : '',
                 division,
                 names: cols[6] ? cols[6].trim() : '',

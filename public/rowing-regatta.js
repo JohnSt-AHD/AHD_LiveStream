@@ -330,6 +330,7 @@
             map.set(`${info.label}|${division}`, {
                 race: info.label,
                 raceNum: info.raceNum,
+                eventNum: cols[2] ? cols[2].trim() : '',
                 eventType: cols[3] ? cols[3].trim() : '',
                 division,
                 names: cols[6] ? cols[6].trim() : '',
@@ -705,7 +706,7 @@
     function athletesForLane(race, lane) {
         const RCA = regattaCrewAthletes();
         if (!RCA?.athletesForLane) return [];
-        return RCA.athletesForLane(race, lane, state.competitors);
+        return RCA.athletesForLane(race, lane, state.competitors, { eventsByNum: state.eventsByNum });
     }
 
     function renderLaneAthletesPanel(race, laneNum) {
