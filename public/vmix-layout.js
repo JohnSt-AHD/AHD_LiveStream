@@ -3,32 +3,45 @@
  * Dev editor: ?dev=1 on vmix-kri.html / vmix-rnz-milford.html
  */
 (function (global) {
-    const LS_KEY = 'altitudeHdVmixLayout_v3';
-    const LAYOUT_BUILD = 9;
+    const LS_KEY = 'altitudeHdVmixLayout_v2';
+    const LAYOUT_BUILD = 8;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
-        /* KRI draw/results/schedule: title + lanes live inside draw-body (one transform). */
+        /* Positions from KRI GT templates (1920×1080) in gt-templates/extracted/kri/ */
         kri: {
+            /* Dev-tuned draw layout — coords are panel-local for absolute regions (see applyLayout). */
             draw: {
-                'draw-body': {
-                    transform: 'translate(-199px, -172px)',
+                'draw-head': {
+                    left: '389px',
+                    top: '275px',
+                    width: '935px',
+                    color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
+                    transform: 'translate(-333px, -216px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
                     width: '900px',
+                    transform: 'translate(-333px, -211px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
+                    transform: 'translate(-333px, -209px)',
                     color: 'rgb(49, 62, 80)',
                 },
+                'draw-body': {
+                    transform: 'translate(-199px, -172px)',
+                    color: 'rgb(255, 255, 255)',
+                },
                 'draw-cols': {
+                    transform: 'translate(211px, 210px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
                     width: '900px',
+                    transform: 'translate(208px, 233px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
@@ -44,24 +57,36 @@
                 },
             },
             results: {
-                'results-body': {
-                    transform: 'translate(-199px, -172px)',
+                'results-head': {
+                    left: '389px',
+                    top: '275px',
+                    width: '935px',
+                    color: 'rgb(255, 255, 255)',
                 },
                 'results-kicker': {
+                    transform: 'translate(-333px, -216px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-title': {
                     width: '900px',
+                    transform: 'translate(-333px, -211px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-meta': {
+                    transform: 'translate(-333px, -209px)',
                     color: 'rgb(49, 62, 80)',
                 },
+                'results-body': {
+                    transform: 'translate(-199px, -172px)',
+                    color: 'rgb(255, 255, 255)',
+                },
                 'results-cols': {
+                    transform: 'translate(211px, 210px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-lanes': {
                     width: '900px',
+                    transform: 'translate(208px, 233px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-lane-n': {
@@ -77,24 +102,36 @@
                 },
             },
             schedule: {
-                'schedule-body': {
-                    transform: 'translate(-199px, -172px)',
+                'schedule-head': {
+                    left: '389px',
+                    top: '275px',
+                    width: '935px',
+                    color: 'rgb(255, 255, 255)',
                 },
                 'schedule-kicker': {
+                    transform: 'translate(-333px, -216px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-title': {
                     width: '900px',
+                    transform: 'translate(-333px, -211px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-meta': {
+                    transform: 'translate(-333px, -209px)',
                     color: 'rgb(49, 62, 80)',
                 },
+                'schedule-body': {
+                    transform: 'translate(-199px, -172px)',
+                    color: 'rgb(255, 255, 255)',
+                },
                 'schedule-cols': {
+                    transform: 'translate(211px, 210px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-rows': {
                     width: '900px',
+                    transform: 'translate(208px, 233px)',
                     color: 'rgb(255, 255, 255)',
                 },
             },
@@ -241,21 +278,18 @@
 
     /** Strip properties that Save all accidentally copied from the wrong region. */
     const TRANSFORM_ONLY_REGIONS = new Set([
-        'draw-head',
         'draw-kicker',
         'draw-title',
         'draw-meta',
         'draw-body',
         'draw-cols',
         'draw-lanes',
-        'results-head',
         'results-kicker',
         'results-title',
         'results-meta',
         'results-body',
         'results-cols',
         'results-lanes',
-        'schedule-head',
         'schedule-kicker',
         'schedule-title',
         'schedule-meta',
@@ -399,11 +433,9 @@
 
         if (props.color) {
             el.style.color = String(props.color);
-            if (!el.classList.contains('vg-kri-head')) {
-                el.querySelectorAll('h1, h2, h3, h4, p, span, li, ul, div').forEach((node) => {
-                    node.style.color = String(props.color);
-                });
-            }
+            el.querySelectorAll('h1, h2, h3, h4, p, span, li, ul, div').forEach((node) => {
+                node.style.color = String(props.color);
+            });
         }
     }
 
