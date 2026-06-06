@@ -13,6 +13,9 @@
     const ZOOM_TRAIL_M = 90;
     const ZOOM_LEAD_M = 35;
     const LOOP_PAUSE_SEC = 2.5;
+    const ZONE_START_M = 100;
+    const ZONE_FINISH_M = 250;
+    const BUOY_SPACING_M = 20;
 
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2,
@@ -335,10 +338,138 @@
         return { minD, maxD };
     }
 
+    function xCourse(distanceM, padL, chartW) {
+        return padL + (distanceM / COURSE_M) * chartW;
+    }
+
+    function svgDefs() {
+        return (
+            '<defs>' +
+            '<pattern id="krvChecker" width="10" height="10" patternUnits="userSpaceOnUse">' +
+            '<rect width="5" height="5" fill="#1e40af"/>' +
+            '<rect x="5" y="0" width="5" height="5" fill="#ffffff"/>' +
+            '<rect x="0" y="5" width="5" height="5" fill="#ffffff"/>' +
+            '<rect x="5" y="5" width="5" height="5" fill="#1e40af"/>' +
+            '</pattern>' +
+            '</defs>'
+        );
+    }
+
+    function displayName(boat) {
+        return boat.label || boat.shortLabel || 'Crew';
+    }
+
     function xMap(distanceM, minD, maxD, width, padLeft, padRight) {
         const chartW = width - padLeft - padRight;
         const t = (distanceM - minD) / Math.max(1, maxD - minD);
         return padLeft + Math.max(0, Math.min(1, t)) * chartW;
+    }
+
+    function zoneRectsHtml(padL, padT, chartW, chartH, minD = 0, maxD = COURSE_M) {
+        const zones = [
+            { from: 0, to: ZONE_START_M, cls: 'krv-zone krv-zone--start' },
+            { from: ZONE_START_M, to: COURSE_M - ZONE_FINISH_M, cls: 'krv-zone krv-zone--mid' },
+            { from: COURSE_M - ZONE_FINISH_M, to: COURSE_M, cls: 'krv-zone krv-zone--finish' },
+        ];
+        return zones
+            .map(({ from, to, cls }) => {
+                const a = Math.max(from, minD);
+                const b = Math.min(to, maxD);
+                if (b <= a) return '';
+                const x0 = padL + ((a - minD) / Math.max(1, maxD - minD)) * chartW;
+                const x1 = padL + ((b - minD) / Math.max(1, maxD - minD)) * chartW;
+                return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="${cls}"/>`;
+            })
+            .join('');
+    }
+
+    function zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD) {
+        const zones = [
+            { from: 0, to: ZONE_START_M, cls: 'krv-zone krv-zone--start' },
+            { from: ZONE_START_M, to: COURSE_M - ZONE_FINISH_M, cls: 'krv-zone krv-zone--mid' },
+            { from: COURSE_M - ZONE_FINISH_M, to: COURSE_M, cls: 'krv-zone krv-zone--finish' },
+        ];
+        return zones
+            .map(({ from, to, cls }) => {
+                const a = Math.max(from, minD);
+                const b = Math.min(to, maxD);
+                if (b <= a) return '';
+                const x0 = xMap(a, minD, maxD, w, padL, padR);
+                const x1 = xMap(b, minD, maxD, w, padL, padR);
+                return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="${cls}"/>`;
+            })
+            .join('');
+    }
+
+    function buoysHtml(h, padL, padT, padB, chartW, minD = 0, maxD = COURSE_M, padR = 0, totalW = null) {
+        const parts = [];
+        const w = totalW ?? padL + chartW + padR;
+        for (let lane = 1; lane <= LANE_COUNT; lane++) {
+            const y = yMapLane(lane, h, padT, padB);
+            for (let d = BUOY_SPACING_M; d < COURSE_M; d += BUOY_SPACING_M) {
+                if (d < minD || d > maxD) continue;
+                const x =
+                    maxD > minD && maxD < COURSE_M
+                        ? xMap(d, minD, maxD, w, padL, padR)
+                        : xCourse(d, padL, chartW);
+                parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" class="krv-buoy"/>`);
+            }
+        }
+        return parts.join('');
+    }
+
+    function startFinishHtml(padL, padT, chartH, chartW, padR = 0, minD = 0, maxD = COURSE_M) {
+        const w = padL + chartW + padR;
+        const xStart = maxD > minD && minD > 0 ? xMap(0, minD, maxD, w, padL, padR) : padL;
+        const xFinish =
+            maxD > minD && maxD < COURSE_M
+                ? xMap(COURSE_M, minD, maxD, w, padL, padR)
+                : padL + chartW;
+        const showStart = minD <= 0;
+        const showFinish = maxD >= COURSE_M;
+        const parts = [];
+        if (showStart) {
+            parts.push(
+                `<line x1="${xStart}" y1="${padT}" x2="${xStart}" y2="${padT + chartH}" class="krv-line-start"/>`,
+                `<text x="${xStart + 6}" y="${padT + 16}" class="krv-line-label krv-line-label--start">Start</text>`,
+            );
+        }
+        if (showFinish) {
+            parts.push(
+                `<rect x="${xFinish - 6}" y="${padT}" width="12" height="${chartH}" fill="url(#krvChecker)" class="krv-finish-banner"/>`,
+                `<line x1="${xFinish}" y1="${padT}" x2="${xFinish}" y2="${padT + chartH}" class="krv-line-finish"/>`,
+                `<text x="${xFinish - 8}" y="${padT + 16}" class="krv-line-label krv-line-label--finish" text-anchor="end">Finish</text>`,
+            );
+        }
+        return parts.join('');
+    }
+
+    function boatShapeHtml(color) {
+        const fill = color || '#38bdf8';
+        return `<polygon points="10,0 -5,-5 -5,5" fill="${fill}" class="krv-boat-shape"/>`;
+    }
+
+    function applyRaceContextToState(prepared, raceContext) {
+        if (!raceContext?.lanes?.length) return prepared;
+        const sortedLanes = [...raceContext.lanes].sort((a, b) => a.lane - b.lane);
+        const boats = prepared.boats.map((boat, idx) => {
+            const laneCtx = sortedLanes[idx];
+            if (!laneCtx) return { ...boat, lane: boat.lane ?? idx + 1 };
+            return {
+                ...boat,
+                lane: laneCtx.lane,
+                label: laneCtx.label,
+                logoUrl: laneCtx.logoUrl,
+                shortLabel: laneCtx.shortLabel,
+            };
+        });
+        const data = {
+            ...prepared.data,
+            event: raceContext.event || prepared.data.event,
+            round: raceContext.round ?? prepared.data.round,
+            race: raceContext.race ?? prepared.data.race,
+        };
+        return { ...prepared, data, boats };
     }
 
     function yMapLane(lane, height, padTop, padBottom) {
@@ -360,7 +491,11 @@
         const chartH = h - padT - padB;
 
         const parts = [
+            svgDefs(),
             `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-bg" rx="6"/>`,
+            zoneRectsHtml(padL, padT, chartW, chartH),
+            buoysHtml(h, padL, padT, padB, chartW),
+            startFinishHtml(padL, padT, chartH, chartW),
         ];
 
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -383,11 +518,6 @@
             }
         }
 
-        parts.push(
-            `<text x="${padL}" y="${h - 4}" class="krv-end-label" text-anchor="start">Start</text>`,
-            `<text x="${padL + chartW}" y="${h - 4}" class="krv-end-label" text-anchor="end">Finish</text>`,
-        );
-
         parts.push('<g id="krvOverviewCluster"></g>');
         parts.push('<g id="krvOverviewBoats"></g>');
 
@@ -404,9 +534,12 @@
         const padR = 40;
         const padT = 36;
         const padB = 36;
+        const chartW = w - padL - padR;
+        const chartH = h - padT - padB;
 
         const parts = [
-            `<rect x="${padL}" y="${padT}" width="${w - padL - padR}" height="${h - padT - padB}" class="krv-course-bg krv-course-bg--zoom" rx="10"/>`,
+            svgDefs(),
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-bg krv-course-bg--zoom" rx="10"/>`,
         ];
 
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -419,9 +552,9 @@
             );
         }
 
-        parts.push('<g id="krvZoomMarkers"></g>');
+        parts.push('<g id="krvZoomCourse"></g>');
         svg.innerHTML = parts.join('');
-        svg.dataset.layout = JSON.stringify({ w, h, padL, padR, padT, padB });
+        svg.dataset.layout = JSON.stringify({ w, h, padL, padR, padT, padB, chartW, chartH });
     }
 
     function updateOverviewBoats(standings, tSec) {
@@ -454,7 +587,7 @@
                 const y = yMapLane(lane, h, padT, padB);
                 return (
                     `<g class="krv-boat krv-boat--overview" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">` +
-                    `<polygon points="0,-7 12,0 0,7 -4,0" fill="${boat.color || '#38bdf8'}" class="krv-boat-shape"/>` +
+                    boatShapeHtml(boat.color) +
                     `</g>`
                 );
             })
@@ -465,28 +598,34 @@
 
     function updateZoomView(standings) {
         const svg = $('krvZoomSvg');
-        const markersG = svg?.querySelector('#krvZoomMarkers');
+        const courseG = svg?.querySelector('#krvZoomCourse');
         const boatsEl = $('krvZoomBoats');
-        if (!svg || !markersG || !boatsEl) return;
+        if (!svg || !courseG || !boatsEl) return;
 
         const layout = JSON.parse(svg.dataset.layout || '{}');
-        const { w, h, padL, padR, padT, padB } = layout;
+        const { w, h, padL, padR, padT, padB, chartW, chartH } = layout;
         const { minD, maxD } = zoomWindow(standings);
         const leaderD = standings[0]?.distance ?? 0;
         const toGo = Math.max(0, Math.round(COURSE_M - leaderD));
 
-        const markerParts = [];
+        const courseParts = [
+            zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD),
+            buoysHtml(h, padL, padT, padB, chartW, minD, maxD, padR, w),
+            startFinishHtml(padL, padT, chartH, chartW, padR, minD, maxD),
+        ];
         for (const dist of MARKERS_M) {
             if (dist < minD || dist > maxD) continue;
             const x = xMap(dist, minD, maxD, w, padL, padR);
-            markerParts.push(`<line x1="${x}" y1="${padT}" x2="${x}" y2="${h - padB}" class="krv-marker-line krv-marker-line--zoom"/>`);
+            courseParts.push(
+                `<line x1="${x}" y1="${padT}" x2="${x}" y2="${h - padB}" class="krv-marker-line krv-marker-line--zoom"/>`,
+            );
             if (dist > 0 && dist < COURSE_M) {
-                markerParts.push(
+                courseParts.push(
                     `<text x="${x}" y="${padT - 10}" class="krv-marker-label krv-marker-label--zoom" text-anchor="middle">${dist}m</text>`,
                 );
             }
         }
-        markersG.innerHTML = markerParts.join('');
+        courseG.innerHTML = courseParts.join('');
 
         boatsEl.innerHTML = standings
             .map((entry, rank) => {
@@ -502,7 +641,7 @@
                     `<div class="krv-zoom-boat" style="left:${xPct}%;top:${yPct}%" data-rank="${rank + 1}">` +
                     `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
                     `<img class="krv-zoom-boat__logo" src="${escapeHtml(logo)}" alt="">` +
-                    `<span class="krv-zoom-boat__label">${escapeHtml(boat.label || boat.id)}</span>` +
+                    `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
                     `<span class="krv-zoom-boat__speed">${speedStr}</span>` +
                     `<span class="krv-zoom-boat__gap">${escapeHtml(toGoStr)}</span>` +
                     `</div>`
@@ -588,7 +727,8 @@
 
         const data = await chart.loadData(getDataUrl());
         const raceContext = buildRaceContext();
-        state.chartState = chart.applyRaceContext(chart.prepareChartState(data), raceContext);
+        const prepared = chart.prepareChartState(data);
+        state.chartState = applyRaceContextToState(prepared, raceContext);
         state.raceLabel = raceTitleLine(raceContext, data);
     }
 
@@ -597,7 +737,8 @@
         try {
             renderOverviewStatic();
             renderZoomStatic();
-            await Promise.all([loadRegattaData(), loadRaceTraces()]);
+            await loadRegattaData();
+            await loadRaceTraces();
             renderUpcoming();
             renderFrame(0);
             startPlayback();
@@ -612,7 +753,8 @@
     }
 
     function onLiveRaceChange() {
-        loadRaceTraces()
+        loadRegattaData()
+            .then(() => loadRaceTraces())
             .then(() => {
                 renderUpcoming();
                 renderFrame(playbackTimeSec(performance.now()));

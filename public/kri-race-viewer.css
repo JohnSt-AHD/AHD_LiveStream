@@ -50,25 +50,41 @@ body {
         radial-gradient(ellipse at 80% 80%, rgba(56, 189, 248, 0.2), transparent 50%),
         #071428;
     overflow: hidden;
+    --krv-titlebar-h: 44px;
 }
 
-.krv-logo {
-    position: absolute;
-    top: 20px;
-    right: 28px;
-    width: 64px;
-    height: 64px;
+.krv-titlebar {
+    flex: 0 0 var(--krv-titlebar-h);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 28px;
+    background: rgba(7, 20, 40, 0.94);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.22);
+    z-index: 6;
+}
+
+.krv-titlebar__logo {
+    width: 32px;
+    height: 32px;
     object-fit: contain;
-    z-index: 5;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+    filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35));
+}
+
+.krv-titlebar__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--kri-brand-white);
 }
 
 /* Top 25% — full course overview */
 .krv-overview {
     position: relative;
-    flex: 0 0 25%;
+    flex: 0 0 calc((100% - var(--krv-titlebar-h)) * 0.25);
     min-height: 0;
-    padding: 20px 28px 8px;
+    padding: 12px 28px 8px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.25);
     background: rgba(0, 121, 209, 0.08);
 }
@@ -277,6 +293,56 @@ body {
     fill: rgba(255, 255, 255, 0.88);
 }
 
+.krv-zone {
+    pointer-events: none;
+}
+
+.krv-zone--start,
+.krv-zone--finish {
+    fill: rgba(250, 204, 21, 0.42);
+}
+
+.krv-zone--mid {
+    fill: rgba(251, 146, 60, 0.38);
+}
+
+.krv-buoy {
+    fill: #ea580c;
+    stroke: #ffffff;
+    stroke-width: 0.75;
+}
+
+.krv-line-start {
+    stroke: #16a34a;
+    stroke-width: 2.5;
+}
+
+.krv-line-finish {
+    stroke: #dc2626;
+    stroke-width: 2.5;
+}
+
+.krv-line-label {
+    fill: rgba(12, 31, 61, 0.85);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.krv-line-label--start {
+    fill: #15803d;
+}
+
+.krv-line-label--finish {
+    fill: #b91c1c;
+}
+
+.krv-finish-banner {
+    stroke: rgba(12, 31, 61, 0.35);
+    stroke-width: 1;
+}
+
 .krv-lane-line {
     stroke: rgba(0, 121, 209, 0.22);
     stroke-width: 1;
@@ -317,14 +383,6 @@ body {
 
 .krv-marker-label--zoom {
     font-size: 13px;
-}
-
-.krv-end-label {
-    fill: rgba(12, 31, 61, 0.7);
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
 }
 
 .krv-cluster-box {
