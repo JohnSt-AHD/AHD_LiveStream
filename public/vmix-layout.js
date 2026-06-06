@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 9;
+    const LAYOUT_BUILD = 10;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -13,21 +13,21 @@
             draw: {
                 'draw-head': {
                     left: '445px',
-                    top: '336px',
+                    top: '337px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
-                    transform: 'translate(-345px, -236px)',
+                    transform: 'translate(-433px, -320px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
                     width: '900px',
-                    transform: 'translate(-389px, -235px)',
+                    transform: 'translate(-433px, -319px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-345px, -231px)',
+                    transform: 'translate(-433px, -318px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
@@ -35,12 +35,12 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    transform: 'translate(212px, 239px)',
+                    transform: 'translate(212px, 110px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
                     width: '900px',
-                    transform: 'translate(212px, 258px)',
+                    transform: 'translate(212px, 122px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
