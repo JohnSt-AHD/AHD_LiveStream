@@ -46,7 +46,7 @@ function vgResolveGraphicAlias(raw) {
 
 const VG_HOLD_MS = 3000;
 const VG_OUTRO_MS = 3000;
-const VG_KRI_FADE_MS = 650;
+const VG_KRI_FADE_MS = 1500;
 const VG_MILFORD_FADE_MS = 500;
 
 const vgPlayback = {
