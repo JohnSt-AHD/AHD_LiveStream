@@ -215,9 +215,12 @@
         const stage = getStage();
         if (!stage) return { left: 0, top: 0 };
         const sr = stage.getBoundingClientRect();
+        const cs = global.getComputedStyle(container);
+        const padL = parseFloat(cs.paddingLeft) || 0;
+        const padT = parseFloat(cs.paddingTop) || 0;
         return {
-            left: ((er.left - cr.left) / sr.width) * 1920,
-            top: ((er.top - cr.top) / sr.height) * 1080,
+            left: ((er.left - cr.left - padL) / sr.width) * 1920,
+            top: ((er.top - cr.top - padT) / sr.height) * 1080,
         };
     }
 

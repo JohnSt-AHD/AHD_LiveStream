@@ -4,44 +4,43 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 8;
+    const LAYOUT_BUILD = 9;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
-        /* Positions from KRI GT templates (1920×1080) in gt-templates/extracted/kri/ */
+        /* Dev-tuned KRI draw layout — panel-local absolute head; transforms for nested blocks. */
         kri: {
-            /* Dev-tuned draw layout — coords are panel-local for absolute regions (see applyLayout). */
             draw: {
                 'draw-head': {
-                    left: '389px',
-                    top: '275px',
+                    left: '445px',
+                    top: '336px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
-                    transform: 'translate(-333px, -216px)',
+                    transform: 'translate(-345px, -236px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
                     width: '900px',
-                    transform: 'translate(-333px, -211px)',
+                    transform: 'translate(-389px, -235px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-333px, -209px)',
+                    transform: 'translate(-345px, -231px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
-                    transform: 'translate(-199px, -172px)',
+                    transform: 'translate(-200px, -100px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    transform: 'translate(211px, 210px)',
+                    transform: 'translate(212px, 239px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
                     width: '900px',
-                    transform: 'translate(208px, 233px)',
+                    transform: 'translate(212px, 258px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
