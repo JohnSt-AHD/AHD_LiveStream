@@ -1,6 +1,42 @@
 /**
  * KRI full-screen weather overlay for vMix (1920×1080, ~90% transparent).
  */
+@keyframes vg-kri-shine-sweep {
+    0% {
+        transform: translateX(-120%) skewX(-18deg);
+        opacity: 0;
+    }
+    6% {
+        opacity: 1;
+    }
+    28% {
+        opacity: 1;
+    }
+    38%,
+    100% {
+        transform: translateX(320%) skewX(-18deg);
+        opacity: 0;
+    }
+}
+
+@keyframes vg-kri-shine-sweep-soft {
+    0% {
+        transform: translateX(-120%) skewX(-18deg);
+        opacity: 0;
+    }
+    8% {
+        opacity: 0.65;
+    }
+    30% {
+        opacity: 0.65;
+    }
+    42%,
+    100% {
+        transform: translateX(320%) skewX(-18deg);
+        opacity: 0;
+    }
+}
+
 html,
 body.kri-weather-page {
     margin: 0;
@@ -172,6 +208,38 @@ body.kri-weather-page {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
     color: #0c1f3d;
     pointer-events: none;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.kri-weather-panel::before {
+    content: '';
+    position: absolute;
+    top: -35%;
+    bottom: -35%;
+    left: 0;
+    width: 42%;
+    background: linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 38%,
+        rgba(255, 255, 255, 0.12) 46%,
+        rgba(255, 255, 255, 0.32) 50%,
+        rgba(255, 255, 255, 0.12) 54%,
+        transparent 62%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: soft-light;
+    animation: vg-kri-shine-sweep 13s ease-in-out infinite;
+    animation-delay: -1.5s;
+    will-change: transform, opacity;
+}
+
+.kri-weather-panel > * {
+    position: relative;
+    z-index: 2;
 }
 
 .kri-weather-panel__kicker {
@@ -394,6 +462,39 @@ body.kri-weather-page {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.kri-weather-rowing::before {
+    content: '';
+    position: absolute;
+    top: -35%;
+    bottom: -35%;
+    left: 0;
+    width: 42%;
+    background: linear-gradient(
+        105deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.08) 47%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.08) 53%,
+        transparent 60%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+    animation: vg-kri-shine-sweep-soft 15s ease-in-out infinite;
+    animation-delay: -8s;
+    will-change: transform, opacity;
+}
+
+.kri-weather-rowing > * {
+    position: relative;
+    z-index: 2;
 }
 
 .kri-weather-rowing__title {
