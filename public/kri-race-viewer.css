@@ -76,7 +76,28 @@ body {
     font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.krv-titlebar__race {
+    margin: 0;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.95) 0%, rgba(0, 121, 209, 0.95) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    font-size: 15px;
+    font-weight: 800;
     color: var(--kri-brand-white);
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+    max-width: 560px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.krv-titlebar__race[hidden] {
+    display: none !important;
 }
 
 /* Top 25% — full course overview */
@@ -93,23 +114,6 @@ body {
     display: block;
     width: 100%;
     height: 100%;
-}
-
-.krv-overview__race-label {
-    position: absolute;
-    transform: translate(-50%, -100%);
-    padding: 8px 18px;
-    border-radius: 10px 10px 0 0;
-    background: linear-gradient(180deg, rgba(7, 20, 40, 0.95) 0%, rgba(0, 96, 191, 0.92) 100%);
-    border: 2px solid rgba(255, 255, 255, 0.6);
-    border-bottom: none;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--kri-brand-white);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 3;
-    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* Bottom 75% — upcoming + zoom + previous results */
@@ -316,12 +320,41 @@ body {
     position: absolute;
     transform: translate(-50%, -50%);
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    min-width: 96px;
+    justify-content: center;
+    width: max-content;
+    max-width: none;
     text-align: center;
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+    pointer-events: none;
+}
+
+.krv-zoom-boat__anchor {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Lanes 1–4: info below hull; lanes 5–8: info above */
+.krv-zoom-boat--info-below {
+    flex-direction: column;
+    gap: 6px;
+}
+
+.krv-zoom-boat--info-above {
+    flex-direction: column-reverse;
+    gap: 6px;
+}
+
+/* Stagger info cards slightly toward course centre to reduce overlap */
+.krv-zoom-boat--info-right {
+    transform: translate(calc(-50% + 18px), -50%);
+}
+
+.krv-zoom-boat--info-left {
+    transform: translate(calc(-50% - 18px), -50%);
 }
 
 .krv-zoom-boat__hull {
@@ -356,19 +389,20 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
-    padding: 5px 10px 6px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, rgba(7, 20, 40, 0.88) 0%, rgba(0, 96, 191, 0.82) 100%);
+    gap: 0;
+    padding: 4px 8px 5px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(7, 20, 40, 0.92) 0%, rgba(0, 96, 191, 0.88) 100%);
     border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    min-width: 92px;
+    max-width: 108px;
+    flex-shrink: 0;
 }
 
 .krv-zoom-boat__rank {
     position: absolute;
-    top: -6px;
-    left: -6px;
+    top: -8px;
+    left: -8px;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -392,37 +426,53 @@ body {
 }
 
 .krv-zoom-boat__label {
-    max-width: 120px;
-    font-size: 11px;
+    max-width: 100px;
+    font-size: 10px;
     font-weight: 800;
     color: var(--kri-brand-white);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1.25;
 }
 
 .krv-zoom-boat__speed {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     color: #bae6fd;
+    line-height: 1.25;
 }
 
 .krv-zoom-boat__gap {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: rgba(255, 255, 255, 0.9);
+    line-height: 1.2;
 }
 
 /* SVG course styling */
+.krv-water-layer {
+    pointer-events: none;
+}
+
 .krv-course-water {
     pointer-events: none;
 }
 
 .krv-course-water-shine {
     pointer-events: none;
-    mix-blend-mode: soft-light;
+    opacity: 0.35;
+}
+
+.krv-course-water-ripple {
+    pointer-events: none;
+    opacity: 0.45;
+}
+
+.krv-course-water-ripple--slow {
+    opacity: 0.28;
 }
 
 .krv-course-frame {
@@ -448,16 +498,15 @@ body {
 
 .krv-zone {
     pointer-events: none;
-    mix-blend-mode: multiply;
 }
 
 .krv-zone--start,
 .krv-zone--finish {
-    fill: rgba(250, 204, 21, 0.32);
+    fill: rgba(250, 204, 21, 0.28);
 }
 
 .krv-zone--mid {
-    fill: rgba(251, 146, 60, 0.28);
+    fill: rgba(251, 146, 60, 0.22);
 }
 
 .krv-buoy {

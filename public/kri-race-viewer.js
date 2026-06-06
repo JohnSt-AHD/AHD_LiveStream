@@ -384,7 +384,6 @@
     }
 
     function svgDefs(scope = 'main') {
-        const clipId = `krvWaterClip-${scope}`;
         const p = (name) => `${name}-${scope}`;
         return (
             '<defs>' +
@@ -396,6 +395,15 @@
             `<pattern id="${p('krvWaterRipple')}" width="56" height="28" patternUnits="userSpaceOnUse">` +
             '<path d="M0 14 Q14 10 28 14 T56 14" fill="none" stroke="rgba(255,255,255,0.38)" stroke-width="1.1"/>' +
             '<path d="M0 21 Q14 17 28 21 T56 21" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.85"/>' +
+            '</pattern>' +
+            `<pattern id="${p('krvWaterRippleAnim')}" width="56" height="28" patternUnits="userSpaceOnUse">` +
+            '<path d="M0 14 Q14 10 28 14 T56 14" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="1.2"/>' +
+            '<path d="M0 21 Q14 17 28 21 T56 21" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="0.9"/>' +
+            '<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="56 0" dur="4.5s" repeatCount="indefinite"/>' +
+            '</pattern>' +
+            `<pattern id="${p('krvWaterRippleAnim2')}" width="48" height="24" patternUnits="userSpaceOnUse">` +
+            '<path d="M0 12 Q12 8 24 12 T48 12" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.9"/>' +
+            '<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="-48 0" dur="6.5s" repeatCount="indefinite"/>' +
             '</pattern>' +
             `<pattern id="${p('krvWaterTexture')}" width="96" height="48" patternUnits="userSpaceOnUse">` +
             `<rect width="96" height="48" fill="url(#${p('krvWaterBase')})"/>` +
@@ -415,7 +423,6 @@
             `<filter id="${p('krvCourseShadow')}" x="-4%" y="-8%" width="108%" height="120%">` +
             '<feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0c4a6e" flood-opacity="0.28"/>' +
             '</filter>' +
-            `<clipPath id="${clipId}"><rect id="${clipId}-rect"/></clipPath>` +
             `<pattern id="${p('krvChecker')}" width="10" height="10" patternUnits="userSpaceOnUse">` +
             '<rect width="5" height="5" fill="#1e40af"/>' +
             '<rect x="5" y="0" width="5" height="5" fill="#ffffff"/>' +
@@ -430,12 +437,17 @@
         const clipId = `krvWaterClip-${scope}`;
         const tex = `krvWaterTexture-${scope}`;
         const shine = `krvWaterShine-${scope}`;
+        const rippleAnim = `krvWaterRippleAnim-${scope}`;
+        const rippleAnim2 = `krvWaterRippleAnim2-${scope}`;
         const shadow = `krvCourseShadow-${scope}`;
         return (
-            `<rect id="${clipId}-rect" x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="${rx}"/>` +
-            `<g clip-path="url(#${clipId})">` +
+            `<clipPath id="${clipId}"><rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="${rx}"/></clipPath>` +
+            `<g clip-path="url(#${clipId})" class="krv-water-layer">` +
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="${rx}" fill="#7dd3fc"/>` +
             `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water ${frameCls}" rx="${rx}" fill="url(#${tex})"/>` +
             `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-shine ${frameCls}" rx="${rx}" fill="url(#${shine})"/>` +
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-ripple ${frameCls}" rx="${rx}" fill="url(#${rippleAnim})"/>` +
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-ripple krv-course-water-ripple--slow ${frameCls}" rx="${rx}" fill="url(#${rippleAnim2})"/>` +
             `</g>` +
             `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-frame ${frameCls}" rx="${rx}" fill="none" filter="url(#${shadow})"/>`
         );
@@ -732,11 +744,21 @@
         svg.dataset.layout = JSON.stringify({ w, h, padL, padR, padT, padB, chartW, chartH });
     }
 
+    function updateRaceLabel() {
+        const labelEl = $('krvRaceLabel');
+        if (!labelEl) return;
+        if (state.raceLabel) {
+            labelEl.hidden = false;
+            labelEl.textContent = state.raceLabel;
+        } else {
+            labelEl.hidden = true;
+        }
+    }
+
     function updateOverviewBoats(standings, tSec) {
         const svg = $('krvOverviewSvg');
         const clusterG = svg?.querySelector('#krvOverviewCluster');
         const boatsG = svg?.querySelector('#krvOverviewBoats');
-        const labelEl = $('krvRaceLabel');
         if (!svg || !clusterG || !boatsG) return;
 
         const layout = JSON.parse(svg.dataset.layout || '{}');
@@ -748,12 +770,7 @@
         clusterG.innerHTML =
             `<rect x="${x0}" y="${padT}" width="${Math.max(8, x1 - x0)}" height="${h - padT - padB}" class="krv-cluster-box" rx="8"/>`;
 
-        if (labelEl) {
-            labelEl.hidden = false;
-            labelEl.textContent = state.raceLabel;
-            labelEl.style.left = `${((x0 + x1) / 2 / w) * 100}%`;
-            labelEl.style.top = `${((padT - 6) / h) * 100}%`;
-        }
+        updateRaceLabel();
 
         boatsG.innerHTML = standings
             .map(({ boat, distance, idx }) => {
@@ -812,10 +829,14 @@
                 const logo = boat.logoUrl || LOGO_PLACEHOLDER;
                 const speedStr = `${speed.toFixed(1)} m/s`;
                 const toGoStr = rank === 0 ? `${toGo} m to go` : gap;
+                const vertCls = lane <= 4 ? 'below' : 'above';
+                const horizCls = lane % 2 === 1 ? 'right' : 'left';
                 return (
-                    `<div class="krv-zoom-boat" style="left:${xPct}%;top:${yPct}%" data-rank="${rank + 1}">` +
+                    `<div class="krv-zoom-boat krv-zoom-boat--info-${vertCls} krv-zoom-boat--info-${horizCls}" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
+                    `<div class="krv-zoom-boat__anchor">` +
                     `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
                     cartoonBoatMarkup(boat.color, logo) +
+                    `</div>` +
                     `<div class="krv-zoom-boat__info">` +
                     `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
                     `<span class="krv-zoom-boat__speed">${speedStr}</span>` +
@@ -955,6 +976,7 @@
         const prepared = chart.prepareChartState(data);
         state.chartState = applyRaceContextToState(prepared, raceContext);
         state.raceLabel = raceTitleLine(raceContext, data);
+        updateRaceLabel();
         renderLaneLabels();
         renderPreviousResults();
     }
