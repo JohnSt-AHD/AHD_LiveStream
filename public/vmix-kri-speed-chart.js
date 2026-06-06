@@ -621,6 +621,7 @@
         loadData,
         prepareChartState,
         applyRaceContext,
+        stateAtTime,
         liveStandings,
         formatGapFromLeader,
         getPlaybackDurationMs,

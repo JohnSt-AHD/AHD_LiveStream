@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+    <title>KRI — Race viewer</title>
+    <link rel="stylesheet" href="kri-race-viewer.css">
+</head>
+<body class="kri-race-viewer-page">
+    <div class="krv-stage" id="krvStage">
+        <img class="krv-logo" src="assets/kri/kri-logo.png" alt="" width="64" height="64">
+        <section class="krv-overview" aria-label="Course overview">
+            <svg class="krv-overview__svg" id="krvOverviewSvg" viewBox="0 0 1800 220" preserveAspectRatio="none"></svg>
+            <div class="krv-overview__race-label" id="krvRaceLabel" hidden></div>
+        </section>
+        <div class="krv-main">
+            <aside class="krv-upcoming" aria-label="Upcoming races">
+                <h2 class="krv-upcoming__title">Upcoming</h2>
+                <ul class="krv-upcoming__list" id="krvUpcomingList"></ul>
+            </aside>
+            <section class="krv-zoom" aria-label="Race close-up">
+                <svg class="krv-zoom__svg" id="krvZoomSvg" viewBox="0 0 1200 520" preserveAspectRatio="none"></svg>
+                <div class="krv-zoom__boats" id="krvZoomBoats"></div>
+            </section>
+        </div>
+        <p class="krv-status" id="krvStatus" hidden></p>
+    </div>
+    <script src="hub-csv.js"></script>
+    <script src="hub-live-race.js"></script>
+    <script src="vmix-kri-speed-chart.js"></script>
+    <script src="kri-race-viewer.js"></script>
+</body>
+</html>
