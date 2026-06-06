@@ -43,6 +43,15 @@ body {
     }
 }
 
+@keyframes vg-kri-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 .vg-bg {
     position: absolute;
     inset: 0;
@@ -60,7 +69,7 @@ body {
 
 /* KRI: PNG background fades in with text when hold starts */
 [data-vmix-theme='kri'] .vg-stage[data-vg-state='hold'] .vg-bg--visible.vg-bg--fade-in {
-    animation: vg-fade-in 0.85s ease forwards;
+    animation: vg-kri-fade-in 0.95s ease-out forwards;
 }
 
 /* KRI: PNG background + text fade out together on o */
@@ -1109,26 +1118,41 @@ body {
 
 /* KRI draw / results: cascade full lane rows (0.5s between each) */
 [data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in,
-[data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in {
+[data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in,
+[data-vmix-theme='kri'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in,
+[data-vmix-theme='kri'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in,
+[data-vmix-theme='kri'] .vg-layer--schedule.vg-layer--visible.vg-layer--fade-in {
     animation: none;
     opacity: 1;
     visibility: visible;
 }
 
-[data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-head,
-[data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-cols,
-[data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-kri-head,
-[data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-kri-cols,
+[data-vmix-theme='kri'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .vg-kri-panel,
+[data-vmix-theme='kri'] .vg-layer--schedule.vg-layer--visible.vg-layer--fade-in .vg-kri-panel,
+[data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-panel,
+[data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-kri-panel,
+[data-vmix-theme='kri'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-kri-lower-wrap {
+    opacity: 0;
+    animation: vg-kri-fade-in 0.95s ease-out forwards;
+}
+
+[data-vmix-theme='kri'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .vg-kri-logo,
+[data-vmix-theme='kri'] .vg-layer--schedule.vg-layer--visible.vg-layer--fade-in .vg-kri-logo,
+[data-vmix-theme='kri'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-kri-logo {
+    opacity: 0;
+    animation: vg-kri-fade-in 0.95s ease-out forwards;
+}
+
 [data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-logo,
 [data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-kri-logo {
     opacity: 0;
-    animation: vg-fade-in 0.65s ease forwards;
+    animation: vg-kri-fade-in 0.85s ease-out forwards;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-lanes .vg-lane,
 [data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-kri-lanes .vg-lane {
     opacity: 0;
-    animation: vg-fade-in 0.5s ease forwards;
+    animation: vg-kri-fade-in 0.65s ease-out forwards;
 }
 
 [data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-lanes .vg-lane-logo,

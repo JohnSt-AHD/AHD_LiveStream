@@ -1069,6 +1069,8 @@ function vgShowTextLayer(visible, opts = {}) {
     if (!layer) return;
     layer.classList.toggle('vg-layer--visible', visible);
     if (visible && opts.fadeIn) {
+        layer.classList.remove('vg-layer--fade-in');
+        void layer.offsetWidth;
         layer.classList.add('vg-layer--fade-in');
     }
     if (!visible) {
@@ -1399,8 +1401,16 @@ function vgStartIntroPlayback(isVideo, video) {
         return;
     }
 
-    vgShowBackground(!vgKriDefersBackgroundFade() && !vgKriUsesCssBackground());
+    const graphic = vgPlayback.graphic;
+    vgShowBackground(!vgKriDefersBackgroundFade() && !vgKriUsesCssBackground(graphic));
     vgShowTextLayer(false);
+
+    /* KRI CSS/PNG graphics: no blank intro wait — fade in on the next frame. */
+    if (vgIsKriTheme()) {
+        requestAnimationFrame(() => vgEnterHold());
+        return;
+    }
+
     vgPlayback.introTimer = setTimeout(() => vgEnterHold(), VG_HOLD_MS);
 }
 
