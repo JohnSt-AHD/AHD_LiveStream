@@ -351,14 +351,9 @@ body {
 .krv-zoom-boat {
     position: absolute;
     transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
     width: max-content;
     max-width: none;
-    text-align: center;
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
     pointer-events: none;
 }
 
@@ -381,28 +376,33 @@ body {
     top: 50%;
     left: 54%;
     transform: translate(-50%, -50%);
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
     background: rgba(255, 255, 255, 0.96);
     border-radius: 50%;
-    padding: 2px;
+    padding: 3px;
     border: 2px solid rgba(255, 255, 255, 0.95);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .krv-zoom-boat__info {
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0;
-    padding: 4px 8px 5px;
+    padding: 5px 10px 6px;
     border-radius: 8px;
-    background: linear-gradient(180deg, rgba(7, 20, 40, 0.92) 0%, rgba(0, 96, 191, 0.88) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-    max-width: 108px;
+    background: #ffffff;
+    border: 1px solid rgba(12, 31, 61, 0.12);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    max-width: 118px;
     flex-shrink: 0;
+    text-align: center;
 }
 
 .krv-zoom-boat__rank {
@@ -432,10 +432,10 @@ body {
 }
 
 .krv-zoom-boat__label {
-    max-width: 100px;
+    max-width: 110px;
     font-size: 10px;
     font-weight: 800;
-    color: var(--kri-brand-white);
+    color: #0c1f3d;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -446,7 +446,7 @@ body {
     font-size: 12px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-    color: #bae6fd;
+    color: #0060bf;
     line-height: 1.25;
 }
 
@@ -454,7 +454,7 @@ body {
     font-size: 10px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: rgba(255, 255, 255, 0.9);
+    color: #334155;
     line-height: 1.2;
 }
 
@@ -546,6 +546,13 @@ body {
     stroke-width: 1.25;
 }
 
+.krv-lane-info-box {
+    fill: #ffffff;
+    stroke: rgba(12, 31, 61, 0.14);
+    stroke-width: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+}
+
 .krv-lane-head {
     fill: rgba(255, 255, 255, 0.72);
     font-size: 10px;
@@ -562,12 +569,11 @@ body {
 }
 
 .krv-lane-label {
-    fill: rgba(255, 255, 255, 0.95);
+    fill: #0c1f3d;
     font-size: 10px;
     font-weight: 800;
     paint-order: stroke;
-    stroke: rgba(12, 31, 61, 0.5);
-    stroke-width: 2px;
+    stroke: none;
 }
 
 .krv-lane-label--zoom {
@@ -575,12 +581,11 @@ body {
 }
 
 .krv-lane-crew {
-    fill: rgba(224, 242, 254, 0.95);
+    fill: #334155;
     font-size: 9px;
     font-weight: 700;
     paint-order: stroke;
-    stroke: rgba(12, 31, 61, 0.4);
-    stroke-width: 1.5px;
+    stroke: none;
 }
 
 .krv-lane-crew--zoom {

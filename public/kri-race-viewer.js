@@ -16,6 +16,7 @@
     const ZONE_START_M = 100;
     const ZONE_FINISH_M = 250;
     const BUOY_SPACING_M = 20;
+    const LANE1_EXTRA_RATIO = 0.38;
 
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2,
@@ -634,22 +635,12 @@
         return padLeft + Math.max(0, Math.min(1, t)) * chartW;
     }
 
-    function zoneRectsHtml(padL, padT, chartW, chartH, minD = 0, maxD = COURSE_M) {
-        const from = Math.max(ZONE_START_M, minD);
-        const to = Math.min(COURSE_M - ZONE_FINISH_M, maxD);
-        if (to <= from) return '';
-        const x0 = padL + ((from - minD) / Math.max(1, maxD - minD)) * chartW;
-        const x1 = padL + ((to - minD) / Math.max(1, maxD - minD)) * chartW;
-        return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="krv-zone krv-zone--mid"/>`;
+    function zoneRectsHtml() {
+        return '';
     }
 
-    function zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD) {
-        const from = Math.max(ZONE_START_M, minD);
-        const to = Math.min(COURSE_M - ZONE_FINISH_M, maxD);
-        if (to <= from) return '';
-        const x0 = xMap(from, minD, maxD, w, padL, padR);
-        const x1 = xMap(to, minD, maxD, w, padL, padR);
-        return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="krv-zone krv-zone--mid"/>`;
+    function zoneRectsForWindow() {
+        return '';
     }
 
     function buoyFill(d, scope) {
@@ -727,10 +718,30 @@
         return { ...prepared, data, boats };
     }
 
-    function yMapLane(lane, height, padTop, padBottom) {
+    function computeLaneBands(height, padTop, padBottom) {
         const chartH = height - padTop - padBottom;
-        const laneH = chartH / LANE_COUNT;
-        return padTop + (lane - 0.5) * laneH;
+        const totalUnits = LANE_COUNT - 1 + (1 + LANE1_EXTRA_RATIO);
+        const unitH = chartH / totalUnits;
+        const heights = [];
+        for (let lane = 1; lane <= LANE_COUNT; lane++) {
+            heights.push(lane === 1 ? unitH * (1 + LANE1_EXTRA_RATIO) : unitH);
+        }
+        const tops = [padTop];
+        for (let i = 0; i < LANE_COUNT; i++) {
+            tops.push(tops[i] + heights[i]);
+        }
+        const centers = heights.map((laneH, i) => tops[i] + laneH / 2);
+        return { tops, centers, heights };
+    }
+
+    function yMapLane(lane, height, padTop, padBottom) {
+        const { centers } = computeLaneBands(height, padTop, padBottom);
+        return centers[lane - 1];
+    }
+
+    function laneDividerYs(height, padTop, padBottom) {
+        const { tops } = computeLaneBands(height, padTop, padBottom);
+        return tops.slice(1, LANE_COUNT);
     }
 
     function crewByLane() {
@@ -747,21 +758,28 @@
         const headCls = zoom ? 'krv-lane-head krv-lane-head--zoom' : 'krv-lane-head';
         const laneCls = zoom ? 'krv-lane-label krv-lane-label--zoom' : 'krv-lane-label';
         const crewCls = zoom ? 'krv-lane-crew krv-lane-crew--zoom' : 'krv-lane-crew';
-        const labelX = padL - 10;
+        const boxW = zoom ? 102 : 92;
+        const boxH = zoom ? 30 : 26;
+        const boxX = padL - boxW - 14;
+        const boxCx = boxX + boxW / 2;
         parts.push(
-            `<text x="${labelX}" y="${padT - 6}" class="${headCls}" text-anchor="end">Lane</text>`,
+            `<text x="${boxCx}" y="${padT - 6}" class="${headCls}" text-anchor="middle">Lane</text>`,
         );
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
             const y = yMapLane(lane, h, padT, padB);
             const crew = crews.get(lane);
-            parts.push(
-                `<text x="${labelX}" y="${y - 1}" class="${laneCls}" text-anchor="end">${lane}</text>`,
-            );
             const crewLabel = crew
                 ? escapeHtml(crew.shortLabel || crew.label || '')
                 : '—';
+            const boxY = y - boxH / 2;
             parts.push(
-                `<text x="${labelX}" y="${y + 10}" class="${crewCls}" text-anchor="end">${crewLabel}</text>`,
+                `<rect x="${boxX}" y="${boxY.toFixed(1)}" width="${boxW}" height="${boxH}" rx="5" class="krv-lane-info-box"/>`,
+            );
+            parts.push(
+                `<text x="${boxCx}" y="${(y - 3).toFixed(1)}" class="${laneCls}" text-anchor="middle">${lane}</text>`,
+            );
+            parts.push(
+                `<text x="${boxCx}" y="${(y + 10).toFixed(1)}" class="${crewCls}" text-anchor="middle">${crewLabel}</text>`,
             );
         }
         return parts.join('');
@@ -797,7 +815,7 @@
         if (!svg) return;
         const w = 1800;
         const h = 220;
-        const padL = 108;
+        const padL = 120;
         const padR = 48;
         const padT = 28;
         const padB = 24;
@@ -812,10 +830,9 @@
             startFinishHtml(padL, padT, chartH, chartW, padR, 0, COURSE_M, 'overview'),
         ];
 
-        for (let lane = 1; lane <= LANE_COUNT; lane++) {
-            const y = yMapLane(lane, h, padT, padB);
+        for (const y of laneDividerYs(h, padT, padB)) {
             parts.push(
-                `<line x1="${padL}" y1="${y}" x2="${padL + chartW}" y2="${y}" class="krv-lane-line"/>`,
+                `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + chartW}" y2="${y.toFixed(1)}" class="krv-lane-line"/>`,
             );
         }
 
@@ -845,7 +862,7 @@
         if (!svg) return;
         const w = 1200;
         const h = 520;
-        const padL = 96;
+        const padL = 132;
         const padR = 40;
         const padT = 36;
         const padB = 36;
@@ -857,10 +874,9 @@
             courseFrameHtml(padL, padT, chartW, chartH, 'zoom', 12, 'krv-course-frame--zoom'),
         ];
 
-        for (let lane = 1; lane <= LANE_COUNT; lane++) {
-            const y = yMapLane(lane, h, padT, padB);
+        for (const y of laneDividerYs(h, padT, padB)) {
             parts.push(
-                `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" class="krv-lane-line krv-lane-line--zoom"/>`,
+                `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w - padR}" y2="${y.toFixed(1)}" class="krv-lane-line krv-lane-line--zoom"/>`,
             );
         }
 
