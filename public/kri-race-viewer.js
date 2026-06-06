@@ -5,6 +5,9 @@
 (function (global) {
     const DATA_URL = 'data/kri-sample-wrcp1-m1x-h1.json';
     const COURSE_M = 2000;
+    const COURSE_PAD_M = 100;
+    const COURSE_VIEW_MIN_M = -COURSE_PAD_M;
+    const COURSE_VIEW_MAX_M = COURSE_M + COURSE_PAD_M;
     const LANE_COUNT = 8;
     const MARKERS_M = [0, 500, 1000, 1500, 2000];
     const LOGO_PLACEHOLDER = 'assets/school-logos/placeholder-white.svg';
@@ -377,11 +380,11 @@
 
     function zoomWindowTarget(standings) {
         const span = ZOOM_SPAN_M;
-        const pinnedStartCenter = span / 2;
-        const pinnedFinishCenter = COURSE_M - span / 2;
+        const pinnedStartCenter = COURSE_VIEW_MIN_M + span / 2;
+        const pinnedFinishCenter = COURSE_VIEW_MAX_M - span / 2;
 
         if (!standings.length) {
-            return { minD: 0, maxD: span, center: pinnedStartCenter };
+            return { minD: COURSE_VIEW_MIN_M, maxD: COURSE_VIEW_MIN_M + span, center: pinnedStartCenter };
         }
 
         const dists = standings.map((s) => s.distance);
@@ -416,13 +419,13 @@
         let minD = center - span / 2;
         let maxD = center + span / 2;
 
-        if (minD < 0) {
-            minD = 0;
-            maxD = span;
+        if (minD < COURSE_VIEW_MIN_M) {
+            minD = COURSE_VIEW_MIN_M;
+            maxD = COURSE_VIEW_MIN_M + span;
             center = pinnedStartCenter;
-        } else if (maxD > COURSE_M) {
-            maxD = COURSE_M;
-            minD = COURSE_M - span;
+        } else if (maxD > COURSE_VIEW_MAX_M) {
+            maxD = COURSE_VIEW_MAX_M;
+            minD = COURSE_VIEW_MAX_M - span;
             center = pinnedFinishCenter;
         }
 
@@ -431,25 +434,24 @@
 
     function smoothZoomWindow(target) {
         const span = ZOOM_SPAN_M;
-        let center = target.center;
 
         if (state.zoomCenter == null) {
-            state.zoomCenter = center;
+            state.zoomCenter = target.center;
         } else {
-            state.zoomCenter += (center - state.zoomCenter) * ZOOM_CENTER_SMOOTH;
+            state.zoomCenter += (target.center - state.zoomCenter) * ZOOM_CENTER_SMOOTH;
         }
 
         let minD = state.zoomCenter - span / 2;
         let maxD = state.zoomCenter + span / 2;
 
-        if (minD < 0) {
-            state.zoomCenter = span / 2;
-            minD = 0;
-            maxD = span;
-        } else if (maxD > COURSE_M) {
-            state.zoomCenter = COURSE_M - span / 2;
-            maxD = COURSE_M;
-            minD = COURSE_M - span;
+        if (minD < COURSE_VIEW_MIN_M) {
+            state.zoomCenter = COURSE_VIEW_MIN_M + span / 2;
+            minD = COURSE_VIEW_MIN_M;
+            maxD = COURSE_VIEW_MIN_M + span;
+        } else if (maxD > COURSE_VIEW_MAX_M) {
+            state.zoomCenter = COURSE_VIEW_MAX_M - span / 2;
+            maxD = COURSE_VIEW_MAX_M;
+            minD = COURSE_VIEW_MAX_M - span;
         }
 
         return { minD, maxD };
@@ -728,21 +730,18 @@
 
     function startFinishHtml(padL, padT, chartH, chartW, padR = 0, minD = 0, maxD = COURSE_M, scope = 'overview') {
         const w = padL + chartW + padR;
-        const xStart = maxD > minD && minD > 0 ? xMap(0, minD, maxD, w, padL, padR) : padL;
-        const xFinish =
-            maxD > minD && maxD < COURSE_M
-                ? xMap(COURSE_M, minD, maxD, w, padL, padR)
-                : padL + chartW;
-        const showStart = minD <= 0;
-        const showFinish = maxD >= COURSE_M;
+        const showStart = minD <= 0 && maxD >= 0;
+        const showFinish = minD <= COURSE_M && maxD >= COURSE_M;
         const parts = [];
         if (showStart) {
+            const xStart = xMap(0, minD, maxD, w, padL, padR);
             parts.push(
                 `<line x1="${xStart}" y1="${padT}" x2="${xStart}" y2="${padT + chartH}" class="krv-line-start"/>`,
                 `<text x="${xStart + 6}" y="${padT + 16}" class="krv-line-label krv-line-label--start">Start</text>`,
             );
         }
         if (showFinish) {
+            const xFinish = xMap(COURSE_M, minD, maxD, w, padL, padR);
             parts.push(
                 `<rect x="${xFinish - 6}" y="${padT}" width="12" height="${chartH}" fill="${checkerFill(scope)}" class="krv-finish-banner"/>`,
                 `<line x1="${xFinish}" y1="${padT}" x2="${xFinish}" y2="${padT + chartH}" class="krv-line-finish"/>`,
