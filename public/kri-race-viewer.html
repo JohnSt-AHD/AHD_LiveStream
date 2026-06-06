@@ -14,7 +14,10 @@
             <h1 class="krv-titlebar__title">Live Race Viewer</h1>
         </header>
         <section class="krv-overview" aria-label="Course overview">
-            <svg class="krv-overview__svg" id="krvOverviewSvg" viewBox="0 0 1800 220" preserveAspectRatio="none"></svg>
+            <div class="krv-water-stack">
+                <canvas class="krv-water-canvas" id="krvOverviewWater" aria-hidden="true"></canvas>
+                <svg class="krv-overview__svg" id="krvOverviewSvg" viewBox="0 0 1800 220" preserveAspectRatio="none"></svg>
+            </div>
         </section>
         <div class="krv-main">
             <aside class="krv-upcoming" aria-label="Upcoming races">
@@ -22,7 +25,10 @@
                 <ul class="krv-upcoming__list" id="krvUpcomingList"></ul>
             </aside>
             <section class="krv-zoom" aria-label="Race close-up">
-                <svg class="krv-zoom__svg" id="krvZoomSvg" viewBox="0 0 1200 520" preserveAspectRatio="none"></svg>
+                <div class="krv-water-stack">
+                    <canvas class="krv-water-canvas" id="krvZoomWater" aria-hidden="true"></canvas>
+                    <svg class="krv-zoom__svg" id="krvZoomSvg" viewBox="0 0 1200 520" preserveAspectRatio="none"></svg>
+                </div>
                 <div class="krv-zoom__boats" id="krvZoomBoats"></div>
             </section>
             <aside class="krv-previous" aria-label="Previous race results">

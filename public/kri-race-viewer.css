@@ -110,6 +110,31 @@ body {
     background: linear-gradient(180deg, rgba(0, 121, 209, 0.18) 0%, rgba(7, 20, 40, 0.35) 100%);
 }
 
+.krv-water-stack {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.krv-water-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.krv-water-stack > svg {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
 .krv-overview__svg {
     display: block;
     width: 100%;
@@ -302,6 +327,13 @@ body {
     padding: 16px 16px 24px 12px;
     border-right: 2px solid rgba(255, 255, 255, 0.12);
     background: linear-gradient(180deg, rgba(2, 132, 199, 0.12) 0%, rgba(7, 20, 40, 0.45) 100%);
+    display: flex;
+    flex-direction: column;
+}
+
+.krv-zoom .krv-water-stack {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .krv-zoom__svg {
@@ -453,31 +485,10 @@ body {
 }
 
 /* SVG course styling */
-.krv-water-layer {
-    pointer-events: none;
-}
-
-.krv-course-water {
-    pointer-events: none;
-}
-
-.krv-course-water-shine {
-    pointer-events: none;
-    opacity: 0.35;
-}
-
-.krv-course-water-ripple {
-    pointer-events: none;
-    opacity: 0.45;
-}
-
-.krv-course-water-ripple--slow {
-    opacity: 0.28;
-}
-
 .krv-course-frame {
     stroke: rgba(255, 255, 255, 0.72);
     stroke-width: 2.5;
+    fill: none;
 }
 
 .krv-course-frame--overview {

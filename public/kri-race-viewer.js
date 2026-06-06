@@ -33,6 +33,7 @@
         raceLabel: '',
         rafId: null,
         playbackStart: null,
+        waterRafId: null,
     };
 
     function $(id) {
@@ -387,35 +388,6 @@
         const p = (name) => `${name}-${scope}`;
         return (
             '<defs>' +
-            `<linearGradient id="${p('krvWaterBase')}" x1="0%" y1="0%" x2="100%" y2="100%">` +
-            '<stop offset="0%" stop-color="#cffafe"/>' +
-            '<stop offset="40%" stop-color="#7dd3fc"/>' +
-            '<stop offset="100%" stop-color="#0284c7"/>' +
-            '</linearGradient>' +
-            `<pattern id="${p('krvWaterRipple')}" width="56" height="28" patternUnits="userSpaceOnUse">` +
-            '<path d="M0 14 Q14 10 28 14 T56 14" fill="none" stroke="rgba(255,255,255,0.38)" stroke-width="1.1"/>' +
-            '<path d="M0 21 Q14 17 28 21 T56 21" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.85"/>' +
-            '</pattern>' +
-            `<pattern id="${p('krvWaterRippleAnim')}" width="56" height="28" patternUnits="userSpaceOnUse">` +
-            '<path d="M0 14 Q14 10 28 14 T56 14" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="1.2"/>' +
-            '<path d="M0 21 Q14 17 28 21 T56 21" fill="none" stroke="rgba(255,255,255,0.24)" stroke-width="0.9"/>' +
-            '<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="56 0" dur="4.5s" repeatCount="indefinite"/>' +
-            '</pattern>' +
-            `<pattern id="${p('krvWaterRippleAnim2')}" width="48" height="24" patternUnits="userSpaceOnUse">` +
-            '<path d="M0 12 Q12 8 24 12 T48 12" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.9"/>' +
-            '<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="-48 0" dur="6.5s" repeatCount="indefinite"/>' +
-            '</pattern>' +
-            `<pattern id="${p('krvWaterTexture')}" width="96" height="48" patternUnits="userSpaceOnUse">` +
-            `<rect width="96" height="48" fill="url(#${p('krvWaterBase')})"/>` +
-            `<rect width="96" height="48" fill="url(#${p('krvWaterRipple')})"/>` +
-            '<ellipse cx="28" cy="14" rx="22" ry="5" fill="rgba(255,255,255,0.16)"/>' +
-            '<ellipse cx="72" cy="34" rx="18" ry="4" fill="rgba(255,255,255,0.1)"/>' +
-            '</pattern>' +
-            `<linearGradient id="${p('krvWaterShine')}" x1="0%" y1="0%" x2="0%" y2="100%">` +
-            '<stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>' +
-            '<stop offset="45%" stop-color="rgba(255,255,255,0.04)"/>' +
-            '<stop offset="100%" stop-color="rgba(15,23,42,0.06)"/>' +
-            '</linearGradient>' +
             `<radialGradient id="${p('krvBuoyGrad')}" cx="35%" cy="30%" r="65%">` +
             '<stop offset="0%" stop-color="#fed7aa"/>' +
             '<stop offset="100%" stop-color="#ea580c"/>' +
@@ -433,24 +405,171 @@
         );
     }
 
-    function courseWaterHtml(padL, padT, chartW, chartH, scope, rx = 6, frameCls = '') {
-        const clipId = `krvWaterClip-${scope}`;
-        const tex = `krvWaterTexture-${scope}`;
-        const shine = `krvWaterShine-${scope}`;
-        const rippleAnim = `krvWaterRippleAnim-${scope}`;
-        const rippleAnim2 = `krvWaterRippleAnim2-${scope}`;
+    function courseFrameHtml(padL, padT, chartW, chartH, scope, rx = 6, frameCls = '') {
         const shadow = `krvCourseShadow-${scope}`;
         return (
-            `<clipPath id="${clipId}"><rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="${rx}"/></clipPath>` +
-            `<g clip-path="url(#${clipId})" class="krv-water-layer">` +
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="${rx}" fill="#7dd3fc"/>` +
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water ${frameCls}" rx="${rx}" fill="url(#${tex})"/>` +
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-shine ${frameCls}" rx="${rx}" fill="url(#${shine})"/>` +
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-ripple ${frameCls}" rx="${rx}" fill="url(#${rippleAnim})"/>` +
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-ripple krv-course-water-ripple--slow ${frameCls}" rx="${rx}" fill="url(#${rippleAnim2})"/>` +
-            `</g>` +
             `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-frame ${frameCls}" rx="${rx}" fill="none" filter="url(#${shadow})"/>`
         );
+    }
+
+    function roundRectPath(ctx, x, y, w, h, r) {
+        const rad = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + rad, y);
+        ctx.lineTo(x + w - rad, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+        ctx.lineTo(x + w, y + h - rad);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+        ctx.lineTo(x + rad, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+        ctx.lineTo(x, y + rad);
+        ctx.quadraticCurveTo(x, y, x + rad, y);
+        ctx.closePath();
+    }
+
+    function coursePixelRect(layout, pw, ph) {
+        const { padL, padT, chartW, chartH, w, h, rx = 6 } = layout;
+        const sx = pw / w;
+        const sy = ph / h;
+        return {
+            x: padL * sx,
+            y: padT * sy,
+            w: chartW * sx,
+            h: chartH * sy,
+            r: rx * Math.min(sx, sy),
+        };
+    }
+
+    function drawLakeWater(ctx, pw, ph, layout, timeSec) {
+        const { x, y, w, h, r } = coursePixelRect(layout, pw, ph);
+        if (w < 2 || h < 2) return;
+
+        ctx.save();
+        roundRectPath(ctx, x, y, w, h, r);
+        ctx.clip();
+
+        const depth = ctx.createLinearGradient(0, y, 0, y + h);
+        depth.addColorStop(0, '#7ec8ea');
+        depth.addColorStop(0.18, '#55aed8');
+        depth.addColorStop(0.45, '#3d94c4');
+        depth.addColorStop(0.72, '#2a7aab');
+        depth.addColorStop(1, '#1a5580');
+        ctx.fillStyle = depth;
+        ctx.fillRect(x, y, w, h);
+
+        const sunGlare = ctx.createLinearGradient(x, y, x + w * 0.35, y + h * 0.25);
+        sunGlare.addColorStop(0, 'rgba(255,255,255,0.22)');
+        sunGlare.addColorStop(0.45, 'rgba(200,235,255,0.08)');
+        sunGlare.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = sunGlare;
+        ctx.fillRect(x, y, w, h);
+
+        const bandCount = Math.max(10, Math.floor(h / 16));
+        for (let i = 0; i < bandCount; i++) {
+            const row = (i + 0.5) / bandCount;
+            const yMid = y + h * row;
+            ctx.beginPath();
+            for (let px = 0; px <= w; px += 3) {
+                const wx = x + px;
+                const wave =
+                    Math.sin(px * 0.022 + timeSec * 1.15 + i * 0.62) * 2.4 +
+                    Math.sin(px * 0.009 - timeSec * 0.72 + i * 1.05) * 3.8 +
+                    Math.cos(px * 0.005 + timeSec * 0.38) * 1.6;
+                const wy = yMid + wave;
+                if (px === 0) ctx.moveTo(wx, wy);
+                else ctx.lineTo(wx, wy);
+            }
+            ctx.strokeStyle = `rgba(255,255,255,${0.035 + (i % 3) * 0.012})`;
+            ctx.lineWidth = 1.1;
+            ctx.stroke();
+        }
+
+        for (let i = 0; i < bandCount; i++) {
+            const row = (i + 0.35) / bandCount;
+            const yMid = y + h * row + 4;
+            ctx.beginPath();
+            for (let px = 0; px <= w; px += 4) {
+                const wx = x + px;
+                const wave =
+                    Math.sin(px * 0.016 - timeSec * 0.95 + i * 0.8) * 2.8 +
+                    Math.sin(px * 0.007 + timeSec * 0.55 + i * 0.4) * 2.2;
+                const wy = yMid + wave;
+                if (px === 0) ctx.moveTo(wx, wy);
+                else ctx.lineTo(wx, wy);
+            }
+            ctx.strokeStyle = 'rgba(8, 47, 73, 0.04)';
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+        }
+
+        for (let b = 0; b < 6; b++) {
+            const bandY = y + ((timeSec * 14 + b * (h / 6)) % h);
+            const spec = ctx.createLinearGradient(x, bandY - 28, x, bandY + 28);
+            spec.addColorStop(0, 'rgba(255,255,255,0)');
+            spec.addColorStop(0.42, 'rgba(186,230,253,0.1)');
+            spec.addColorStop(0.5, 'rgba(255,255,255,0.16)');
+            spec.addColorStop(0.58, 'rgba(186,230,253,0.08)');
+            spec.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = spec;
+            ctx.fillRect(x, bandY - 28, w, 56);
+        }
+
+        const sparkleCount = Math.floor((w * h) / 9000);
+        for (let s = 0; s < sparkleCount; s++) {
+            const seed = s * 17.17 + Math.floor(timeSec * 3);
+            const sx = x + ((seed * 73) % 1000) / 1000 * w;
+            const sy = y + (((seed + 41) * 59) % 1000) / 1000 * h;
+            const pulse = 0.35 + 0.65 * Math.sin(timeSec * 2.4 + seed);
+            if (pulse < 0.55) continue;
+            ctx.fillStyle = `rgba(255,255,255,${0.08 * pulse})`;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, 2.2 * pulse, 0.9 * pulse, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    function syncWaterCanvas(canvas, layout) {
+        if (!canvas || !layout) return;
+        const stack = canvas.parentElement;
+        if (!stack) return;
+        const rect = stack.getBoundingClientRect();
+        const dpr = Math.min(global.devicePixelRatio || 1, 2);
+        const pw = Math.max(1, Math.floor(rect.width * dpr));
+        const ph = Math.max(1, Math.floor(rect.height * dpr));
+        if (canvas.width !== pw || canvas.height !== ph) {
+            canvas.width = pw;
+            canvas.height = ph;
+        }
+        canvas.dataset.waterLayout = JSON.stringify(layout);
+    }
+
+    function paintWaterCanvas(canvas, timeSec) {
+        if (!canvas) return;
+        const layout = JSON.parse(canvas.dataset.waterLayout || 'null');
+        if (!layout) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawLakeWater(ctx, canvas.width, canvas.height, layout, timeSec);
+    }
+
+    function waterAnimationTick(ts) {
+        const timeSec = ts / 1000;
+        const overviewLayout = JSON.parse($('krvOverviewSvg')?.dataset.layout || 'null');
+        const zoomLayout = JSON.parse($('krvZoomSvg')?.dataset.layout || 'null');
+        syncWaterCanvas($('krvOverviewWater'), overviewLayout);
+        syncWaterCanvas($('krvZoomWater'), zoomLayout);
+        paintWaterCanvas($('krvOverviewWater'), timeSec);
+        paintWaterCanvas($('krvZoomWater'), timeSec);
+        state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
+    }
+
+    function startWaterAnimation() {
+        if (state.waterRafId) global.cancelAnimationFrame(state.waterRafId);
+        state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
     }
 
     function checkerFill(scope) {
@@ -682,7 +801,7 @@
 
         const parts = [
             svgDefs('overview'),
-            courseWaterHtml(padL, padT, chartW, chartH, 'overview', 8, 'krv-course-frame--overview'),
+            courseFrameHtml(padL, padT, chartW, chartH, 'overview', 8, 'krv-course-frame--overview'),
             zoneRectsHtml(padL, padT, chartW, chartH),
             buoysHtml(h, padL, padT, padB, chartW, 0, COURSE_M, padR, null, 'overview'),
             startFinishHtml(padL, padT, chartH, chartW, padR, 0, COURSE_M, 'overview'),
@@ -711,7 +830,9 @@
         parts.push('<g id="krvOverviewBoats"></g>');
 
         svg.innerHTML = parts.join('');
-        svg.dataset.layout = JSON.stringify({ w, h, padL, padR, padT, padB, chartW, chartH });
+        const overviewLayout = { w, h, padL, padR, padT, padB, chartW, chartH, rx: 8 };
+        svg.dataset.layout = JSON.stringify(overviewLayout);
+        syncWaterCanvas($('krvOverviewWater'), overviewLayout);
     }
 
     function renderZoomStatic() {
@@ -728,7 +849,7 @@
 
         const parts = [
             svgDefs('zoom'),
-            courseWaterHtml(padL, padT, chartW, chartH, 'zoom', 12, 'krv-course-frame--zoom'),
+            courseFrameHtml(padL, padT, chartW, chartH, 'zoom', 12, 'krv-course-frame--zoom'),
         ];
 
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -741,7 +862,9 @@
         parts.push('<g id="krvZoomLaneLabels"></g>');
         parts.push('<g id="krvZoomCourse"></g>');
         svg.innerHTML = parts.join('');
-        svg.dataset.layout = JSON.stringify({ w, h, padL, padR, padT, padB, chartW, chartH });
+        const zoomLayout = { w, h, padL, padR, padT, padB, chartW, chartH, rx: 12 };
+        svg.dataset.layout = JSON.stringify(zoomLayout);
+        syncWaterCanvas($('krvZoomWater'), zoomLayout);
     }
 
     function updateRaceLabel() {
@@ -993,6 +1116,7 @@
             renderPreviousResults();
             renderFrame(0);
             startPlayback();
+            startWaterAnimation();
             if (status) status.hidden = true;
         } catch (err) {
             if (status) {
