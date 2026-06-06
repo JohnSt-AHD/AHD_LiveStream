@@ -754,13 +754,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Align event title block with lane list (head is outside draw-body transform). */
-[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-head,
-[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-head,
-[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-head {
-    transform: translate(-100px, -100px);
-}
-
 [data-vmix-theme='kri'] .vg-kri-kicker {
     margin: 0 0 8px;
     font-size: 14px;
