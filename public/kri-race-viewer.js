@@ -27,6 +27,8 @@
     const state = {
         lookup: null,
         races: [],
+        results: new Map(),
+        raceContext: null,
         chartState: null,
         raceLabel: '',
         rafId: null,
@@ -215,6 +217,28 @@
         return races;
     }
 
+    function parseResultsCsv(text) {
+        const map = new Map();
+        for (const line of text.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || !/^\d/.test(trimmed)) continue;
+            const cols = parseCsvLine(trimmed);
+            const raceNum = parseInt(cols[0], 10);
+            if (!Number.isFinite(raceNum)) continue;
+            const placings = [];
+            for (let i = 6; i + 2 < cols.length; i += 3) {
+                const place = parseInt(cols[i], 10);
+                const competitor = cols[i + 1].trim();
+                const time = cols[i + 2].trim();
+                if (!Number.isFinite(place) || !competitor) continue;
+                placings.push({ place, competitor, time });
+            }
+            placings.sort((a, b) => a.place - b.place);
+            map.set(raceNum, { status: cols[5]?.trim() || '', placings });
+        }
+        return map;
+    }
+
     function lookupToken(map, key) {
         if (!map || !key) return key;
         const hit = map[String(key).toLowerCase()];
@@ -260,6 +284,23 @@
             return state.races.find((r) => r.raceNum === num) || state.races[0];
         }
         return state.races[0];
+    }
+
+    function findPreviousRace() {
+        const current = findRace(getRaceParam());
+        if (!current || !state.races.length) return null;
+        let idx = state.races.findIndex((r) => r.race === current.race);
+        if (idx < 0) idx = state.races.findIndex((r) => r.raceNum === current.raceNum);
+        if (idx > 0) return state.races[idx - 1];
+        if (Number.isFinite(current.raceNum)) {
+            let prev = null;
+            for (const r of state.races) {
+                if (r.raceNum < current.raceNum) prev = r;
+                else break;
+            }
+            return prev;
+        }
+        return null;
     }
 
     function buildRaceContext() {
@@ -478,12 +519,71 @@
         return padTop + (lane - 0.5) * laneH;
     }
 
+    function crewByLane() {
+        const map = new Map();
+        const lanes = state.raceContext?.lanes;
+        if (!lanes?.length) return map;
+        for (const entry of lanes) map.set(entry.lane, entry);
+        return map;
+    }
+
+    function laneLabelsSvgHtml(h, padL, padT, padB, zoom = false) {
+        const crews = crewByLane();
+        const parts = [];
+        const headCls = zoom ? 'krv-lane-head krv-lane-head--zoom' : 'krv-lane-head';
+        const laneCls = zoom ? 'krv-lane-label krv-lane-label--zoom' : 'krv-lane-label';
+        const crewCls = zoom ? 'krv-lane-crew krv-lane-crew--zoom' : 'krv-lane-crew';
+        const labelX = padL - 10;
+        parts.push(
+            `<text x="${labelX}" y="${padT - 6}" class="${headCls}" text-anchor="end">Lane</text>`,
+        );
+        for (let lane = 1; lane <= LANE_COUNT; lane++) {
+            const y = yMapLane(lane, h, padT, padB);
+            const crew = crews.get(lane);
+            parts.push(
+                `<text x="${labelX}" y="${y - 1}" class="${laneCls}" text-anchor="end">${lane}</text>`,
+            );
+            const crewLabel = crew
+                ? escapeHtml(crew.shortLabel || crew.label || '')
+                : '—';
+            parts.push(
+                `<text x="${labelX}" y="${y + 10}" class="${crewCls}" text-anchor="end">${crewLabel}</text>`,
+            );
+        }
+        return parts.join('');
+    }
+
+    function renderLaneLabels() {
+        const overviewG = $('krvOverviewSvg')?.querySelector('#krvOverviewLaneLabels');
+        const zoomG = $('krvZoomSvg')?.querySelector('#krvZoomLaneLabels');
+        if (overviewG) {
+            const layout = JSON.parse($('krvOverviewSvg').dataset.layout || '{}');
+            overviewG.innerHTML = laneLabelsSvgHtml(
+                layout.h,
+                layout.padL,
+                layout.padT,
+                layout.padB,
+                false,
+            );
+        }
+        if (zoomG) {
+            const layout = JSON.parse($('krvZoomSvg').dataset.layout || '{}');
+            zoomG.innerHTML = laneLabelsSvgHtml(
+                layout.h,
+                layout.padL,
+                layout.padT,
+                layout.padB,
+                true,
+            );
+        }
+    }
+
     function renderOverviewStatic() {
         const svg = $('krvOverviewSvg');
         if (!svg) return;
         const w = 1800;
         const h = 220;
-        const padL = 72;
+        const padL = 108;
         const padR = 48;
         const padT = 28;
         const padB = 24;
@@ -503,10 +603,9 @@
             parts.push(
                 `<line x1="${padL}" y1="${y}" x2="${padL + chartW}" y2="${y}" class="krv-lane-line"/>`,
             );
-            parts.push(
-                `<text x="${padL - 10}" y="${y + 5}" class="krv-lane-label" text-anchor="end">${lane}</text>`,
-            );
         }
+
+        parts.push('<g id="krvOverviewLaneLabels"></g>');
 
         for (const dist of MARKERS_M) {
             const x = padL + (dist / COURSE_M) * chartW;
@@ -530,7 +629,7 @@
         if (!svg) return;
         const w = 1200;
         const h = 520;
-        const padL = 56;
+        const padL = 96;
         const padR = 40;
         const padT = 36;
         const padB = 36;
@@ -547,11 +646,9 @@
             parts.push(
                 `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" class="krv-lane-line krv-lane-line--zoom"/>`,
             );
-            parts.push(
-                `<text x="${padL - 12}" y="${y + 6}" class="krv-lane-label krv-lane-label--zoom" text-anchor="end">${lane}</text>`,
-            );
         }
 
+        parts.push('<g id="krvZoomLaneLabels"></g>');
         parts.push('<g id="krvZoomCourse"></g>');
         svg.innerHTML = parts.join('');
         svg.dataset.layout = JSON.stringify({ w, h, padL, padR, padT, padB, chartW, chartH });
@@ -676,6 +773,47 @@
             .join('');
     }
 
+    function renderPreviousResults() {
+        const metaEl = $('krvPreviousMeta');
+        const list = $('krvPreviousList');
+        if (!metaEl || !list) return;
+
+        const prevRace = findPreviousRace();
+        if (!prevRace) {
+            metaEl.textContent = 'No previous race';
+            list.innerHTML = '<li class="krv-previous__empty">—</li>';
+            return;
+        }
+
+        const event = expandEventName(prevRace.eventType, state.lookup);
+        const round = [prevRace.round, prevRace.division ? `Div ${prevRace.division}` : '']
+            .filter(Boolean)
+            .join(' · ');
+        metaEl.textContent = [`Race ${prevRace.race}`, event, round].filter(Boolean).join(' · ');
+
+        const result = state.results.get(prevRace.raceNum);
+        if (!result?.placings?.length) {
+            list.innerHTML = '<li class="krv-previous__empty">Results not available</li>';
+            return;
+        }
+
+        list.innerHTML = result.placings
+            .map((p) => {
+                const club = parseClubCode(p.competitor);
+                const info = clubInfo(club.id, state.lookup);
+                const logo = info.logoUrl || LOGO_PLACEHOLDER;
+                return (
+                    `<li class="krv-previous__row">` +
+                    `<span class="krv-previous__place">${p.place}</span>` +
+                    `<img class="krv-previous__logo" src="${escapeHtml(logo)}" alt="">` +
+                    `<span class="krv-previous__name">${escapeHtml(info.name)}</span>` +
+                    `<span class="krv-previous__time">${escapeHtml(p.time || '—')}</span>` +
+                    `</li>`
+                );
+            })
+            .join('');
+    }
+
     function renderFrame(tSec) {
         if (!state.chartState) return;
         const standings = global.KriVmixSpeedChart.liveStandings(state.chartState.boats, tSec);
@@ -710,15 +848,21 @@
         const daysheetUrl = hub?.buildCsvUrl
             ? hub.buildCsvUrl(code, 'daysheet')
             : `https://l.rowit.nz/altitude/${code}/daysheet.csv`;
+        const resultsUrl = hub?.buildCsvUrl
+            ? hub.buildCsvUrl(code, 'results')
+            : `https://l.rowit.nz/altitude/${code}/results.csv`;
 
-        const [lookup, daysheetText] = await Promise.all([
+        const [lookup, daysheetText, resultsText] = await Promise.all([
             fetch('data/ahd-lookup.json').then((r) => (r.ok ? r.json() : null)),
             fetchCsv(daysheetUrl).catch(() => ''),
+            fetchCsv(resultsUrl).catch(() => ''),
         ]);
 
         state.lookup = lookup;
         state.races = daysheetText ? parseDaysheet(daysheetText) : [];
+        state.results = resultsText ? parseResultsCsv(resultsText) : new Map();
         renderUpcoming();
+        renderPreviousResults();
     }
 
     async function loadRaceTraces() {
@@ -727,9 +871,12 @@
 
         const data = await chart.loadData(getDataUrl());
         const raceContext = buildRaceContext();
+        state.raceContext = raceContext;
         const prepared = chart.prepareChartState(data);
         state.chartState = applyRaceContextToState(prepared, raceContext);
         state.raceLabel = raceTitleLine(raceContext, data);
+        renderLaneLabels();
+        renderPreviousResults();
     }
 
     async function init() {
@@ -740,6 +887,8 @@
             await loadRegattaData();
             await loadRaceTraces();
             renderUpcoming();
+            renderLaneLabels();
+            renderPreviousResults();
             renderFrame(0);
             startPlayback();
             if (status) status.hidden = true;
@@ -757,6 +906,8 @@
             .then(() => loadRaceTraces())
             .then(() => {
                 renderUpcoming();
+                renderLaneLabels();
+                renderPreviousResults();
                 renderFrame(playbackTimeSec(performance.now()));
             })
             .catch(() => {});
@@ -765,7 +916,10 @@
     global.document.addEventListener('DOMContentLoaded', () => {
         init();
         global.document.addEventListener('altitudehd:liverace', onLiveRaceChange);
-        global.document.addEventListener('altitudehd:schedule', () => renderUpcoming());
+        global.document.addEventListener('altitudehd:schedule', () => {
+            renderUpcoming();
+            renderPreviousResults();
+        });
     });
 
     global.KriRaceViewer = { init, reload: init };

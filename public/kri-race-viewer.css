@@ -112,12 +112,12 @@ body {
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* Bottom 75% — zoom + upcoming */
+/* Bottom 75% — upcoming + zoom + previous results */
 .krv-main {
     flex: 1 1 75%;
     min-height: 0;
     display: grid;
-    grid-template-columns: 360px minmax(0, 1fr);
+    grid-template-columns: 360px minmax(0, 1fr) 300px;
     gap: 0;
 }
 
@@ -202,10 +202,101 @@ body {
     padding: 12px 0;
 }
 
+.krv-previous {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 20px 20px 24px 16px;
+    background: var(--kri-panel-bg);
+    border-left: 2px solid rgba(255, 255, 255, 0.28);
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.krv-previous__title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.krv-previous__meta {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--kri-text-dark);
+}
+
+.krv-previous__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+}
+
+.krv-previous__row {
+    display: grid;
+    grid-template-columns: 28px 36px minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--kri-text-dark);
+}
+
+.krv-previous__place {
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--kri-brand-blue-dark);
+    text-align: center;
+}
+
+.krv-previous__logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.krv-previous__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.krv-previous__time {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: rgba(12, 31, 61, 0.78);
+    white-space: nowrap;
+}
+
+.krv-previous__empty {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.65);
+    padding: 8px 0;
+}
+
 .krv-zoom {
     position: relative;
     min-height: 0;
-    padding: 16px 28px 24px 16px;
+    padding: 16px 16px 24px 12px;
+    border-right: 2px solid rgba(255, 255, 255, 0.12);
 }
 
 .krv-zoom__svg {
@@ -216,7 +307,7 @@ body {
 
 .krv-zoom__boats {
     position: absolute;
-    inset: 16px 28px 24px 16px;
+    inset: 16px 16px 24px 12px;
     pointer-events: none;
 }
 
@@ -353,15 +444,38 @@ body {
     stroke-width: 1.5;
 }
 
-.krv-lane-label {
-    fill: rgba(12, 31, 61, 0.55);
+.krv-lane-head {
+    fill: rgba(12, 31, 61, 0.45);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.krv-lane-head--zoom {
     font-size: 11px;
-    font-weight: 700;
+}
+
+.krv-lane-label {
+    fill: rgba(12, 31, 61, 0.72);
+    font-size: 10px;
+    font-weight: 800;
 }
 
 .krv-lane-label--zoom {
-    fill: rgba(12, 31, 61, 0.65);
-    font-size: 13px;
+    fill: rgba(12, 31, 61, 0.78);
+    font-size: 11px;
+}
+
+.krv-lane-crew {
+    fill: rgba(12, 31, 61, 0.55);
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.krv-lane-crew--zoom {
+    fill: rgba(12, 31, 61, 0.62);
+    font-size: 10px;
 }
 
 .krv-marker-line {
