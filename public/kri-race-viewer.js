@@ -370,8 +370,29 @@
     }
 
     function zoomWindow(standings) {
-        const leaderD = standings[0]?.distance ?? 0;
-        const lastD = standings[standings.length - 1]?.distance ?? 0;
+        if (!standings.length) {
+            return { minD: 0, maxD: 200 };
+        }
+        const dists = standings.map((s) => s.distance);
+        const leaderD = dists[0];
+        const packMin = Math.min(...dists);
+        const packMax = Math.max(...dists);
+        const packCenter = (packMin + packMax) / 2;
+        const nearStart = leaderD <= ZONE_START_M + 50;
+        const nearFinish = leaderD >= COURSE_M - ZONE_FINISH_M - 50;
+
+        if (nearStart || nearFinish) {
+            const halfWin = Math.max(90, (packMax - packMin) / 2 + 50);
+            let minD = Math.max(0, packCenter - halfWin);
+            let maxD = Math.min(COURSE_M, packCenter + halfWin);
+            if (maxD - minD < 130) {
+                minD = Math.max(0, packCenter - 65);
+                maxD = Math.min(COURSE_M, minD + 130);
+            }
+            return { minD, maxD };
+        }
+
+        const lastD = dists[dists.length - 1];
         const minD = Math.max(0, lastD - ZOOM_TRAIL_M);
         const maxD = Math.min(COURSE_M, leaderD + ZOOM_LEAD_M);
         if (maxD - minD < 120) {
@@ -391,6 +412,10 @@
             `<radialGradient id="${p('krvBuoyGrad')}" cx="35%" cy="30%" r="65%">` +
             '<stop offset="0%" stop-color="#fed7aa"/>' +
             '<stop offset="100%" stop-color="#ea580c"/>' +
+            '</radialGradient>' +
+            `<radialGradient id="${p('krvBuoyGradYellow')}" cx="35%" cy="30%" r="65%">` +
+            '<stop offset="0%" stop-color="#fef08a"/>' +
+            '<stop offset="100%" stop-color="#eab308"/>' +
             '</radialGradient>' +
             `<filter id="${p('krvCourseShadow')}" x="-4%" y="-8%" width="108%" height="120%">` +
             '<feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0c4a6e" flood-opacity="0.28"/>' +
@@ -464,19 +489,20 @@
         ctx.fillStyle = sunGlare;
         ctx.fillRect(x, y, w, h);
 
-        const bandCount = Math.max(10, Math.floor(h / 16));
-        for (let i = 0; i < bandCount; i++) {
-            const row = (i + 0.5) / bandCount;
-            const yMid = y + h * row;
+        // Vertical ripples travelling right → left (across the course)
+        const colCount = Math.max(8, Math.floor(w / 14));
+        for (let i = 0; i < colCount; i++) {
+            const col = (i + 0.5) / colCount;
+            const xMid = x + w * col;
             ctx.beginPath();
-            for (let px = 0; px <= w; px += 3) {
-                const wx = x + px;
+            for (let py = 0; py <= h; py += 3) {
+                const wy = y + py;
                 const wave =
-                    Math.sin(px * 0.022 + timeSec * 1.15 + i * 0.62) * 2.4 +
-                    Math.sin(px * 0.009 - timeSec * 0.72 + i * 1.05) * 3.8 +
-                    Math.cos(px * 0.005 + timeSec * 0.38) * 1.6;
-                const wy = yMid + wave;
-                if (px === 0) ctx.moveTo(wx, wy);
+                    Math.sin(py * 0.024 - timeSec * 1.2 + i * 0.58) * 2.6 +
+                    Math.sin(py * 0.01 + timeSec * 0.68 + i * 1.02) * 3.6 +
+                    Math.cos(py * 0.006 - timeSec * 0.42) * 1.5;
+                const wx = xMid + wave;
+                if (py === 0) ctx.moveTo(wx, wy);
                 else ctx.lineTo(wx, wy);
             }
             ctx.strokeStyle = `rgba(255,255,255,${0.035 + (i % 3) * 0.012})`;
@@ -484,40 +510,42 @@
             ctx.stroke();
         }
 
-        for (let i = 0; i < bandCount; i++) {
-            const row = (i + 0.35) / bandCount;
-            const yMid = y + h * row + 4;
+        for (let i = 0; i < colCount; i++) {
+            const col = (i + 0.35) / colCount;
+            const xMid = x + w * col;
             ctx.beginPath();
-            for (let px = 0; px <= w; px += 4) {
-                const wx = x + px;
+            for (let py = 0; py <= h; py += 4) {
+                const wy = y + py;
                 const wave =
-                    Math.sin(px * 0.016 - timeSec * 0.95 + i * 0.8) * 2.8 +
-                    Math.sin(px * 0.007 + timeSec * 0.55 + i * 0.4) * 2.2;
-                const wy = yMid + wave;
-                if (px === 0) ctx.moveTo(wx, wy);
+                    Math.sin(py * 0.017 + timeSec * 0.88 + i * 0.75) * 2.6 +
+                    Math.sin(py * 0.008 - timeSec * 0.5 + i * 0.38) * 2.0;
+                const wx = xMid + wave;
+                if (py === 0) ctx.moveTo(wx, wy);
                 else ctx.lineTo(wx, wy);
             }
             ctx.strokeStyle = 'rgba(8, 47, 73, 0.04)';
-            ctx.lineWidth = 1.4;
+            ctx.lineWidth = 1.3;
             ctx.stroke();
         }
 
-        for (let b = 0; b < 6; b++) {
-            const bandY = y + ((timeSec * 14 + b * (h / 6)) % h);
-            const spec = ctx.createLinearGradient(x, bandY - 28, x, bandY + 28);
+        for (let b = 0; b < 5; b++) {
+            const drift = (timeSec * 22 + b * (w / 5)) % (w + 80);
+            const bandX = x + w - drift;
+            const spec = ctx.createLinearGradient(bandX - 24, y, bandX + 24, y);
             spec.addColorStop(0, 'rgba(255,255,255,0)');
-            spec.addColorStop(0.42, 'rgba(186,230,253,0.1)');
-            spec.addColorStop(0.5, 'rgba(255,255,255,0.16)');
-            spec.addColorStop(0.58, 'rgba(186,230,253,0.08)');
+            spec.addColorStop(0.45, 'rgba(186,230,253,0.1)');
+            spec.addColorStop(0.5, 'rgba(255,255,255,0.14)');
+            spec.addColorStop(0.55, 'rgba(186,230,253,0.08)');
             spec.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = spec;
-            ctx.fillRect(x, bandY - 28, w, 56);
+            ctx.fillRect(bandX - 24, y, 48, h);
         }
 
         const sparkleCount = Math.floor((w * h) / 9000);
         for (let s = 0; s < sparkleCount; s++) {
             const seed = s * 17.17 + Math.floor(timeSec * 3);
-            const sx = x + ((seed * 73) % 1000) / 1000 * w;
+            const drift = (timeSec * 18 + seed * 0.7) % w;
+            const sx = x + w - drift;
             const sy = y + (((seed + 41) * 59) % 1000) / 1000 * h;
             const pulse = 0.35 + 0.65 * Math.sin(timeSec * 2.4 + seed);
             if (pulse < 0.55) continue;
@@ -590,22 +618,9 @@
 
     function boatShapeHtml(color) {
         return (
-            `<g class="krv-boat-shape" transform="scale(0.55) translate(-24,-12)">` +
+            `<g class="krv-boat-shape" transform="scale(0.72) translate(-24,-12)">` +
             cartoonBoatPaths(color) +
             `</g>`
-        );
-    }
-
-    function cartoonBoatMarkup(color, logoUrl) {
-        const hull = color || '#38bdf8';
-        const logo = logoUrl || LOGO_PLACEHOLDER;
-        return (
-            `<div class="krv-zoom-boat__hull">` +
-            `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="64" height="32" aria-hidden="true">` +
-            cartoonBoatPaths(hull) +
-            `</svg>` +
-            `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="">` +
-            `</div>`
         );
     }
 
@@ -620,43 +635,31 @@
     }
 
     function zoneRectsHtml(padL, padT, chartW, chartH, minD = 0, maxD = COURSE_M) {
-        const zones = [
-            { from: 0, to: ZONE_START_M, cls: 'krv-zone krv-zone--start' },
-            { from: ZONE_START_M, to: COURSE_M - ZONE_FINISH_M, cls: 'krv-zone krv-zone--mid' },
-            { from: COURSE_M - ZONE_FINISH_M, to: COURSE_M, cls: 'krv-zone krv-zone--finish' },
-        ];
-        return zones
-            .map(({ from, to, cls }) => {
-                const a = Math.max(from, minD);
-                const b = Math.min(to, maxD);
-                if (b <= a) return '';
-                const x0 = padL + ((a - minD) / Math.max(1, maxD - minD)) * chartW;
-                const x1 = padL + ((b - minD) / Math.max(1, maxD - minD)) * chartW;
-                return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="${cls}"/>`;
-            })
-            .join('');
+        const from = Math.max(ZONE_START_M, minD);
+        const to = Math.min(COURSE_M - ZONE_FINISH_M, maxD);
+        if (to <= from) return '';
+        const x0 = padL + ((from - minD) / Math.max(1, maxD - minD)) * chartW;
+        const x1 = padL + ((to - minD) / Math.max(1, maxD - minD)) * chartW;
+        return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="krv-zone krv-zone--mid"/>`;
     }
 
     function zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD) {
-        const zones = [
-            { from: 0, to: ZONE_START_M, cls: 'krv-zone krv-zone--start' },
-            { from: ZONE_START_M, to: COURSE_M - ZONE_FINISH_M, cls: 'krv-zone krv-zone--mid' },
-            { from: COURSE_M - ZONE_FINISH_M, to: COURSE_M, cls: 'krv-zone krv-zone--finish' },
-        ];
-        return zones
-            .map(({ from, to, cls }) => {
-                const a = Math.max(from, minD);
-                const b = Math.min(to, maxD);
-                if (b <= a) return '';
-                const x0 = xMap(a, minD, maxD, w, padL, padR);
-                const x1 = xMap(b, minD, maxD, w, padL, padR);
-                return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="${cls}"/>`;
-            })
-            .join('');
+        const from = Math.max(ZONE_START_M, minD);
+        const to = Math.min(COURSE_M - ZONE_FINISH_M, maxD);
+        if (to <= from) return '';
+        const x0 = xMap(from, minD, maxD, w, padL, padR);
+        const x1 = xMap(to, minD, maxD, w, padL, padR);
+        return `<rect x="${x0}" y="${padT}" width="${Math.max(0, x1 - x0)}" height="${chartH}" class="krv-zone krv-zone--mid"/>`;
+    }
+
+    function buoyFill(d, scope) {
+        if (d <= ZONE_START_M || d >= COURSE_M - ZONE_FINISH_M) {
+            return `url(#krvBuoyGradYellow-${scope})`;
+        }
+        return `url(#krvBuoyGrad-${scope})`;
     }
 
     function buoysHtml(h, padL, padT, padB, chartW, minD = 0, maxD = COURSE_M, padR = 0, totalW = null, scope = 'overview') {
-        const buoyGrad = `krvBuoyGrad-${scope}`;
         const parts = [];
         const w = totalW ?? padL + chartW + padR;
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -667,7 +670,9 @@
                     maxD > minD && maxD < COURSE_M
                         ? xMap(d, minD, maxD, w, padL, padR)
                         : xCourse(d, padL, chartW);
-                parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="krv-buoy" fill="url(#${buoyGrad})"/>`);
+                parts.push(
+                    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" class="krv-buoy" fill="${buoyFill(d, scope)}"/>`,
+                );
             }
         }
         return parts.join('');
@@ -952,13 +957,14 @@
                 const logo = boat.logoUrl || LOGO_PLACEHOLDER;
                 const speedStr = `${speed.toFixed(1)} m/s`;
                 const toGoStr = rank === 0 ? `${toGo} m to go` : gap;
-                const vertCls = lane <= 4 ? 'below' : 'above';
-                const horizCls = lane % 2 === 1 ? 'right' : 'left';
                 return (
-                    `<div class="krv-zoom-boat krv-zoom-boat--info-${vertCls} krv-zoom-boat--info-${horizCls}" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
-                    `<div class="krv-zoom-boat__anchor">` +
+                    `<div class="krv-zoom-boat" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
+                    `<div class="krv-zoom-boat__hull">` +
                     `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
-                    cartoonBoatMarkup(boat.color, logo) +
+                    `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true">` +
+                    cartoonBoatPaths(boat.color || '#38bdf8') +
+                    `</svg>` +
+                    `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="">` +
                     `</div>` +
                     `<div class="krv-zoom-boat__info">` +
                     `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
