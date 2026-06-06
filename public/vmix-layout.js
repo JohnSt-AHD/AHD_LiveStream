@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 10;
+    const LAYOUT_BUILD = 11;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -57,35 +57,35 @@
             },
             results: {
                 'results-head': {
-                    left: '389px',
-                    top: '275px',
+                    left: '445px',
+                    top: '337px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-kicker': {
-                    transform: 'translate(-333px, -216px)',
+                    transform: 'translate(-433px, -320px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-title': {
                     width: '900px',
-                    transform: 'translate(-333px, -211px)',
+                    transform: 'translate(-433px, -319px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-meta': {
-                    transform: 'translate(-333px, -209px)',
+                    transform: 'translate(-433px, -318px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-body': {
-                    transform: 'translate(-199px, -172px)',
+                    transform: 'translate(-200px, -100px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-cols': {
-                    transform: 'translate(211px, 210px)',
+                    transform: 'translate(212px, 110px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-lanes': {
                     width: '900px',
-                    transform: 'translate(208px, 233px)',
+                    transform: 'translate(212px, 122px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-lane-n': {
@@ -102,35 +102,35 @@
             },
             schedule: {
                 'schedule-head': {
-                    left: '389px',
-                    top: '275px',
+                    left: '445px',
+                    top: '337px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'schedule-kicker': {
-                    transform: 'translate(-333px, -216px)',
+                    transform: 'translate(-433px, -320px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-title': {
                     width: '900px',
-                    transform: 'translate(-333px, -211px)',
+                    transform: 'translate(-433px, -319px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-meta': {
-                    transform: 'translate(-333px, -209px)',
+                    transform: 'translate(-433px, -318px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-body': {
-                    transform: 'translate(-199px, -172px)',
+                    transform: 'translate(-200px, -100px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'schedule-cols': {
-                    transform: 'translate(211px, 210px)',
+                    transform: 'translate(212px, 110px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-rows': {
                     width: '900px',
-                    transform: 'translate(208px, 233px)',
+                    transform: 'translate(212px, 122px)',
                     color: 'rgb(255, 255, 255)',
                 },
             },
