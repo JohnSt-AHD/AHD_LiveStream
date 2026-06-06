@@ -671,6 +671,30 @@ function vgFormatScheduleTime(d) {
         .toLowerCase();
 }
 
+function vgScheduleMetaText() {
+    return `Current time - ${vgFormatScheduleTime(new Date())}`;
+}
+
+let vgScheduleClockTimer = null;
+
+function vgStopScheduleClock() {
+    if (vgScheduleClockTimer) {
+        clearInterval(vgScheduleClockTimer);
+        vgScheduleClockTimer = null;
+    }
+}
+
+function vgUpdateScheduleMetaClock() {
+    const el = document.querySelector('[data-vg-layout="schedule-meta"]');
+    if (el) el.textContent = vgScheduleMetaText();
+}
+
+function vgStartScheduleClock() {
+    vgStopScheduleClock();
+    vgUpdateScheduleMetaClock();
+    vgScheduleClockTimer = setInterval(vgUpdateScheduleMetaClock, 30000);
+}
+
 function vgFormatDayLabel(dayLabel) {
     return dayLabel.replace(/^DAY\s+\d+:\s*/i, '').trim();
 }
@@ -1500,6 +1524,7 @@ function vgStartOutroPlayback(isVideo, video) {
 function vgResetToIdle() {
     vgPostToSpeedFrame('clear');
     vgClearPlaybackTimers();
+    vgStopScheduleClock();
     vgPlayback.videoHoldTime = null;
     vgPlayback.graphic = null;
     vgLeaderLane = null;
@@ -1642,6 +1667,7 @@ function vgPrepareContent(graphic, raceParam) {
     const layer = vgGetLayerEl();
     const err = document.getElementById('vgError');
     if (!layer) return;
+    if (graphic !== 'schedule') vgStopScheduleClock();
     if (vgIsSpeedGraphic(graphic) || vgIsSpeedChartGraphic(graphic) || vgIsLiveTrackingGraphic(graphic) || vgIsWeatherGraphic(graphic)) return;
 
     const race = vgFindRace(raceParam);
@@ -2130,9 +2156,7 @@ function vgRenderSchedule(layer, raceParam) {
     const shell = vgKriCreateShell({ useMarkLogo: true });
     const panel = vgKriCreatePanel('schedule');
 
-    const metaText = current
-        ? `Race ${current.race} · ${current.round}${current.division ? ` · Div ${current.division}` : ''}`
-        : '';
+    const metaText = vgScheduleMetaText();
     vgKriAppendHead(panel, {
         kicker: 'Upcoming',
         title: 'Schedule',
@@ -2190,6 +2214,7 @@ function vgRenderSchedule(layer, raceParam) {
     panel.appendChild(body);
     shell.appendChild(panel);
     layer.appendChild(shell);
+    vgStartScheduleClock();
 }
 
 function vgRenderResults(layer, race) {
