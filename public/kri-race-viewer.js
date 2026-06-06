@@ -19,7 +19,8 @@
     const ZONE_START_M = 100;
     const ZONE_FINISH_M = 250;
     const BUOY_SPACING_M = 20;
-    const LANE1_EXTRA_RATIO = 0.38;
+    const BUOY_R_OVERVIEW = 3;
+    const BUOY_R_ZOOM = 4;
 
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2,
@@ -718,7 +719,7 @@
                         ? xMap(d, minD, maxD, w, padL, padR)
                         : xCourse(d, padL, chartW);
                 parts.push(
-                    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" class="krv-buoy" fill="${buoyFill(d, scope)}"/>`,
+                    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${scope === 'overview' ? BUOY_R_OVERVIEW : BUOY_R_ZOOM}" class="krv-buoy" fill="${buoyFill(d, scope)}"/>`,
                 );
             }
         }
@@ -776,18 +777,13 @@
 
     function computeLaneBands(height, padTop, padBottom) {
         const chartH = height - padTop - padBottom;
-        const totalUnits = LANE_COUNT - 1 + (1 + LANE1_EXTRA_RATIO);
-        const unitH = chartH / totalUnits;
-        const heights = [];
-        for (let lane = 1; lane <= LANE_COUNT; lane++) {
-            heights.push(lane === 1 ? unitH * (1 + LANE1_EXTRA_RATIO) : unitH);
-        }
+        const laneH = chartH / LANE_COUNT;
         const tops = [padTop];
         for (let i = 0; i < LANE_COUNT; i++) {
-            tops.push(tops[i] + heights[i]);
+            tops.push(padTop + (i + 1) * laneH);
         }
-        const centers = heights.map((laneH, i) => tops[i] + laneH / 2);
-        return { tops, centers, heights };
+        const centers = tops.slice(0, -1).map((top) => top + laneH / 2);
+        return { tops, centers, heights: Array(LANE_COUNT).fill(laneH) };
     }
 
     function yMapLane(lane, height, padTop, padBottom) {
@@ -797,7 +793,7 @@
 
     function yMapBuoyLine(lane, height, padTop, padBottom) {
         const { tops } = computeLaneBands(height, padTop, padBottom);
-        return tops[lane];
+        return tops[lane - 1];
     }
 
     function laneDividerYs(height, padTop, padBottom) {
@@ -1047,8 +1043,10 @@
                     `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
                     `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
                     `</div>` +
+                    `<div class="krv-zoom-boat__stats">` +
                     `<span class="krv-zoom-boat__speed">${speedStr}</span>` +
                     `<span class="krv-zoom-boat__gap">${escapeHtml(toGoStr)}</span>` +
+                    `</div>` +
                     `</div>` +
                     `</div>`
                 );
