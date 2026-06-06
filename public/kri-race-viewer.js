@@ -654,7 +654,7 @@
         const parts = [];
         const w = totalW ?? padL + chartW + padR;
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
-            const y = yMapLane(lane, h, padT, padB);
+            const y = yMapBuoyLine(lane, h, padT, padB);
             for (let d = BUOY_SPACING_M; d < COURSE_M; d += BUOY_SPACING_M) {
                 if (d < minD || d > maxD) continue;
                 const x =
@@ -662,7 +662,7 @@
                         ? xMap(d, minD, maxD, w, padL, padR)
                         : xCourse(d, padL, chartW);
                 parts.push(
-                    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" class="krv-buoy" fill="${buoyFill(d, scope)}"/>`,
+                    `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" class="krv-buoy" fill="${buoyFill(d, scope)}"/>`,
                 );
             }
         }
@@ -737,6 +737,11 @@
     function yMapLane(lane, height, padTop, padBottom) {
         const { centers } = computeLaneBands(height, padTop, padBottom);
         return centers[lane - 1];
+    }
+
+    function yMapBuoyLine(lane, height, padTop, padBottom) {
+        const { tops } = computeLaneBands(height, padTop, padBottom);
+        return tops[lane];
     }
 
     function laneDividerYs(height, padTop, padBottom) {
@@ -976,14 +981,16 @@
                 return (
                     `<div class="krv-zoom-boat" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
                     `<div class="krv-zoom-boat__hull">` +
-                    `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
                     `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true">` +
                     cartoonBoatPaths(boat.color || '#38bdf8') +
                     `</svg>` +
                     `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="">` +
                     `</div>` +
                     `<div class="krv-zoom-boat__info">` +
+                    `<div class="krv-zoom-boat__info-head">` +
+                    `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
                     `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
+                    `</div>` +
                     `<span class="krv-zoom-boat__speed">${speedStr}</span>` +
                     `<span class="krv-zoom-boat__gap">${escapeHtml(toGoStr)}</span>` +
                     `</div>` +

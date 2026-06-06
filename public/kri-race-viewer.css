@@ -28,7 +28,7 @@ body {
     height: 100%;
     overflow: hidden;
     background: #071428;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: 'Barlow', 'Segoe UI', system-ui, -apple-system, sans-serif;
     color: var(--kri-brand-white);
 }
 
@@ -73,9 +73,11 @@ body {
 
 .krv-titlebar__title {
     margin: 0;
-    font-size: 18px;
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 19px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: rgba(255, 255, 255, 0.82);
 }
 
@@ -85,7 +87,8 @@ body {
     border-radius: 999px;
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.95) 0%, rgba(0, 121, 209, 0.95) 100%);
     border: 2px solid rgba(255, 255, 255, 0.55);
-    font-size: 15px;
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 16px;
     font-weight: 800;
     color: var(--kri-brand-white);
     white-space: nowrap;
@@ -388,43 +391,68 @@ body {
 
 .krv-zoom-boat__info {
     position: absolute;
-    right: calc(100% + 10px);
+    right: calc(100% + 12px);
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0;
-    padding: 5px 10px 6px;
-    border-radius: 8px;
-    background: #ffffff;
-    border: 1px solid rgba(12, 31, 61, 0.12);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
-    max-width: 118px;
+    align-items: stretch;
+    gap: 2px;
+    min-width: 108px;
+    max-width: 132px;
+    padding: 7px 10px 8px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(12, 31, 61, 0.1);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 6px 18px rgba(7, 20, 40, 0.16);
     flex-shrink: 0;
-    text-align: center;
+    overflow: hidden;
+}
+
+.krv-zoom-boat__info::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--kri-brand-blue-light) 0%, var(--kri-brand-blue) 100%);
+}
+
+.krv-zoom-boat[data-rank='1'] .krv-zoom-boat__info::before {
+    background: linear-gradient(180deg, #fde047 0%, #f59e0b 100%);
+}
+
+.krv-zoom-boat__info-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-left: 2px;
 }
 
 .krv-zoom-boat__rank {
-    position: absolute;
-    top: -8px;
-    left: -8px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #38bdf8 0%, #0079d1 100%);
-    border: 2px solid var(--kri-brand-white);
-    font-size: 12px;
+    flex-shrink: 0;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border-radius: 6px;
+    background: linear-gradient(145deg, #38bdf8 0%, var(--kri-brand-blue) 100%);
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 14px;
     font-weight: 800;
-    line-height: 20px;
+    line-height: 22px;
+    letter-spacing: 0.02em;
+    text-align: center;
     color: var(--kri-brand-white);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 96, 191, 0.28);
 }
 
 .krv-zoom-boat[data-rank='1'] .krv-zoom-boat__rank {
     background: linear-gradient(145deg, #fde047 0%, #f59e0b 100%);
     color: #0c1f3d;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.35);
 }
 
 .krv-zoom-boat__logo {
@@ -432,29 +460,40 @@ body {
 }
 
 .krv-zoom-boat__label {
-    max-width: 110px;
-    font-size: 10px;
-    font-weight: 800;
-    color: #0c1f3d;
+    flex: 1;
+    min-width: 0;
+    font-family: 'Barlow', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--kri-text-dark);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    line-height: 1.25;
+    line-height: 1.2;
+    text-align: left;
 }
 
 .krv-zoom-boat__speed {
-    font-size: 12px;
+    padding-left: 2px;
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 17px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-    color: #0060bf;
-    line-height: 1.25;
+    letter-spacing: 0.02em;
+    color: var(--kri-brand-blue-dark);
+    line-height: 1.1;
 }
 
 .krv-zoom-boat__gap {
+    padding-left: 2px;
+    font-family: 'Barlow', sans-serif;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: #334155;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #64748b;
     line-height: 1.2;
 }
 
@@ -496,8 +535,8 @@ body {
 
 .krv-buoy {
     stroke: #ffffff;
-    stroke-width: 1;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+    stroke-width: 1.25;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .krv-line-start {
@@ -570,20 +609,22 @@ body {
 
 .krv-lane-label {
     fill: #0c1f3d;
-    font-size: 10px;
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 11px;
     font-weight: 800;
     paint-order: stroke;
     stroke: none;
 }
 
 .krv-lane-label--zoom {
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .krv-lane-crew {
-    fill: #334155;
+    fill: #475569;
+    font-family: 'Barlow', sans-serif;
     font-size: 9px;
-    font-weight: 700;
+    font-weight: 600;
     paint-order: stroke;
     stroke: none;
 }
