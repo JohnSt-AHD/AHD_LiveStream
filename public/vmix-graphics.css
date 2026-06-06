@@ -814,8 +814,8 @@ body {
     --kri-lane-logo-box: 35px;
     --kri-draw-grid-cols: 40px var(--kri-lane-logo-box) max-content;
     --kri-results-grid-cols: 40px var(--kri-lane-logo-box) minmax(0, 1fr) 84px;
-    --kri-draw-lanes-offset-x: -200px;
-    --kri-draw-lanes-offset-y: -100px;
+    --kri-draw-lanes-offset-x: -199px;
+    --kri-draw-lanes-offset-y: -172px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-cols,
@@ -833,7 +833,11 @@ body {
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body,
 [data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body {
     width: 100%;
-    margin-top: 30px;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
     transform: translate(
         var(--kri-draw-lanes-offset-x),
         var(--kri-draw-lanes-offset-y)
@@ -842,11 +846,23 @@ body {
 
 [data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body {
     width: fit-content;
-    margin-top: 30px;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
     transform: translate(
         var(--kri-draw-lanes-offset-x),
         var(--kri-draw-lanes-offset-y)
     );
+}
+
+[data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-head,
+[data-vmix-theme='kri'] .vg-kri-panel--results .vg-kri-draw-body .vg-kri-head,
+[data-vmix-theme='kri'] .vg-kri-panel--schedule .vg-kri-draw-body .vg-kri-head {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 20px 10px;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--draw .vg-kri-draw-body .vg-kri-cols,

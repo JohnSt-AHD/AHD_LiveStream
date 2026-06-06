@@ -1766,25 +1766,34 @@ function vgKriCreateLowerSponsorBox() {
     return box;
 }
 
-function vgKriAppendHead(panel, { kicker, title, meta, layoutId = 'kri-head', parts = null }) {
+function vgKriAppendHead(parent, { kicker, title, meta, layoutId = 'kri-head', parts = null }) {
     const head = vgEl('div', 'vg-kri-head');
     head.dataset.vgLayout = layoutId;
     if (kicker) {
         const p = vgEl('p', 'vg-kri-kicker', kicker);
-        if (parts?.kicker) p.dataset.vgLayout = parts.kicker;
+        if (parts?.kicker) {
+            p.dataset.vgLayout = parts.kicker;
+            p.dataset.vgLayoutTarget = parts.kicker;
+        }
         head.appendChild(p);
     }
     if (title) {
         const h = vgEl('h2', 'vg-kri-heading', title);
-        if (parts?.title) h.dataset.vgLayout = parts.title;
+        if (parts?.title) {
+            h.dataset.vgLayout = parts.title;
+            h.dataset.vgLayoutTarget = parts.title;
+        }
         head.appendChild(h);
     }
     if (meta) {
         const p = vgEl('p', 'vg-kri-meta', meta);
-        if (parts?.meta) p.dataset.vgLayout = parts.meta;
+        if (parts?.meta) {
+            p.dataset.vgLayout = parts.meta;
+            p.dataset.vgLayoutTarget = parts.meta;
+        }
         head.appendChild(p);
     }
-    panel.appendChild(head);
+    parent.appendChild(head);
     return head;
 }
 
@@ -2043,7 +2052,9 @@ function vgRenderDraw(layer, race) {
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell({ useMarkLogo: true });
         const panel = vgKriCreatePanel('draw');
-        vgKriAppendHead(panel, {
+        const body = vgEl('div', 'vg-kri-draw-body');
+        body.dataset.vgLayout = 'draw-body';
+        vgKriAppendHead(body, {
             kicker: 'Start list',
             title: fullName,
             meta: metaText,
@@ -2054,8 +2065,6 @@ function vgRenderDraw(layer, race) {
                 meta: 'draw-meta',
             },
         });
-        const body = vgEl('div', 'vg-kri-draw-body');
-        body.dataset.vgLayout = 'draw-body';
         vgKriAppendCols(
             body,
             [
@@ -2133,7 +2142,9 @@ function vgRenderSchedule(layer, raceParam) {
     const metaText = current
         ? `Race ${current.race} · ${current.round}${current.division ? ` · Div ${current.division}` : ''}`
         : '';
-    vgKriAppendHead(panel, {
+    const body = vgEl('div', 'vg-kri-draw-body');
+    body.dataset.vgLayout = 'schedule-body';
+    vgKriAppendHead(body, {
         kicker: 'Upcoming',
         title: 'Schedule',
         meta: metaText,
@@ -2144,9 +2155,6 @@ function vgRenderSchedule(layer, raceParam) {
             meta: 'schedule-meta',
         },
     });
-
-    const body = vgEl('div', 'vg-kri-draw-body');
-    body.dataset.vgLayout = 'schedule-body';
     vgKriAppendCols(
         body,
         [
@@ -2201,7 +2209,9 @@ function vgRenderResults(layer, race) {
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell({ useMarkLogo: true });
         const panel = vgKriCreatePanel('results');
-        vgKriAppendHead(panel, {
+        const body = vgEl('div', 'vg-kri-draw-body');
+        body.dataset.vgLayout = 'results-body';
+        vgKriAppendHead(body, {
             kicker: 'Results',
             title: fullName,
             meta: metaText,
@@ -2212,8 +2222,6 @@ function vgRenderResults(layer, race) {
                 meta: 'results-meta',
             },
         });
-        const body = vgEl('div', 'vg-kri-draw-body');
-        body.dataset.vgLayout = 'results-body';
         vgKriAppendCols(
             body,
             [
