@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 5;
+    const LAYOUT_BUILD = 6;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -13,35 +13,35 @@
             /* Dev-tuned draw layout — coords are panel-local for absolute regions (see applyLayout). */
             draw: {
                 'draw-head': {
-                    left: '401px',
-                    top: '299px',
+                    left: '445px',
+                    top: '337px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-kicker': {
-                    transform: 'translate(-345px, -236px)',
+                    transform: 'translate(-389px, -260px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-title': {
                     width: '900px',
-                    transform: 'translate(-345px, -235px)',
+                    transform: 'translate(-389px, -261px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-meta': {
-                    transform: 'translate(-345px, -231px)',
+                    transform: 'translate(-389px, -261px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-body': {
-                    transform: 'translate(-200px, -100px)',
+                    transform: 'translate(-199px, -172px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-cols': {
-                    transform: 'translate(212px, 239px)',
+                    transform: 'translate(211px, 210px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'draw-lanes': {
                     width: '900px',
-                    transform: 'translate(212px, 258px)',
+                    transform: 'translate(208px, 233px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'draw-lane-n': {
@@ -58,35 +58,35 @@
             },
             results: {
                 'results-head': {
-                    left: '401px',
-                    top: '299px',
+                    left: '445px',
+                    top: '337px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-kicker': {
-                    transform: 'translate(-345px, -236px)',
+                    transform: 'translate(-389px, -260px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-title': {
                     width: '900px',
-                    transform: 'translate(-345px, -235px)',
+                    transform: 'translate(-389px, -261px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-meta': {
-                    transform: 'translate(-345px, -231px)',
+                    transform: 'translate(-389px, -261px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-body': {
-                    transform: 'translate(-200px, -100px)',
+                    transform: 'translate(-199px, -172px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-cols': {
-                    transform: 'translate(212px, 239px)',
+                    transform: 'translate(211px, 210px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'results-lanes': {
                     width: '900px',
-                    transform: 'translate(212px, 258px)',
+                    transform: 'translate(208px, 233px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'results-lane-n': {
@@ -103,35 +103,35 @@
             },
             schedule: {
                 'schedule-head': {
-                    left: '401px',
-                    top: '298px',
+                    left: '445px',
+                    top: '337px',
                     width: '935px',
                     color: 'rgb(255, 255, 255)',
                 },
                 'schedule-kicker': {
-                    transform: 'translate(-345px, -236px)',
+                    transform: 'translate(-389px, -260px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-title': {
                     width: '900px',
-                    transform: 'translate(-345px, -226px)',
+                    transform: 'translate(-389px, -261px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-meta': {
-                    transform: 'translate(-345px, -216px)',
+                    transform: 'translate(-389px, -261px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-body': {
-                    transform: 'translate(-200px, -100px)',
+                    transform: 'translate(-199px, -172px)',
                     color: 'rgb(255, 255, 255)',
                 },
                 'schedule-cols': {
-                    transform: 'translate(212px, 239px)',
+                    transform: 'translate(211px, 210px)',
                     color: 'rgb(49, 62, 80)',
                 },
                 'schedule-rows': {
                     width: '900px',
-                    transform: 'translate(212px, 258px)',
+                    transform: 'translate(208px, 233px)',
                     color: 'rgb(255, 255, 255)',
                 },
             },
