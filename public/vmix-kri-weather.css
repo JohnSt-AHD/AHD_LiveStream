@@ -6,13 +6,14 @@
         transform: translateX(-120%) skewX(-18deg);
         opacity: 0;
     }
-    6% {
-        opacity: 1;
+    5% {
+        opacity: 0.45;
     }
-    28% {
-        opacity: 1;
+    50% {
+        transform: translateX(320%) skewX(-18deg);
+        opacity: 0.45;
     }
-    38%,
+    56%,
     100% {
         transform: translateX(320%) skewX(-18deg);
         opacity: 0;
@@ -24,13 +25,14 @@
         transform: translateX(-120%) skewX(-18deg);
         opacity: 0;
     }
-    8% {
-        opacity: 0.65;
+    6% {
+        opacity: 0.35;
     }
-    30% {
-        opacity: 0.65;
+    52% {
+        transform: translateX(320%) skewX(-18deg);
+        opacity: 0.35;
     }
-    42%,
+    58%,
     100% {
         transform: translateX(320%) skewX(-18deg);
         opacity: 0;
@@ -223,16 +225,16 @@ body.kri-weather-page {
         105deg,
         transparent 0%,
         transparent 38%,
-        rgba(255, 255, 255, 0.12) 46%,
-        rgba(255, 255, 255, 0.32) 50%,
-        rgba(255, 255, 255, 0.12) 54%,
+        rgba(255, 255, 255, 0.06) 46%,
+        rgba(255, 255, 255, 0.16) 50%,
+        rgba(255, 255, 255, 0.06) 54%,
         transparent 62%,
         transparent 100%
     );
     pointer-events: none;
     z-index: 1;
     mix-blend-mode: soft-light;
-    animation: vg-kri-shine-sweep 13s ease-in-out infinite;
+    animation: vg-kri-shine-sweep 10s ease-in-out infinite;
     animation-delay: -1.5s;
     will-change: transform, opacity;
 }
@@ -478,16 +480,16 @@ body.kri-weather-page {
         105deg,
         transparent 0%,
         transparent 40%,
-        rgba(255, 255, 255, 0.08) 47%,
-        rgba(255, 255, 255, 0.2) 50%,
-        rgba(255, 255, 255, 0.08) 53%,
+        rgba(255, 255, 255, 0.04) 47%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.04) 53%,
         transparent 60%,
         transparent 100%
     );
     pointer-events: none;
     z-index: 1;
     mix-blend-mode: overlay;
-    animation: vg-kri-shine-sweep-soft 15s ease-in-out infinite;
+    animation: vg-kri-shine-sweep-soft 11s ease-in-out infinite;
     animation-delay: -8s;
     will-change: transform, opacity;
 }

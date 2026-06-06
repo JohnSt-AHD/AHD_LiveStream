@@ -450,16 +450,16 @@ body {
         105deg,
         transparent 0%,
         transparent 38%,
-        rgba(255, 255, 255, 0.12) 46%,
-        rgba(255, 255, 255, 0.32) 50%,
-        rgba(255, 255, 255, 0.12) 54%,
+        rgba(255, 255, 255, 0.06) 46%,
+        rgba(255, 255, 255, 0.16) 50%,
+        rgba(255, 255, 255, 0.06) 54%,
         transparent 62%,
         transparent 100%
     );
     pointer-events: none;
     z-index: 1;
     mix-blend-mode: soft-light;
-    animation: vg-kri-shine-sweep 13s ease-in-out infinite;
+    animation: vg-kri-shine-sweep 10s ease-in-out infinite;
     will-change: transform, opacity;
 }
 
@@ -470,15 +470,15 @@ body {
         105deg,
         transparent 0%,
         transparent 40%,
-        rgba(255, 255, 255, 0.08) 47%,
-        rgba(255, 255, 255, 0.2) 50%,
-        rgba(255, 255, 255, 0.08) 53%,
+        rgba(255, 255, 255, 0.04) 47%,
+        rgba(255, 255, 255, 0.12) 50%,
+        rgba(255, 255, 255, 0.04) 53%,
         transparent 60%,
         transparent 100%
     );
     mix-blend-mode: overlay;
     animation-name: vg-kri-shine-sweep-soft;
-    animation-duration: 15s;
+    animation-duration: 11s;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel > *,
@@ -527,17 +527,17 @@ body {
         105deg,
         transparent 0%,
         transparent 36%,
-        rgba(255, 255, 255, 0.06) 44%,
-        rgba(255, 255, 255, 0.18) 50%,
-        rgba(255, 255, 255, 0.06) 56%,
+        rgba(255, 255, 255, 0.03) 44%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.03) 56%,
         transparent 64%,
         transparent 100%
     );
     pointer-events: none;
     z-index: 2;
     mix-blend-mode: soft-light;
-    animation: vg-kri-shine-sweep 16s ease-in-out infinite;
-    animation-delay: -6s;
+    animation: vg-kri-shine-sweep 12s ease-in-out infinite;
+    animation-delay: -4.5s;
     will-change: transform, opacity;
 }
 
