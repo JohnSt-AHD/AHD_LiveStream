@@ -13,13 +13,13 @@
     <div class="krv-stage" id="krvStage">
         <header class="krv-titlebar">
             <img class="krv-titlebar__logo" src="assets/kri/kri-logo.png" alt="" width="36" height="36">
-            <p class="krv-titlebar__race" id="krvRaceLabel" hidden></p>
             <h1 class="krv-titlebar__title">Live Race Viewer</h1>
         </header>
         <section class="krv-overview" aria-label="Course overview">
             <div class="krv-water-stack">
                 <canvas class="krv-water-canvas" id="krvOverviewWater" aria-hidden="true"></canvas>
                 <svg class="krv-overview__svg" id="krvOverviewSvg" viewBox="0 0 1800 220" preserveAspectRatio="none"></svg>
+                <p class="krv-overview__race-label" id="krvOverviewRaceLabel" hidden></p>
             </div>
         </section>
         <div class="krv-main">
@@ -28,11 +28,14 @@
                 <ul class="krv-upcoming__list" id="krvUpcomingList"></ul>
             </aside>
             <section class="krv-zoom" aria-label="Race close-up">
-                <div class="krv-water-stack">
-                    <canvas class="krv-water-canvas" id="krvZoomWater" aria-hidden="true"></canvas>
-                    <svg class="krv-zoom__svg" id="krvZoomSvg" viewBox="0 0 1200 520" preserveAspectRatio="none"></svg>
+                <h2 class="krv-zoom__race-title" id="krvZoomRaceTitle" hidden></h2>
+                <div class="krv-zoom__viewport">
+                    <div class="krv-water-stack">
+                        <canvas class="krv-water-canvas" id="krvZoomWater" aria-hidden="true"></canvas>
+                        <svg class="krv-zoom__svg" id="krvZoomSvg" viewBox="0 0 1200 520" preserveAspectRatio="none"></svg>
+                    </div>
+                    <div class="krv-zoom__boats" id="krvZoomBoats"></div>
                 </div>
-                <div class="krv-zoom__boats" id="krvZoomBoats"></div>
             </section>
             <aside class="krv-previous" aria-label="Previous race results">
                 <h2 class="krv-previous__title">Previous</h2>

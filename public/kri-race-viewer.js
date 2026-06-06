@@ -944,15 +944,46 @@
         syncWaterCanvas($('krvZoomWater'), zoomLayout);
     }
 
-    function updateRaceLabel() {
-        const labelEl = $('krvRaceLabel');
-        if (!labelEl) return;
-        if (state.raceLabel) {
-            labelEl.hidden = false;
-            labelEl.textContent = state.raceLabel;
-        } else {
-            labelEl.hidden = true;
+    function updateRaceTitles(standings) {
+        const overviewEl = $('krvOverviewRaceLabel');
+        const zoomEl = $('krvZoomRaceTitle');
+        const label = state.raceLabel;
+
+        if (zoomEl) {
+            if (label) {
+                zoomEl.hidden = false;
+                zoomEl.textContent = label;
+            } else {
+                zoomEl.hidden = true;
+            }
         }
+
+        if (!overviewEl) return;
+        if (!label || !standings?.length) {
+            overviewEl.hidden = true;
+            return;
+        }
+
+        const svg = $('krvOverviewSvg');
+        const layout = JSON.parse(svg?.dataset.layout || '{}');
+        const { w, h, padL, padR, padT, padB } = layout;
+        if (!w || !h) {
+            overviewEl.hidden = true;
+            return;
+        }
+
+        const dists = standings.map((s) => s.distance);
+        const packMin = Math.min(...dists);
+        const packMax = Math.max(...dists);
+        const followD = (packMin + packMax) / 2;
+        const chartW = w - padL - padR;
+        const x = padL + (followD / COURSE_M) * chartW;
+        const xPct = (x / w) * 100;
+
+        overviewEl.textContent = label;
+        overviewEl.hidden = false;
+        overviewEl.style.left = `${xPct}%`;
+        overviewEl.style.top = `${(((padT - 6) / h) * 100).toFixed(3)}%`;
     }
 
     function updateOverviewBoats(standings, tSec) {
@@ -970,7 +1001,7 @@
         clusterG.innerHTML =
             `<rect x="${x0}" y="${padT}" width="${Math.max(8, x1 - x0)}" height="${h - padT - padB}" class="krv-cluster-box" rx="8"/>`;
 
-        updateRaceLabel();
+        updateRaceTitles(standings);
 
         boatsG.innerHTML = standings
             .map(({ boat, distance, idx }) => {
@@ -1183,7 +1214,7 @@
         state.chartState = applyRaceContextToState(prepared, raceContext);
         state.raceLabel = raceTitleLine(raceContext, data);
         state.zoomCenter = null;
-        updateRaceLabel();
+        updateRaceTitles([]);
         renderLaneLabels();
         renderPreviousResults();
     }
