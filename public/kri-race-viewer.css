@@ -86,7 +86,7 @@ body {
     min-height: 0;
     padding: 12px 28px 8px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.25);
-    background: rgba(0, 121, 209, 0.08);
+    background: linear-gradient(180deg, rgba(0, 121, 209, 0.18) 0%, rgba(7, 20, 40, 0.35) 100%);
 }
 
 .krv-overview__svg {
@@ -98,10 +98,10 @@ body {
 .krv-overview__race-label {
     position: absolute;
     transform: translate(-50%, -100%);
-    padding: 6px 16px;
-    border-radius: 8px 8px 0 0;
-    background: rgba(7, 20, 40, 0.88);
-    border: 2px solid rgba(255, 255, 255, 0.55);
+    padding: 8px 18px;
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(180deg, rgba(7, 20, 40, 0.95) 0%, rgba(0, 96, 191, 0.92) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.6);
     border-bottom: none;
     font-size: 18px;
     font-weight: 700;
@@ -109,7 +109,7 @@ body {
     white-space: nowrap;
     pointer-events: none;
     z-index: 3;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* Bottom 75% — upcoming + zoom + previous results */
@@ -297,6 +297,7 @@ body {
     min-height: 0;
     padding: 16px 16px 24px 12px;
     border-right: 2px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.12) 0%, rgba(7, 20, 40, 0.45) 100%);
 }
 
 .krv-zoom__svg {
@@ -317,43 +318,84 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    min-width: 88px;
+    gap: 4px;
+    min-width: 96px;
     text-align: center;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+.krv-zoom-boat__hull {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.krv-cartoon-boat {
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 2px 4px rgba(12, 74, 110, 0.45));
+}
+
+.krv-zoom-boat__logo-badge {
+    position: absolute;
+    top: 50%;
+    left: 54%;
+    transform: translate(-50%, -50%);
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 50%;
+    padding: 2px;
+    border: 2px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.krv-zoom-boat__info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 5px 10px 6px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(7, 20, 40, 0.88) 0%, rgba(0, 96, 191, 0.82) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    min-width: 92px;
 }
 
 .krv-zoom-boat__rank {
     position: absolute;
-    top: -8px;
-    left: -8px;
-    width: 22px;
-    height: 22px;
+    top: -6px;
+    left: -6px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: var(--kri-brand-blue);
+    background: linear-gradient(145deg, #38bdf8 0%, #0079d1 100%);
     border: 2px solid var(--kri-brand-white);
     font-size: 12px;
     font-weight: 800;
-    line-height: 18px;
+    line-height: 20px;
     color: var(--kri-brand-white);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.krv-zoom-boat[data-rank='1'] .krv-zoom-boat__rank {
+    background: linear-gradient(145deg, #fde047 0%, #f59e0b 100%);
+    color: #0c1f3d;
 }
 
 .krv-zoom-boat__logo {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
-    padding: 3px;
-    border: 2px solid rgba(255, 255, 255, 0.9);
+    display: none;
 }
 
 .krv-zoom-boat__label {
     max-width: 120px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--kri-brand-white);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -361,21 +403,41 @@ body {
 
 .krv-zoom-boat__speed {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 800;
     font-variant-numeric: tabular-nums;
-    color: var(--kri-brand-blue-light);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    color: #bae6fd;
 }
 
 .krv-zoom-boat__gap {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: rgba(255, 255, 255, 0.88);
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* SVG course styling */
+.krv-course-water {
+    pointer-events: none;
+}
+
+.krv-course-water-shine {
+    pointer-events: none;
+    mix-blend-mode: soft-light;
+}
+
+.krv-course-frame {
+    stroke: rgba(255, 255, 255, 0.72);
+    stroke-width: 2.5;
+}
+
+.krv-course-frame--overview {
+    stroke-width: 2;
+}
+
+.krv-course-frame--zoom {
+    stroke-width: 3;
+}
+
 .krv-course-bg {
     fill: rgba(255, 255, 255, 0.82);
 }
@@ -386,47 +448,53 @@ body {
 
 .krv-zone {
     pointer-events: none;
+    mix-blend-mode: multiply;
 }
 
 .krv-zone--start,
 .krv-zone--finish {
-    fill: rgba(250, 204, 21, 0.42);
+    fill: rgba(250, 204, 21, 0.32);
 }
 
 .krv-zone--mid {
-    fill: rgba(251, 146, 60, 0.38);
+    fill: rgba(251, 146, 60, 0.28);
 }
 
 .krv-buoy {
-    fill: #ea580c;
     stroke: #ffffff;
-    stroke-width: 0.75;
+    stroke-width: 1;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
 }
 
 .krv-line-start {
-    stroke: #16a34a;
-    stroke-width: 2.5;
+    stroke: #22c55e;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.5));
 }
 
 .krv-line-finish {
-    stroke: #dc2626;
-    stroke-width: 2.5;
+    stroke: #ef4444;
+    stroke-width: 3;
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.45));
 }
 
 .krv-line-label {
-    fill: rgba(12, 31, 61, 0.85);
+    fill: rgba(255, 255, 255, 0.95);
     font-size: 12px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    paint-order: stroke;
+    stroke: rgba(12, 31, 61, 0.55);
+    stroke-width: 2px;
 }
 
 .krv-line-label--start {
-    fill: #15803d;
+    fill: #dcfce7;
 }
 
 .krv-line-label--finish {
-    fill: #b91c1c;
+    fill: #fee2e2;
 }
 
 .krv-finish-banner {
@@ -435,21 +503,25 @@ body {
 }
 
 .krv-lane-line {
-    stroke: rgba(0, 121, 209, 0.22);
+    stroke: rgba(255, 255, 255, 0.42);
     stroke-width: 1;
+    stroke-dasharray: 6 5;
 }
 
 .krv-lane-line--zoom {
-    stroke: rgba(0, 121, 209, 0.28);
-    stroke-width: 1.5;
+    stroke: rgba(255, 255, 255, 0.48);
+    stroke-width: 1.25;
 }
 
 .krv-lane-head {
-    fill: rgba(12, 31, 61, 0.45);
+    fill: rgba(255, 255, 255, 0.72);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    paint-order: stroke;
+    stroke: rgba(12, 31, 61, 0.45);
+    stroke-width: 2px;
 }
 
 .krv-lane-head--zoom {
@@ -457,42 +529,49 @@ body {
 }
 
 .krv-lane-label {
-    fill: rgba(12, 31, 61, 0.72);
+    fill: rgba(255, 255, 255, 0.95);
     font-size: 10px;
     font-weight: 800;
+    paint-order: stroke;
+    stroke: rgba(12, 31, 61, 0.5);
+    stroke-width: 2px;
 }
 
 .krv-lane-label--zoom {
-    fill: rgba(12, 31, 61, 0.78);
     font-size: 11px;
 }
 
 .krv-lane-crew {
-    fill: rgba(12, 31, 61, 0.55);
+    fill: rgba(224, 242, 254, 0.95);
     font-size: 9px;
     font-weight: 700;
+    paint-order: stroke;
+    stroke: rgba(12, 31, 61, 0.4);
+    stroke-width: 1.5px;
 }
 
 .krv-lane-crew--zoom {
-    fill: rgba(12, 31, 61, 0.62);
     font-size: 10px;
 }
 
 .krv-marker-line {
-    stroke: rgba(0, 121, 209, 0.45);
-    stroke-width: 1;
-    stroke-dasharray: 4 4;
+    stroke: rgba(255, 255, 255, 0.55);
+    stroke-width: 1.25;
+    stroke-dasharray: 5 4;
 }
 
 .krv-marker-line--zoom {
-    stroke: rgba(0, 96, 191, 0.55);
+    stroke: rgba(255, 255, 255, 0.62);
     stroke-width: 1.5;
 }
 
 .krv-marker-label {
-    fill: var(--kri-brand-blue-dark);
+    fill: rgba(255, 255, 255, 0.95);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
+    paint-order: stroke;
+    stroke: rgba(12, 31, 61, 0.5);
+    stroke-width: 2px;
 }
 
 .krv-marker-label--zoom {
@@ -500,14 +579,15 @@ body {
 }
 
 .krv-cluster-box {
-    fill: rgba(56, 189, 248, 0.12);
-    stroke: var(--kri-brand-blue-light);
-    stroke-width: 2;
-    stroke-dasharray: 8 5;
+    fill: rgba(255, 255, 255, 0.14);
+    stroke: #ffffff;
+    stroke-width: 2.5;
+    stroke-dasharray: 10 6;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.35));
 }
 
 .krv-boat-shape {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
 }
 
 .krv-status {

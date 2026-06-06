@@ -383,16 +383,98 @@
         return padL + (distanceM / COURSE_M) * chartW;
     }
 
-    function svgDefs() {
+    function svgDefs(scope = 'main') {
+        const clipId = `krvWaterClip-${scope}`;
+        const p = (name) => `${name}-${scope}`;
         return (
             '<defs>' +
-            '<pattern id="krvChecker" width="10" height="10" patternUnits="userSpaceOnUse">' +
+            `<linearGradient id="${p('krvWaterBase')}" x1="0%" y1="0%" x2="100%" y2="100%">` +
+            '<stop offset="0%" stop-color="#cffafe"/>' +
+            '<stop offset="40%" stop-color="#7dd3fc"/>' +
+            '<stop offset="100%" stop-color="#0284c7"/>' +
+            '</linearGradient>' +
+            `<pattern id="${p('krvWaterRipple')}" width="56" height="28" patternUnits="userSpaceOnUse">` +
+            '<path d="M0 14 Q14 10 28 14 T56 14" fill="none" stroke="rgba(255,255,255,0.38)" stroke-width="1.1"/>' +
+            '<path d="M0 21 Q14 17 28 21 T56 21" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.85"/>' +
+            '</pattern>' +
+            `<pattern id="${p('krvWaterTexture')}" width="96" height="48" patternUnits="userSpaceOnUse">` +
+            `<rect width="96" height="48" fill="url(#${p('krvWaterBase')})"/>` +
+            `<rect width="96" height="48" fill="url(#${p('krvWaterRipple')})"/>` +
+            '<ellipse cx="28" cy="14" rx="22" ry="5" fill="rgba(255,255,255,0.16)"/>' +
+            '<ellipse cx="72" cy="34" rx="18" ry="4" fill="rgba(255,255,255,0.1)"/>' +
+            '</pattern>' +
+            `<linearGradient id="${p('krvWaterShine')}" x1="0%" y1="0%" x2="0%" y2="100%">` +
+            '<stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>' +
+            '<stop offset="45%" stop-color="rgba(255,255,255,0.04)"/>' +
+            '<stop offset="100%" stop-color="rgba(15,23,42,0.06)"/>' +
+            '</linearGradient>' +
+            `<radialGradient id="${p('krvBuoyGrad')}" cx="35%" cy="30%" r="65%">` +
+            '<stop offset="0%" stop-color="#fed7aa"/>' +
+            '<stop offset="100%" stop-color="#ea580c"/>' +
+            '</radialGradient>' +
+            `<filter id="${p('krvCourseShadow')}" x="-4%" y="-8%" width="108%" height="120%">` +
+            '<feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0c4a6e" flood-opacity="0.28"/>' +
+            '</filter>' +
+            `<clipPath id="${clipId}"><rect id="${clipId}-rect"/></clipPath>` +
+            `<pattern id="${p('krvChecker')}" width="10" height="10" patternUnits="userSpaceOnUse">` +
             '<rect width="5" height="5" fill="#1e40af"/>' +
             '<rect x="5" y="0" width="5" height="5" fill="#ffffff"/>' +
             '<rect x="0" y="5" width="5" height="5" fill="#ffffff"/>' +
             '<rect x="5" y="5" width="5" height="5" fill="#1e40af"/>' +
             '</pattern>' +
             '</defs>'
+        );
+    }
+
+    function courseWaterHtml(padL, padT, chartW, chartH, scope, rx = 6, frameCls = '') {
+        const clipId = `krvWaterClip-${scope}`;
+        const tex = `krvWaterTexture-${scope}`;
+        const shine = `krvWaterShine-${scope}`;
+        const shadow = `krvCourseShadow-${scope}`;
+        return (
+            `<rect id="${clipId}-rect" x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="${rx}"/>` +
+            `<g clip-path="url(#${clipId})">` +
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water ${frameCls}" rx="${rx}" fill="url(#${tex})"/>` +
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-water-shine ${frameCls}" rx="${rx}" fill="url(#${shine})"/>` +
+            `</g>` +
+            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-frame ${frameCls}" rx="${rx}" fill="none" filter="url(#${shadow})"/>`
+        );
+    }
+
+    function checkerFill(scope) {
+        return `url(#krvChecker-${scope})`;
+    }
+
+    function cartoonBoatPaths(fill) {
+        const hull = fill || '#38bdf8';
+        return (
+            `<ellipse cx="7" cy="12" rx="5.5" ry="2.4" fill="rgba(255,255,255,0.42)"/>` +
+            `<path d="M11 12c0-5.5 15-6.5 29 0-14 6.5-29 5.5-29 0z" fill="${hull}" stroke="#0c4a6e" stroke-width="1.1"/>` +
+            `<path d="M15 12c0-3.2 10.5-3.8 23 0-11 3.8-23 3.2-23 0z" fill="rgba(255,255,255,0.32)"/>` +
+            `<line x1="23" y1="5.2" x2="35" y2="3.4" stroke="#334155" stroke-width="1.35" stroke-linecap="round"/>` +
+            `<line x1="23" y1="18.8" x2="35" y2="20.6" stroke="#334155" stroke-width="1.35" stroke-linecap="round"/>` +
+            `<circle cx="23" cy="12" r="2.1" fill="#1e293b"/>`
+        );
+    }
+
+    function boatShapeHtml(color) {
+        return (
+            `<g class="krv-boat-shape" transform="scale(0.55) translate(-24,-12)">` +
+            cartoonBoatPaths(color) +
+            `</g>`
+        );
+    }
+
+    function cartoonBoatMarkup(color, logoUrl) {
+        const hull = color || '#38bdf8';
+        const logo = logoUrl || LOGO_PLACEHOLDER;
+        return (
+            `<div class="krv-zoom-boat__hull">` +
+            `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="64" height="32" aria-hidden="true">` +
+            cartoonBoatPaths(hull) +
+            `</svg>` +
+            `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="">` +
+            `</div>`
         );
     }
 
@@ -442,7 +524,8 @@
             .join('');
     }
 
-    function buoysHtml(h, padL, padT, padB, chartW, minD = 0, maxD = COURSE_M, padR = 0, totalW = null) {
+    function buoysHtml(h, padL, padT, padB, chartW, minD = 0, maxD = COURSE_M, padR = 0, totalW = null, scope = 'overview') {
+        const buoyGrad = `krvBuoyGrad-${scope}`;
         const parts = [];
         const w = totalW ?? padL + chartW + padR;
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -453,13 +536,13 @@
                     maxD > minD && maxD < COURSE_M
                         ? xMap(d, minD, maxD, w, padL, padR)
                         : xCourse(d, padL, chartW);
-                parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" class="krv-buoy"/>`);
+                parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="krv-buoy" fill="url(#${buoyGrad})"/>`);
             }
         }
         return parts.join('');
     }
 
-    function startFinishHtml(padL, padT, chartH, chartW, padR = 0, minD = 0, maxD = COURSE_M) {
+    function startFinishHtml(padL, padT, chartH, chartW, padR = 0, minD = 0, maxD = COURSE_M, scope = 'overview') {
         const w = padL + chartW + padR;
         const xStart = maxD > minD && minD > 0 ? xMap(0, minD, maxD, w, padL, padR) : padL;
         const xFinish =
@@ -477,17 +560,12 @@
         }
         if (showFinish) {
             parts.push(
-                `<rect x="${xFinish - 6}" y="${padT}" width="12" height="${chartH}" fill="url(#krvChecker)" class="krv-finish-banner"/>`,
+                `<rect x="${xFinish - 6}" y="${padT}" width="12" height="${chartH}" fill="${checkerFill(scope)}" class="krv-finish-banner"/>`,
                 `<line x1="${xFinish}" y1="${padT}" x2="${xFinish}" y2="${padT + chartH}" class="krv-line-finish"/>`,
                 `<text x="${xFinish - 8}" y="${padT + 16}" class="krv-line-label krv-line-label--finish" text-anchor="end">Finish</text>`,
             );
         }
         return parts.join('');
-    }
-
-    function boatShapeHtml(color) {
-        const fill = color || '#38bdf8';
-        return `<polygon points="10,0 -5,-5 -5,5" fill="${fill}" class="krv-boat-shape"/>`;
     }
 
     function applyRaceContextToState(prepared, raceContext) {
@@ -591,11 +669,11 @@
         const chartH = h - padT - padB;
 
         const parts = [
-            svgDefs(),
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-bg" rx="6"/>`,
+            svgDefs('overview'),
+            courseWaterHtml(padL, padT, chartW, chartH, 'overview', 8, 'krv-course-frame--overview'),
             zoneRectsHtml(padL, padT, chartW, chartH),
-            buoysHtml(h, padL, padT, padB, chartW),
-            startFinishHtml(padL, padT, chartH, chartW),
+            buoysHtml(h, padL, padT, padB, chartW, 0, COURSE_M, padR, null, 'overview'),
+            startFinishHtml(padL, padT, chartH, chartW, padR, 0, COURSE_M, 'overview'),
         ];
 
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -637,8 +715,8 @@
         const chartH = h - padT - padB;
 
         const parts = [
-            svgDefs(),
-            `<rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" class="krv-course-bg krv-course-bg--zoom" rx="10"/>`,
+            svgDefs('zoom'),
+            courseWaterHtml(padL, padT, chartW, chartH, 'zoom', 12, 'krv-course-frame--zoom'),
         ];
 
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
@@ -707,8 +785,8 @@
 
         const courseParts = [
             zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD),
-            buoysHtml(h, padL, padT, padB, chartW, minD, maxD, padR, w),
-            startFinishHtml(padL, padT, chartH, chartW, padR, minD, maxD),
+            buoysHtml(h, padL, padT, padB, chartW, minD, maxD, padR, w, 'zoom'),
+            startFinishHtml(padL, padT, chartH, chartW, padR, minD, maxD, 'zoom'),
         ];
         for (const dist of MARKERS_M) {
             if (dist < minD || dist > maxD) continue;
@@ -737,10 +815,12 @@
                 return (
                     `<div class="krv-zoom-boat" style="left:${xPct}%;top:${yPct}%" data-rank="${rank + 1}">` +
                     `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
-                    `<img class="krv-zoom-boat__logo" src="${escapeHtml(logo)}" alt="">` +
+                    cartoonBoatMarkup(boat.color, logo) +
+                    `<div class="krv-zoom-boat__info">` +
                     `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
                     `<span class="krv-zoom-boat__speed">${speedStr}</span>` +
                     `<span class="krv-zoom-boat__gap">${escapeHtml(toGoStr)}</span>` +
+                    `</div>` +
                     `</div>`
                 );
             })
