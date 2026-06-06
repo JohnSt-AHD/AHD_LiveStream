@@ -19,7 +19,7 @@
             <div class="krv-water-stack">
                 <canvas class="krv-water-canvas" id="krvOverviewWater" aria-hidden="true"></canvas>
                 <svg class="krv-overview__svg" id="krvOverviewSvg" viewBox="0 0 1800 220" preserveAspectRatio="none"></svg>
-                <p class="krv-overview__race-label" id="krvOverviewRaceLabel" hidden></p>
+                <div class="krv-overview__race-labels" id="krvOverviewRaceLabels"></div>
             </div>
         </section>
         <div class="krv-main">
@@ -29,6 +29,7 @@
             </aside>
             <section class="krv-zoom" aria-label="Race close-up">
                 <h2 class="krv-zoom__race-title" id="krvZoomRaceTitle" hidden></h2>
+                <div class="krv-zoom__race-picker" id="krvZoomRacePicker" role="tablist" aria-label="Select race for zoom" hidden></div>
                 <div class="krv-zoom__viewport">
                     <div class="krv-water-stack">
                         <canvas class="krv-water-canvas" id="krvZoomWater" aria-hidden="true"></canvas>

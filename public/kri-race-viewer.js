@@ -24,6 +24,7 @@
     const BUOY_SPACING_M = 20;
     const BUOY_R_OVERVIEW = 3;
     const BUOY_R_ZOOM = 4;
+    const RACE_STAGGER_M = 1000;
 
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2,
@@ -39,6 +40,10 @@
         raceContext: null,
         chartState: null,
         raceLabel: '',
+        raceSlots: [],
+        selectedRaceSlot: 'current',
+        onCourseRaceNums: new Set(),
+        lastPlaybackSec: 0,
         rafId: null,
         playbackStart: null,
         waterRafId: null,
@@ -313,8 +318,7 @@
         return null;
     }
 
-    function buildRaceContext() {
-        const race = findRace(getRaceParam());
+    function buildRaceContextFromRace(race) {
         if (!race) return null;
         const lanes = (race.lanes || [])
             .filter((entry) => entry.code)
@@ -335,6 +339,88 @@
             race: race.race,
             lanes,
         };
+    }
+
+    function buildRaceContext() {
+        return buildRaceContextFromRace(findRace(getRaceParam()));
+    }
+
+    function getSelectedRaceSlot() {
+        return state.raceSlots.find((s) => s.slot === state.selectedRaceSlot) || state.raceSlots[1] || state.raceSlots[0];
+    }
+
+    function selectRaceSlot(slotId) {
+        if (!state.raceSlots.some((s) => s.slot === slotId)) return;
+        state.selectedRaceSlot = slotId;
+        state.zoomCenter = null;
+        const sel = getSelectedRaceSlot();
+        state.raceContext = sel?.context ?? null;
+        state.raceLabel = sel?.label ?? '';
+        renderZoomRacePicker();
+        renderLaneLabels();
+        renderUpcoming();
+        renderFrame(state.lastPlaybackSec);
+    }
+
+    function standingsForSlot(boats, tSec, offsetM) {
+        const chart = global.KriVmixSpeedChart;
+        if (!chart || !boats?.length) return [];
+        return chart
+            .liveStandings(boats, tSec)
+            .map((entry) => ({ ...entry, distance: entry.distance + offsetM }));
+    }
+
+    function isRaceOnCourse(standings) {
+        return standings.some((s) => s.distance >= 0 && s.distance <= COURSE_M);
+    }
+
+    function updateOnCourseRaceNums(tSec) {
+        const nums = new Set();
+        for (const slot of state.raceSlots) {
+            const standings = standingsForSlot(slot.boats, tSec, slot.offsetM);
+            if (isRaceOnCourse(standings)) nums.add(slot.raceNum);
+        }
+        state.onCourseRaceNums = nums;
+    }
+
+    function prepareRaceSlots(prepared, baseData) {
+        const current = findRace(getRaceParam());
+        let idx = current ? state.races.findIndex((r) => r.race === current.race) : 0;
+        if (idx < 0 && current) {
+            idx = state.races.findIndex((r) => r.raceNum === current.raceNum);
+        }
+        if (idx < 0) idx = 0;
+
+        const fallback = current || state.races[idx] || null;
+        const behindRace = state.races[idx > 0 ? idx - 1 : idx] || fallback;
+        const aheadRace = state.races[idx + 1 < state.races.length ? idx + 1 : idx] || fallback;
+        const raceBySlot = { behind: behindRace, current: fallback, ahead: aheadRace };
+
+        state.raceSlots = [
+            { slot: 'behind', offsetM: -RACE_STAGGER_M },
+            { slot: 'current', offsetM: 0 },
+            { slot: 'ahead', offsetM: RACE_STAGGER_M },
+        ].map(({ slot, offsetM }) => {
+            const daysheetRace = raceBySlot[slot];
+            const ctx = buildRaceContextFromRace(daysheetRace);
+            const applied = applyRaceContextToState(prepared, ctx);
+            return {
+                slot,
+                offsetM,
+                raceNum: daysheetRace?.raceNum ?? null,
+                raceId: daysheetRace?.race ?? null,
+                label: raceTitleLine(ctx, baseData),
+                context: ctx,
+                boats: applied.boats,
+            };
+        });
+
+        if (!state.raceSlots.some((s) => s.slot === state.selectedRaceSlot)) {
+            state.selectedRaceSlot = 'current';
+        }
+        const sel = getSelectedRaceSlot();
+        state.raceContext = sel?.context ?? null;
+        state.raceLabel = sel?.label ?? '';
     }
 
     function getUpcoming(count = 5) {
@@ -944,49 +1030,74 @@
         syncWaterCanvas($('krvZoomWater'), zoomLayout);
     }
 
-    function updateRaceTitles(standings) {
-        const overviewEl = $('krvOverviewRaceLabel');
+    function updateRaceTitles(slotStandings) {
         const zoomEl = $('krvZoomRaceTitle');
-        const label = state.raceLabel;
+        const labelsEl = $('krvOverviewRaceLabels');
+        const sel = getSelectedRaceSlot();
 
         if (zoomEl) {
-            if (label) {
+            if (sel?.label) {
                 zoomEl.hidden = false;
-                zoomEl.textContent = label;
+                zoomEl.textContent = sel.label;
             } else {
                 zoomEl.hidden = true;
             }
         }
 
-        if (!overviewEl) return;
-        if (!label || !standings?.length) {
-            overviewEl.hidden = true;
-            return;
-        }
+        if (!labelsEl || !state.raceSlots.length) return;
 
         const svg = $('krvOverviewSvg');
         const layout = JSON.parse(svg?.dataset.layout || '{}');
-        const { w, h, padL, padR, padT, padB } = layout;
+        const { w, h, padL, padR, padT } = layout;
         if (!w || !h) {
-            overviewEl.hidden = true;
+            labelsEl.innerHTML = '';
             return;
         }
 
-        const dists = standings.map((s) => s.distance);
-        const packMin = Math.min(...dists);
-        const packMax = Math.max(...dists);
-        const followD = (packMin + packMax) / 2;
         const chartW = w - padL - padR;
-        const x = padL + (followD / COURSE_M) * chartW;
-        const xPct = (x / w) * 100;
-
-        overviewEl.textContent = label;
-        overviewEl.hidden = false;
-        overviewEl.style.left = `${xPct}%`;
-        overviewEl.style.top = `${(((padT - 6) / h) * 100).toFixed(3)}%`;
+        labelsEl.innerHTML = state.raceSlots
+            .map((slot) => {
+                const standings = slotStandings?.find((s) => s.slot === slot.slot)?.standings ?? [];
+                if (!slot.label || !standings.length) return '';
+                const dists = standings.map((s) => s.distance);
+                const followD = (Math.min(...dists) + Math.max(...dists)) / 2;
+                const x = padL + (followD / COURSE_M) * chartW;
+                const xPct = (x / w) * 100;
+                const active = slot.slot === state.selectedRaceSlot;
+                const onCourse = state.onCourseRaceNums.has(slot.raceNum);
+                return (
+                    `<button type="button" class="krv-overview__race-label${active ? ' krv-overview__race-label--active' : ''}${onCourse ? ' krv-overview__race-label--on-course' : ''}" data-slot="${slot.slot}" style="left:${xPct.toFixed(3)}%;top:${(((padT - 6) / h) * 100).toFixed(3)}%">` +
+                    `${escapeHtml(slot.label)}` +
+                    `</button>`
+                );
+            })
+            .join('');
     }
 
-    function updateOverviewBoats(standings, tSec) {
+    function renderZoomRacePicker() {
+        const el = $('krvZoomRacePicker');
+        if (!el) return;
+        if (!state.raceSlots.length) {
+            el.innerHTML = '';
+            el.hidden = true;
+            return;
+        }
+        el.hidden = false;
+        el.innerHTML = state.raceSlots
+            .map((slot) => {
+                const active = slot.slot === state.selectedRaceSlot;
+                const onCourse = state.onCourseRaceNums.has(slot.raceNum);
+                const short = slot.label.split(' · ').slice(-2).join(' · ') || slot.label;
+                return (
+                    `<button type="button" role="tab" aria-selected="${active}" class="krv-zoom__race-tab${active ? ' krv-zoom__race-tab--active' : ''}${onCourse ? ' krv-zoom__race-tab--on-course' : ''}" data-slot="${slot.slot}">` +
+                    `${escapeHtml(short)}` +
+                    `</button>`
+                );
+            })
+            .join('');
+    }
+
+    function updateOverviewBoats(slotStandings) {
         const svg = $('krvOverviewSvg');
         const clusterG = svg?.querySelector('#krvOverviewCluster');
         const boatsG = svg?.querySelector('#krvOverviewBoats');
@@ -994,29 +1105,45 @@
 
         const layout = JSON.parse(svg.dataset.layout || '{}');
         const { w, h, padL, padR, padT, padB } = layout;
-        const { minD, maxD, leaderD } = clusterBounds(standings);
+        const chartW = w - padL - padR;
+        const selected = state.selectedRaceSlot;
 
-        const x0 = padL + (minD / COURSE_M) * (w - padL - padR);
-        const x1 = padL + (maxD / COURSE_M) * (w - padL - padR);
-        clusterG.innerHTML =
-            `<rect x="${x0}" y="${padT}" width="${Math.max(8, x1 - x0)}" height="${h - padT - padB}" class="krv-cluster-box" rx="8"/>`;
-
-        updateRaceTitles(standings);
-
-        boatsG.innerHTML = standings
-            .map(({ boat, distance, idx }) => {
-                const lane = boat.lane || idx + 1;
-                const x = padL + (distance / COURSE_M) * (w - padL - padR);
-                const y = yMapLane(lane, h, padT, padB);
+        clusterG.innerHTML = slotStandings
+            .map(({ slot, standings }) => {
+                if (!standings.length) return '';
+                const dists = standings.map((s) => s.distance);
+                const minD = Math.min(...dists);
+                const maxD = Math.max(...dists);
+                const a = Math.max(0, minD);
+                const b = Math.min(COURSE_M, maxD);
+                if (b <= a) return '';
+                const x0 = padL + (a / COURSE_M) * chartW;
+                const x1 = padL + (b / COURSE_M) * chartW;
+                const active = slot === selected;
                 return (
-                    `<g class="krv-boat krv-boat--overview" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">` +
-                    boatShapeHtml(boat.color) +
-                    `</g>`
+                    `<rect x="${x0.toFixed(1)}" y="${padT}" width="${Math.max(8, x1 - x0).toFixed(1)}" height="${h - padT - padB}" class="krv-cluster-box krv-cluster-box--${slot}${active ? ' krv-cluster-box--active' : ''}" rx="8"/>`
                 );
             })
             .join('');
 
-        boatsG.dataset.leaderD = String(leaderD);
+        updateRaceTitles(slotStandings);
+
+        boatsG.innerHTML = slotStandings
+            .flatMap(({ slot, standings }) =>
+                standings.map(({ boat, distance, idx }) => {
+                    if (distance < -80 || distance > COURSE_M + 80) return '';
+                    const lane = boat.lane || idx + 1;
+                    const x = padL + (distance / COURSE_M) * chartW;
+                    const y = yMapLane(lane, h, padT, padB);
+                    const dim = slot !== selected ? ' krv-boat--overview-dim' : '';
+                    return (
+                        `<g class="krv-boat krv-boat--overview krv-boat--${slot}${dim}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">` +
+                        boatShapeHtml(boat.color) +
+                        `</g>`
+                    );
+                }),
+            )
+            .join('');
     }
 
     function updateZoomView(standings) {
@@ -1087,23 +1214,34 @@
     function renderUpcoming() {
         const list = $('krvUpcomingList');
         if (!list) return;
-        const upcoming = getUpcoming(5);
+        const upcoming = getUpcoming(8);
         if (!upcoming.length) {
             list.innerHTML = '<li class="krv-upcoming__empty">No schedule loaded</li>';
             return;
         }
+        const selectedNum = getSelectedRaceSlot()?.raceNum;
         list.innerHTML = upcoming
             .map((race) => {
                 const name = expandEventName(race.eventType, state.lookup);
                 const round = [race.round, race.division ? `Div ${race.division}` : '']
                     .filter(Boolean)
                     .join(' · ');
+                const onCourse = state.onCourseRaceNums.has(race.raceNum);
+                const active = race.raceNum === selectedNum;
+                const cls = [
+                    'krv-upcoming__row',
+                    onCourse ? 'krv-upcoming__row--on-course' : '',
+                    active ? 'krv-upcoming__row--active' : '',
+                ]
+                    .filter(Boolean)
+                    .join(' ');
                 return (
-                    `<li class="krv-upcoming__row">` +
+                    `<li class="${cls}" data-race-num="${race.raceNum}" role="button" tabindex="0">` +
                     `<span class="krv-upcoming__time">${formatScheduleTime(race.startAt)}</span>` +
                     `<span class="krv-upcoming__race">Race ${escapeHtml(race.race)}</span>` +
                     `<span class="krv-upcoming__event">${escapeHtml(name)}</span>` +
                     `<span class="krv-upcoming__round">${escapeHtml(round || '—')}</span>` +
+                    (onCourse ? `<span class="krv-upcoming__badge">On course</span>` : '') +
                     `</li>`
                 );
             })
@@ -1153,9 +1291,28 @@
 
     function renderFrame(tSec) {
         if (!state.chartState) return;
-        const standings = global.KriVmixSpeedChart.liveStandings(state.chartState.boats, tSec);
-        updateOverviewBoats(standings, tSec);
-        updateZoomView(standings);
+        state.lastPlaybackSec = tSec;
+        const prevOnCourseKey = [...state.onCourseRaceNums].sort().join(',');
+        updateOnCourseRaceNums(tSec);
+        const onCourseKey = [...state.onCourseRaceNums].sort().join(',');
+        if (onCourseKey !== prevOnCourseKey) {
+            renderUpcoming();
+            renderZoomRacePicker();
+        }
+
+        const slotStandings = state.raceSlots.map((slot) => ({
+            slot: slot.slot,
+            raceNum: slot.raceNum,
+            standings: standingsForSlot(slot.boats, tSec, slot.offsetM),
+        }));
+
+        updateOverviewBoats(slotStandings);
+
+        const selected = getSelectedRaceSlot();
+        const zoomStandings = selected
+            ? standingsForSlot(selected.boats, tSec, selected.offsetM)
+            : [];
+        updateZoomView(zoomStandings);
     }
 
     function playbackTimeSec(ts) {
@@ -1208,15 +1365,41 @@
         if (!chart) throw new Error('Speed chart module missing');
 
         const data = await chart.loadData(getDataUrl());
-        const raceContext = buildRaceContext();
-        state.raceContext = raceContext;
         const prepared = chart.prepareChartState(data);
-        state.chartState = applyRaceContextToState(prepared, raceContext);
-        state.raceLabel = raceTitleLine(raceContext, data);
+        state.chartState = prepared;
+        prepareRaceSlots(prepared, data);
         state.zoomCenter = null;
+        renderZoomRacePicker();
         updateRaceTitles([]);
         renderLaneLabels();
         renderPreviousResults();
+    }
+
+    function bindRaceSelection() {
+        $('krvZoomRacePicker')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-slot]');
+            if (btn) selectRaceSlot(btn.dataset.slot);
+        });
+        $('krvOverviewRaceLabels')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-slot]');
+            if (btn) selectRaceSlot(btn.dataset.slot);
+        });
+        $('krvUpcomingList')?.addEventListener('click', (e) => {
+            const row = e.target.closest('[data-race-num]');
+            if (!row) return;
+            const num = parseInt(row.dataset.raceNum, 10);
+            const slot = state.raceSlots.find((s) => s.raceNum === num);
+            if (slot) selectRaceSlot(slot.slot);
+        });
+        $('krvUpcomingList')?.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const row = e.target.closest('[data-race-num]');
+            if (!row) return;
+            e.preventDefault();
+            const num = parseInt(row.dataset.raceNum, 10);
+            const slot = state.raceSlots.find((s) => s.raceNum === num);
+            if (slot) selectRaceSlot(slot.slot);
+        });
     }
 
     async function init() {
@@ -1224,6 +1407,7 @@
         try {
             renderOverviewStatic();
             renderZoomStatic();
+            bindRaceSelection();
             await loadRegattaData();
             await loadRaceTraces();
             renderUpcoming();
@@ -1263,5 +1447,5 @@
         });
     });
 
-    global.KriRaceViewer = { init, reload: init };
+    global.KriRaceViewer = { init, reload: init, selectRaceSlot };
 })(typeof window !== 'undefined' ? window : globalThis);
