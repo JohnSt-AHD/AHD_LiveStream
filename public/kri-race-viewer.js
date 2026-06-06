@@ -12,6 +12,9 @@
     const CLUSTER_PAD_M = 100;
     const ZOOM_TRAIL_M = 90;
     const ZOOM_LEAD_M = 35;
+    const ZOOM_SPAN_M = 130;
+    const ZOOM_CENTER_SMOOTH = 0.14;
+    const ZOOM_EDGE_BLEND_M = 50;
     const LOOP_PAUSE_SEC = 2.5;
     const ZONE_START_M = 100;
     const ZONE_FINISH_M = 250;
@@ -35,6 +38,7 @@
         rafId: null,
         playbackStart: null,
         waterRafId: null,
+        zoomCenter: null,
     };
 
     function $(id) {
@@ -370,36 +374,88 @@
         return { minD, maxD, leaderD: dists[0] };
     }
 
-    function zoomWindow(standings) {
+    function zoomWindowTarget(standings) {
+        const span = ZOOM_SPAN_M;
+        const pinnedStartCenter = span / 2;
+        const pinnedFinishCenter = COURSE_M - span / 2;
+
         if (!standings.length) {
-            return { minD: 0, maxD: 200 };
+            return { minD: 0, maxD: span, center: pinnedStartCenter };
         }
+
         const dists = standings.map((s) => s.distance);
         const leaderD = dists[0];
+        const lastD = dists[dists.length - 1];
         const packMin = Math.min(...dists);
         const packMax = Math.max(...dists);
-        const packCenter = (packMin + packMax) / 2;
-        const nearStart = leaderD <= ZONE_START_M + 50;
-        const nearFinish = leaderD >= COURSE_M - ZONE_FINISH_M - 50;
 
-        if (nearStart || nearFinish) {
-            const halfWin = Math.max(90, (packMax - packMin) / 2 + 50);
-            let minD = Math.max(0, packCenter - halfWin);
-            let maxD = Math.min(COURSE_M, packCenter + halfWin);
-            if (maxD - minD < 130) {
-                minD = Math.max(0, packCenter - 65);
-                maxD = Math.min(COURSE_M, minD + 130);
-            }
-            return { minD, maxD };
+        const movingCenter = (lastD - ZOOM_TRAIL_M * 0.5 + leaderD + ZOOM_LEAD_M * 0.75) / 2;
+        const clampedMoving = Math.max(packMin - 10, Math.min(packMax + 10, movingCenter));
+
+        const startBlendFrom = span * 0.5;
+        const startBlendTo = startBlendFrom + ZOOM_EDGE_BLEND_M;
+        const finishBlendTo = COURSE_M - span * 0.5;
+        const finishBlendFrom = finishBlendTo - ZOOM_EDGE_BLEND_M;
+
+        let center;
+        if (leaderD <= startBlendFrom) {
+            center = pinnedStartCenter;
+        } else if (leaderD < startBlendTo) {
+            const t = (leaderD - startBlendFrom) / ZOOM_EDGE_BLEND_M;
+            center = pinnedStartCenter + (clampedMoving - pinnedStartCenter) * t;
+        } else if (leaderD >= finishBlendTo) {
+            center = pinnedFinishCenter;
+        } else if (leaderD > finishBlendFrom) {
+            const t = (leaderD - finishBlendFrom) / ZOOM_EDGE_BLEND_M;
+            center = clampedMoving + (pinnedFinishCenter - clampedMoving) * t;
+        } else {
+            center = clampedMoving;
         }
 
-        const lastD = dists[dists.length - 1];
-        const minD = Math.max(0, lastD - ZOOM_TRAIL_M);
-        const maxD = Math.min(COURSE_M, leaderD + ZOOM_LEAD_M);
-        if (maxD - minD < 120) {
-            return { minD: Math.max(0, leaderD - 80), maxD: Math.min(COURSE_M, leaderD + 40) };
+        let minD = center - span / 2;
+        let maxD = center + span / 2;
+
+        if (minD < 0) {
+            minD = 0;
+            maxD = span;
+            center = pinnedStartCenter;
+        } else if (maxD > COURSE_M) {
+            maxD = COURSE_M;
+            minD = COURSE_M - span;
+            center = pinnedFinishCenter;
         }
+
+        return { minD, maxD, center };
+    }
+
+    function smoothZoomWindow(target) {
+        const span = ZOOM_SPAN_M;
+        let center = target.center;
+
+        if (state.zoomCenter == null) {
+            state.zoomCenter = center;
+        } else {
+            state.zoomCenter += (center - state.zoomCenter) * ZOOM_CENTER_SMOOTH;
+        }
+
+        let minD = state.zoomCenter - span / 2;
+        let maxD = state.zoomCenter + span / 2;
+
+        if (minD < 0) {
+            state.zoomCenter = span / 2;
+            minD = 0;
+            maxD = span;
+        } else if (maxD > COURSE_M) {
+            state.zoomCenter = COURSE_M - span / 2;
+            maxD = COURSE_M;
+            minD = COURSE_M - span;
+        }
+
         return { minD, maxD };
+    }
+
+    function zoomWindow(standings) {
+        return smoothZoomWindow(zoomWindowTarget(standings));
     }
 
     function xCourse(distanceM, padL, chartW) {
@@ -1092,6 +1148,7 @@
     function startPlayback() {
         if (state.rafId) global.cancelAnimationFrame(state.rafId);
         state.playbackStart = null;
+        state.zoomCenter = null;
         state.rafId = global.requestAnimationFrame(tick);
     }
 
@@ -1128,6 +1185,7 @@
         const prepared = chart.prepareChartState(data);
         state.chartState = applyRaceContextToState(prepared, raceContext);
         state.raceLabel = raceTitleLine(raceContext, data);
+        state.zoomCenter = null;
         updateRaceLabel();
         renderLaneLabels();
         renderPreviousResults();
