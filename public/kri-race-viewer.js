@@ -18,7 +18,6 @@
     const ZOOM_SPAN_M = 130;
     const ZOOM_CENTER_SMOOTH = 0.1;
     const ZOOM_BOAT_Y_SMOOTH = 0.16;
-    const ZOOM_COURSE_REGEN_M = 40;
     const LOOP_PAUSE_SEC = 2.5;
     const ZONE_START_M = 100;
     const ZONE_FINISH_M = 250;
@@ -54,7 +53,6 @@
         playbackStart: null,
         waterRafId: null,
         zoomCenter: null,
-        zoomCourseAnchor: null,
         zoomBoatYOffset: new Map(),
         lastFrameTs: null,
         prevBoatDistance: new Map(),
@@ -424,7 +422,6 @@
         state.prevBoatDistance = new Map();
         state.laneSplitCallouts = new Map();
         state.splitCalloutsKey = '';
-        state.zoomCourseAnchor = null;
         state.zoomBoatYOffset = new Map();
         if (clearFinished) state.finishedBoats = new Map();
     }
@@ -532,7 +529,6 @@
         if (!state.raceSlots.some((s) => s.slot === slotId)) return;
         state.selectedRaceSlot = slotId;
         state.zoomCenter = null;
-        state.zoomCourseAnchor = null;
         state.zoomBoatYOffset = new Map();
         state.laneSplitCallouts = new Map();
         state.splitCalloutsKey = '';
@@ -1549,25 +1545,12 @@
 
         const layout = getZoomLayout();
         if (!layout) return;
-        const { w, padL, padR, padT, padB } = layout;
         const { minD, maxD } = zoomWindow(standings, dtSec);
         const leaderD = standings[0]?.distance ?? 0;
         const toGo = Math.max(0, Math.round(COURSE_M - leaderD));
 
-        const anchor = state.zoomCourseAnchor;
-        const needsRebuild =
-            !anchor ||
-            minD < anchor.minD - ZOOM_COURSE_REGEN_M ||
-            maxD > anchor.maxD + ZOOM_COURSE_REGEN_M;
-
-        if (needsRebuild) {
-            courseG.innerHTML = buildZoomCourseHtml(layout, minD, maxD);
-            state.zoomCourseAnchor = { minD, maxD };
-            courseG.setAttribute('transform', '');
-        } else {
-            const offset = xMap(anchor.minD, minD, maxD, w, padL, padR) - padL;
-            courseG.setAttribute('transform', `translate(${offset.toFixed(2)}, 0)`);
-        }
+        courseG.innerHTML = buildZoomCourseHtml(layout, minD, maxD);
+        courseG.removeAttribute('transform');
 
         updateZoomBoatsPooled(standings, layout, minD, maxD, toGo, dtSec);
     }
@@ -1795,7 +1778,6 @@
         state.chartState = prepared;
         prepareRaceSlots(prepared, data);
         state.zoomCenter = null;
-        state.zoomCourseAnchor = null;
         state.zoomBoatYOffset = new Map();
         resetRaceTracking();
         renderZoomRacePicker();
