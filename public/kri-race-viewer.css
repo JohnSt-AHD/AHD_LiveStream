@@ -565,7 +565,7 @@ body {
     gap: 8px;
     width: max-content;
     max-width: none;
-    will-change: transform;
+    will-change: left, top, transform;
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
     pointer-events: none;
 }

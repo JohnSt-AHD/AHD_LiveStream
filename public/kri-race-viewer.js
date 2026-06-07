@@ -1277,7 +1277,7 @@
                 ? Math.max(...items.map((i) => i.xPx)) - Math.min(...items.map((i) => i.xPx))
                 : 999;
         const xThreshold = mobile ? 90 : 130;
-        if (xSpread <= xThreshold) {
+        if (!mobile && xSpread <= xThreshold) {
             for (let i = 0; i < items.length; i++) {
                 for (let j = i + 1; j < items.length; j++) {
                     const a = items[i];
@@ -1363,8 +1363,9 @@
             node.el.hidden = false;
             node.el.dataset.rank = String(rank + 1);
             node.el.style.setProperty('--hull-half', `${hullHalf}px`);
-            node.el.style.transform =
-                `translate3d(${xPct}%, ${yPct}%, 0) translate(calc(-1 * var(--hull-half)), -50%)`;
+            node.el.style.left = `${xPct}%`;
+            node.el.style.top = `${yPct}%`;
+            node.el.style.transform = `translate(calc(-1 * var(--hull-half)), -50%)`;
             node.el.style.zIndex = String(20 - rank);
 
             const logo = boat.logoUrl || LOGO_PLACEHOLDER;
