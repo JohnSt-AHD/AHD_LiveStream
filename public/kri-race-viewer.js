@@ -28,6 +28,8 @@
     const SPLIT_MARKERS_M = [500, 1000, 1500];
     const SPLIT_HOLD_SEC = 20;
     const FINISH_HIDE_SEC = 30;
+    const TITLE_FOLLOW_SNAP_M = 14;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
 
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2,
@@ -58,6 +60,14 @@
         waterLiteFrame: 0,
         waterDeferTimer: null,
         splitMarkerBanner: null,
+        overviewLayout: null,
+        zoomLayout: null,
+        zoomBoatPool: [],
+        overviewBoatNodes: new Map(),
+        titleFollowKey: '',
+        splitCalloutsKey: '',
+        clusterKeys: '',
+        waterDeferUntil: 0,
     };
 
     function $(id) {
@@ -75,6 +85,42 @@
 
     function canvasDpr() {
         return useLiteGraphics() ? 1 : Math.min(global.devicePixelRatio || 1, 2);
+    }
+
+    function enrichLayout(layout) {
+        const { h, padT, padB } = layout;
+        const bands = computeLaneBands(h, padT, padB);
+        return { ...layout, laneCenters: bands.centers, laneHeights: bands.heights };
+    }
+
+    function getOverviewLayout() {
+        if (state.overviewLayout) return state.overviewLayout;
+        const svg = $('krvOverviewSvg');
+        if (!svg?.dataset.layout) return null;
+        state.overviewLayout = enrichLayout(JSON.parse(svg.dataset.layout));
+        return state.overviewLayout;
+    }
+
+    function getZoomLayout() {
+        if (state.zoomLayout) return state.zoomLayout;
+        const svg = $('krvZoomSvg');
+        if (!svg?.dataset.layout) return null;
+        state.zoomLayout = enrichLayout(JSON.parse(svg.dataset.layout));
+        return state.zoomLayout;
+    }
+
+    function clearBoatPools() {
+        state.zoomBoatPool = [];
+        $('krvZoomBoats')?.replaceChildren();
+        state.overviewBoatNodes = new Map();
+        $('krvOverviewBoats')?.replaceChildren();
+        state.titleFollowKey = '';
+        state.splitCalloutsKey = '';
+        state.clusterKeys = '';
+    }
+
+    function yMapLaneCached(lane, layout) {
+        return layout?.laneCenters?.[lane - 1] ?? 0;
     }
 
     function escapeHtml(s) {
@@ -376,6 +422,7 @@
         state.prevBoatDistance = new Map();
         state.laneSplitCallouts = new Map();
         state.splitMarkerBanner = null;
+        state.splitCalloutsKey = '';
         state.zoomCourseKey = '';
         if (clearFinished) state.finishedBoats = new Map();
     }
@@ -477,6 +524,11 @@
         if (state.splitMarkerBanner && tSec > state.splitMarkerBanner.until) {
             state.splitMarkerBanner = null;
         }
+        if (state.laneSplitCallouts.size === 0 && state.splitCalloutsKey) {
+            state.splitCalloutsKey = '';
+            const el = $('krvZoomSplits');
+            if (el) el.innerHTML = '';
+        }
     }
 
     function applyFinishHold(slotId, entry, tSec, offsetM) {
@@ -497,6 +549,7 @@
         state.zoomCourseKey = '';
         state.laneSplitCallouts = new Map();
         state.splitMarkerBanner = null;
+        state.splitCalloutsKey = '';
         const sel = getSelectedRaceSlot();
         state.raceContext = sel?.context ?? null;
         state.raceLabel = sel?.label ?? '';
@@ -847,39 +900,24 @@
         drawLakeWater(ctx, canvas.width, canvas.height, layout, timeSec, lite);
     }
 
-    function waterAnimationTick(ts) {
+    function paintWaterFrame(ts) {
         const lite = useLiteGraphics();
         if (lite) {
             state.waterLiteFrame += 1;
-            if (state.waterLiteFrame % 2 !== 0) {
-                state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
-                return;
-            }
+            if (state.waterLiteFrame % 2 !== 0) return;
         }
         const timeSec = ts / 1000;
-        const overviewLayout = JSON.parse($('krvOverviewSvg')?.dataset.layout || 'null');
-        const zoomLayout = JSON.parse($('krvZoomSvg')?.dataset.layout || 'null');
-        if (!lite) {
-            syncWaterCanvas($('krvOverviewWater'), overviewLayout);
-            paintWaterCanvas($('krvOverviewWater'), timeSec, false);
-        }
+        const zoomLayout = getZoomLayout();
         syncWaterCanvas($('krvZoomWater'), zoomLayout);
         paintWaterCanvas($('krvZoomWater'), timeSec, lite);
-        state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
     }
 
     function scheduleWaterAnimation() {
-        if (state.waterDeferTimer) global.clearTimeout(state.waterDeferTimer);
-        const delay = useLiteGraphics() ? 500 : 0;
-        state.waterDeferTimer = global.setTimeout(() => {
-            state.waterDeferTimer = null;
-            startWaterAnimation();
-        }, delay);
+        /* Water is painted from the main playback loop. */
     }
 
     function startWaterAnimation() {
-        if (state.waterRafId) global.cancelAnimationFrame(state.waterRafId);
-        state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
+        /* No-op: single RAF drives playback + water. */
     }
 
     function checkerFill(scope) {
@@ -1121,9 +1159,10 @@
         parts.push('<g id="krvOverviewBoats"></g>');
 
         svg.innerHTML = parts.join('');
-        const overviewLayout = { w, h, padL, padR, padT, padB, chartW, chartH, rx: 8 };
-        svg.dataset.layout = JSON.stringify(overviewLayout);
-        syncWaterCanvas($('krvOverviewWater'), overviewLayout);
+        state.overviewLayout = enrichLayout({
+            w, h, padL, padR, padT, padB, chartW, chartH, rx: 8,
+        });
+        svg.dataset.layout = JSON.stringify(state.overviewLayout);
     }
 
     function renderZoomStatic() {
@@ -1152,9 +1191,11 @@
         parts.push('<g id="krvZoomLaneLabels"></g>');
         parts.push('<g id="krvZoomCourse"></g>');
         svg.innerHTML = parts.join('');
-        const zoomLayout = { w, h, padL, padR, padT, padB, chartW, chartH, rx: 12 };
-        svg.dataset.layout = JSON.stringify(zoomLayout);
-        syncWaterCanvas($('krvZoomWater'), zoomLayout);
+        state.zoomLayout = enrichLayout({
+            w, h, padL, padR, padT, padB, chartW, chartH, rx: 12,
+        });
+        svg.dataset.layout = JSON.stringify(state.zoomLayout);
+        syncWaterCanvas($('krvZoomWater'), state.zoomLayout);
     }
 
     function updateRaceTitles(slotStandings) {
@@ -1173,13 +1214,25 @@
 
         if (!labelsEl || !state.raceSlots.length) return;
 
-        const svg = $('krvOverviewSvg');
-        const layout = JSON.parse(svg?.dataset.layout || '{}');
-        const { w, h, padL, padR, padT } = layout;
-        if (!w || !h) {
+        const layout = getOverviewLayout();
+        if (!layout) {
             labelsEl.innerHTML = '';
             return;
         }
+        const { w, h, padL, padR, padT } = layout;
+
+        const titleBits = state.raceSlots
+            .map((slot) => {
+                const standings = slotStandings?.find((s) => s.slot === slot.slot)?.standings ?? [];
+                if (!standings.length) return '';
+                const dists = standings.map((s) => s.distance);
+                const followD = (Math.min(...dists) + Math.max(...dists)) / 2;
+                return `${slot.slot}:${Math.round(followD / TITLE_FOLLOW_SNAP_M)}`;
+            })
+            .join('|');
+        const titleKey = `${titleBits}|${state.selectedRaceSlot}`;
+        if (titleKey === state.titleFollowKey && labelsEl.childElementCount > 0) return;
+        state.titleFollowKey = titleKey;
 
         const chartW = w - padL - padR;
         const dockTop = useLiteGraphics();
@@ -1209,32 +1262,27 @@
     function layoutZoomBoats(standings, layout, minD, maxD) {
         const { w, h, padL, padR, padT, padB } = layout;
         const mobile = useLiteGraphics();
-        const chartH = h - padT - padB;
-        const laneH = chartH / LANE_COUNT;
+        const laneH = layout.laneHeights?.[0] ?? (h - padT - padB) / LANE_COUNT;
         const minSep = mobile ? Math.max(52, laneH * 0.92) : Math.max(44, laneH * 0.82);
 
         const items = standings.map((entry, rank) => {
             const lane = entry.boat.lane || entry.idx + 1;
             const xPx = xMap(entry.distance, minD, maxD, w, padL, padR);
-            const yPx = yMapLane(lane, h, padT, padB);
-            return {
-                entry,
-                rank,
-                lane,
-                xPx,
-                yPx,
-                yOffset: 0,
-            };
+            const yPx = yMapLaneCached(lane, layout);
+            return { entry, rank, lane, xPx, yPx, yOffset: 0 };
         });
 
-        for (let pass = 0; pass < 3; pass++) {
+        const xSpread =
+            items.length > 1
+                ? Math.max(...items.map((i) => i.xPx)) - Math.min(...items.map((i) => i.xPx))
+                : 999;
+        const xThreshold = mobile ? 90 : 130;
+        if (xSpread <= xThreshold) {
             for (let i = 0; i < items.length; i++) {
                 for (let j = i + 1; j < items.length; j++) {
                     const a = items[i];
                     const b = items[j];
-                    const xDist = Math.abs(a.xPx - b.xPx);
-                    const xThreshold = mobile ? 90 : 130;
-                    if (xDist > xThreshold) continue;
+                    if (Math.abs(a.xPx - b.xPx) > xThreshold) continue;
                     const yA = a.yPx + a.yOffset;
                     const yB = b.yPx + b.yOffset;
                     const gap = Math.abs(yA - yB);
@@ -1258,9 +1306,84 @@
 
         return items.map((item) => ({
             ...item,
-            xPct: ((item.xPx / w) * 100).toFixed(3),
-            yPct: (((item.yPx + item.yOffset) / h) * 100).toFixed(3),
+            xPct: ((item.xPx / w) * 100).toFixed(2),
+            yPct: (((item.yPx + item.yOffset) / h) * 100).toFixed(2),
         }));
+    }
+
+    function createZoomBoatNode() {
+        const el = document.createElement('div');
+        el.className = 'krv-zoom-boat';
+        el.innerHTML =
+            `<div class="krv-zoom-boat__hull">` +
+            `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true"></svg>` +
+            `<img class="krv-zoom-boat__logo-badge" alt="" loading="lazy" decoding="async">` +
+            `</div>` +
+            `<div class="krv-zoom-boat__info">` +
+            `<div class="krv-zoom-boat__info-head">` +
+            `<span class="krv-zoom-boat__rank"></span>` +
+            `<span class="krv-zoom-boat__label"></span>` +
+            `</div>` +
+            `<div class="krv-zoom-boat__stats">` +
+            `<span class="krv-zoom-boat__speed"></span>` +
+            `<span class="krv-zoom-boat__gap"></span>` +
+            `</div>` +
+            `</div>`;
+        return {
+            el,
+            svg: el.querySelector('.krv-cartoon-boat'),
+            img: el.querySelector('.krv-zoom-boat__logo-badge'),
+            rank: el.querySelector('.krv-zoom-boat__rank'),
+            label: el.querySelector('.krv-zoom-boat__label'),
+            speed: el.querySelector('.krv-zoom-boat__speed'),
+            gap: el.querySelector('.krv-zoom-boat__gap'),
+            logoUrl: null,
+            hullColor: null,
+        };
+    }
+
+    function updateZoomBoatsPooled(standings, layout, minD, maxD, toGo) {
+        const boatsEl = $('krvZoomBoats');
+        if (!boatsEl) return;
+        const items = layoutZoomBoats(standings, layout, minD, maxD);
+        const leaderD = standings[0]?.distance ?? 0;
+        const stacked = useLiteGraphics();
+
+        while (state.zoomBoatPool.length < items.length) {
+            const node = createZoomBoatNode();
+            boatsEl.appendChild(node.el);
+            state.zoomBoatPool.push(node);
+        }
+
+        for (let i = 0; i < items.length; i++) {
+            const node = state.zoomBoatPool[i];
+            const { entry, rank, xPct, yPct } = items[i];
+            const { boat, distance, speed } = entry;
+            node.el.hidden = false;
+            node.el.classList.toggle('krv-zoom-boat--stacked', stacked);
+            node.el.style.transform = `translate3d(${xPct}%, ${yPct}%, 0) translate(-50%, -50%)`;
+            node.el.style.zIndex = String(20 - rank);
+
+            const logo = boat.logoUrl || LOGO_PLACEHOLDER;
+            if (node.logoUrl !== logo) {
+                node.img.src = logo;
+                node.logoUrl = logo;
+            }
+            const hullColor = boat.color || '#38bdf8';
+            if (node.hullColor !== hullColor) {
+                node.svg.innerHTML = cartoonBoatPaths(hullColor);
+                node.hullColor = hullColor;
+            }
+            node.rank.textContent = String(rank + 1);
+            node.label.textContent = displayName(boat);
+            node.speed.textContent = `${speed.toFixed(1)} m/s`;
+            node.gap.textContent =
+                rank === 0 ? `${toGo} m to go` : `+${Math.max(0, Math.round(leaderD - distance))} m`;
+        }
+
+        for (let i = items.length; i < state.zoomBoatPool.length; i++) {
+            state.zoomBoatPool[i].el.hidden = true;
+        }
     }
 
     function renderZoomRacePicker() {
@@ -1292,56 +1415,89 @@
         const boatsG = svg?.querySelector('#krvOverviewBoats');
         if (!svg || !clusterG || !boatsG) return;
 
-        const layout = JSON.parse(svg.dataset.layout || '{}');
+        const layout = getOverviewLayout();
+        if (!layout) return;
         const { w, h, padL, padR, padT, padB } = layout;
         const chartW = w - padL - padR;
         const selected = state.selectedRaceSlot;
 
-        clusterG.innerHTML = slotStandings
+        const clusterKey = slotStandings
             .map(({ slot, standings }) => {
-                if (!standings.length) return '';
+                if (!standings.length) return `${slot}:none`;
                 const dists = standings.map((s) => s.distance);
                 const minD = Math.min(...dists);
                 const maxD = Math.max(...dists);
-                const a = Math.max(0, minD);
-                const b = Math.min(COURSE_M, maxD);
-                if (b <= a) return '';
-                const x0 = padL + (a / COURSE_M) * chartW;
-                const x1 = padL + (b / COURSE_M) * chartW;
-                const active = slot === selected;
-                return (
-                    `<rect x="${x0.toFixed(1)}" y="${padT}" width="${Math.max(8, x1 - x0).toFixed(1)}" height="${h - padT - padB}" class="krv-cluster-box krv-cluster-box--${slot}${active ? ' krv-cluster-box--active' : ''}" rx="8"/>`
-                );
+                return `${slot}:${Math.round(minD / 8)}-${Math.round(maxD / 8)}:${slot === selected ? 1 : 0}`;
             })
-            .join('');
+            .join('|');
+        if (clusterKey !== state.clusterKeys) {
+            state.clusterKeys = clusterKey;
+            clusterG.innerHTML = slotStandings
+                .map(({ slot, standings }) => {
+                    if (!standings.length) return '';
+                    const dists = standings.map((s) => s.distance);
+                    const minD = Math.min(...dists);
+                    const maxD = Math.max(...dists);
+                    const a = Math.max(0, minD);
+                    const b = Math.min(COURSE_M, maxD);
+                    if (b <= a) return '';
+                    const x0 = padL + (a / COURSE_M) * chartW;
+                    const x1 = padL + (b / COURSE_M) * chartW;
+                    const active = slot === selected;
+                    return (
+                        `<rect x="${x0.toFixed(1)}" y="${padT}" width="${Math.max(8, x1 - x0).toFixed(1)}" height="${h - padT - padB}" class="krv-cluster-box krv-cluster-box--${slot}${active ? ' krv-cluster-box--active' : ''}" rx="8"/>`
+                    );
+                })
+                .join('');
+        }
 
         updateRaceTitles(slotStandings);
 
-        boatsG.innerHTML = slotStandings
-            .flatMap(({ slot, standings }) =>
-                standings.map(({ boat, distance, idx }) => {
-                    if (distance < -80 || distance > COURSE_M + 80) return '';
-                    const lane = boat.lane || idx + 1;
-                    const x = padL + (distance / COURSE_M) * chartW;
-                    const y = yMapLane(lane, h, padT, padB);
-                    const dim = slot !== selected ? ' krv-boat--overview-dim' : '';
-                    return (
-                        `<g class="krv-boat krv-boat--overview krv-boat--${slot}${dim}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">` +
-                        boatShapeHtml(boat.color) +
-                        `</g>`
-                    );
-                }),
-            )
-            .join('');
+        const activeKeys = new Set();
+        for (const { slot, standings } of slotStandings) {
+            for (const { boat, distance, idx } of standings) {
+                if (distance < -80 || distance > COURSE_M + 80) continue;
+                const key = `${slot}-${idx}`;
+                activeKeys.add(key);
+                const lane = boat.lane || idx + 1;
+                const x = padL + (distance / COURSE_M) * chartW;
+                const y = yMapLaneCached(lane, layout);
+                const dim = slot !== selected ? ' krv-boat--overview-dim' : '';
+                const cls = `krv-boat krv-boat--overview krv-boat--${slot}${dim}`;
+                let node = state.overviewBoatNodes.get(key);
+                if (!node) {
+                    const g = document.createElementNS(SVG_NS, 'g');
+                    const shape = document.createElementNS(SVG_NS, 'g');
+                    shape.setAttribute('class', 'krv-boat-shape');
+                    shape.setAttribute('transform', 'scale(0.72) translate(-24,-12)');
+                    shape.innerHTML = cartoonBoatPaths(boat.color);
+                    g.appendChild(shape);
+                    boatsG.appendChild(g);
+                    node = { g, shape, color: boat.color };
+                    state.overviewBoatNodes.set(key, node);
+                } else if (node.color !== boat.color) {
+                    node.shape.innerHTML = cartoonBoatPaths(boat.color);
+                    node.color = boat.color;
+                }
+                node.g.setAttribute('class', cls);
+                node.g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+            }
+        }
+        for (const [key, node] of state.overviewBoatNodes) {
+            if (!activeKeys.has(key)) {
+                node.g.remove();
+                state.overviewBoatNodes.delete(key);
+            }
+        }
     }
 
     function updateZoomView(standings) {
         const svg = $('krvZoomSvg');
         const courseG = svg?.querySelector('#krvZoomCourse');
-        const boatsEl = $('krvZoomBoats');
-        if (!svg || !courseG || !boatsEl) return;
+        if (!svg || !courseG) return;
 
-        const layout = JSON.parse(svg.dataset.layout || '{}');
+        const layout = getZoomLayout();
+        if (!layout) return;
         const { w, h, padL, padR, padT, padB, chartW, chartH } = layout;
         const { minD, maxD } = zoomWindow(standings);
         const leaderD = standings[0]?.distance ?? 0;
@@ -1374,37 +1530,7 @@
             courseG.innerHTML = courseParts.join('');
         }
 
-        boatsEl.innerHTML = layoutZoomBoats(standings, layout, minD, maxD)
-            .map(({ entry, rank, xPct, yPct }) => {
-                const { boat, distance, speed, idx } = entry;
-                const leaderD = standings[0]?.distance ?? 0;
-                const gap = rank === 0 ? '' : `+${Math.max(0, Math.round(leaderD - distance))} m`;
-                const logo = boat.logoUrl || LOGO_PLACEHOLDER;
-                const speedStr = `${speed.toFixed(1)} m/s`;
-                const toGoStr = rank === 0 ? `${toGo} m to go` : gap;
-                const stackCls = useLiteGraphics() ? ' krv-zoom-boat--stacked' : '';
-                return (
-                    `<div class="krv-zoom-boat${stackCls}" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
-                    `<div class="krv-zoom-boat__hull">` +
-                    `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true">` +
-                    cartoonBoatPaths(boat.color || '#38bdf8') +
-                    `</svg>` +
-                    `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">` +
-                    `</div>` +
-                    `<div class="krv-zoom-boat__info">` +
-                    `<div class="krv-zoom-boat__info-head">` +
-                    `<span class="krv-zoom-boat__rank">${rank + 1}</span>` +
-                    `<span class="krv-zoom-boat__label">${escapeHtml(displayName(boat))}</span>` +
-                    `</div>` +
-                    `<div class="krv-zoom-boat__stats">` +
-                    `<span class="krv-zoom-boat__speed">${speedStr}</span>` +
-                    `<span class="krv-zoom-boat__gap">${escapeHtml(toGoStr)}</span>` +
-                    `</div>` +
-                    `</div>` +
-                    `</div>`
-                );
-            })
-            .join('');
+        updateZoomBoatsPooled(standings, layout, minD, maxD, toGo);
     }
 
     function splitMarkerLabel(marker) {
@@ -1428,9 +1554,8 @@
 
     function renderZoomSplitCallouts(tSec) {
         const el = $('krvZoomSplits');
-        const svg = $('krvZoomSvg');
-        if (!el || !svg) return;
-        const layout = JSON.parse(svg.dataset.layout || '{}');
+        const layout = getZoomLayout();
+        if (!el || !layout) return;
         const { h, padT, padB } = layout;
         const byLane = new Map();
         for (const callout of state.laneSplitCallouts.values()) {
@@ -1440,9 +1565,16 @@
                 byLane.set(callout.lane, callout);
             }
         }
+        const calloutKey = [...byLane.entries()]
+            .sort((a, b) => a[0] - b[0])
+            .map(([lane, c]) => `${lane}:${c.text}:${c.kind}`)
+            .join('|');
+        if (calloutKey === state.splitCalloutsKey) return;
+        state.splitCalloutsKey = calloutKey;
+
         el.innerHTML = [...byLane.entries()]
             .map(([lane, callout]) => {
-                const yPct = ((yMapLane(lane, h, padT, padB) / h) * 100).toFixed(3);
+                const yPct = ((yMapLaneCached(lane, layout) / h) * 100).toFixed(2);
                 const kindCls = callout.kind === 'finish' ? ' krv-lane-split--finish' : '';
                 return (
                     `<div class="krv-lane-split${kindCls}" style="top:${yPct}%">` +
@@ -1577,6 +1709,9 @@
     function tick(ts) {
         const tSec = playbackTimeSec(ts);
         renderFrame(tSec);
+        if (!state.waterDeferUntil || ts >= state.waterDeferUntil) {
+            paintWaterFrame(ts);
+        }
         state.rafId = global.requestAnimationFrame(tick);
     }
 
@@ -1584,6 +1719,7 @@
         if (state.rafId) global.cancelAnimationFrame(state.rafId);
         state.playbackStart = null;
         state.zoomCenter = null;
+        state.waterDeferUntil = useLiteGraphics() ? performance.now() + 500 : 0;
         resetRaceTracking();
         state.rafId = global.requestAnimationFrame(tick);
     }
@@ -1624,6 +1760,9 @@
     function applyRaceTraces(data) {
         const chart = global.KriVmixSpeedChart;
         if (!chart) throw new Error('Speed chart module missing');
+        clearBoatPools();
+        state.overviewLayout = null;
+        state.zoomLayout = null;
         const prepared = chart.prepareChartState(data);
         state.chartState = prepared;
         prepareRaceSlots(prepared, data);

@@ -98,6 +98,14 @@ body {
     min-height: 0;
 }
 
+.krv-overview .krv-water-canvas {
+    display: none;
+}
+
+.krv-overview .krv-water-stack {
+    background: linear-gradient(180deg, #7ec8ea 0%, #3d94c4 45%, #1a5580 100%);
+}
+
 .krv-water-canvas {
     position: absolute;
     inset: 0;
@@ -549,9 +557,11 @@ body {
 
 .krv-zoom-boat {
     position: absolute;
-    transform: translate(-50%, -50%);
+    left: 0;
+    top: 0;
     width: max-content;
     max-width: none;
+    will-change: transform;
     filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
     pointer-events: none;
 }
