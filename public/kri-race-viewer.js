@@ -1150,9 +1150,24 @@
         return parts.join('');
     }
 
+    function renderZoomLaneBadges(layout) {
+        const el = $('krvZoomLaneBadges');
+        if (!el || !layout) return;
+        const { h, padT, padB } = layout;
+        const badges = [];
+        for (let lane = 1; lane <= LANE_COUNT; lane++) {
+            const yPct = ((yMapLane(lane, h, padT, padB) / h) * 100).toFixed(2);
+            badges.push(
+                `<div class="krv-zoom-lane-badge" style="top:${yPct}%">` +
+                `<span class="krv-zoom-lane-badge__num">${lane}</span>` +
+                `</div>`,
+            );
+        }
+        el.innerHTML = `<span class="krv-zoom-lane-badge__head">Lane</span>${badges.join('')}`;
+    }
+
     function renderLaneLabels() {
         const overviewG = $('krvOverviewSvg')?.querySelector('#krvOverviewLaneLabels');
-        const zoomG = $('krvZoomSvg')?.querySelector('#krvZoomLaneLabels');
         if (overviewG) {
             const layout = JSON.parse($('krvOverviewSvg').dataset.layout || '{}');
             overviewG.innerHTML = laneLabelsSvgHtml(
@@ -1163,16 +1178,10 @@
                 false,
             );
         }
-        if (zoomG) {
-            const layout = JSON.parse($('krvZoomSvg').dataset.layout || '{}');
-            zoomG.innerHTML = laneLabelsSvgHtml(
-                layout.h,
-                layout.padL,
-                layout.padT,
-                layout.padB,
-                true,
-            );
-        }
+        const zoomLayout = getZoomLayout();
+        renderZoomLaneBadges(zoomLayout);
+        const zoomG = $('krvZoomSvg')?.querySelector('#krvZoomLaneLabels');
+        if (zoomG) zoomG.innerHTML = '';
     }
 
     function renderOverviewStatic() {
@@ -1255,6 +1264,7 @@
         });
         svg.dataset.layout = JSON.stringify(state.zoomLayout);
         syncWaterCanvas($('krvZoomWater'), state.zoomLayout);
+        renderZoomLaneBadges(state.zoomLayout);
     }
 
     function updateRaceTitles(slotStandings) {

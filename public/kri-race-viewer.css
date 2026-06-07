@@ -239,18 +239,22 @@ body {
 }
 
 .krv-upcoming__row--on-course {
+    margin-left: -10px;
+    padding-left: 10px;
     background: rgba(253, 224, 71, 0.12);
-    box-shadow: inset 3px 0 0 #fde047;
+    box-shadow: inset 13px 0 0 #fde047;
 }
 
 .krv-upcoming__row--active {
+    margin-left: -10px;
+    padding-left: 10px;
     background: rgba(56, 189, 248, 0.16);
-    box-shadow: inset 3px 0 0 #38bdf8;
+    box-shadow: inset 13px 0 0 #38bdf8;
 }
 
 .krv-upcoming__row--on-course.krv-upcoming__row--active {
     background: rgba(253, 224, 71, 0.2);
-    box-shadow: inset 3px 0 0 #f59e0b;
+    box-shadow: inset 13px 0 0 #f59e0b;
 }
 
 .krv-upcoming__badge {
@@ -272,7 +276,7 @@ body {
     font-size: 14px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: var(--kri-brand-blue-dark);
+    color: #ffffff;
 }
 
 .krv-upcoming__race {
@@ -493,6 +497,54 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
+}
+
+.krv-zoom__lane-badges {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 10px;
+    width: 40px;
+    pointer-events: none;
+    z-index: 6;
+}
+
+.krv-zoom-lane-badge__head {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--krv-font, 'Barlow Condensed', sans-serif);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.82);
+    text-shadow: 0 1px 2px rgba(12, 31, 61, 0.45);
+    white-space: nowrap;
+}
+
+.krv-zoom-lane-badge {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid rgba(12, 31, 61, 0.14);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.krv-zoom-lane-badge__num {
+    font-family: var(--krv-font, 'Barlow Condensed', sans-serif);
+    font-size: 12px;
+    font-weight: 800;
+    color: #0c1f3d;
+    line-height: 1;
 }
 
 .krv-zoom__splits {
@@ -1127,6 +1179,25 @@ body {
 
     .krv-zoom__boats {
         padding-left: 6px;
+    }
+
+    .krv-zoom__lane-badges {
+        left: 6px;
+        width: 34px;
+    }
+
+    .krv-zoom-lane-badge {
+        width: 26px;
+        height: 26px;
+    }
+
+    .krv-zoom-lane-badge__head {
+        font-size: 9px;
+        top: 4px;
+    }
+
+    .krv-zoom-lane-badge__num {
+        font-size: 10px;
     }
 
     .krv-zoom-boat {
