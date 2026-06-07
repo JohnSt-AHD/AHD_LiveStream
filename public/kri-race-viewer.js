@@ -28,7 +28,6 @@
     const SPLIT_MARKERS_M = [500, 1000, 1500];
     const SPLIT_HOLD_SEC = 20;
     const FINISH_HIDE_SEC = 30;
-    const FINISH_TIE_SEC = 1;
     const FINISH_CAMERA_GLIDE_MPS = 5;
     const FINISH_CAMERA_GLIDE_MAX_M = 90;
     const TITLE_FOLLOW_SNAP_M = 14;
@@ -462,50 +461,18 @@
         return `${m}:${String(whole).padStart(2, '0')}.${tenths}`;
     }
 
-    function formatPlace(place) {
-        const n = Math.max(1, Math.floor(place));
-        const mod100 = n % 100;
-        const mod10 = n % 10;
-        let suffix = 'th';
-        if (mod100 < 11 || mod100 > 13) {
-            if (mod10 === 1) suffix = 'st';
-            else if (mod10 === 2) suffix = 'nd';
-            else if (mod10 === 3) suffix = 'rd';
-        }
-        return `${n}${suffix}`;
-    }
-
-    function recomputeFinishPlaces(slotId) {
-        const entries = [];
-        for (const [key, fin] of state.finishedBoats) {
-            if (!key.startsWith(`${slotId}-`) || fin.finishTime == null) continue;
-            entries.push({ key, finishTime: fin.finishTime });
-        }
-        entries.sort((a, b) => a.finishTime - b.finishTime);
-        let nextPlace = 1;
-        for (let i = 0; i < entries.length; ) {
-            let j = i + 1;
-            while (j < entries.length && entries[j].finishTime - entries[i].finishTime <= FINISH_TIE_SEC) {
-                j++;
-            }
-            for (let k = i; k < j; k++) {
-                const fin = state.finishedBoats.get(entries[k].key);
-                if (fin) fin.place = nextPlace;
-            }
-            nextPlace += j - i;
-            i = j;
-        }
-    }
-
     function standingsForCamera(rawStandings, slotId, tSec, offsetM) {
         return rawStandings.map((entry) => {
             const key = trackingKey(slotId, entry.idx);
             const fin = state.finishedBoats.get(key);
             let distance = entry.rawDistance + offsetM;
-            if (fin && tSec <= fin.hideAfter) {
+            if (entry.rawDistance >= COURSE_M - 0.5) {
+                if (fin && tSec > fin.hideAfter) return { ...entry, distance };
+                const timelineFinish = timeAtDistance(entry.boat.timeline, COURSE_M);
+                const crossTime = fin?.crossTime ?? timelineFinish ?? tSec;
                 const glideM = Math.min(
                     FINISH_CAMERA_GLIDE_MAX_M,
-                    Math.max(0, tSec - fin.crossTime) * FINISH_CAMERA_GLIDE_MPS,
+                    Math.max(0, tSec - crossTime) * FINISH_CAMERA_GLIDE_MPS,
                 );
                 distance = COURSE_M + glideM + offsetM;
             }
@@ -527,9 +494,7 @@
                             hideAfter: tSec + FINISH_HIDE_SEC,
                             finishTime,
                             crossTime: tSec,
-                            place: null,
                         });
-                        recomputeFinishPlaces(slotId);
                     }
                 }
                 if (isSelected) {
@@ -1394,12 +1359,6 @@
             `<span class="krv-zoom-boat__gap"></span>` +
             `</div>` +
             `</div>` +
-            `<div class="krv-zoom-boat__finish" hidden>` +
-            `<span class="krv-zoom-boat__finish-place"></span>` +
-            `<img class="krv-zoom-boat__finish-logo" alt="" loading="lazy" decoding="async">` +
-            `<span class="krv-zoom-boat__finish-name"></span>` +
-            `<span class="krv-zoom-boat__finish-time"></span>` +
-            `</div>` +
             `<div class="krv-zoom-boat__hull">` +
             `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true"></svg>` +
             `<img class="krv-zoom-boat__logo-badge" alt="" loading="lazy" decoding="async">` +
@@ -1407,11 +1366,6 @@
         return {
             el,
             info: el.querySelector('.krv-zoom-boat__info'),
-            finish: el.querySelector('.krv-zoom-boat__finish'),
-            finishPlace: el.querySelector('.krv-zoom-boat__finish-place'),
-            finishLogo: el.querySelector('.krv-zoom-boat__finish-logo'),
-            finishName: el.querySelector('.krv-zoom-boat__finish-name'),
-            finishTime: el.querySelector('.krv-zoom-boat__finish-time'),
             svg: el.querySelector('.krv-cartoon-boat'),
             hull: el.querySelector('.krv-zoom-boat__hull'),
             img: el.querySelector('.krv-zoom-boat__logo-badge'),
@@ -1420,7 +1374,6 @@
             speed: el.querySelector('.krv-zoom-boat__speed'),
             gap: el.querySelector('.krv-zoom-boat__gap'),
             logoUrl: null,
-            finishLogoUrl: null,
             hullColor: null,
         };
     }
@@ -1476,44 +1429,27 @@
             const finished = fin != null && tSec <= fin.hideAfter;
 
             node.el.hidden = false;
+            node.el.classList.remove('krv-zoom-boat--finished');
             node.el.dataset.rank = String(rank + 1);
             node.el.style.setProperty('--hull-half', `${hullHalf}px`);
             node.el.style.left = `${xPct}%`;
             node.el.style.top = `${yPct}%`;
+            node.el.style.transform = `translate(calc(-1 * var(--hull-half)), -50%)`;
             node.el.style.zIndex = String(20 - rank);
+            node.info.hidden = finished;
+            node.hull.hidden = false;
 
-            if (finished) {
-                node.el.classList.add('krv-zoom-boat--finished');
-                node.el.style.transform = 'translate(-50%, -50%)';
-                node.info.hidden = true;
-                node.hull.hidden = true;
-                node.finish.hidden = false;
-
-                node.finishPlace.textContent = formatPlace(fin.place ?? rank + 1);
-                node.finishName.textContent = displayName(boat);
-                node.finishTime.textContent = formatSplitTime(fin.finishTime);
-                const finishLogo = boat.logoUrl || LOGO_PLACEHOLDER;
-                if (node.finishLogoUrl !== finishLogo) {
-                    node.finishLogo.src = finishLogo;
-                    node.finishLogoUrl = finishLogo;
-                }
-            } else {
-                node.el.classList.remove('krv-zoom-boat--finished');
-                node.el.style.transform = `translate(calc(-1 * var(--hull-half)), -50%)`;
-                node.info.hidden = false;
-                node.hull.hidden = false;
-                node.finish.hidden = true;
-
-                const logo = boat.logoUrl || LOGO_PLACEHOLDER;
-                if (node.logoUrl !== logo) {
-                    node.img.src = logo;
-                    node.logoUrl = logo;
-                }
-                const hullColor = boat.color || '#38bdf8';
-                if (node.hullColor !== hullColor) {
-                    node.svg.innerHTML = cartoonBoatPaths(hullColor);
-                    node.hullColor = hullColor;
-                }
+            const logo = boat.logoUrl || LOGO_PLACEHOLDER;
+            if (node.logoUrl !== logo) {
+                node.img.src = logo;
+                node.logoUrl = logo;
+            }
+            const hullColor = boat.color || '#38bdf8';
+            if (node.hullColor !== hullColor) {
+                node.svg.innerHTML = cartoonBoatPaths(hullColor);
+                node.hullColor = hullColor;
+            }
+            if (!finished) {
                 node.rank.textContent = String(rank + 1);
                 node.label.textContent = mobile
                     ? (boat.shortLabel || displayName(boat))
