@@ -42,6 +42,24 @@
                     <div class="krv-zoom__boats" id="krvZoomBoats"></div>
                     <div class="krv-zoom__lane-badges" id="krvZoomLaneBadges" aria-hidden="true"></div>
                     <div class="krv-zoom__splits" id="krvZoomSplits" aria-hidden="true"></div>
+                    <div class="krv-live-results" id="krvLiveResults" hidden aria-live="polite">
+                        <div class="krv-live-results__panel">
+                            <img class="krv-live-results__mark" src="assets/kri/kri-logo.png" alt="">
+                            <header class="krv-live-results__head">
+                                <p class="krv-live-results__kicker">Results</p>
+                                <h3 class="krv-live-results__title" id="krvLiveResultsTitle"></h3>
+                                <p class="krv-live-results__meta" id="krvLiveResultsMeta"></p>
+                            </header>
+                            <div class="krv-live-results__body">
+                                <div class="krv-live-results__cols" aria-hidden="true">
+                                    <span class="krv-live-results__col krv-live-results__col--place">Placing</span>
+                                    <span class="krv-live-results__col krv-live-results__col--crew">Crew</span>
+                                    <span class="krv-live-results__col krv-live-results__col--time">Time</span>
+                                </div>
+                                <ul class="krv-live-results__list" id="krvLiveResultsList"></ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
             <aside class="krv-previous" aria-label="Previous race results">

@@ -28,6 +28,7 @@
     const SPLIT_MARKERS_M = [500, 1000, 1500];
     const SPLIT_HOLD_SEC = 20;
     const FINISH_HIDE_SEC = 30;
+    const FINISH_TIE_SEC = 1;
     const FINISH_CAMERA_GLIDE_MPS = 5;
     const FINISH_CAMERA_GLIDE_MAX_M = 90;
     const TITLE_FOLLOW_SNAP_M = 14;
@@ -70,6 +71,8 @@
         splitCalloutsKey: '',
         clusterKeys: '',
         waterDeferUntil: 0,
+        liveResultsKey: '',
+        liveResultsRowCount: 0,
     };
 
     function $(id) {
@@ -426,6 +429,117 @@
         state.splitCalloutsKey = '';
         state.zoomBoatYOffset = new Map();
         if (clearFinished) state.finishedBoats = new Map();
+        state.liveResultsKey = '';
+        state.liveResultsRowCount = 0;
+        hideLiveResults();
+    }
+
+    function hideLiveResults() {
+        const panel = $('krvLiveResults');
+        if (panel) panel.hidden = true;
+        state.liveResultsRowCount = 0;
+    }
+
+    function recomputeFinishPlaces(slotId) {
+        const entries = [];
+        for (const [key, fin] of state.finishedBoats) {
+            if (!key.startsWith(`${slotId}-`) || fin.finishTime == null) continue;
+            entries.push({ key, finishTime: fin.finishTime });
+        }
+        entries.sort((a, b) => a.finishTime - b.finishTime);
+        let nextPlace = 1;
+        for (let i = 0; i < entries.length; ) {
+            let j = i + 1;
+            while (j < entries.length && entries[j].finishTime - entries[i].finishTime <= FINISH_TIE_SEC) {
+                j++;
+            }
+            for (let k = i; k < j; k++) {
+                const fin = state.finishedBoats.get(entries[k].key);
+                if (fin) fin.place = nextPlace;
+            }
+            nextPlace += j - i;
+            i = j;
+        }
+    }
+
+    function liveResultRows(slotId, tSec) {
+        const rows = [];
+        for (const [key, fin] of state.finishedBoats) {
+            if (!key.startsWith(`${slotId}-`) || tSec > fin.hideAfter || fin.place == null) continue;
+            rows.push({ key, ...fin });
+        }
+        rows.sort((a, b) => a.place - b.place || a.finishTime - b.finishTime);
+        return rows;
+    }
+
+    function liveResultsHeaderText() {
+        const ctx = state.raceContext;
+        const data = state.chartState?.data;
+        const event = expandEventName(ctx?.event || data?.event, state.lookup);
+        const race = ctx?.race ?? data?.race;
+        const round = ctx?.round ?? data?.round;
+        const meta = [`Race ${race}`, round, 'Results'].filter(Boolean).join(' · ');
+        return { event, meta };
+    }
+
+    function buildLiveResultRowHtml(fin) {
+        const boat = fin.boat;
+        const logo = boat?.logoUrl || LOGO_PLACEHOLDER;
+        const name = boat ? displayName(boat) : 'Crew';
+        const time = formatSplitTime(fin.finishTime);
+        return (
+            `<li class="krv-live-results__row">` +
+            `<span class="krv-live-results__place">${fin.place}</span>` +
+            `<span class="krv-live-results__logo-wrap">` +
+            `<span class="krv-live-results__logo-halo" aria-hidden="true"></span>` +
+            `<img class="krv-live-results__logo" src="${escapeHtml(logo)}" alt="">` +
+            `</span>` +
+            `<span class="krv-live-results__crew">${escapeHtml(name)}</span>` +
+            `<span class="krv-live-results__time">${escapeHtml(time)}</span>` +
+            `</li>`
+        );
+    }
+
+    function updateLiveResults(slotId, tSec) {
+        const panel = $('krvLiveResults');
+        const list = $('krvLiveResultsList');
+        if (!panel || !list) return;
+
+        if (slotId !== state.selectedRaceSlot) {
+            panel.hidden = true;
+            return;
+        }
+
+        const rows = liveResultRows(slotId, tSec);
+        if (!rows.length) {
+            panel.hidden = true;
+            state.liveResultsKey = '';
+            return;
+        }
+
+        const rowKey = rows
+            .map((r) => `${r.key}:${r.place}:${formatSplitTime(r.finishTime)}`)
+            .join('|');
+        const { event, meta } = liveResultsHeaderText();
+        const headerKey = `${event}|${meta}`;
+        const fullKey = `${headerKey}|${rowKey}`;
+        if (fullKey === state.liveResultsKey) return;
+        const prevCount = state.liveResultsRowCount;
+        state.liveResultsKey = fullKey;
+        state.liveResultsRowCount = rows.length;
+
+        const titleEl = $('krvLiveResultsTitle');
+        const metaEl = $('krvLiveResultsMeta');
+        if (titleEl) titleEl.textContent = event || 'Race';
+        if (metaEl) metaEl.textContent = meta;
+
+        list.innerHTML = rows.map((fin) => buildLiveResultRowHtml(fin)).join('');
+        if (rows.length > prevCount) {
+            const lastRow = list.lastElementChild;
+            lastRow?.classList.add('krv-live-results__row--enter');
+        }
+
+        panel.hidden = false;
     }
 
     function trackingKey(slotId, idx) {
@@ -494,7 +608,11 @@
                             hideAfter: tSec + FINISH_HIDE_SEC,
                             finishTime,
                             crossTime: tSec,
+                            idx,
+                            lane: boat.lane || idx + 1,
+                            boat,
                         });
+                        recomputeFinishPlaces(slotId);
                     }
                 }
                 if (isSelected) {
@@ -548,6 +666,9 @@
         state.zoomBoatYOffset = new Map();
         state.laneSplitCallouts = new Map();
         state.splitCalloutsKey = '';
+        state.liveResultsKey = '';
+        state.liveResultsRowCount = 0;
+        hideLiveResults();
         const sel = getSelectedRaceSlot();
         state.raceContext = sel?.context ?? null;
         state.raceLabel = sel?.label ?? '';
@@ -1755,6 +1876,7 @@
             selected?.slot ?? 'current',
             tSec,
         );
+        updateLiveResults(selected?.slot ?? 'current', tSec);
         renderZoomSplitCallouts(tSec);
     }
 
