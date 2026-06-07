@@ -59,7 +59,6 @@
         zoomCourseKey: '',
         waterLiteFrame: 0,
         waterDeferTimer: null,
-        splitMarkerBanner: null,
         overviewLayout: null,
         zoomLayout: null,
         zoomBoatPool: [],
@@ -421,21 +420,9 @@
     function resetRaceTracking(clearFinished = true) {
         state.prevBoatDistance = new Map();
         state.laneSplitCallouts = new Map();
-        state.splitMarkerBanner = null;
         state.splitCalloutsKey = '';
         state.zoomCourseKey = '';
         if (clearFinished) state.finishedBoats = new Map();
-    }
-
-    function setSplitMarkerBanner(marker, tSec) {
-        const current = state.splitMarkerBanner;
-        if (!current || marker >= current.marker || tSec > current.until) {
-            state.splitMarkerBanner = {
-                marker,
-                until: tSec + SPLIT_HOLD_SEC,
-                kind: marker >= COURSE_M ? 'finish' : 'split',
-            };
-        }
     }
 
     function trackingKey(slotId, idx) {
@@ -483,7 +470,6 @@
                     if (finishTime != null) {
                         state.finishedBoats.set(key, { hideAfter: tSec + FINISH_HIDE_SEC });
                         if (isSelected) {
-                            setSplitMarkerBanner(COURSE_M, tSec);
                             state.laneSplitCallouts.set(`${key}-finish`, {
                                 lane: boat.lane || idx + 1,
                                 text: formatSplitTime(finishTime),
@@ -500,7 +486,6 @@
                             const t0 = timeAtDistance(boat.timeline, m - 500);
                             const t1 = timeAtDistance(boat.timeline, m);
                             if (t0 != null && t1 != null) {
-                                setSplitMarkerBanner(m, tSec);
                                 state.laneSplitCallouts.set(`${key}-${m}`, {
                                     lane: boat.lane || idx + 1,
                                     text: formatSplitTime(t1 - t0),
@@ -520,9 +505,6 @@
     function pruneLaneSplitCallouts(tSec) {
         for (const [k, v] of state.laneSplitCallouts) {
             if (tSec > v.until) state.laneSplitCallouts.delete(k);
-        }
-        if (state.splitMarkerBanner && tSec > state.splitMarkerBanner.until) {
-            state.splitMarkerBanner = null;
         }
         if (state.laneSplitCallouts.size === 0 && state.splitCalloutsKey) {
             state.splitCalloutsKey = '';
@@ -548,7 +530,6 @@
         state.zoomCenter = null;
         state.zoomCourseKey = '';
         state.laneSplitCallouts = new Map();
-        state.splitMarkerBanner = null;
         state.splitCalloutsKey = '';
         const sel = getSelectedRaceSlot();
         state.raceContext = sel?.context ?? null;
@@ -1550,20 +1531,6 @@
         return `${marker}m`;
     }
 
-    function renderSplitMarkerBanner(tSec) {
-        const el = $('krvZoomSplitMarker');
-        if (!el) return;
-        const banner = state.splitMarkerBanner;
-        if (!banner || tSec > banner.until) {
-            el.hidden = true;
-            el.textContent = '';
-            return;
-        }
-        el.hidden = false;
-        el.textContent = splitMarkerLabel(banner.marker);
-        el.classList.toggle('krv-zoom__split-marker--finish', banner.kind === 'finish');
-    }
-
     function renderZoomSplitCallouts(tSec) {
         const el = $('krvZoomSplits');
         const layout = getZoomLayout();
@@ -1579,7 +1546,7 @@
         }
         const calloutKey = [...byLane.entries()]
             .sort((a, b) => a[0] - b[0])
-            .map(([lane, c]) => `${lane}:${c.text}:${c.kind}`)
+            .map(([lane, c]) => `${lane}:${c.marker}:${c.text}:${c.kind}`)
             .join('|');
         if (calloutKey === state.splitCalloutsKey) return;
         state.splitCalloutsKey = calloutKey;
@@ -1590,7 +1557,8 @@
                 const kindCls = callout.kind === 'finish' ? ' krv-lane-split--finish' : '';
                 return (
                     `<div class="krv-lane-split${kindCls}" style="top:${yPct}%">` +
-                    `${escapeHtml(callout.text)}` +
+                    `<span class="krv-lane-split__marker">${escapeHtml(splitMarkerLabel(callout.marker))}</span>` +
+                    `<span class="krv-lane-split__time">${escapeHtml(callout.text)}</span>` +
                     `</div>`
                 );
             })
@@ -1705,7 +1673,6 @@
             ? slotStandings.find((s) => s.slot === selected.slot)?.standings ?? []
             : [];
         updateZoomView(zoomStandings);
-        renderSplitMarkerBanner(tSec);
         renderZoomSplitCallouts(tSec);
     }
 
