@@ -1263,7 +1263,7 @@
         const { w, h, padL, padR, padT, padB } = layout;
         const mobile = useLiteGraphics();
         const laneH = layout.laneHeights?.[0] ?? (h - padT - padB) / LANE_COUNT;
-        const minSep = mobile ? Math.max(52, laneH * 0.92) : Math.max(44, laneH * 0.82);
+        const minSep = mobile ? Math.max(58, laneH * 0.98) : Math.max(44, laneH * 0.82);
 
         const items = standings.map((entry, rank) => {
             const lane = entry.boat.lane || entry.idx + 1;
@@ -1315,10 +1315,6 @@
         const el = document.createElement('div');
         el.className = 'krv-zoom-boat';
         el.innerHTML =
-            `<div class="krv-zoom-boat__hull">` +
-            `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true"></svg>` +
-            `<img class="krv-zoom-boat__logo-badge" alt="" loading="lazy" decoding="async">` +
-            `</div>` +
             `<div class="krv-zoom-boat__info">` +
             `<div class="krv-zoom-boat__info-head">` +
             `<span class="krv-zoom-boat__rank"></span>` +
@@ -1328,6 +1324,10 @@
             `<span class="krv-zoom-boat__speed"></span>` +
             `<span class="krv-zoom-boat__gap"></span>` +
             `</div>` +
+            `</div>` +
+            `<div class="krv-zoom-boat__hull">` +
+            `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true"></svg>` +
+            `<img class="krv-zoom-boat__logo-badge" alt="" loading="lazy" decoding="async">` +
             `</div>`;
         return {
             el,
@@ -1347,7 +1347,8 @@
         if (!boatsEl) return;
         const items = layoutZoomBoats(standings, layout, minD, maxD);
         const leaderD = standings[0]?.distance ?? 0;
-        const stacked = useLiteGraphics();
+        const mobile = useLiteGraphics();
+        const hullHalf = mobile ? 36 : 46;
 
         while (state.zoomBoatPool.length < items.length) {
             const node = createZoomBoatNode();
@@ -1360,8 +1361,10 @@
             const { entry, rank, xPct, yPct } = items[i];
             const { boat, distance, speed } = entry;
             node.el.hidden = false;
-            node.el.classList.toggle('krv-zoom-boat--stacked', stacked);
-            node.el.style.transform = `translate3d(${xPct}%, ${yPct}%, 0) translate(-50%, -50%)`;
+            node.el.dataset.rank = String(rank + 1);
+            node.el.style.setProperty('--hull-half', `${hullHalf}px`);
+            node.el.style.transform =
+                `translate3d(${xPct}%, ${yPct}%, 0) translate(calc(-1 * var(--hull-half)), -50%)`;
             node.el.style.zIndex = String(20 - rank);
 
             const logo = boat.logoUrl || LOGO_PLACEHOLDER;
@@ -1375,10 +1378,18 @@
                 node.hullColor = hullColor;
             }
             node.rank.textContent = String(rank + 1);
-            node.label.textContent = displayName(boat);
-            node.speed.textContent = `${speed.toFixed(1)} m/s`;
+            node.label.textContent = mobile
+                ? (boat.shortLabel || displayName(boat))
+                : displayName(boat);
+            node.speed.textContent = mobile
+                ? `${speed.toFixed(1)}`
+                : `${speed.toFixed(1)} m/s`;
             node.gap.textContent =
-                rank === 0 ? `${toGo} m to go` : `+${Math.max(0, Math.round(leaderD - distance))} m`;
+                rank === 0
+                    ? mobile
+                        ? `${toGo}m`
+                        : `${toGo} m to go`
+                    : `+${Math.max(0, Math.round(leaderD - distance))}m`;
         }
 
         for (let i = items.length; i < state.zoomBoatPool.length; i++) {

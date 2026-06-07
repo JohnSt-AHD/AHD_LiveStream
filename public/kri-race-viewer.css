@@ -559,6 +559,10 @@ body {
     position: absolute;
     left: 0;
     top: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     width: max-content;
     max-width: none;
     will-change: transform;
@@ -572,6 +576,7 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    order: 2;
 }
 
 .krv-cartoon-boat {
@@ -596,10 +601,12 @@ body {
 }
 
 .krv-zoom-boat__info {
-    position: absolute;
-    right: calc(100% + 12px);
-    top: 50%;
-    transform: translateY(-50%);
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
+    order: 1;
+    flex-shrink: 1;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -613,7 +620,6 @@ body {
     box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.95) inset,
         0 4px 14px rgba(7, 20, 40, 0.14);
-    flex-shrink: 0;
     overflow: hidden;
 }
 
@@ -1048,10 +1054,12 @@ body {
         min-height: 275px;
     }
 
+    .krv-zoom__boats {
+        padding-left: 6px;
+    }
+
     .krv-zoom-boat {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        gap: 5px;
     }
 
     .krv-zoom-boat__hull .krv-cartoon-boat {
@@ -1065,26 +1073,55 @@ body {
     }
 
     .krv-zoom-boat__info {
-        position: static;
-        right: auto;
-        top: auto;
-        transform: none;
-        margin-top: 3px;
-        min-width: 76px;
-        max-width: 96px;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        max-width: min(62vw, 240px);
+        padding: 4px 9px;
+        border-radius: 999px;
+    }
+
+    .krv-zoom-boat__info-head,
+    .krv-zoom-boat__stats {
+        display: contents;
+    }
+
+    .krv-zoom-boat__rank {
+        min-width: 18px;
+        height: 18px;
+        font-size: 11px;
+        line-height: 18px;
+    }
+
+    .krv-zoom-boat__label {
+        flex: 0 1 auto;
+        max-width: 4.2rem;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .krv-zoom-boat__speed {
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .krv-zoom-boat__speed::after {
+        content: ' m/s';
+        font-size: 8px;
+        font-weight: 700;
+        opacity: 0.75;
+    }
+
+    .krv-zoom-boat__gap {
+        font-size: 9px;
+        flex-shrink: 0;
     }
 
     .krv-zoom__split-marker {
         font-size: 18px;
         padding: 6px 18px;
-    }
-
-    .krv-zoom-boat__speed {
-        font-size: 13px;
-    }
-
-    .krv-zoom-boat__label {
-        font-size: 9px;
     }
 
     .krv-upcoming {
