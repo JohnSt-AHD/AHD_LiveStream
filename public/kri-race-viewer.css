@@ -909,6 +909,7 @@ body {
         justify-content: flex-start;
         min-height: 100vh;
         min-height: 100dvh;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
     }
 
     .krv-stage {
@@ -933,6 +934,14 @@ body {
         flex: 0 0 auto;
         height: clamp(100px, 22vw, 140px);
         padding: 8px 12px 6px;
+    }
+
+    .krv-overview .krv-water-canvas {
+        display: none;
+    }
+
+    .krv-overview .krv-water-stack {
+        background: linear-gradient(180deg, #7ec8ea 0%, #3d94c4 45%, #1a5580 100%);
     }
 
     .krv-overview__race-label {

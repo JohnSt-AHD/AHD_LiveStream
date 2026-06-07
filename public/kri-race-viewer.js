@@ -54,10 +54,26 @@
         prevBoatDistance: new Map(),
         finishedBoats: new Map(),
         laneSplitCallouts: new Map(),
+        zoomCourseKey: '',
+        waterLiteFrame: 0,
+        waterDeferTimer: null,
     };
 
     function $(id) {
         return document.getElementById(id);
+    }
+
+    function useLiteGraphics() {
+        if (global.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+        return global.matchMedia('(max-width: 900px)').matches;
+    }
+
+    function effectiveBuoySpacing() {
+        return useLiteGraphics() ? BUOY_SPACING_M * 2 : BUOY_SPACING_M;
+    }
+
+    function canvasDpr() {
+        return useLiteGraphics() ? 1 : Math.min(global.devicePixelRatio || 1, 2);
     }
 
     function escapeHtml(s) {
@@ -358,6 +374,7 @@
     function resetRaceTracking(clearFinished = true) {
         state.prevBoatDistance = new Map();
         state.laneSplitCallouts = new Map();
+        state.zoomCourseKey = '';
         if (clearFinished) state.finishedBoats = new Map();
     }
 
@@ -459,6 +476,7 @@
         if (!state.raceSlots.some((s) => s.slot === slotId)) return;
         state.selectedRaceSlot = slotId;
         state.zoomCenter = null;
+        state.zoomCourseKey = '';
         state.laneSplitCallouts = new Map();
         const sel = getSelectedRaceSlot();
         state.raceContext = sel?.context ?? null;
@@ -728,7 +746,7 @@
         };
     }
 
-    function drawLakeWater(ctx, pw, ph, layout, timeSec) {
+    function drawLakeWater(ctx, pw, ph, layout, timeSec, lite = false) {
         const { x, y, w, h, r } = coursePixelRect(layout, pw, ph);
         if (w < 2 || h < 2) return;
 
@@ -744,6 +762,11 @@
         depth.addColorStop(1, '#1a5580');
         ctx.fillStyle = depth;
         ctx.fillRect(x, y, w, h);
+
+        if (lite) {
+            ctx.restore();
+            return;
+        }
 
         const sunGlare = ctx.createLinearGradient(x, y, x + w * 0.35, y + h * 0.25);
         sunGlare.addColorStop(0, 'rgba(255,255,255,0.22)');
@@ -826,7 +849,7 @@
         const stack = canvas.parentElement;
         if (!stack) return;
         const rect = stack.getBoundingClientRect();
-        const dpr = Math.min(global.devicePixelRatio || 1, 2);
+        const dpr = canvasDpr();
         const pw = Math.max(1, Math.floor(rect.width * dpr));
         const ph = Math.max(1, Math.floor(rect.height * dpr));
         if (canvas.width !== pw || canvas.height !== ph) {
@@ -836,7 +859,7 @@
         canvas.dataset.waterLayout = JSON.stringify(layout);
     }
 
-    function paintWaterCanvas(canvas, timeSec) {
+    function paintWaterCanvas(canvas, timeSec, lite = false) {
         if (!canvas) return;
         const layout = JSON.parse(canvas.dataset.waterLayout || 'null');
         if (!layout) return;
@@ -844,18 +867,37 @@
         if (!ctx) return;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawLakeWater(ctx, canvas.width, canvas.height, layout, timeSec);
+        drawLakeWater(ctx, canvas.width, canvas.height, layout, timeSec, lite);
     }
 
     function waterAnimationTick(ts) {
+        const lite = useLiteGraphics();
+        if (lite) {
+            state.waterLiteFrame += 1;
+            if (state.waterLiteFrame % 2 !== 0) {
+                state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
+                return;
+            }
+        }
         const timeSec = ts / 1000;
         const overviewLayout = JSON.parse($('krvOverviewSvg')?.dataset.layout || 'null');
         const zoomLayout = JSON.parse($('krvZoomSvg')?.dataset.layout || 'null');
-        syncWaterCanvas($('krvOverviewWater'), overviewLayout);
+        if (!lite) {
+            syncWaterCanvas($('krvOverviewWater'), overviewLayout);
+            paintWaterCanvas($('krvOverviewWater'), timeSec, false);
+        }
         syncWaterCanvas($('krvZoomWater'), zoomLayout);
-        paintWaterCanvas($('krvOverviewWater'), timeSec);
-        paintWaterCanvas($('krvZoomWater'), timeSec);
+        paintWaterCanvas($('krvZoomWater'), timeSec, lite);
         state.waterRafId = global.requestAnimationFrame(waterAnimationTick);
+    }
+
+    function scheduleWaterAnimation() {
+        if (state.waterDeferTimer) global.clearTimeout(state.waterDeferTimer);
+        const delay = useLiteGraphics() ? 500 : 0;
+        state.waterDeferTimer = global.setTimeout(() => {
+            state.waterDeferTimer = null;
+            startWaterAnimation();
+        }, delay);
     }
 
     function startWaterAnimation() {
@@ -912,12 +954,12 @@
         return `url(#krvBuoyGrad-${scope})`;
     }
 
-    function buoysHtml(h, padL, padT, padB, chartW, minD = 0, maxD = COURSE_M, padR = 0, totalW = null, scope = 'overview') {
+    function buoysHtml(h, padL, padT, padB, chartW, minD = 0, maxD = COURSE_M, padR = 0, totalW = null, scope = 'overview', buoySpacing = BUOY_SPACING_M) {
         const parts = [];
         const w = totalW ?? padL + chartW + padR;
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
             const y = yMapBuoyLine(lane, h, padT, padB);
-            for (let d = BUOY_SPACING_M; d < COURSE_M; d += BUOY_SPACING_M) {
+            for (let d = buoySpacing; d < COURSE_M; d += buoySpacing) {
                 if (d < minD || d > maxD) continue;
                 const x =
                     maxD > minD && maxD < COURSE_M
@@ -1071,11 +1113,12 @@
         const chartW = w - padL - padR;
         const chartH = h - padT - padB;
 
+        const buoySpacing = effectiveBuoySpacing();
         const parts = [
             svgDefs('overview'),
             courseFrameHtml(padL, padT, chartW, chartH, 'overview', 8, 'krv-course-frame--overview'),
             zoneRectsHtml(padL, padT, chartW, chartH),
-            buoysHtml(h, padL, padT, padB, chartW, 0, COURSE_M, padR, null, 'overview'),
+            buoysHtml(h, padL, padT, padB, chartW, 0, COURSE_M, padR, null, 'overview', buoySpacing),
             startFinishHtml(padL, padT, chartH, chartW, padR, 0, COURSE_M, 'overview'),
         ];
 
@@ -1265,24 +1308,32 @@
         const leaderD = standings[0]?.distance ?? 0;
         const toGo = Math.max(0, Math.round(COURSE_M - leaderD));
 
-        const courseParts = [
-            zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD),
-            buoysHtml(h, padL, padT, padB, chartW, minD, maxD, padR, w, 'zoom'),
-            startFinishHtml(padL, padT, chartH, chartW, padR, minD, maxD, 'zoom'),
-        ];
-        for (const dist of MARKERS_M) {
-            if (dist < minD || dist > maxD) continue;
-            const x = xMap(dist, minD, maxD, w, padL, padR);
-            courseParts.push(
-                `<line x1="${x}" y1="${padT}" x2="${x}" y2="${h - padB}" class="krv-marker-line krv-marker-line--zoom"/>`,
-            );
-            if (dist > 0 && dist < COURSE_M) {
+        const snap = useLiteGraphics() ? 4 : 2;
+        const qMin = Math.round(minD / snap) * snap;
+        const qMax = Math.round(maxD / snap) * snap;
+        const courseKey = `${qMin}-${qMax}`;
+        if (courseKey !== state.zoomCourseKey) {
+            state.zoomCourseKey = courseKey;
+            const buoySpacing = effectiveBuoySpacing();
+            const courseParts = [
+                zoneRectsForWindow(padL, padT, chartW, chartH, padR, w, minD, maxD),
+                buoysHtml(h, padL, padT, padB, chartW, minD, maxD, padR, w, 'zoom', buoySpacing),
+                startFinishHtml(padL, padT, chartH, chartW, padR, minD, maxD, 'zoom'),
+            ];
+            for (const dist of MARKERS_M) {
+                if (dist < minD || dist > maxD) continue;
+                const x = xMap(dist, minD, maxD, w, padL, padR);
                 courseParts.push(
-                    `<text x="${x}" y="${padT - 10}" class="krv-marker-label krv-marker-label--zoom" text-anchor="middle">${dist}m</text>`,
+                    `<line x1="${x}" y1="${padT}" x2="${x}" y2="${h - padB}" class="krv-marker-line krv-marker-line--zoom"/>`,
                 );
+                if (dist > 0 && dist < COURSE_M) {
+                    courseParts.push(
+                        `<text x="${x}" y="${padT - 10}" class="krv-marker-label krv-marker-label--zoom" text-anchor="middle">${dist}m</text>`,
+                    );
+                }
             }
+            courseG.innerHTML = courseParts.join('');
         }
-        courseG.innerHTML = courseParts.join('');
 
         boatsEl.innerHTML = standings
             .map((entry, rank) => {
@@ -1300,7 +1351,7 @@
                     `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true">` +
                     cartoonBoatPaths(boat.color || '#38bdf8') +
                     `</svg>` +
-                    `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="">` +
+                    `<img class="krv-zoom-boat__logo-badge" src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async">` +
                     `</div>` +
                     `<div class="krv-zoom-boat__info">` +
                     `<div class="krv-zoom-boat__info-head">` +
@@ -1479,42 +1530,58 @@
         state.rafId = global.requestAnimationFrame(tick);
     }
 
-    async function loadRegattaData() {
+    async function loadRegattaSchedule() {
         const code = getRegattaCode();
         const hub = global.AltitudeHdHub;
         const daysheetUrl = hub?.buildCsvUrl
             ? hub.buildCsvUrl(code, 'daysheet')
             : `https://l.rowit.nz/altitude/${code}/daysheet.csv`;
-        const resultsUrl = hub?.buildCsvUrl
-            ? hub.buildCsvUrl(code, 'results')
-            : `https://l.rowit.nz/altitude/${code}/results.csv`;
 
-        const [lookup, daysheetText, resultsText] = await Promise.all([
+        const [lookup, daysheetText] = await Promise.all([
             fetch('data/ahd-lookup.json').then((r) => (r.ok ? r.json() : null)),
             fetchCsv(daysheetUrl).catch(() => ''),
-            fetchCsv(resultsUrl).catch(() => ''),
         ]);
 
         state.lookup = lookup;
         state.races = daysheetText ? parseDaysheet(daysheetText) : [];
-        state.results = resultsText ? parseResultsCsv(resultsText) : new Map();
         renderUpcoming();
+    }
+
+    async function loadRegattaResults() {
+        const code = getRegattaCode();
+        const hub = global.AltitudeHdHub;
+        const resultsUrl = hub?.buildCsvUrl
+            ? hub.buildCsvUrl(code, 'results')
+            : `https://l.rowit.nz/altitude/${code}/results.csv`;
+        const resultsText = await fetchCsv(resultsUrl).catch(() => '');
+        state.results = resultsText ? parseResultsCsv(resultsText) : new Map();
+    }
+
+    async function loadRegattaData() {
+        await loadRegattaSchedule();
+        await loadRegattaResults();
         renderPreviousResults();
+    }
+
+    function applyRaceTraces(data) {
+        const chart = global.KriVmixSpeedChart;
+        if (!chart) throw new Error('Speed chart module missing');
+        const prepared = chart.prepareChartState(data);
+        state.chartState = prepared;
+        prepareRaceSlots(prepared, data);
+        state.zoomCenter = null;
+        state.zoomCourseKey = '';
+        resetRaceTracking();
+        renderZoomRacePicker();
+        updateRaceTitles([]);
+        renderLaneLabels();
     }
 
     async function loadRaceTraces() {
         const chart = global.KriVmixSpeedChart;
         if (!chart) throw new Error('Speed chart module missing');
-
         const data = await chart.loadData(getDataUrl());
-        const prepared = chart.prepareChartState(data);
-        state.chartState = prepared;
-        prepareRaceSlots(prepared, data);
-        state.zoomCenter = null;
-        resetRaceTracking();
-        renderZoomRacePicker();
-        updateRaceTitles([]);
-        renderLaneLabels();
+        applyRaceTraces(data);
         renderPreviousResults();
     }
 
@@ -1551,15 +1618,26 @@
             renderOverviewStatic();
             renderZoomStatic();
             bindRaceSelection();
-            await loadRegattaData();
-            await loadRaceTraces();
+
+            const chart = global.KriVmixSpeedChart;
+            if (!chart) throw new Error('Speed chart module missing');
+
+            const [data] = await Promise.all([
+                chart.loadData(getDataUrl()),
+                loadRegattaSchedule(),
+            ]);
+            applyRaceTraces(data);
             renderUpcoming();
             renderLaneLabels();
             renderPreviousResults();
             renderFrame(0);
             startPlayback();
-            startWaterAnimation();
+            scheduleWaterAnimation();
             if (status) status.hidden = true;
+
+            loadRegattaResults()
+                .then(() => renderPreviousResults())
+                .catch(() => {});
         } catch (err) {
             if (status) {
                 status.hidden = false;
@@ -1570,14 +1648,19 @@
     }
 
     function onLiveRaceChange() {
-        loadRegattaData()
-            .then(() => loadRaceTraces())
-            .then(() => {
+        const chart = global.KriVmixSpeedChart;
+        if (!chart) return;
+        Promise.all([loadRegattaSchedule(), chart.loadData(getDataUrl())])
+            .then(([, data]) => {
+                applyRaceTraces(data);
                 renderUpcoming();
                 renderLaneLabels();
                 renderPreviousResults();
                 renderFrame(playbackTimeSec(performance.now()));
             })
+            .catch(() => {});
+        loadRegattaResults()
+            .then(() => renderPreviousResults())
             .catch(() => {});
     }
 
