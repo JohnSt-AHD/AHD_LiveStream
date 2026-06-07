@@ -25,6 +25,9 @@
     const BUOY_R_OVERVIEW = 3;
     const BUOY_R_ZOOM = 4;
     const RACE_STAGGER_M = 1000;
+    const SPLIT_MARKERS_M = [500, 1000, 1500];
+    const SPLIT_HOLD_SEC = 20;
+    const FINISH_HIDE_SEC = 30;
 
     const MONTHS = {
         january: 0, jan: 0, february: 1, feb: 1, march: 2, mar: 2,
@@ -48,6 +51,9 @@
         playbackStart: null,
         waterRafId: null,
         zoomCenter: null,
+        prevBoatDistance: new Map(),
+        finishedBoats: new Map(),
+        laneSplitCallouts: new Map(),
     };
 
     function $(id) {
@@ -349,10 +355,111 @@
         return state.raceSlots.find((s) => s.slot === state.selectedRaceSlot) || state.raceSlots[1] || state.raceSlots[0];
     }
 
+    function resetRaceTracking(clearFinished = true) {
+        state.prevBoatDistance = new Map();
+        state.laneSplitCallouts = new Map();
+        if (clearFinished) state.finishedBoats = new Map();
+    }
+
+    function trackingKey(slotId, idx) {
+        return `${slotId}-${idx}`;
+    }
+
+    function timeAtDistance(timeline, dist) {
+        if (!timeline?.length) return null;
+        if (dist <= 0) return 0;
+        if (timeline[0].distance >= dist) {
+            const a = timeline[0];
+            if (a.distance <= 0) return a.t;
+            return a.t + (dist / a.distance) * (timeline[1]?.t ?? a.t);
+        }
+        for (let i = 1; i < timeline.length; i++) {
+            const b = timeline[i];
+            if (b.distance >= dist) {
+                const a = timeline[i - 1];
+                if (b.distance <= a.distance) return b.t;
+                const f = (dist - a.distance) / (b.distance - a.distance);
+                return a.t + f * (b.t - a.t);
+            }
+        }
+        return timeline[timeline.length - 1].t;
+    }
+
+    function formatSplitTime(sec) {
+        const s = Math.max(0, sec);
+        const m = Math.floor(s / 60);
+        const secs = s % 60;
+        const tenths = Math.floor((secs % 1) * 10);
+        const whole = Math.floor(secs);
+        return `${m}:${String(whole).padStart(2, '0')}.${tenths}`;
+    }
+
+    function updateRaceTracking(slotId, rawStandings, tSec) {
+        const isSelected = slotId === state.selectedRaceSlot;
+        for (const entry of rawStandings) {
+            const { boat, rawDistance, idx } = entry;
+            const key = trackingKey(slotId, idx);
+            const prevDist = state.prevBoatDistance.get(key);
+            if (prevDist != null) {
+                if (rawDistance >= COURSE_M && prevDist < COURSE_M) {
+                    const finishTime = timeAtDistance(boat.timeline, COURSE_M);
+                    if (finishTime != null) {
+                        state.finishedBoats.set(key, { hideAfter: tSec + FINISH_HIDE_SEC });
+                        if (isSelected) {
+                            state.laneSplitCallouts.set(`${key}-finish`, {
+                                lane: boat.lane || idx + 1,
+                                text: formatSplitTime(finishTime),
+                                until: tSec + SPLIT_HOLD_SEC,
+                                kind: 'finish',
+                                marker: COURSE_M,
+                            });
+                        }
+                    }
+                }
+                if (isSelected) {
+                    for (const m of SPLIT_MARKERS_M) {
+                        if (prevDist < m && rawDistance >= m) {
+                            const t0 = timeAtDistance(boat.timeline, m - 500);
+                            const t1 = timeAtDistance(boat.timeline, m);
+                            if (t0 != null && t1 != null) {
+                                state.laneSplitCallouts.set(`${key}-${m}`, {
+                                    lane: boat.lane || idx + 1,
+                                    text: formatSplitTime(t1 - t0),
+                                    until: tSec + SPLIT_HOLD_SEC,
+                                    kind: 'split',
+                                    marker: m,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            state.prevBoatDistance.set(key, rawDistance);
+        }
+    }
+
+    function pruneLaneSplitCallouts(tSec) {
+        for (const [k, v] of state.laneSplitCallouts) {
+            if (tSec > v.until) state.laneSplitCallouts.delete(k);
+        }
+    }
+
+    function applyFinishHold(slotId, entry, tSec, offsetM) {
+        const { idx } = entry;
+        const key = trackingKey(slotId, idx);
+        const fin = state.finishedBoats.get(key);
+        if (!fin) return entry;
+        if (tSec <= fin.hideAfter) {
+            return { ...entry, distance: COURSE_M + offsetM };
+        }
+        return { ...entry, hide: true };
+    }
+
     function selectRaceSlot(slotId) {
         if (!state.raceSlots.some((s) => s.slot === slotId)) return;
         state.selectedRaceSlot = slotId;
         state.zoomCenter = null;
+        state.laneSplitCallouts = new Map();
         const sel = getSelectedRaceSlot();
         state.raceContext = sel?.context ?? null;
         state.raceLabel = sel?.label ?? '';
@@ -367,7 +474,17 @@
         if (!chart || !boats?.length) return [];
         return chart
             .liveStandings(boats, tSec)
-            .map((entry) => ({ ...entry, distance: entry.distance + offsetM }));
+            .map((entry) => ({
+                ...entry,
+                rawDistance: entry.distance,
+                distance: entry.distance + offsetM,
+            }));
+    }
+
+    function processSlotStandings(slotId, rawStandings, tSec, offsetM) {
+        return rawStandings
+            .map((entry) => applyFinishHold(slotId, entry, tSec, offsetM))
+            .filter((entry) => !entry.hide);
     }
 
     function isRaceOnCourse(standings) {
@@ -895,33 +1012,23 @@
     }
 
     function laneLabelsSvgHtml(h, padL, padT, padB, zoom = false) {
-        const crews = crewByLane();
         const parts = [];
         const headCls = zoom ? 'krv-lane-head krv-lane-head--zoom' : 'krv-lane-head';
         const laneCls = zoom ? 'krv-lane-label krv-lane-label--zoom' : 'krv-lane-label';
-        const crewCls = zoom ? 'krv-lane-crew krv-lane-crew--zoom' : 'krv-lane-crew';
-        const boxW = zoom ? 102 : 92;
-        const boxH = zoom ? 30 : 26;
-        const boxX = padL - boxW - 14;
-        const boxCx = boxX + boxW / 2;
+        const { heights } = computeLaneBands(h, padT, padB);
+        const laneH = heights[0];
+        const r = Math.min(laneH * 0.38, zoom ? 16 : 13);
+        const boxCx = padL - r - 16;
         parts.push(
-            `<text x="${boxCx}" y="${padT - 6}" class="${headCls}" text-anchor="middle">Lane</text>`,
+            `<text x="${boxCx.toFixed(1)}" y="${padT - 6}" class="${headCls}" text-anchor="middle">Lane</text>`,
         );
         for (let lane = 1; lane <= LANE_COUNT; lane++) {
             const y = yMapLane(lane, h, padT, padB);
-            const crew = crews.get(lane);
-            const crewLabel = crew
-                ? escapeHtml(crew.shortLabel || crew.label || '')
-                : '—';
-            const boxY = y - boxH / 2;
             parts.push(
-                `<rect x="${boxX}" y="${boxY.toFixed(1)}" width="${boxW}" height="${boxH}" rx="5" class="krv-lane-info-box"/>`,
+                `<circle cx="${boxCx.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" class="krv-lane-info-box"/>`,
             );
             parts.push(
-                `<text x="${boxCx}" y="${(y - 3).toFixed(1)}" class="${laneCls}" text-anchor="middle">${lane}</text>`,
-            );
-            parts.push(
-                `<text x="${boxCx}" y="${(y + 10).toFixed(1)}" class="${crewCls}" text-anchor="middle">${crewLabel}</text>`,
+                `<text x="${boxCx.toFixed(1)}" y="${(y + 4).toFixed(1)}" class="${laneCls}" text-anchor="middle">${lane}</text>`,
             );
         }
         return parts.join('');
@@ -1211,6 +1318,33 @@
             .join('');
     }
 
+    function renderZoomSplitCallouts(tSec) {
+        const el = $('krvZoomSplits');
+        const svg = $('krvZoomSvg');
+        if (!el || !svg) return;
+        const layout = JSON.parse(svg.dataset.layout || '{}');
+        const { h, padT, padB } = layout;
+        const byLane = new Map();
+        for (const callout of state.laneSplitCallouts.values()) {
+            if (tSec > callout.until) continue;
+            const existing = byLane.get(callout.lane);
+            if (!existing || callout.marker > existing.marker) {
+                byLane.set(callout.lane, callout);
+            }
+        }
+        el.innerHTML = [...byLane.entries()]
+            .map(([lane, callout]) => {
+                const yPct = ((yMapLane(lane, h, padT, padB) / h) * 100).toFixed(3);
+                const kindCls = callout.kind === 'finish' ? ' krv-lane-split--finish' : '';
+                return (
+                    `<div class="krv-lane-split${kindCls}" style="top:${yPct}%">` +
+                    `${escapeHtml(callout.text)}` +
+                    `</div>`
+                );
+            })
+            .join('');
+    }
+
     function renderUpcoming() {
         const list = $('krvUpcomingList');
         if (!list) return;
@@ -1291,6 +1425,7 @@
 
     function renderFrame(tSec) {
         if (!state.chartState) return;
+        if (state.lastPlaybackSec - tSec > 1) resetRaceTracking();
         state.lastPlaybackSec = tSec;
         const prevOnCourseKey = [...state.onCourseRaceNums].sort().join(',');
         updateOnCourseRaceNums(tSec);
@@ -1300,19 +1435,25 @@
             renderZoomRacePicker();
         }
 
-        const slotStandings = state.raceSlots.map((slot) => ({
-            slot: slot.slot,
-            raceNum: slot.raceNum,
-            standings: standingsForSlot(slot.boats, tSec, slot.offsetM),
-        }));
+        const slotStandings = state.raceSlots.map((slot) => {
+            const raw = standingsForSlot(slot.boats, tSec, slot.offsetM);
+            updateRaceTracking(slot.slot, raw, tSec);
+            return {
+                slot: slot.slot,
+                raceNum: slot.raceNum,
+                standings: processSlotStandings(slot.slot, raw, tSec, slot.offsetM),
+            };
+        });
+        pruneLaneSplitCallouts(tSec);
 
         updateOverviewBoats(slotStandings);
 
         const selected = getSelectedRaceSlot();
         const zoomStandings = selected
-            ? standingsForSlot(selected.boats, tSec, selected.offsetM)
+            ? slotStandings.find((s) => s.slot === selected.slot)?.standings ?? []
             : [];
         updateZoomView(zoomStandings);
+        renderZoomSplitCallouts(tSec);
     }
 
     function playbackTimeSec(ts) {
@@ -1334,6 +1475,7 @@
         if (state.rafId) global.cancelAnimationFrame(state.rafId);
         state.playbackStart = null;
         state.zoomCenter = null;
+        resetRaceTracking();
         state.rafId = global.requestAnimationFrame(tick);
     }
 
@@ -1369,6 +1511,7 @@
         state.chartState = prepared;
         prepareRaceSlots(prepared, data);
         state.zoomCenter = null;
+        resetRaceTracking();
         renderZoomRacePicker();
         updateRaceTitles([]);
         renderLaneLabels();
