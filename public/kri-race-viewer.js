@@ -57,6 +57,7 @@
         zoomCourseKey: '',
         waterLiteFrame: 0,
         waterDeferTimer: null,
+        splitMarkerBanner: null,
     };
 
     function $(id) {
@@ -374,8 +375,20 @@
     function resetRaceTracking(clearFinished = true) {
         state.prevBoatDistance = new Map();
         state.laneSplitCallouts = new Map();
+        state.splitMarkerBanner = null;
         state.zoomCourseKey = '';
         if (clearFinished) state.finishedBoats = new Map();
+    }
+
+    function setSplitMarkerBanner(marker, tSec) {
+        const current = state.splitMarkerBanner;
+        if (!current || marker >= current.marker || tSec > current.until) {
+            state.splitMarkerBanner = {
+                marker,
+                until: tSec + SPLIT_HOLD_SEC,
+                kind: marker >= COURSE_M ? 'finish' : 'split',
+            };
+        }
     }
 
     function trackingKey(slotId, idx) {
@@ -423,6 +436,7 @@
                     if (finishTime != null) {
                         state.finishedBoats.set(key, { hideAfter: tSec + FINISH_HIDE_SEC });
                         if (isSelected) {
+                            setSplitMarkerBanner(COURSE_M, tSec);
                             state.laneSplitCallouts.set(`${key}-finish`, {
                                 lane: boat.lane || idx + 1,
                                 text: formatSplitTime(finishTime),
@@ -439,6 +453,7 @@
                             const t0 = timeAtDistance(boat.timeline, m - 500);
                             const t1 = timeAtDistance(boat.timeline, m);
                             if (t0 != null && t1 != null) {
+                                setSplitMarkerBanner(m, tSec);
                                 state.laneSplitCallouts.set(`${key}-${m}`, {
                                     lane: boat.lane || idx + 1,
                                     text: formatSplitTime(t1 - t0),
@@ -459,6 +474,9 @@
         for (const [k, v] of state.laneSplitCallouts) {
             if (tSec > v.until) state.laneSplitCallouts.delete(k);
         }
+        if (state.splitMarkerBanner && tSec > state.splitMarkerBanner.until) {
+            state.splitMarkerBanner = null;
+        }
     }
 
     function applyFinishHold(slotId, entry, tSec, offsetM) {
@@ -478,6 +496,7 @@
         state.zoomCenter = null;
         state.zoomCourseKey = '';
         state.laneSplitCallouts = new Map();
+        state.splitMarkerBanner = null;
         const sel = getSelectedRaceSlot();
         state.raceContext = sel?.context ?? null;
         state.raceLabel = sel?.label ?? '';
@@ -601,81 +620,39 @@
 
     function zoomWindowTarget(standings) {
         const span = ZOOM_SPAN_M;
-        const pinnedStartCenter = COURSE_VIEW_MIN_M + span / 2;
-        const pinnedFinishCenter = COURSE_VIEW_MAX_M - span / 2;
 
         if (!standings.length) {
-            return { minD: COURSE_VIEW_MIN_M, maxD: COURSE_VIEW_MIN_M + span, center: pinnedStartCenter };
+            const center = 0;
+            return { minD: center - span / 2, maxD: center + span / 2, center };
         }
 
         const dists = standings.map((s) => s.distance);
-        const leaderD = dists[0];
-        const lastD = dists[dists.length - 1];
         const packMin = Math.min(...dists);
         const packMax = Math.max(...dists);
-
-        const movingCenter = (lastD - ZOOM_TRAIL_M * 0.5 + leaderD + ZOOM_LEAD_M * 0.75) / 2;
-        const clampedMoving = Math.max(packMin - 10, Math.min(packMax + 10, movingCenter));
-
-        const startBlendFrom = span * 0.5;
-        const startBlendTo = startBlendFrom + ZOOM_EDGE_BLEND_M;
-        const finishBlendTo = COURSE_M - span * 0.5;
-        const finishBlendFrom = finishBlendTo - ZOOM_EDGE_BLEND_M;
-
-        let center;
-        if (leaderD <= startBlendFrom) {
-            center = pinnedStartCenter;
-        } else if (leaderD < startBlendTo) {
-            const t = (leaderD - startBlendFrom) / ZOOM_EDGE_BLEND_M;
-            center = pinnedStartCenter + (clampedMoving - pinnedStartCenter) * t;
-        } else if (leaderD >= finishBlendTo) {
-            center = pinnedFinishCenter;
-        } else if (leaderD > finishBlendFrom) {
-            const t = (leaderD - finishBlendFrom) / ZOOM_EDGE_BLEND_M;
-            center = clampedMoving + (pinnedFinishCenter - clampedMoving) * t;
-        } else {
-            center = clampedMoving;
-        }
+        let center = (packMin + packMax) / 2;
 
         let minD = center - span / 2;
         let maxD = center + span / 2;
 
         if (minD < COURSE_VIEW_MIN_M) {
-            minD = COURSE_VIEW_MIN_M;
-            maxD = COURSE_VIEW_MIN_M + span;
-            center = pinnedStartCenter;
-        } else if (maxD > COURSE_VIEW_MAX_M) {
-            maxD = COURSE_VIEW_MAX_M;
-            minD = COURSE_VIEW_MAX_M - span;
-            center = pinnedFinishCenter;
+            const shift = COURSE_VIEW_MIN_M - minD;
+            minD += shift;
+            maxD += shift;
+            center = (minD + maxD) / 2;
+        }
+        if (maxD > COURSE_VIEW_MAX_M) {
+            const shift = maxD - COURSE_VIEW_MAX_M;
+            minD -= shift;
+            maxD -= shift;
+            center = (minD + maxD) / 2;
         }
 
         return { minD, maxD, center };
     }
 
     function smoothZoomWindow(target) {
-        const span = ZOOM_SPAN_M;
-
-        if (state.zoomCenter == null) {
-            state.zoomCenter = target.center;
-        } else {
-            state.zoomCenter += (target.center - state.zoomCenter) * ZOOM_CENTER_SMOOTH;
-        }
-
-        let minD = state.zoomCenter - span / 2;
-        let maxD = state.zoomCenter + span / 2;
-
-        if (minD < COURSE_VIEW_MIN_M) {
-            state.zoomCenter = COURSE_VIEW_MIN_M + span / 2;
-            minD = COURSE_VIEW_MIN_M;
-            maxD = COURSE_VIEW_MIN_M + span;
-        } else if (maxD > COURSE_VIEW_MAX_M) {
-            state.zoomCenter = COURSE_VIEW_MAX_M - span / 2;
-            maxD = COURSE_VIEW_MAX_M;
-            minD = COURSE_VIEW_MAX_M - span;
-        }
-
-        return { minD, maxD };
+        state.zoomCenter = target.center;
+        return { minD: target.minD, maxD: target.maxD };
     }
 
     function zoomWindow(standings) {
@@ -1205,6 +1182,7 @@
         }
 
         const chartW = w - padL - padR;
+        const dockTop = useLiteGraphics();
         labelsEl.innerHTML = state.raceSlots
             .map((slot) => {
                 const standings = slotStandings?.find((s) => s.slot === slot.slot)?.standings ?? [];
@@ -1215,13 +1193,74 @@
                 const xPct = (x / w) * 100;
                 const active = slot.slot === state.selectedRaceSlot;
                 const onCourse = state.onCourseRaceNums.has(slot.raceNum);
+                const topPct = dockTop ? null : (((padT - 6) / h) * 100).toFixed(3);
+                const style = dockTop
+                    ? `left:${xPct.toFixed(3)}%`
+                    : `left:${xPct.toFixed(3)}%;top:${topPct}%`;
                 return (
-                    `<button type="button" class="krv-overview__race-label${active ? ' krv-overview__race-label--active' : ''}${onCourse ? ' krv-overview__race-label--on-course' : ''}" data-slot="${slot.slot}" style="left:${xPct.toFixed(3)}%;top:${(((padT - 6) / h) * 100).toFixed(3)}%">` +
+                    `<button type="button" class="krv-overview__race-label${dockTop ? ' krv-overview__race-label--dock-top' : ''}${active ? ' krv-overview__race-label--active' : ''}${onCourse ? ' krv-overview__race-label--on-course' : ''}" data-slot="${slot.slot}" style="${style}">` +
                     `${escapeHtml(slot.label)}` +
                     `</button>`
                 );
             })
             .join('');
+    }
+
+    function layoutZoomBoats(standings, layout, minD, maxD) {
+        const { w, h, padL, padR, padT, padB } = layout;
+        const mobile = useLiteGraphics();
+        const chartH = h - padT - padB;
+        const laneH = chartH / LANE_COUNT;
+        const minSep = mobile ? Math.max(52, laneH * 0.92) : Math.max(44, laneH * 0.82);
+
+        const items = standings.map((entry, rank) => {
+            const lane = entry.boat.lane || entry.idx + 1;
+            const xPx = xMap(entry.distance, minD, maxD, w, padL, padR);
+            const yPx = yMapLane(lane, h, padT, padB);
+            return {
+                entry,
+                rank,
+                lane,
+                xPx,
+                yPx,
+                yOffset: 0,
+            };
+        });
+
+        for (let pass = 0; pass < 3; pass++) {
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    const a = items[i];
+                    const b = items[j];
+                    const xDist = Math.abs(a.xPx - b.xPx);
+                    const xThreshold = mobile ? 90 : 130;
+                    if (xDist > xThreshold) continue;
+                    const yA = a.yPx + a.yOffset;
+                    const yB = b.yPx + b.yOffset;
+                    const gap = Math.abs(yA - yB);
+                    if (gap >= minSep) continue;
+                    const push = (minSep - gap) / 2 + 1;
+                    if (yA <= yB) {
+                        a.yOffset -= push;
+                        b.yOffset += push;
+                    } else {
+                        a.yOffset += push;
+                        b.yOffset -= push;
+                    }
+                }
+            }
+        }
+
+        const maxOffset = laneH * 0.42;
+        for (const item of items) {
+            item.yOffset = Math.max(-maxOffset, Math.min(maxOffset, item.yOffset));
+        }
+
+        return items.map((item) => ({
+            ...item,
+            xPct: ((item.xPx / w) * 100).toFixed(3),
+            yPct: (((item.yPx + item.yOffset) / h) * 100).toFixed(3),
+        }));
     }
 
     function renderZoomRacePicker() {
@@ -1335,18 +1374,17 @@
             courseG.innerHTML = courseParts.join('');
         }
 
-        boatsEl.innerHTML = standings
-            .map((entry, rank) => {
+        boatsEl.innerHTML = layoutZoomBoats(standings, layout, minD, maxD)
+            .map(({ entry, rank, xPct, yPct }) => {
                 const { boat, distance, speed, idx } = entry;
-                const lane = boat.lane || idx + 1;
-                const xPct = ((xMap(distance, minD, maxD, w, padL, padR) / w) * 100).toFixed(3);
-                const yPct = ((yMapLane(lane, h, padT, padB) / h) * 100).toFixed(3);
+                const leaderD = standings[0]?.distance ?? 0;
                 const gap = rank === 0 ? '' : `+${Math.max(0, Math.round(leaderD - distance))} m`;
                 const logo = boat.logoUrl || LOGO_PLACEHOLDER;
                 const speedStr = `${speed.toFixed(1)} m/s`;
                 const toGoStr = rank === 0 ? `${toGo} m to go` : gap;
+                const stackCls = useLiteGraphics() ? ' krv-zoom-boat--stacked' : '';
                 return (
-                    `<div class="krv-zoom-boat" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
+                    `<div class="krv-zoom-boat${stackCls}" style="left:${xPct}%;top:${yPct}%;z-index:${20 - rank}" data-rank="${rank + 1}">` +
                     `<div class="krv-zoom-boat__hull">` +
                     `<svg class="krv-cartoon-boat" viewBox="0 0 48 24" width="92" height="46" aria-hidden="true">` +
                     cartoonBoatPaths(boat.color || '#38bdf8') +
@@ -1367,6 +1405,25 @@
                 );
             })
             .join('');
+    }
+
+    function splitMarkerLabel(marker) {
+        if (marker >= COURSE_M) return 'Finish';
+        return `${marker}m`;
+    }
+
+    function renderSplitMarkerBanner(tSec) {
+        const el = $('krvZoomSplitMarker');
+        if (!el) return;
+        const banner = state.splitMarkerBanner;
+        if (!banner || tSec > banner.until) {
+            el.hidden = true;
+            el.textContent = '';
+            return;
+        }
+        el.hidden = false;
+        el.textContent = splitMarkerLabel(banner.marker);
+        el.classList.toggle('krv-zoom__split-marker--finish', banner.kind === 'finish');
     }
 
     function renderZoomSplitCallouts(tSec) {
@@ -1504,6 +1561,7 @@
             ? slotStandings.find((s) => s.slot === selected.slot)?.standings ?? []
             : [];
         updateZoomView(zoomStandings);
+        renderSplitMarkerBanner(tSec);
         renderZoomSplitCallouts(tSec);
     }
 

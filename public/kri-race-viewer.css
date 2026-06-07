@@ -118,8 +118,11 @@ body {
 
 .krv-overview__race-labels {
     position: absolute;
-    inset: 0;
-    z-index: 2;
+    left: 28px;
+    right: 28px;
+    top: var(--krv-titlebar-h);
+    height: calc((100% - var(--krv-titlebar-h)) * 0.25);
+    z-index: 10;
     pointer-events: none;
 }
 
@@ -511,6 +514,37 @@ body {
 .krv-lane-split--finish {
     background: #fef08a;
     border-color: rgba(161, 98, 7, 0.25);
+}
+
+.krv-zoom__split-marker {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 14;
+    padding: 8px 22px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.96) 0%, rgba(0, 121, 209, 0.96) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff;
+    text-transform: uppercase;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.krv-zoom__split-marker[hidden] {
+    display: none;
+}
+
+.krv-zoom__split-marker--finish {
+    background: linear-gradient(135deg, #fef08a 0%, #f59e0b 100%);
+    color: #0c1f3d;
+    border-color: rgba(255, 255, 255, 0.75);
 }
 
 .krv-zoom-boat {
@@ -924,6 +958,21 @@ body {
     .krv-titlebar {
         padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
         padding-top: env(safe-area-inset-top, 0);
+        z-index: 4;
+    }
+
+    .krv-overview__race-labels {
+        left: 12px;
+        right: 12px;
+        top: calc(var(--krv-titlebar-h) - 10px);
+        height: 36px;
+        z-index: 12;
+    }
+
+    .krv-overview__race-label--dock-top {
+        top: auto !important;
+        bottom: 0;
+        transform: translate(-50%, 0);
     }
 
     .krv-titlebar__title {
@@ -960,7 +1009,7 @@ body {
     .krv-zoom {
         order: 1;
         flex: 1 1 auto;
-        min-height: clamp(280px, 48vh, 440px);
+        min-height: clamp(350px, 60vh, 550px);
         padding: 10px 12px 16px;
         padding-left: max(12px, env(safe-area-inset-left));
         padding-right: max(12px, env(safe-area-inset-right));
@@ -986,13 +1035,38 @@ body {
     }
 
     .krv-zoom__viewport {
-        min-height: 220px;
+        min-height: 275px;
+    }
+
+    .krv-zoom-boat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .krv-zoom-boat__hull .krv-cartoon-boat {
+        width: 72px;
+        height: 36px;
+    }
+
+    .krv-zoom-boat__logo-badge {
+        width: 32px;
+        height: 32px;
     }
 
     .krv-zoom-boat__info {
-        min-width: 84px;
-        max-width: 108px;
-        padding: 3px 7px 4px;
+        position: static;
+        right: auto;
+        top: auto;
+        transform: none;
+        margin-top: 3px;
+        min-width: 76px;
+        max-width: 96px;
+    }
+
+    .krv-zoom__split-marker {
+        font-size: 18px;
+        padding: 6px 18px;
     }
 
     .krv-zoom-boat__speed {

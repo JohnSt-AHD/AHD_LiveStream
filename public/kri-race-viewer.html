@@ -17,11 +17,11 @@
             <img class="krv-titlebar__logo" src="assets/kri/kri-logo.png" alt="" width="36" height="36">
             <h1 class="krv-titlebar__title">Live Race Viewer</h1>
         </header>
+        <div class="krv-overview__race-labels" id="krvOverviewRaceLabels" aria-hidden="true"></div>
         <section class="krv-overview" aria-label="Course overview">
             <div class="krv-water-stack">
                 <canvas class="krv-water-canvas" id="krvOverviewWater" aria-hidden="true"></canvas>
                 <svg class="krv-overview__svg" id="krvOverviewSvg" viewBox="0 0 1800 220" preserveAspectRatio="none"></svg>
-                <div class="krv-overview__race-labels" id="krvOverviewRaceLabels"></div>
             </div>
         </section>
         <div class="krv-main">
@@ -41,6 +41,7 @@
                     </div>
                     <div class="krv-zoom__boats" id="krvZoomBoats"></div>
                     <div class="krv-zoom__splits" id="krvZoomSplits" aria-hidden="true"></div>
+                    <div class="krv-zoom__split-marker" id="krvZoomSplitMarker" hidden aria-live="polite"></div>
                 </div>
             </section>
             <aside class="krv-previous" aria-label="Previous race results">
