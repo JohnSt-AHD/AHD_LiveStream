@@ -1449,7 +1449,7 @@ body {
 [data-vmix-theme='rnz-milford'] .vg-lower-race {
     box-sizing: border-box;
     margin: 0;
-    left: 430px;
+    left: 428px;
     top: 952px;
     width: 280px;
     height: 22px;
@@ -1476,7 +1476,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-lower-race-progression {
     margin-left: 34px;
-    margin-top: 13px;
+    margin-top: 15px;
     font-size: 18px;
     color: #fff;
 }
@@ -1486,6 +1486,10 @@ body {
     font-size: 36px;
     color: #fff;
     text-shadow: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in {
+    animation: vg-fade-in 1.25s ease-in forwards;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head,
@@ -1844,7 +1848,7 @@ body {
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race {
     box-sizing: border-box;
     margin: 0;
-    left: 430px;
+    left: 428px;
     top: 952px;
     width: 280px;
     height: 22px;
@@ -1871,7 +1875,7 @@ body {
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-progression {
     margin-left: 34px;
-    margin-top: 13px;
+    margin-top: 15px;
     font-size: 18px;
     color: #fff;
 }
@@ -1880,6 +1884,10 @@ body {
     margin: 0;
     font-size: 36px;
     color: #fff;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in {
+    animation: vg-fade-in 1.25s ease-in forwards;
 }
 
 [data-vmix-theme='beachsprints-milford'] .vg-layer--draw .vg-draw-head {
