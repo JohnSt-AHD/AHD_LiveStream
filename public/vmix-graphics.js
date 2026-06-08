@@ -2083,16 +2083,16 @@ function vgRenderLower(layer, race) {
         return;
     }
     const raceNumber = `Race ${race.race}`;
-    const metaEl = vgEl('p', 'vg-lower-meta', raceNumber);
-    metaEl.dataset.vgLayout = 'lower-meta';
-    layer.appendChild(metaEl);
-
     const roundLabel = vgFormatRoundLabel(race.round, race.division);
     const progressionLabel = race.progression || '';
 
     if (vgIsMilfordBroadcastTheme()) {
+        const metaEl = vgEl('p', 'vg-lower-meta', roundLabel);
+        metaEl.dataset.vgLayout = 'lower-meta';
+        layer.appendChild(metaEl);
+
         const raceEl = vgEl('p', 'vg-lower-race');
-        raceEl.appendChild(vgEl('span', 'vg-lower-race-event', fullName));
+        raceEl.appendChild(vgEl('span', 'vg-lower-race-number', raceNumber));
         if (progressionLabel) {
             raceEl.appendChild(
                 vgEl('span', 'vg-lower-race-progression', progressionLabel),
@@ -2100,11 +2100,16 @@ function vgRenderLower(layer, race) {
         }
         raceEl.dataset.vgLayout = 'lower-race';
         layer.appendChild(raceEl);
-        const eventEl = vgEl('h2', 'vg-lower-event', roundLabel);
+
+        const eventEl = vgEl('h2', 'vg-lower-event', fullName);
         eventEl.dataset.vgLayout = 'lower-event';
         layer.appendChild(eventEl);
         return;
     }
+
+    const metaEl = vgEl('p', 'vg-lower-meta', raceNumber);
+    metaEl.dataset.vgLayout = 'lower-meta';
+    layer.appendChild(metaEl);
 
     const raceEl = vgEl('p', 'vg-lower-race');
     const timeLabel = vgFormatTime(race.startAt);
