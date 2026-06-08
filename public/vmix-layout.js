@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 11;
+    const LAYOUT_BUILD = 13;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -162,41 +162,92 @@
         /* Positions from Milford GT templates (1920×1080) in gt-templates/extracted/ */
         'rnz-milford': {
             draw: {
+                _playback: {
+                    textInMs: 4500,
+                    textOutMs: 27000,
+                    outroMs: 500,
+                },
                 'draw-head': { left: '140px', top: '154px', width: '812px' },
                 'draw-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
                 'draw-logo': { width: '37px', height: '39px' },
                 'draw-crew': {},
             },
             results: {
+                _playback: {
+                    textInMs: 6000,
+                    textOutMs: 16000,
+                    outroMs: 500,
+                },
                 'results-head': { left: '140px', top: '134px', width: '812px' },
                 'results-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
                 'results-logo': { width: '37px', height: '39px' },
                 'results-crew': {},
             },
             lower: {
+                _playback: {
+                    textInMs: 0,
+                    outroMs: 1500,
+                },
+                'milford-lower-wrap': {
+                    left: '0px',
+                    top: '950px',
+                    fadeInDelay: 0,
+                    fadeInDuration: 1.5,
+                    fadeOutDuration: 1.5,
+                },
+                'milford-lower-logo': {
+                    width: '220px',
+                    height: '130px',
+                },
+                'milford-lower-panel': {},
                 'lower-meta': {
-                    left: '294px',
-                    top: '952px',
-                    width: '200px',
-                    height: '22px',
                     fontSize: '20px',
+                    fadeInDelay: 0.15,
+                    fadeInDuration: 0.85,
+                    fadeOutDuration: 1.5,
                 },
                 'lower-race': {
-                    left: '436px',
-                    top: '952px',
-                    width: '280px',
-                    height: '22px',
                     fontSize: '20px',
+                    fadeInDelay: 0.3,
+                    fadeInDuration: 0.85,
+                    fadeOutDuration: 1.5,
+                },
+                'lower-progression': {
+                    fontSize: '18px',
+                    fadeInDelay: 0.45,
+                    fadeInDuration: 0.85,
+                    fadeOutDuration: 1.5,
                 },
                 'lower-event': {
-                    left: '287px',
-                    top: '996px',
                     width: '615px',
                     fontSize: '36px',
                     color: 'rgb(255, 255, 255)',
+                    fadeInDelay: 0.55,
+                    fadeInDuration: 0.85,
+                    fadeOutDuration: 1.5,
+                },
+                'milford-lower-corner': {
+                    left: '1802px',
+                    top: '0px',
+                    width: '118px',
+                    height: '72px',
+                    fadeInDelay: 0,
+                    fadeInDuration: 1.5,
+                    fadeOutDuration: 1.5,
+                },
+            },
+            speed: {
+                _playback: {
+                    textInMs: 1000,
+                    pauseAtMs: 3000,
+                    outroMs: 500,
                 },
             },
             leader: {
+                _playback: {
+                    pauseAtMs: 6000,
+                    outroMs: 500,
+                },
                 'leader-wrap': {},
                 'leader-logo': {
                     left: '1476.5px',
@@ -275,6 +326,26 @@
         'color',
     ];
 
+    const TIMING_KEYS = ['fadeInDelay', 'fadeInDuration', 'fadeOutDuration'];
+
+    const PLAYBACK_KEYS = ['textInMs', 'pauseAtMs', 'textOutMs', 'outroMs'];
+
+    const TIMING_CSS_VARS = {
+        fadeInDelay: '--vg-fade-in-delay',
+        fadeInDuration: '--vg-fade-in-duration',
+        fadeOutDuration: '--vg-fade-out-duration',
+    };
+
+    function formatTimingSeconds(value) {
+        if (value == null || value === '') return null;
+        const s = String(value).trim();
+        if (/ms$/i.test(s)) return s;
+        if (/s$/i.test(s)) return s;
+        const n = parseFloat(s);
+        if (!Number.isFinite(n)) return s;
+        return `${n}s`;
+    }
+
     /** Strip properties that Save all accidentally copied from the wrong region. */
     const TRANSFORM_ONLY_REGIONS = new Set([
         'draw-kicker',
@@ -299,7 +370,16 @@
 
     function sanitizeRegionProps(id, props, isTarget = false) {
         if (!props || typeof props !== 'object') return {};
-        const allowed = new Set(['color']);
+        if (id === '_playback') {
+            const out = {};
+            for (const key of PLAYBACK_KEYS) {
+                if (props[key] == null || props[key] === '') continue;
+                const n = parseInt(String(props[key]), 10);
+                if (Number.isFinite(n)) out[key] = n;
+            }
+            return out;
+        }
+        const allowed = new Set(['color', ...TIMING_KEYS]);
         if (isTarget) {
             allowed.add('transform');
             if (String(id).includes('logo')) {
@@ -436,6 +516,21 @@
                 node.style.color = String(props.color);
             });
         }
+
+        for (const key of TIMING_KEYS) {
+            const cssVar = TIMING_CSS_VARS[key];
+            if (!cssVar) continue;
+            if (props[key] == null || props[key] === '') {
+                el.style.removeProperty(cssVar);
+                continue;
+            }
+            el.style.setProperty(cssVar, formatTimingSeconds(props[key]));
+        }
+    }
+
+    function getPlayback(theme, graphic) {
+        const region = getRegion(theme, graphic, '_playback');
+        return region && Object.keys(region).length ? region : null;
     }
 
     function getRegions(theme, graphic) {
@@ -485,10 +580,13 @@
         LS_KEY,
         LAYOUT_BUILD,
         DEFAULT_LAYOUTS,
+        TIMING_KEYS,
+        PLAYBACK_KEYS,
         readAll,
         writeAll,
         getRegion,
         getRegions,
+        getPlayback,
         setRegion,
         clearGraphic,
         apply,

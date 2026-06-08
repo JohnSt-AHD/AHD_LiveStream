@@ -10,6 +10,17 @@
             { id: 'lower-race', label: 'Lower — race number + time' },
             { id: 'lower-event', label: 'Lower — event title' },
         ],
+        lowerMilford: [
+            { id: '_playback', label: 'Playback timing (whole graphic)', playback: true },
+            { id: 'milford-lower-wrap', label: 'Lower — chrome root' },
+            { id: 'milford-lower-logo', label: 'Lower — Milford logo box' },
+            { id: 'milford-lower-panel', label: 'Lower — text panel' },
+            { id: 'lower-meta', label: 'Lower — round badge (orange)' },
+            { id: 'lower-race', label: 'Lower — race code strip (white)' },
+            { id: 'lower-progression', label: 'Lower — progression' },
+            { id: 'lower-event', label: 'Lower — event title (purple)' },
+            { id: 'milford-lower-corner', label: 'Lower — top-right accent' },
+        ],
         draw: [
             { id: 'draw-head', label: 'Draw — header block (all)', posMode: 'absolute' },
             { id: 'draw-kicker', label: 'Draw — “Start list” kicker', posMode: 'transform' },
@@ -90,8 +101,32 @@
         return global.document.querySelector('.vg-stage');
     }
 
+    function milfordVideoGraphics() {
+        return ['draw', 'results', 'leader', 'speed'];
+    }
+
     function regionDefs(graphic) {
-        return LAYOUT_IDS[graphic] || [];
+        const theme = editor.theme;
+        if (graphic === 'lower' && theme === 'rnz-milford') {
+            return LAYOUT_IDS.lowerMilford;
+        }
+        const base = LAYOUT_IDS[graphic] || [];
+        if (
+            (theme === 'rnz-milford' || theme === 'beachsprints-milford') &&
+            milfordVideoGraphics().includes(graphic)
+        ) {
+            return [
+                { id: '_playback', label: 'Playback timing (whole graphic)', playback: true },
+                ...base,
+            ];
+        }
+        if (theme === 'beachsprints-milford' && graphic === 'lower') {
+            return [
+                { id: '_playback', label: 'Playback timing (whole graphic)', playback: true },
+                ...base,
+            ];
+        }
+        return base;
     }
 
     function findBlockEl(id) {
@@ -100,8 +135,44 @@
 
     function findRegionEl(def) {
         if (!def) return null;
+        if (def.playback) return null;
         if (def.target) return findTargetEls(def.target)[0] || null;
         return findBlockEl(def.id);
+    }
+
+    function isCssMilfordLower() {
+        return editor.theme === 'rnz-milford' && editor.graphic === 'lower';
+    }
+
+    function toggleEditorSections(def) {
+        const panel = editor.panel;
+        if (!panel) return;
+        const layoutFields = panel.querySelector('.vg-layout-fields');
+        const timingFields = panel.querySelector('.vg-layout-timing-fields');
+        const playbackFields = panel.querySelector('.vg-layout-playback-fields');
+        const posMode = panel.querySelector('.vg-layout-pos-mode');
+        const livePos = panel.querySelector('.vg-layout-live-pos');
+        const isPlayback = !!def?.playback;
+        if (layoutFields) layoutFields.hidden = isPlayback;
+        if (timingFields) {
+            timingFields.hidden = isPlayback || !isCssMilfordLower();
+        }
+        if (playbackFields) playbackFields.hidden = !isPlayback;
+        if (posMode) posMode.hidden = isPlayback;
+        if (livePos) livePos.hidden = isPlayback;
+
+        const textInLabel = panel.querySelector('[data-label="textInMs"]');
+        if (textInLabel) {
+            textInLabel.textContent = isCssMilfordLower()
+                ? 'Intro delay (ms)'
+                : 'Text in (ms)';
+        }
+        const pauseLabel = panel.querySelector('[data-label="pauseAtMs"]');
+        if (pauseLabel) {
+            pauseLabel.textContent = isCssMilfordLower()
+                ? 'Hold at (ms) — unused for CSS'
+                : 'Pause at (ms)';
+        }
     }
 
     function resolveRegionId(el) {
@@ -203,9 +274,14 @@
         };
     }
 
-    /** Absolute left/top for KRI regions are relative to .vg-kri-panel, not the 1920×1080 stage. */
+    /** Absolute left/top for nested panel regions (not the 1920×1080 stage). */
     function layoutContainerFor(el) {
-        return el?.closest?.('.vg-kri-panel') || null;
+        return (
+            el?.closest?.('.vg-kri-panel') ||
+            el?.closest?.('.vg-milford-lower-panel') ||
+            el?.closest?.('.vg-milford-lower-top') ||
+            null
+        );
     }
 
     function positionInContainerPx(el, container) {
@@ -242,6 +318,7 @@
         });
         const def = getSelectedDef();
         if (!def) return;
+        toggleEditorSections(def);
         const el = findRegionEl(def);
         if (el) el.classList.add('vg-layout-selected');
         syncFieldsFromSelection();
@@ -253,7 +330,7 @@
         if (!sel) return;
         for (const opt of sel.options) {
             const def = regionDefs(editor.graphic).find((d) => d.id === opt.value);
-            const found = def ? !!findRegionEl(def) : false;
+            const found = def?.playback ? true : !!findRegionEl(def);
             const plain = def?.label?.replace(/^[●○]\s*/, '') || opt.value;
             opt.textContent = `${found ? '● ' : '○ '}${plain}`;
             opt.disabled = !found;
@@ -341,16 +418,26 @@
         if (!panel || !def) return;
 
         const el = findRegionEl(def);
-        if (!el) return;
+        const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, def.id);
+        const set = (name, val) => {
+            const input = panel.querySelector(`[data-field="${name}"]`);
+            if (input) input.value = val ?? '';
+        };
 
         editor.syncingFields = true;
         try {
-            const pos = elPositionPx(el);
+            if (def.playback) {
+                set('textInMs', saved?.textInMs ?? '');
+                set('pauseAtMs', saved?.pauseAtMs ?? '');
+                set('textOutMs', saved?.textOutMs ?? '');
+                set('outroMs', saved?.outroMs ?? '');
+                hidePosBadge();
+                return;
+            }
+
+            if (!el) return;
+
             const transformPos = usesTransformPos(def, el);
-            const set = (name, val) => {
-                const input = panel.querySelector(`[data-field="${name}"]`);
-                if (input) input.value = val ?? '';
-            };
             if (transformPos) {
                 set('left', '');
                 set('top', '');
@@ -358,7 +445,6 @@
                 set('left', Math.round(layoutPositionPx(def, el).left));
                 set('top', Math.round(layoutPositionPx(def, el).top));
             }
-            const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, def.id);
             const tr = readTranslate(el);
             const liveTransform =
                 el.style.transform ||
@@ -376,6 +462,9 @@
                 'color',
                 el.style.color || rgbToHex(computedColor) || saved?.color || '',
             );
+            set('fadeInDelay', saved?.fadeInDelay ?? '');
+            set('fadeInDuration', saved?.fadeInDuration ?? '');
+            set('fadeOutDuration', saved?.fadeOutDuration ?? '');
 
             const modeEl = panel.querySelector('[data-field="posMode"]');
             if (modeEl) modeEl.textContent = regionPosMode(def, el);
@@ -402,8 +491,21 @@
         return `#${to2(r)}${to2(g)}${to2(b)}`;
     }
 
+    function collectPlaybackProps() {
+        const panel = editor.panel;
+        const get = (name) => panel.querySelector(`[data-field="${name}"]`)?.value?.trim() ?? '';
+        const props = {};
+        for (const key of ['textInMs', 'pauseAtMs', 'textOutMs', 'outroMs']) {
+            if (get(key) === '') continue;
+            const n = parseInt(get(key), 10);
+            if (Number.isFinite(n)) props[key] = n;
+        }
+        return props;
+    }
+
     function collectFieldProps(def) {
         const panel = editor.panel;
+        if (def?.playback) return collectPlaybackProps();
         const get = (name) => panel.querySelector(`[data-field="${name}"]`)?.value?.trim() ?? '';
         const props = {};
         const transformPos = def && usesTransformPos(def, findRegionEl(def));
@@ -417,6 +519,11 @@
         if (get('transform')) props.transform = get('transform');
         if (get('scale') !== '') props.scale = Number(get('scale')) || 1;
         if (get('color')) props.color = get('color');
+        for (const key of ['fadeInDelay', 'fadeInDuration', 'fadeOutDuration']) {
+            if (get(key) === '') continue;
+            const n = parseFloat(get(key));
+            if (Number.isFinite(n)) props[key] = n;
+        }
         return props;
     }
 
@@ -447,6 +554,11 @@
         if (!def || !panel) return;
 
         const props = collectFieldProps(def);
+        if (def.playback) {
+            global.VmixLayout.setRegion(editor.theme, editor.graphic, '_playback', props);
+            setStatus('Applied playback timing (saved on next Save region)');
+            return;
+        }
 
         if (def.target) {
             findTargetEls(def.target).forEach((el) => applyStyleToRegion(def, el, props));
@@ -463,6 +575,9 @@
     }
 
     function buildSavedProps(def, el, { includeForm = false } = {}) {
+        if (def?.playback) {
+            return global.VmixLayout.sanitizeRegionProps('_playback', collectFieldProps(def), false);
+        }
         const props = includeForm
             ? { ...readPropsFromEl(el), ...collectFieldProps(def) }
             : { ...readPropsFromEl(el) };
@@ -495,6 +610,11 @@
     function snapshotGraphicLayout() {
         const snapshot = {};
         for (const def of regionDefs(editor.graphic)) {
+            if (def.playback) {
+                const saved = global.VmixLayout.getRegion(editor.theme, editor.graphic, '_playback');
+                if (saved) snapshot._playback = saved;
+                continue;
+            }
             const el = findRegionEl(def);
             if (!el) continue;
             snapshot[def.id] = buildSavedProps(def, el, { includeForm: false });
@@ -511,6 +631,9 @@
         const el = findRegionEl(def);
         const props = buildSavedProps(def, el, { includeForm: true });
         global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
+        if (def.playback) {
+            previewGraphic(editor.graphic);
+        }
         setStatus(`Saved ${editor.theme} / ${editor.graphic} / ${def.id}`);
     }
 
@@ -703,12 +826,23 @@
                 <option value="lower">Lower third</option>
                 <option value="draw">Draw</option>
                 <option value="results">Results</option>
+                <option value="leader">Leader</option>
+                <option value="speed">Tracker</option>
                 <option value="schedule">Schedule</option>
             </select>
             <label for="vgLayoutRegion">Region</label>
             <select id="vgLayoutRegion"></select>
             <p class="vg-layout-pos-mode">Move mode: <span data-field="posMode">—</span></p>
             <p class="vg-layout-live-pos">Position: <span data-field="livePos">—</span></p>
+            <div class="vg-layout-playback-fields" hidden>
+                <h3 class="vg-layout-subhead">Graphic playback</h3>
+                <div class="vg-layout-fields">
+                    <div><label data-label="textInMs">Text in (ms)</label><input data-field="textInMs" type="number" step="50" min="0"></div>
+                    <div><label data-label="pauseAtMs">Pause at (ms)</label><input data-field="pauseAtMs" type="number" step="50" min="0"></div>
+                    <div><label data-label="textOutMs">Text out (ms)</label><input data-field="textOutMs" type="number" step="50" min="0"></div>
+                    <div><label data-label="outroMs">Outro fade (ms)</label><input data-field="outroMs" type="number" step="50" min="0"></div>
+                </div>
+            </div>
             <div class="vg-layout-fields">
                 <div><label>Left (px)</label><input data-field="left" type="number" step="1"></div>
                 <div><label>Top (px)</label><input data-field="top" type="number" step="1"></div>
@@ -718,6 +852,14 @@
                 <div><label>Transform</label><input data-field="transform" type="text" placeholder="translate(5vw, 1vh)"></div>
                 <div><label>Scale</label><input data-field="scale" type="number" step="0.05" min="0.5" max="1.5"></div>
                 <div class="vg-layout-field-color"><label>Text colour</label><input data-field="color" type="color"></div>
+            </div>
+            <div class="vg-layout-timing-fields" hidden>
+                <h3 class="vg-layout-subhead">Element animation (seconds)</h3>
+                <div class="vg-layout-fields">
+                    <div><label>Fade in delay</label><input data-field="fadeInDelay" type="number" step="0.05" min="0"></div>
+                    <div><label>Fade in duration</label><input data-field="fadeInDuration" type="number" step="0.05" min="0"></div>
+                    <div><label>Fade out duration</label><input data-field="fadeOutDuration" type="number" step="0.05" min="0"></div>
+                </div>
             </div>
             <div class="vg-layout-gt-import">
                 <label for="vgGtFile">Import GT template (.gtxml / .gtzip / .gt)</label>
@@ -857,7 +999,7 @@
             }
             previewGraphic(editor.graphic);
             setStatus(
-                'Layout v2 — reset graphic once to clear old browser overrides. Header left/top are panel-local.',
+                'Layout v13 — Milford lower: drag chrome/text regions; set per-element fade timing (seconds). Playback region sets video/CSS intro & outro (ms). Test animations with ?autoplay=1 (dev mode shows hold only).',
             );
 
             getStage()?.addEventListener('pointerdown', onPointerDown);

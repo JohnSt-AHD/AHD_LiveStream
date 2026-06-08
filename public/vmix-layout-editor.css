@@ -8,6 +8,9 @@ body.vg-layout-dev .vg-kri-draw-body,
 body.vg-layout-dev .vg-kri-head,
 body.vg-layout-dev .vg-kri-cols,
 body.vg-layout-dev .vg-kri-lanes,
+body.vg-layout-dev .vg-milford-lower-wrap,
+body.vg-layout-dev .vg-milford-lower-panel,
+body.vg-layout-dev .vg-milford-lower-top,
 body.vg-layout-dev .vg-lane {
     pointer-events: auto;
 }
@@ -62,6 +65,21 @@ body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
     font-size: 15px;
     font-weight: 700;
     color: #7dd3fc;
+}
+
+.vg-layout-panel h3.vg-layout-subhead {
+    margin: 12px 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fde68a;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.vg-layout-playback-fields[hidden],
+.vg-layout-timing-fields[hidden],
+.vg-layout-fields[hidden] {
+    display: none !important;
 }
 
 .vg-layout-panel p {
