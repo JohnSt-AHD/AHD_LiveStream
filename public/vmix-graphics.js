@@ -2301,15 +2301,17 @@ function vgRenderDraw(layer, race) {
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
         const meta = vgEl('p', 'vg-draw-meta');
         meta.appendChild(vgEl('span', 'vg-draw-meta-race', `Race ${race.race}`));
-        if (race.round) {
-            meta.appendChild(document.createTextNode(' · '));
-            meta.appendChild(vgEl('span', 'vg-draw-meta-round', race.round));
-        }
-        if (race.division) {
-            meta.appendChild(document.createTextNode(' · '));
-            meta.appendChild(
-                vgEl('span', 'vg-draw-meta-div', `Div ${race.division}`),
+        const roundLabel = vgFormatRoundLabel(race.round, race.division);
+        if (roundLabel) {
+            const roundEl = vgEl('span', 'vg-draw-meta-round');
+            roundEl.appendChild(
+                vgEl('span', 'vg-draw-meta-time', vgFormatScheduleTime(race.startAt)),
             );
+            roundEl.appendChild(document.createTextNode('  '));
+            roundEl.appendChild(
+                vgEl('span', 'vg-draw-meta-round-label', roundLabel),
+            );
+            meta.appendChild(roundEl);
         }
         head.appendChild(meta);
     } else {

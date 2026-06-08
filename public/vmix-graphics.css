@@ -1514,7 +1514,6 @@ body {
     margin: 51px 0 0 35px;
     font-size: 20px;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #fff;
     opacity: 1;
@@ -1522,16 +1521,20 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-race {
     position: relative;
-    left: -20px;
+    left: -18px;
+    top: -2px;
+    text-transform: uppercase;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round {
     position: relative;
-    left: 5px;
+    left: 7px;
+    top: -2px;
     color: #000;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-div {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-time,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round-label {
     color: #000;
 }
 
