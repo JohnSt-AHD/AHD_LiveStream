@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 13;
+    const LAYOUT_BUILD = 14;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -185,55 +185,30 @@
             },
             lower: {
                 _playback: {
-                    textInMs: 0,
-                    outroMs: 1500,
+                    textInMs: 1000,
+                    pauseAtMs: 1500,
+                    outroMs: 500,
                 },
-                'milford-lower-wrap': {
-                    left: '0px',
-                    top: '950px',
-                    fadeInDelay: 0,
-                    fadeInDuration: 1.5,
-                    fadeOutDuration: 1.5,
-                },
-                'milford-lower-logo': {
-                    width: '220px',
-                    height: '130px',
-                },
-                'milford-lower-panel': {},
                 'lower-meta': {
+                    left: '294px',
+                    top: '952px',
+                    width: '200px',
+                    height: '22px',
                     fontSize: '20px',
-                    fadeInDelay: 0.15,
-                    fadeInDuration: 0.85,
-                    fadeOutDuration: 1.5,
                 },
                 'lower-race': {
+                    left: '436px',
+                    top: '952px',
+                    width: '280px',
+                    height: '22px',
                     fontSize: '20px',
-                    fadeInDelay: 0.3,
-                    fadeInDuration: 0.85,
-                    fadeOutDuration: 1.5,
-                },
-                'lower-progression': {
-                    fontSize: '18px',
-                    fadeInDelay: 0.45,
-                    fadeInDuration: 0.85,
-                    fadeOutDuration: 1.5,
                 },
                 'lower-event': {
+                    left: '287px',
+                    top: '996px',
                     width: '615px',
                     fontSize: '36px',
                     color: 'rgb(255, 255, 255)',
-                    fadeInDelay: 0.55,
-                    fadeInDuration: 0.85,
-                    fadeOutDuration: 1.5,
-                },
-                'milford-lower-corner': {
-                    left: '1802px',
-                    top: '0px',
-                    width: '118px',
-                    height: '72px',
-                    fadeInDelay: 0,
-                    fadeInDuration: 1.5,
-                    fadeOutDuration: 1.5,
                 },
             },
             speed: {

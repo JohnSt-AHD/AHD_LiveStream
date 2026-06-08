@@ -744,15 +744,8 @@ function vgKriUsesCssBackground(graphic) {
     return !!g && !vgIsSpeedChartGraphic(g) && !vgIsLiveTrackingGraphic(g) && !vgIsWeatherGraphic(g);
 }
 
-/** Milford RNZ: code-built lower third (pilot — replaces lower.webm). */
-function vgMilfordUsesCssBackground(graphic) {
-    if (vgThemeId() !== 'rnz-milford') return false;
-    const g = graphic ?? vgPlayback.graphic;
-    return g === 'lower';
-}
-
 function vgUsesCssBackground(graphic) {
-    return vgKriUsesCssBackground(graphic) || vgMilfordUsesCssBackground(graphic);
+    return vgKriUsesCssBackground(graphic);
 }
 
 /** @deprecated alias */
@@ -1087,7 +1080,6 @@ function vgGetOutroFadeMs(graphic) {
     const custom = vgGetLayoutPlayback(graphic);
     const n = custom?.outroMs;
     if (Number.isFinite(n) && n > 0) return n;
-    if (vgMilfordUsesCssBackground(graphic)) return VG_KRI_FADE_MS;
     return VG_MILFORD_FADE_MS;
 }
 
@@ -1098,10 +1090,7 @@ function vgGetVideoProfile(graphic) {
     } else if (graphic === 'speed') {
         base = { textInMs: 1000, pauseAtMs: 3000 };
     } else if (graphic === 'lower') {
-        base =
-            vgMilfordUsesCssBackground(graphic)
-                ? { textInMs: 0, pauseAtMs: 0 }
-                : { textInMs: 1000, pauseAtMs: 1500 };
+        base = { textInMs: 1000, pauseAtMs: 1500 };
     } else if (graphic === 'draw') {
         base = { textInMs: 4500, textOutMs: 27000, playThrough: true };
     } else if (graphic === 'results') {
@@ -1557,7 +1546,7 @@ function vgStartOutroPlayback(isVideo, video) {
     const bg = vgGetBgEl();
     if (bg) bg.classList.add('vg-bg--outro');
 
-    if (vgIsKriTheme() || vgMilfordUsesCssBackground(graphic)) {
+    if (vgIsKriTheme()) {
         vgStartKriOutroFade();
         const outroMs = vgGetOutroFadeMs(graphic);
         vgPlayback.outroTimer = setTimeout(done, outroMs + 100);
@@ -1950,73 +1939,6 @@ function vgKriCapitalizeFirst(text) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const MILFORD_LOWER_LOGO_SRC = 'assets/vmix/milford/lower-logo-box.png';
-
-function vgMilfordCreateLowerShell() {
-    const wrap = vgEl('div', 'vg-milford-lower-wrap');
-    wrap.dataset.vgLayout = 'milford-lower-wrap';
-
-    const logo = vgEl('div', 'vg-milford-lower-logo');
-    logo.dataset.vgLayout = 'milford-lower-logo';
-    const logoImg = document.createElement('img');
-    logoImg.className = 'vg-milford-lower-logo-img';
-    logoImg.src = MILFORD_LOWER_LOGO_SRC;
-    logoImg.alt = '';
-    logoImg.dataset.vgLayout = 'milford-lower-logo-img';
-    logo.appendChild(logoImg);
-    wrap.appendChild(logo);
-
-    const panel = vgEl('div', 'vg-milford-lower-panel');
-    panel.dataset.vgLayout = 'milford-lower-panel';
-    const top = vgEl('div', 'vg-milford-lower-top');
-    top.dataset.vgLayout = 'milford-lower-top';
-    panel.appendChild(top);
-    wrap.appendChild(panel);
-
-    const corner = vgEl('div', 'vg-milford-lower-corner');
-    corner.dataset.vgLayout = 'milford-lower-corner';
-    corner.setAttribute('aria-hidden', 'true');
-
-    return { wrap, panel, top, corner };
-}
-
-function vgRenderMilfordLower(layer, race) {
-    const fullName = vgExpandEventName(race.eventType, vgState.lookup);
-    const { wrap, panel, top, corner } = vgMilfordCreateLowerShell();
-
-    if (race.round) {
-        const roundEl = vgEl('span', 'vg-lower-meta vg-milford-lower-round', race.round);
-        roundEl.dataset.vgLayout = 'lower-meta';
-        top.appendChild(roundEl);
-    }
-
-    const codeEl = vgEl('span', 'vg-milford-lower-code');
-    codeEl.dataset.vgLayout = 'lower-race';
-    const raceNum = vgEl('span', 'vg-lower-race-num', String(race.race).padStart(3, '0'));
-    raceNum.dataset.vgLayout = 'lower-race-num';
-    codeEl.appendChild(raceNum);
-    if (race.eventType) {
-        codeEl.appendChild(vgEl('span', 'vg-lower-race-sep', ' | '));
-        const abbr = vgEl('span', 'vg-lower-race-code', race.eventType);
-        abbr.dataset.vgLayout = 'lower-race-code';
-        codeEl.appendChild(abbr);
-    }
-    top.appendChild(codeEl);
-
-    if (race.progression) {
-        const prog = vgEl('span', 'vg-lower-race-progression vg-milford-lower-progression', race.progression);
-        prog.dataset.vgLayout = 'lower-progression';
-        top.appendChild(prog);
-    }
-
-    const eventEl = vgEl('h2', 'vg-lower-event vg-milford-lower-event', fullName);
-    eventEl.dataset.vgLayout = 'lower-event';
-    panel.appendChild(eventEl);
-
-    layer.appendChild(wrap);
-    layer.appendChild(corner);
-}
-
 function vgRenderLower(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--lower');
     layer.dataset.vgLayout = 'lower';
@@ -2054,10 +1976,6 @@ function vgRenderLower(layer, race) {
         wrap.appendChild(main);
         shell.appendChild(wrap);
         layer.appendChild(shell);
-        return;
-    }
-    if (vgMilfordUsesCssBackground('lower')) {
-        vgRenderMilfordLower(layer, race);
         return;
     }
     const raceNumber = `Race ${race.race}`;

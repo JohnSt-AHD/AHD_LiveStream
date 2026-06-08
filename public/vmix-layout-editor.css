@@ -8,9 +8,6 @@ body.vg-layout-dev .vg-kri-draw-body,
 body.vg-layout-dev .vg-kri-head,
 body.vg-layout-dev .vg-kri-cols,
 body.vg-layout-dev .vg-kri-lanes,
-body.vg-layout-dev .vg-milford-lower-wrap,
-body.vg-layout-dev .vg-milford-lower-panel,
-body.vg-layout-dev .vg-milford-lower-top,
 body.vg-layout-dev .vg-lane {
     pointer-events: auto;
 }

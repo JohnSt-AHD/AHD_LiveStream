@@ -9,7 +9,7 @@ const VMIX_PAGES = {
 
 const VMIX_TRIGGERS = [
     { key: 't', graphic: 'Title', desc: 'KRI — title graphic' },
-    { key: 'l', graphic: 'Lower third', desc: 'Milford: CSS lower third (code-built chrome + live text); o fades out' },
+    { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 1.5s; o fades text and finishes video' },
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Schedule / Leader', desc: 'KRI — upcoming 10 races from hub live race (CSS gradient panel); Milford — leader video + lane text' },

@@ -10,17 +10,6 @@
             { id: 'lower-race', label: 'Lower — race number + time' },
             { id: 'lower-event', label: 'Lower — event title' },
         ],
-        lowerMilford: [
-            { id: '_playback', label: 'Playback timing (whole graphic)', playback: true },
-            { id: 'milford-lower-wrap', label: 'Lower — chrome root' },
-            { id: 'milford-lower-logo', label: 'Lower — Milford logo box' },
-            { id: 'milford-lower-panel', label: 'Lower — text panel' },
-            { id: 'lower-meta', label: 'Lower — round badge (orange)' },
-            { id: 'lower-race', label: 'Lower — race code strip (white)' },
-            { id: 'lower-progression', label: 'Lower — progression' },
-            { id: 'lower-event', label: 'Lower — event title (purple)' },
-            { id: 'milford-lower-corner', label: 'Lower — top-right accent' },
-        ],
         draw: [
             { id: 'draw-head', label: 'Draw — header block (all)', posMode: 'absolute' },
             { id: 'draw-kicker', label: 'Draw — “Start list” kicker', posMode: 'transform' },
@@ -107,20 +96,11 @@
 
     function regionDefs(graphic) {
         const theme = editor.theme;
-        if (graphic === 'lower' && theme === 'rnz-milford') {
-            return LAYOUT_IDS.lowerMilford;
-        }
         const base = LAYOUT_IDS[graphic] || [];
         if (
             (theme === 'rnz-milford' || theme === 'beachsprints-milford') &&
-            milfordVideoGraphics().includes(graphic)
+            (graphic === 'lower' || milfordVideoGraphics().includes(graphic))
         ) {
-            return [
-                { id: '_playback', label: 'Playback timing (whole graphic)', playback: true },
-                ...base,
-            ];
-        }
-        if (theme === 'beachsprints-milford' && graphic === 'lower') {
             return [
                 { id: '_playback', label: 'Playback timing (whole graphic)', playback: true },
                 ...base,
@@ -140,10 +120,6 @@
         return findBlockEl(def.id);
     }
 
-    function isCssMilfordLower() {
-        return editor.theme === 'rnz-milford' && editor.graphic === 'lower';
-    }
-
     function toggleEditorSections(def) {
         const panel = editor.panel;
         if (!panel) return;
@@ -154,25 +130,15 @@
         const livePos = panel.querySelector('.vg-layout-live-pos');
         const isPlayback = !!def?.playback;
         if (layoutFields) layoutFields.hidden = isPlayback;
-        if (timingFields) {
-            timingFields.hidden = isPlayback || !isCssMilfordLower();
-        }
+        if (timingFields) timingFields.hidden = true;
         if (playbackFields) playbackFields.hidden = !isPlayback;
         if (posMode) posMode.hidden = isPlayback;
         if (livePos) livePos.hidden = isPlayback;
 
         const textInLabel = panel.querySelector('[data-label="textInMs"]');
-        if (textInLabel) {
-            textInLabel.textContent = isCssMilfordLower()
-                ? 'Intro delay (ms)'
-                : 'Text in (ms)';
-        }
+        if (textInLabel) textInLabel.textContent = 'Text in (ms)';
         const pauseLabel = panel.querySelector('[data-label="pauseAtMs"]');
-        if (pauseLabel) {
-            pauseLabel.textContent = isCssMilfordLower()
-                ? 'Hold at (ms) — unused for CSS'
-                : 'Pause at (ms)';
-        }
+        if (pauseLabel) pauseLabel.textContent = 'Pause at (ms)';
     }
 
     function resolveRegionId(el) {
@@ -278,8 +244,6 @@
     function layoutContainerFor(el) {
         return (
             el?.closest?.('.vg-kri-panel') ||
-            el?.closest?.('.vg-milford-lower-panel') ||
-            el?.closest?.('.vg-milford-lower-top') ||
             null
         );
     }
@@ -999,7 +963,7 @@
             }
             previewGraphic(editor.graphic);
             setStatus(
-                'Layout v13 — Milford lower: drag chrome/text regions; set per-element fade timing (seconds). Playback region sets video/CSS intro & outro (ms). Test animations with ?autoplay=1 (dev mode shows hold only).',
+                'Layout v14 — Milford lower third uses lower.webm + text overlay. Playback region tunes text in / pause / outro (ms).',
             );
 
             getStage()?.addEventListener('pointerdown', onPointerDown);
