@@ -170,6 +170,12 @@ function vgParseTimeOnDay(timeStr, dayDate) {
     );
 }
 
+function vgDaysheetColIndex(headerCols, name) {
+    if (!headerCols?.length) return -1;
+    const key = name.trim().toLowerCase();
+    return headerCols.findIndex((h) => (h || '').trim().toLowerCase() === key);
+}
+
 function vgParseLanes(cols, headerCols) {
     if (headerCols?.length) {
         const lanes = [];
@@ -230,7 +236,13 @@ function vgParseDaysheet(text) {
             round: cols[4].trim(),
             division: cols[5] ? cols[5].trim() : '',
             lanes: vgParseLanes(cols, headerCols),
-            progression: headerCols ? '' : cols[cols.length - 1] ? cols[cols.length - 1].trim() : '',
+            progression: (() => {
+                if (headerCols) {
+                    const idx = vgDaysheetColIndex(headerCols, 'progression');
+                    return idx >= 0 ? (cols[idx] || '').trim() : '';
+                }
+                return cols[cols.length - 1] ? cols[cols.length - 1].trim() : '';
+            })(),
             dayLabel,
         });
     }
@@ -1116,18 +1128,38 @@ function vgShowBackground(visible) {
     bg.classList.toggle('vg-bg--outro', vgPlayback.state === 'outro');
 }
 
+function vgVideoGraphicTextDuringIntro() {
+    const graphic = vgPlayback.graphic;
+    if (!graphic || vgPlayback.state !== 'intro') return false;
+    const profile = vgGetVideoProfile(graphic);
+    return vgIsVideoTheme() && !profile.noText && profile.textInMs != null;
+}
+
 function vgShowTextLayer(visible, opts = {}) {
     const layer = vgGetLayerEl();
     if (!layer) return;
-    layer.classList.toggle('vg-layer--visible', visible);
-    if (visible && opts.fadeIn) {
-        layer.classList.remove('vg-layer--fade-in');
-        void layer.offsetWidth;
-        layer.classList.add('vg-layer--fade-in');
-    }
     if (!visible) {
-        layer.classList.remove('vg-layer--fade-in', 'vg-layer--fade-out');
+        layer.classList.remove(
+            'vg-layer--visible',
+            'vg-layer--fade-in',
+            'vg-layer--fade-out',
+        );
+        return;
     }
+    if (opts.fadeIn) {
+        /* Add fade-in with visible in one step — removing fade-in first caused a
+           full-opacity flash before the Milford draw lane cascade. */
+        const restartFadeIn = layer.classList.contains('vg-layer--fade-in');
+        layer.classList.add('vg-layer--visible');
+        if (restartFadeIn) {
+            layer.classList.remove('vg-layer--fade-in');
+            void layer.offsetWidth;
+        }
+        layer.classList.add('vg-layer--fade-in');
+        return;
+    }
+    layer.classList.add('vg-layer--visible');
+    layer.classList.remove('vg-layer--fade-in', 'vg-layer--fade-out');
 }
 
 function vgStartKriOutroFade() {
@@ -1193,6 +1225,13 @@ function vgSyncLayerVisibility(layer) {
     }
     if (vgPlayback.state === 'hold' || vgPlayback.state === 'outro') {
         layer.classList.add('vg-layer--visible');
+    } else if (
+        vgPlayback.state === 'intro' &&
+        layer.classList.contains('vg-layer--visible') &&
+        vgVideoGraphicTextDuringIntro()
+    ) {
+        /* Milford draw/results: text is shown mid-intro — don't hide on refresh. */
+        return;
     } else {
         layer.classList.remove('vg-layer--visible', 'vg-layer--fade-in');
     }
@@ -1208,7 +1247,12 @@ function vgUpdateBgGraphicClass() {
 }
 
 function vgSetLayerGraphicClass(layer, modifier) {
+    const keepVisible = layer.classList.contains('vg-layer--visible');
+    const keepFadeOut = layer.classList.contains('vg-layer--fade-out');
     layer.className = `vg-layer ${modifier}`;
+    if (keepVisible) layer.classList.add('vg-layer--visible');
+    if (keepFadeOut) layer.classList.add('vg-layer--fade-out');
+    /* Drop fade-in on re-render so live CSV refresh doesn't replay the cascade. */
     vgSyncLayerVisibility(layer);
 }
 
@@ -1990,6 +2034,15 @@ function vgKriCapitalizeFirst(text) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/** Daysheet Round + Division columns → e.g. heat/1 → "Heat 1", final/A → "Final A". */
+function vgFormatRoundLabel(round, division) {
+    const r = String(round || '').trim();
+    if (!r) return String(division || '').trim();
+    const word = vgKriCapitalizeFirst(r);
+    const div = String(division || '').trim();
+    return div ? `${word} ${div}` : word;
+}
+
 function vgRenderLower(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--lower');
     layer.dataset.vgLayout = 'lower';
@@ -2033,14 +2086,32 @@ function vgRenderLower(layer, race) {
     const metaEl = vgEl('p', 'vg-lower-meta', raceNumber);
     metaEl.dataset.vgLayout = 'lower-meta';
     layer.appendChild(metaEl);
+
+    const roundLabel = vgFormatRoundLabel(race.round, race.division);
+    const progressionLabel = race.progression || '';
+
+    if (vgIsMilfordBroadcastTheme()) {
+        const raceEl = vgEl('p', 'vg-lower-race');
+        raceEl.appendChild(vgEl('span', 'vg-lower-race-event', fullName));
+        if (progressionLabel) {
+            raceEl.appendChild(
+                vgEl('span', 'vg-lower-race-progression', progressionLabel),
+            );
+        }
+        raceEl.dataset.vgLayout = 'lower-race';
+        layer.appendChild(raceEl);
+        const eventEl = vgEl('h2', 'vg-lower-event', roundLabel);
+        eventEl.dataset.vgLayout = 'lower-event';
+        layer.appendChild(eventEl);
+        return;
+    }
+
     const raceEl = vgEl('p', 'vg-lower-race');
     const timeLabel = vgFormatTime(race.startAt);
-    const roundLabel = race.round || '';
-    const progressionLabel = race.progression || '';
     raceEl.appendChild(vgEl('span', 'vg-lower-race-time', timeLabel));
-    if (roundLabel) {
+    if (race.round) {
         raceEl.appendChild(document.createTextNode(' · '));
-        raceEl.appendChild(vgEl('span', 'vg-lower-race-round', roundLabel));
+        raceEl.appendChild(vgEl('span', 'vg-lower-race-round', race.round));
     }
     if (progressionLabel) {
         raceEl.appendChild(vgEl('span', 'vg-lower-race-progression', progressionLabel));

@@ -1464,7 +1464,8 @@ body {
     color: #111;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-lower-race-round {
+[data-vmix-theme='rnz-milford'] .vg-lower-race-round,
+[data-vmix-theme='rnz-milford'] .vg-lower-race-event {
     color: #111;
 }
 
@@ -1852,7 +1853,8 @@ body {
     color: #111;
 }
 
-[data-vmix-theme='beachsprints-milford'] .vg-lower-race-round {
+[data-vmix-theme='beachsprints-milford'] .vg-lower-race-round,
+[data-vmix-theme='beachsprints-milford'] .vg-lower-race-event {
     color: #111;
 }
 
