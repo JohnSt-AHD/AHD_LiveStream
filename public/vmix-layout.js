@@ -185,7 +185,7 @@
             },
             lower: {
                 _playback: {
-                    textInMs: 1000,
+                    textInMs: 1500,
                     pauseAtMs: 1500,
                     outroMs: 500,
                 },
@@ -197,11 +197,11 @@
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '432px',
+                    left: '430px',
                     top: '952px',
                     width: '280px',
                     height: '22px',
-                    fontSize: '19px',
+                    fontSize: '18px',
                 },
                 'lower-event': {
                     left: '287px',
@@ -270,11 +270,11 @@
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '432px',
+                    left: '430px',
                     top: '952px',
                     width: '280px',
                     height: '22px',
-                    fontSize: '19px',
+                    fontSize: '18px',
                 },
                 'lower-event': {
                     left: '287px',

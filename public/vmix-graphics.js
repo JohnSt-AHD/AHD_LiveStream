@@ -1102,7 +1102,7 @@ function vgGetVideoProfile(graphic) {
     } else if (graphic === 'speed') {
         base = { textInMs: 1000, pauseAtMs: 3000 };
     } else if (graphic === 'lower') {
-        base = { textInMs: 1000, pauseAtMs: 1500 };
+        base = { textInMs: 1500, pauseAtMs: 1500 };
     } else if (graphic === 'draw') {
         base = { textInMs: 4500, textOutMs: 27000, playThrough: true };
     } else if (graphic === 'results') {
