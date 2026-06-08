@@ -1340,6 +1340,57 @@ function vgPauseVideoAtHoldPoint(video) {
     vgPlayback.videoHoldTime = video.currentTime;
 }
 
+/** Dev / layout editor: ms into the WebM to show as the hold frame. */
+function vgDevHoldVideoTimeMs(graphic) {
+    const profile = vgGetVideoProfile(graphic);
+    if (Number.isFinite(profile.pauseAtMs) && profile.pauseAtMs > 0) {
+        return profile.pauseAtMs;
+    }
+    if (Number.isFinite(profile.textInMs) && profile.textInMs > 0) {
+        return profile.textInMs;
+    }
+    return 0;
+}
+
+function vgSeekVideoAndPause(video, pauseMs) {
+    if (!video) return;
+    const ms = Math.max(0, Number(pauseMs) || 0);
+    const applySeek = () => {
+        const durationMs = Number.isFinite(video.duration)
+            ? video.duration * 1000
+            : null;
+        const clamped =
+            durationMs != null ? Math.min(ms, Math.max(0, durationMs - 50)) : ms;
+        video.currentTime = clamped / 1000;
+        video.pause();
+        video.playbackRate = 1;
+        vgPlayback.videoHoldTime = video.currentTime;
+    };
+    if (video.readyState >= 1) {
+        applySeek();
+    } else {
+        video.addEventListener('loadedmetadata', applySeek, { once: true });
+    }
+}
+
+/** Layout dev (?dev=1): seek background WebM to the saved pause point. */
+function vgDevSeekVideoHold(pauseMsOverride) {
+    if (!vgIsLayoutDevMode()) return null;
+    const graphic = vgPlayback.graphic;
+    if (!graphic || !vgIsVideoTheme()) return null;
+    const video = vgGetBgVideo();
+    if (!video) return null;
+    const ms = Number.isFinite(pauseMsOverride)
+        ? pauseMsOverride
+        : vgDevHoldVideoTimeMs(graphic);
+    vgSeekVideoAndPause(video, ms);
+    return {
+        pauseMs: ms,
+        currentTime: video.currentTime,
+        duration: video.duration,
+    };
+}
+
 function vgIsKriTheme() {
     return document.body?.dataset?.vmixTheme === 'kri';
 }
@@ -2583,7 +2634,7 @@ function vgDevPreviewHold(graphic) {
         vgShowTextLayer(true);
     }
     if (isVideo && video) {
-        vgPauseVideoAtHoldPoint(video);
+        vgDevSeekVideoHold();
     }
     if (!(vgIsSpeedGraphic(graphic) && vgIsVideoTheme())) {
         vgApplySavedLayout(graphic);
@@ -2596,6 +2647,8 @@ window.VmixGraphics = {
     triggerClear: vgTriggerClear,
     getState: () => vgPlayback.state,
     devPreviewHold: vgDevPreviewHold,
+    devSeekVideoHold: vgDevSeekVideoHold,
+    devHoldVideoTimeMs: vgDevHoldVideoTimeMs,
 };
 window.AltitudeHdVmix = window.VmixGraphics;
 

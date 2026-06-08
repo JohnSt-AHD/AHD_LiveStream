@@ -79,6 +79,28 @@ body.vg-layout-dev [data-vg-layout-target].vg-layout-selected {
     display: none !important;
 }
 
+.vg-layout-pause-scrub-wrap {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+}
+
+.vg-layout-pause-scrub-wrap input[type='range'] {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.vg-layout-video-hold {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    font-size: 11px;
+    font-family: 'Consolas', 'Cascadia Mono', ui-monospace, monospace;
+    color: #bde6ff;
+}
+
 .vg-layout-panel p {
     margin: 0 0 10px;
     opacity: 0.88;

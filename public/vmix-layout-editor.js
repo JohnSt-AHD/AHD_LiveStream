@@ -138,7 +138,45 @@
         const textInLabel = panel.querySelector('[data-label="textInMs"]');
         if (textInLabel) textInLabel.textContent = 'Text in (ms)';
         const pauseLabel = panel.querySelector('[data-label="pauseAtMs"]');
-        if (pauseLabel) pauseLabel.textContent = 'Pause at (ms)';
+        if (pauseLabel) pauseLabel.textContent = 'Video pause point (ms)';
+    }
+
+    function syncPlaybackScrubUi(pauseMs, videoInfo) {
+        const panel = editor.panel;
+        if (!panel) return;
+        const scrub = panel.querySelector('[data-field="pauseScrub"]');
+        const readout = panel.querySelector('[data-field="videoHoldReadout"]');
+        const ms = Math.max(0, Number(pauseMs) || 0);
+        if (scrub) {
+            if (videoInfo?.duration && Number.isFinite(videoInfo.duration)) {
+                const maxMs = Math.max(500, Math.round(videoInfo.duration * 1000));
+                scrub.max = String(maxMs);
+            }
+            scrub.value = String(ms);
+        }
+        if (readout) {
+            const cur = videoInfo?.currentTime;
+            const dur = videoInfo?.duration;
+            if (Number.isFinite(cur) && Number.isFinite(dur)) {
+                readout.textContent = `Video frame: ${(cur * 1000).toFixed(0)} ms / ${(dur * 1000).toFixed(0)} ms (pause ${ms} ms)`;
+            } else {
+                readout.textContent = `Video pause point: ${ms} ms`;
+            }
+        }
+    }
+
+    function devSeekFromPlaybackForm() {
+        const api = global.VmixGraphics || global.AltitudeHdVmix;
+        if (!api?.devSeekVideoHold) return;
+        const pauseMs = parseInt(
+            editor.panel?.querySelector('[data-field="pauseAtMs"]')?.value ?? '',
+            10,
+        );
+        const info = api.devSeekVideoHold(Number.isFinite(pauseMs) ? pauseMs : undefined);
+        syncPlaybackScrubUi(
+            Number.isFinite(pauseMs) ? pauseMs : api.devHoldVideoTimeMs?.(editor.graphic),
+            info,
+        );
     }
 
     function resolveRegionId(el) {
@@ -396,6 +434,7 @@
                 set('textOutMs', saved?.textOutMs ?? '');
                 set('outroMs', saved?.outroMs ?? '');
                 hidePosBadge();
+                syncPlaybackScrubUi(saved?.pauseAtMs ?? saved?.textInMs ?? 0);
                 return;
             }
 
@@ -520,7 +559,8 @@
         const props = collectFieldProps(def);
         if (def.playback) {
             global.VmixLayout.setRegion(editor.theme, editor.graphic, '_playback', props);
-            setStatus('Applied playback timing (saved on next Save region)');
+            devSeekFromPlaybackForm();
+            setStatus('Applied playback timing — video seeked to pause point');
             return;
         }
 
@@ -597,6 +637,7 @@
         global.VmixLayout.setRegion(editor.theme, editor.graphic, def.id, props);
         if (def.playback) {
             previewGraphic(editor.graphic);
+            devSeekFromPlaybackForm();
         }
         setStatus(`Saved ${editor.theme} / ${editor.graphic} / ${def.id}`);
     }
@@ -802,7 +843,12 @@
                 <h3 class="vg-layout-subhead">Graphic playback</h3>
                 <div class="vg-layout-fields">
                     <div><label data-label="textInMs">Text in (ms)</label><input data-field="textInMs" type="number" step="50" min="0"></div>
-                    <div><label data-label="pauseAtMs">Pause at (ms)</label><input data-field="pauseAtMs" type="number" step="50" min="0"></div>
+                    <div><label data-label="pauseAtMs">Video pause point (ms)</label><input data-field="pauseAtMs" type="number" step="50" min="0"></div>
+                    <div class="vg-layout-pause-scrub-wrap">
+                        <label for="vgPauseScrub">Scrub hold frame</label>
+                        <input type="range" id="vgPauseScrub" data-field="pauseScrub" min="0" max="5000" step="50" value="0">
+                    </div>
+                    <p class="vg-layout-video-hold" data-field="videoHoldReadout">Video frame: —</p>
                     <div><label data-label="textOutMs">Text out (ms)</label><input data-field="textOutMs" type="number" step="50" min="0"></div>
                     <div><label data-label="outroMs">Outro fade (ms)</label><input data-field="outroMs" type="number" step="50" min="0"></div>
                 </div>
@@ -870,6 +916,21 @@
             colorInput.addEventListener('input', () => applyFieldsToSelection());
         }
 
+        const pauseMsInput = editor.panel.querySelector('[data-field="pauseAtMs"]');
+        if (pauseMsInput) {
+            pauseMsInput.addEventListener('change', () => devSeekFromPlaybackForm());
+        }
+
+        const pauseScrub = editor.panel.querySelector('[data-field="pauseScrub"]');
+        if (pauseScrub) {
+            pauseScrub.addEventListener('input', () => {
+                const ms = parseInt(pauseScrub.value, 10);
+                if (!Number.isFinite(ms)) return;
+                if (pauseMsInput) pauseMsInput.value = String(ms);
+                devSeekFromPlaybackForm();
+            });
+        }
+
         const gtInput = editor.panel.querySelector('#vgGtFile');
         if (gtInput) {
             gtInput.addEventListener('change', async () => {
@@ -931,6 +992,9 @@
         const el = findRegionEl(def);
         if (def && el) updatePositionReadout(def, el);
         else hidePosBadge();
+        if (def?.playback) {
+            global.setTimeout(() => devSeekFromPlaybackForm(), 80);
+        }
     }
 
     function boot() {
@@ -963,7 +1027,7 @@
             }
             previewGraphic(editor.graphic);
             setStatus(
-                'Layout v14 — Milford lower third uses lower.webm + text overlay. Playback region tunes text in / pause / outro (ms).',
+                'Layout v14 — Video backgrounds show at the pause point in dev. Playback region: text in, pause point (ms), scrubber, outro.',
             );
 
             getStage()?.addEventListener('pointerdown', onPointerDown);
