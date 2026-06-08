@@ -197,7 +197,7 @@
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '428px',
+                    left: '424px',
                     top: '952px',
                     width: '280px',
                     height: '22px',
@@ -270,7 +270,7 @@
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '428px',
+                    left: '424px',
                     top: '952px',
                     width: '280px',
                     height: '22px',
