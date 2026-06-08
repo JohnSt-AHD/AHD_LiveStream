@@ -1449,13 +1449,13 @@ body {
 [data-vmix-theme='rnz-milford'] .vg-lower-race {
     box-sizing: border-box;
     margin: 0;
-    left: 434px;
+    left: 432px;
     top: 952px;
     width: 280px;
     height: 22px;
     display: flex;
     align-items: center;
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 700;
     line-height: 1;
     white-space: nowrap;
@@ -1475,8 +1475,8 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lower-race-progression {
-    margin-left: 38px;
-    margin-top: 9px;
+    margin-left: 36px;
+    margin-top: 11px;
     font-size: 18px;
     color: #fff;
 }
@@ -1844,13 +1844,13 @@ body {
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race {
     box-sizing: border-box;
     margin: 0;
-    left: 434px;
+    left: 432px;
     top: 952px;
     width: 280px;
     height: 22px;
     display: flex;
     align-items: center;
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 700;
     line-height: 1;
     white-space: nowrap;
@@ -1870,8 +1870,8 @@ body {
 }
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-progression {
-    margin-left: 38px;
-    margin-top: 9px;
+    margin-left: 36px;
+    margin-top: 11px;
     font-size: 18px;
     color: #fff;
 }

@@ -197,11 +197,11 @@
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '434px',
+                    left: '432px',
                     top: '952px',
                     width: '280px',
                     height: '22px',
-                    fontSize: '20px',
+                    fontSize: '19px',
                 },
                 'lower-event': {
                     left: '287px',
@@ -270,11 +270,11 @@
                     fontSize: '20px',
                 },
                 'lower-race': {
-                    left: '434px',
+                    left: '432px',
                     top: '952px',
                     width: '280px',
                     height: '22px',
-                    fontSize: '20px',
+                    fontSize: '19px',
                 },
                 'lower-event': {
                     left: '287px',
