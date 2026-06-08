@@ -1465,13 +1465,18 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-lower-race-round,
 [data-vmix-theme='rnz-milford'] .vg-lower-race-event,
+[data-vmix-theme='rnz-milford'] .vg-lower-race-time,
 [data-vmix-theme='rnz-milford'] .vg-lower-race-number {
     color: #111;
 }
 
+[data-vmix-theme='rnz-milford'] .vg-lower-race-time {
+    margin-right: 1.25em;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-lower-race-progression {
-    margin-left: 30px;
-    margin-top: 5px;
+    margin-left: 40px;
+    margin-top: 7px;
     font-size: 18px;
     color: #fff;
 }
@@ -1855,13 +1860,18 @@ body {
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-round,
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-event,
+[data-vmix-theme='beachsprints-milford'] .vg-lower-race-time,
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-number {
     color: #111;
 }
 
+[data-vmix-theme='beachsprints-milford'] .vg-lower-race-time {
+    margin-right: 1.25em;
+}
+
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-progression {
-    margin-left: 30px;
-    margin-top: 5px;
+    margin-left: 40px;
+    margin-top: 7px;
     font-size: 18px;
     color: #fff;
 }

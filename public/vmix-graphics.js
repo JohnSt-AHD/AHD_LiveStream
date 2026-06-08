@@ -2092,6 +2092,13 @@ function vgRenderLower(layer, race) {
         layer.appendChild(metaEl);
 
         const raceEl = vgEl('p', 'vg-lower-race');
+        raceEl.appendChild(
+            vgEl(
+                'span',
+                'vg-lower-race-time',
+                vgFormatScheduleTime(race.startAt).replace(/\s+(am|pm)$/, '$1'),
+            ),
+        );
         raceEl.appendChild(vgEl('span', 'vg-lower-race-number', raceNumber));
         if (progressionLabel) {
             raceEl.appendChild(
