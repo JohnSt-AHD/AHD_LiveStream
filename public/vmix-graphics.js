@@ -1384,6 +1384,17 @@ function vgPauseVideoAtHoldPoint(video) {
     vgPlayback.videoHoldTime = video.currentTime;
 }
 
+/** Pause or seek to the configured hold frame (avoids early pause when WebM is still buffering). */
+function vgHoldVideoAtProfilePoint(video, graphic) {
+    if (!video) return;
+    const profile = vgGetVideoProfile(graphic);
+    if (Number.isFinite(profile.pauseAtMs) && profile.pauseAtMs > 0) {
+        vgSeekVideoAndPause(video, profile.pauseAtMs);
+    } else {
+        vgPauseVideoAtHoldPoint(video);
+    }
+}
+
 /** Dev / layout editor: ms into the WebM to show as the hold frame. */
 function vgDevHoldVideoTimeMs(graphic) {
     const profile = vgGetVideoProfile(graphic);
@@ -1458,7 +1469,7 @@ function vgMilfordFadeTextOut() {
 function vgVideoGraphicEnterHold(video, graphic) {
     if (vgPlayback.state !== 'intro') return;
     vgClearPlaybackTimers();
-    vgPauseVideoAtHoldPoint(video);
+    vgHoldVideoAtProfilePoint(video, graphic);
     vgSetStageState('hold');
     if (graphic === 'leader' && vgIsMilfordBroadcastTheme()) {
         vgShowLeaderForConfiguredLane();
@@ -1472,7 +1483,7 @@ function vgVideoGraphicEnterHold(video, graphic) {
 function vgEnterSpeedTrackerHold(video) {
     if (vgPlayback.state !== 'intro') return;
     vgClearPlaybackTimers();
-    vgPauseVideoAtHoldPoint(video);
+    vgHoldVideoAtProfilePoint(video, 'speed');
     vgSetStageState('hold');
     vgShowTextLayer(false);
     vgLoadSpeedFrame();
@@ -1499,47 +1510,57 @@ function vgStartVideoGraphicIntro(graphic, video) {
 
     vgArmVideoEndedReset(video);
 
-    if (!profile.noText && profile.textInMs != null) {
-        vgScheduleProfile(profile.textInMs, () => {
-            if (vgPlayback.state !== 'intro') return;
-            if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
-                vgLoadSpeedFrame();
-                vgShowMap(true, false);
-                vgSendSpeedOverlayPhase('intro');
-                return;
-            }
-            vgShowTextLayer(true, { fadeIn: true });
-            vgApplySavedLayout(graphic);
-        });
-    }
+    const beginPlayback = () => {
+        if (vgPlayback.state !== 'intro' || vgPlayback.graphic !== graphic) return;
 
-    if (profile.textOutMs != null) {
-        vgScheduleProfile(profile.textOutMs, () => {
-            if (vgPlayback.state === 'idle') return;
-            vgMilfordFadeTextOut();
-        });
-    }
+        if (!profile.noText && profile.textInMs != null) {
+            vgScheduleProfile(profile.textInMs, () => {
+                if (vgPlayback.state !== 'intro') return;
+                if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+                    vgLoadSpeedFrame();
+                    vgShowMap(true, false);
+                    vgSendSpeedOverlayPhase('intro');
+                    return;
+                }
+                vgShowTextLayer(true, { fadeIn: true });
+                vgApplySavedLayout(graphic);
+            });
+        }
 
-    if (profile.pauseAtMs != null) {
-        vgScheduleProfile(profile.pauseAtMs, () => {
-            if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
-                vgEnterSpeedTrackerHold(video);
-            } else {
-                vgVideoGraphicEnterHold(video, graphic);
-            }
-        });
-    }
+        if (profile.textOutMs != null) {
+            vgScheduleProfile(profile.textOutMs, () => {
+                if (vgPlayback.state === 'idle') return;
+                vgMilfordFadeTextOut();
+            });
+        }
 
-    const playPromise = video.play();
-    if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => {});
-    }
+        if (profile.pauseAtMs != null) {
+            vgScheduleProfile(profile.pauseAtMs, () => {
+                if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
+                    vgEnterSpeedTrackerHold(video);
+                } else {
+                    vgVideoGraphicEnterHold(video, graphic);
+                }
+            });
+        }
 
-    const safetyMs =
-        (Number.isFinite(video.duration) ? video.duration * 1000 : 45000) + 8000;
-    vgPlayback.introTimer = setTimeout(() => {
-        if (vgPlayback.state !== 'idle') vgResetToIdle();
-    }, safetyMs);
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
+
+        const safetyMs =
+            (Number.isFinite(video.duration) ? video.duration * 1000 : 45000) + 8000;
+        vgPlayback.introTimer = setTimeout(() => {
+            if (vgPlayback.state !== 'idle') vgResetToIdle();
+        }, safetyMs);
+    };
+
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        beginPlayback();
+    } else {
+        video.addEventListener('canplay', beginPlayback, { once: true });
+    }
 }
 
 function vgStartIntroPlayback(isVideo, video) {
