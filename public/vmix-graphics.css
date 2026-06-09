@@ -1773,7 +1773,6 @@ body {
 [data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-logo,
 [data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-logo--empty,
 [data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-badge,
-[data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-lane-label,
 [data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-badge-lane,
 [data-vmix-theme='rnz-milford'] .vg-leader-wrap--fade-in > .vg-leader-crew {
     opacity: 0;
@@ -1782,28 +1781,9 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge {
     position: absolute;
-    left: 1657px;
+    left: 1649px;
     top: 51px;
     width: 92px;
-    height: 35.1px;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14.4px;
-    font-weight: 700;
-    line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #000;
-    white-space: nowrap;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-leader-lane-label {
-    position: absolute;
-    left: 1717px;
-    top: 51px;
-    width: 40px;
     height: 35.1px;
     margin: 0;
     display: flex;
@@ -1831,7 +1811,10 @@ body {
     font-size: 14.4px;
     font-weight: 700;
     line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: #000;
+    white-space: nowrap;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-leader-crew {
