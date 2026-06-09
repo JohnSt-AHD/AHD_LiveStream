@@ -1781,7 +1781,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge {
     position: absolute;
-    left: 1644px;
+    left: 1639px;
     top: 51px;
     width: 92px;
     height: 35.1px;
@@ -1800,7 +1800,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-leader-badge-lane {
     position: absolute;
-    left: 1720px;
+    left: 1715px;
     top: 51px;
     width: 113.85px;
     height: 35.1px;
@@ -1826,7 +1826,7 @@ body {
     margin: 0;
     display: flex;
     align-items: center;
-    font-size: 21.87px;
+    font-size: 19.2px;
     font-weight: 700;
     line-height: 1.1;
     color: #fff;
