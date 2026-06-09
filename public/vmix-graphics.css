@@ -1511,8 +1511,10 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head .vg-draw-meta {
-    margin: 51px 0 0 35px;
-    font-size: 20px;
+    position: relative;
+    margin: 49px 0 0 37px;
+    min-height: 22px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: #fff;
@@ -1520,20 +1522,27 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-race {
-    position: relative;
-    left: -18px;
-    top: -2px;
+    position: absolute;
+    left: -16px;
+    top: -4px;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round {
-    position: relative;
-    left: 7px;
-    top: -2px;
+    position: absolute;
+    left: 138px;
+    top: -4px;
+    color: #000;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-time {
+    display: inline-block;
+    min-width: 5.25em;
     color: #000;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-time,
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round-label {
     color: #000;
 }

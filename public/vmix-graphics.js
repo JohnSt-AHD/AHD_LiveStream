@@ -683,6 +683,11 @@ function vgFormatScheduleTime(d) {
         .toLowerCase();
 }
 
+/** e.g. 12:15pm (no space before am/pm) */
+function vgFormatCompactScheduleTime(d) {
+    return vgFormatScheduleTime(d).replace(/\s+(am|pm)$/, '$1');
+}
+
 function vgScheduleMetaText() {
     return `Current time - ${vgFormatScheduleTime(new Date())}`;
 }
@@ -2305,9 +2310,13 @@ function vgRenderDraw(layer, race) {
         if (roundLabel) {
             const roundEl = vgEl('span', 'vg-draw-meta-round');
             roundEl.appendChild(
-                vgEl('span', 'vg-draw-meta-time', vgFormatScheduleTime(race.startAt)),
+                vgEl(
+                    'span',
+                    'vg-draw-meta-time',
+                    vgFormatCompactScheduleTime(race.startAt),
+                ),
             );
-            roundEl.appendChild(document.createTextNode('  '));
+            roundEl.appendChild(document.createTextNode(' '));
             roundEl.appendChild(
                 vgEl('span', 'vg-draw-meta-round-label', roundLabel),
             );
