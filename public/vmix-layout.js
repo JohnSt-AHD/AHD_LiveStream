@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 23;
+    const LAYOUT_BUILD = 24;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -198,13 +198,13 @@
                 },
                 'lower-race': {
                     left: '420px',
-                    top: '952px',
+                    top: '954px',
                     width: '280px',
                     height: '22px',
                     fontSize: '18px',
                 },
                 'lower-progression': {
-                    left: '697px',
+                    left: '687px',
                     top: '960px',
                     fontSize: '18px',
                     color: '#ffffff',
@@ -277,13 +277,13 @@
                 },
                 'lower-race': {
                     left: '420px',
-                    top: '952px',
+                    top: '954px',
                     width: '280px',
                     height: '22px',
                     fontSize: '18px',
                 },
                 'lower-progression': {
-                    left: '697px',
+                    left: '687px',
                     top: '960px',
                     fontSize: '18px',
                     color: '#ffffff',
