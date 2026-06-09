@@ -1514,7 +1514,7 @@ body {
     position: relative;
     margin: 49px 0 0 37px;
     min-height: 22px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: #fff;
@@ -1531,7 +1531,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round {
     position: absolute;
-    left: 132px;
+    left: 130px;
     top: -4px;
     color: #000;
     white-space: nowrap;
@@ -1568,31 +1568,31 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
-    margin-left: 13px;
+    margin-left: 12.4px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
-    margin-left: 26px;
+    margin-left: 24.8px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
-    margin-left: 39px;
+    margin-left: 37.2px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
-    margin-left: 52px;
+    margin-left: 49.6px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
-    margin-left: 65px;
+    margin-left: 62px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
-    margin-left: 78px;
+    margin-left: 74.4px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
-    margin-left: 91px;
+    margin-left: 86.8px;
 }
 
 /* Draw: stagger logo + crew fade-in (0.2s between lanes) */
