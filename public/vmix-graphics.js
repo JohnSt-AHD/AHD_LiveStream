@@ -2243,9 +2243,12 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
         wrap.appendChild(vgEl('span', 'vg-leader-logo vg-leader-logo--empty', '—'));
     }
 
-    const badge = vgEl('p', 'vg-leader-badge', 'Leader   Lane');
+    const badge = vgEl('p', 'vg-leader-badge', 'Leader');
     badge.dataset.vgLayout = 'leader-badge';
     wrap.appendChild(badge);
+    const laneLabel = vgEl('p', 'vg-leader-lane-label', 'Lane');
+    laneLabel.dataset.vgLayout = 'leader-lane-label';
+    wrap.appendChild(laneLabel);
     const laneBadge = vgEl('p', 'vg-leader-badge-lane', String(laneNum));
     laneBadge.dataset.vgLayout = 'leader-badge-lane';
     wrap.appendChild(laneBadge);

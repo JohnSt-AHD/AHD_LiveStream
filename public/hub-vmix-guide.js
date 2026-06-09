@@ -129,7 +129,7 @@ function hubRenderVmixGuide() {
         const leaderNote = document.createElement('p');
         leaderNote.className = 'hub-vmix-map-note';
         leaderNote.innerHTML =
-            '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size (GT layout). Set <strong>Leader lane</strong> on the hub (default 4); text fades in 1s after <code>w</code>. Video pauses at 6s; <code>o</code> fades text and finishes video. Press <code>1</code>–<code>8</code> on air to switch lane instantly.';
+            '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size (GT layout). Set <strong>Leader lane</strong> on the hub (default 4); text fades in 2s after <code>w</code>. Video pauses at 6s; <code>o</code> fades text and finishes video. Press <code>1</code>–<code>8</code> on air to switch lane instantly.';
         examples.appendChild(leaderNote);
 
         const devNote = document.createElement('p');

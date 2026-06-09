@@ -46,7 +46,8 @@
         leader: [
             { id: 'leader-wrap', label: 'Leader — overlay root' },
             { id: 'leader-logo', label: 'Leader — school logo' },
-            { id: 'leader-badge', label: 'Leader — “Leader Lane” label' },
+            { id: 'leader-badge', label: 'Leader — “Leader” label' },
+            { id: 'leader-lane-label', label: 'Leader — “Lane” label' },
             { id: 'leader-badge-lane', label: 'Leader — lane number' },
             { id: 'leader-crew', label: 'Leader — crew name' },
         ],
