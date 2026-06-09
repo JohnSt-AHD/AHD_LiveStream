@@ -178,7 +178,7 @@
                     textOutMs: 16000,
                     outroMs: 500,
                 },
-                'results-head': { left: '140px', top: '134px', width: '812px' },
+                'results-head': { left: '140px', top: '154px', width: '812px' },
                 'results-lanes': { left: '273px', top: '378px', width: '900px', gap: '24px' },
                 'results-logo': { width: '37px', height: '39px' },
                 'results-crew': {},

@@ -2255,6 +2255,31 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
     layer.appendChild(wrap);
 }
 
+function vgRenderMilfordRaceHead(head, race, layoutId) {
+    const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+    const meta = vgEl('p', 'vg-draw-meta');
+    meta.appendChild(vgEl('span', 'vg-draw-meta-race', `Race ${race.race}`));
+    const roundLabel = vgFormatRoundLabel(race.round, race.division);
+    if (roundLabel) {
+        const roundEl = vgEl('span', 'vg-draw-meta-round');
+        roundEl.appendChild(
+            vgEl(
+                'span',
+                'vg-draw-meta-time',
+                vgFormatCompactScheduleTime(race.startAt),
+            ),
+        );
+        roundEl.appendChild(document.createTextNode(' '));
+        roundEl.appendChild(
+            vgEl('span', 'vg-draw-meta-round-label', roundLabel),
+        );
+        meta.appendChild(roundEl);
+    }
+    head.appendChild(meta);
+    head.dataset.vgLayout = layoutId;
+}
+
 function vgRenderDraw(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--draw');
     layer.dataset.vgLayout = 'draw';
@@ -2303,31 +2328,12 @@ function vgRenderDraw(layer, race) {
 
     const head = vgEl('div', 'vg-draw-head');
     if (vgIsMilfordBroadcastTheme()) {
-        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
-        const meta = vgEl('p', 'vg-draw-meta');
-        meta.appendChild(vgEl('span', 'vg-draw-meta-race', `Race ${race.race}`));
-        const roundLabel = vgFormatRoundLabel(race.round, race.division);
-        if (roundLabel) {
-            const roundEl = vgEl('span', 'vg-draw-meta-round');
-            roundEl.appendChild(
-                vgEl(
-                    'span',
-                    'vg-draw-meta-time',
-                    vgFormatCompactScheduleTime(race.startAt),
-                ),
-            );
-            roundEl.appendChild(document.createTextNode(' '));
-            roundEl.appendChild(
-                vgEl('span', 'vg-draw-meta-round-label', roundLabel),
-            );
-            meta.appendChild(roundEl);
-        }
-        head.appendChild(meta);
+        vgRenderMilfordRaceHead(head, race, 'draw-head');
     } else {
         head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
         head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+        head.dataset.vgLayout = 'draw-head';
     }
-    head.dataset.vgLayout = 'draw-head';
     layer.appendChild(head);
 
     const list = vgEl('ul', 'vg-draw-lanes');
@@ -2476,9 +2482,13 @@ function vgRenderResults(layer, race) {
     }
 
     const head = vgEl('div', 'vg-draw-head');
-    head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
-    head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
-    head.dataset.vgLayout = 'results-head';
+    if (vgIsMilfordBroadcastTheme()) {
+        vgRenderMilfordRaceHead(head, race, 'results-head');
+    } else {
+        head.appendChild(vgEl('p', 'vg-draw-meta', metaText));
+        head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+        head.dataset.vgLayout = 'results-head';
+    }
     layer.appendChild(head);
 
     const result = vgState.results.get(race.raceNum);

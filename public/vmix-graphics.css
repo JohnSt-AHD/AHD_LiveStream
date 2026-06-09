@@ -1495,22 +1495,20 @@ body {
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head,
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-head {
     left: 140px;
-    top: 134px;
+    top: 154px;
     width: 812px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head {
-    top: 154px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-event {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-event,
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-event {
     margin: 20px 0 0;
     font-size: 42px;
     line-height: 1.1;
     color: #fff;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head .vg-draw-meta {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head .vg-draw-meta,
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-head .vg-draw-meta {
     position: relative;
     margin: 49px 0 0 37px;
     min-height: 22px;
@@ -1521,7 +1519,8 @@ body {
     opacity: 1;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-race {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-race,
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-race {
     position: absolute;
     left: -8px;
     top: -2px;
@@ -1529,7 +1528,8 @@ body {
     white-space: nowrap;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round,
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-round {
     position: absolute;
     left: 130px;
     top: -2px;
@@ -1537,13 +1537,15 @@ body {
     white-space: nowrap;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-time {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-time,
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-time {
     display: inline-block;
     min-width: 5.25em;
     color: #000;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round-label {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round-label,
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-round-label {
     color: #000;
 }
 
@@ -1567,31 +1569,38 @@ body {
     grid-template-columns: 37px minmax(0, 1fr);
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(2) {
     margin-left: 12.3px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(3) {
     margin-left: 24.6px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(4) {
     margin-left: 36.9px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(5) {
     margin-left: 49.2px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(6) {
     margin-left: 61.5px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(7) {
     margin-left: 73.8px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8),
+[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(8) {
     margin-left: 86.1px;
 }
 
