@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 16;
+    const LAYOUT_BUILD = 17;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -239,14 +239,14 @@
                     color: 'rgb(255, 255, 255)',
                 },
                 'leader-badge': {
-                    left: '1649px',
+                    left: '1644px',
                     top: '51px',
                     width: '92px',
                     height: '35.1px',
                     fontSize: '14.4px',
                 },
                 'leader-badge-lane': {
-                    left: '1725px',
+                    left: '1720px',
                     top: '51px',
                     width: '113.85px',
                     height: '35.1px',
