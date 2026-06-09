@@ -1568,31 +1568,31 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
-    margin-left: 12px;
+    margin-left: 13px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
-    margin-left: 24px;
+    margin-left: 26px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
-    margin-left: 36px;
+    margin-left: 39px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
-    margin-left: 48px;
+    margin-left: 52px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
-    margin-left: 60px;
+    margin-left: 65px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
-    margin-left: 72px;
+    margin-left: 78px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
-    margin-left: 84px;
+    margin-left: 91px;
 }
 
 /* Draw: stagger logo + crew fade-in (0.2s between lanes) */
