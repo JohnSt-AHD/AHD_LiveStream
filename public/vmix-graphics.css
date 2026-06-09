@@ -1523,7 +1523,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-race {
     position: absolute;
-    left: -12px;
+    left: -10px;
     top: -4px;
     text-transform: uppercase;
     white-space: nowrap;
@@ -1531,7 +1531,7 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round {
     position: absolute;
-    left: 134px;
+    left: 132px;
     top: -4px;
     color: #000;
     white-space: nowrap;
