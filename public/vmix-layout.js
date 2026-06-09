@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 24;
+    const LAYOUT_BUILD = 26;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -204,7 +204,7 @@
                     fontSize: '18px',
                 },
                 'lower-progression': {
-                    left: '687px',
+                    left: '677px',
                     top: '960px',
                     fontSize: '18px',
                     color: '#ffffff',
@@ -283,7 +283,7 @@
                     fontSize: '18px',
                 },
                 'lower-progression': {
-                    left: '687px',
+                    left: '677px',
                     top: '960px',
                     fontSize: '18px',
                     color: '#ffffff',

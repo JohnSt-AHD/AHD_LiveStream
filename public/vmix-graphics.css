@@ -1482,14 +1482,14 @@ body {
 
 [data-vmix-theme='rnz-milford'] .vg-lower-race-number {
     position: absolute;
-    left: calc(5.25em + 0.15em - 2px);
+    left: calc(5.25em + 0.15em - 2px - 1ch);
     top: 0;
     white-space: nowrap;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lower-progression {
     position: absolute;
-    left: 687px;
+    left: 677px;
     top: 960px;
     margin: 0;
     font-size: 18px;
@@ -1923,14 +1923,14 @@ body {
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-number {
     position: absolute;
-    left: calc(5.25em + 0.15em - 2px);
+    left: calc(5.25em + 0.15em - 2px - 1ch);
     top: 0;
     white-space: nowrap;
 }
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-progression {
     position: absolute;
-    left: 687px;
+    left: 677px;
     top: 960px;
     margin: 0;
     font-size: 18px;
