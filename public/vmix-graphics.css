@@ -288,9 +288,11 @@ body {
 /* When dev mode positions individual lower-third parts absolutely */
 .vg-layer--lower [data-vg-layout='lower-meta'][style*='left'],
 .vg-layer--lower [data-vg-layout='lower-race'][style*='left'],
+.vg-layer--lower [data-vg-layout='lower-progression'][style*='left'],
 .vg-layer--lower [data-vg-layout='lower-event'][style*='left'],
 .vg-layer--lower [data-vg-layout='lower-meta'][style*='top'],
 .vg-layer--lower [data-vg-layout='lower-race'][style*='top'],
+.vg-layer--lower [data-vg-layout='lower-progression'][style*='top'],
 .vg-layer--lower [data-vg-layout='lower-event'][style*='top'] {
     position: absolute;
     margin: 0;
@@ -1431,6 +1433,7 @@ body {
 [data-vmix-theme='rnz-milford'] .vg-lower-meta {
     box-sizing: border-box;
     margin: 0;
+    position: absolute;
     left: 294px;
     top: 952px;
     width: 200px;
@@ -1453,8 +1456,7 @@ body {
     top: 952px;
     width: 280px;
     height: 22px;
-    display: flex;
-    align-items: center;
+    position: absolute;
     font-size: 18px;
     font-weight: 700;
     line-height: 1;
@@ -1471,17 +1473,36 @@ body {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lower-race-time {
-    margin-right: 1em;
+    position: absolute;
+    left: -2px;
+    top: 0;
+    display: inline-block;
+    min-width: 5.25em;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-lower-race-progression {
-    margin-left: 34px;
-    margin-top: 15px;
+[data-vmix-theme='rnz-milford'] .vg-lower-race-number {
+    position: absolute;
+    left: calc(5.25em + 0.15em - 2px);
+    top: 0;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-lower-progression {
+    position: absolute;
+    left: 657px;
+    top: 958px;
+    margin: 0;
     font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
     color: #fff;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lower-event {
+    position: absolute;
+    left: 287px;
+    top: 996px;
     margin: 0;
     font-size: 36px;
     color: #fff;
@@ -1876,8 +1897,7 @@ body {
     top: 952px;
     width: 280px;
     height: 22px;
-    display: flex;
-    align-items: center;
+    position: absolute;
     font-size: 18px;
     font-weight: 700;
     line-height: 1;
@@ -1894,13 +1914,29 @@ body {
 }
 
 [data-vmix-theme='beachsprints-milford'] .vg-lower-race-time {
-    margin-right: 1em;
+    position: absolute;
+    left: -2px;
+    top: 0;
+    display: inline-block;
+    min-width: 5.25em;
 }
 
-[data-vmix-theme='beachsprints-milford'] .vg-lower-race-progression {
-    margin-left: 34px;
-    margin-top: 15px;
+[data-vmix-theme='beachsprints-milford'] .vg-lower-race-number {
+    position: absolute;
+    left: calc(5.25em + 0.15em - 2px);
+    top: 0;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='beachsprints-milford'] .vg-lower-progression {
+    position: absolute;
+    left: 657px;
+    top: 958px;
+    margin: 0;
     font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
     color: #fff;
 }
 

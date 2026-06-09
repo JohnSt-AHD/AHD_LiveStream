@@ -6,8 +6,9 @@
         title: [{ id: 'title', label: 'Title block' }],
         lower: [
             { id: 'lower', label: 'Lower third (whole layer)' },
-            { id: 'lower-meta', label: 'Lower — round / progression' },
+            { id: 'lower-meta', label: 'Lower — round / heat' },
             { id: 'lower-race', label: 'Lower — race number + time' },
+            { id: 'lower-progression', label: 'Lower — progression' },
             { id: 'lower-event', label: 'Lower — event title' },
         ],
         draw: [

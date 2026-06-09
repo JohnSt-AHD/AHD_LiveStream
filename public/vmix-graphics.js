@@ -2126,13 +2126,14 @@ function vgRenderLower(layer, race) {
             ),
         );
         raceEl.appendChild(vgEl('span', 'vg-lower-race-number', raceNumber));
-        if (progressionLabel) {
-            raceEl.appendChild(
-                vgEl('span', 'vg-lower-race-progression', progressionLabel),
-            );
-        }
         raceEl.dataset.vgLayout = 'lower-race';
         layer.appendChild(raceEl);
+
+        if (progressionLabel) {
+            const progEl = vgEl('p', 'vg-lower-progression', progressionLabel);
+            progEl.dataset.vgLayout = 'lower-progression';
+            layer.appendChild(progEl);
+        }
 
         const eventEl = vgEl('h2', 'vg-lower-event', fullName);
         eventEl.dataset.vgLayout = 'lower-event';
