@@ -12,7 +12,7 @@ const OUT = join(__dirname, '..', 'public', 'data', 'documents-h6-traccar-2026-0
 const FROM = '2026-06-03T23:30:00.000Z';
 const TO = '2026-06-04T00:15:00.000Z';
 const RECORDER = 'https://rowing-app-recorder-pwa.vercel.app';
-const OVERLAY = 'https://traccar-overlay.vercel.app';
+const OVERLAY = 'https://ahd-livestream.vercel.app';
 const TRACCAR_DEVICE = 36;
 const MAX_POINTS = 450;
 

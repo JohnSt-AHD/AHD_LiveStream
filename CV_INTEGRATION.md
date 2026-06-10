@@ -15,7 +15,7 @@ Local TouchDesigner still receives OSC on port `10022` as before. Cloud POST is 
 
 ## Vercel setup
 
-1. Deploy this repo to Vercel (existing project: `traccar-overlay.vercel.app`).
+1. Deploy this repo to Vercel (project: **AHD - LiveStream**, `ahd-livestream.vercel.app`).
 2. Add **Vercel KV** to the project (Storage → KV) if not already linked.
 3. Optional env vars:
    - `CV_INGEST_TOKEN` — shared secret; Python sends `Authorization: Bearer …` on POST.
@@ -27,7 +27,7 @@ Redeploy after adding env vars.
 ### vMix overlay (transparent leader line)
 
 ```
-https://traccar-overlay.vercel.app/vmix-cv-leader.html?streamId=f83ef29e-ae42-4c16-a4b3-dcf23a998936
+https://ahd-livestream.vercel.app/vmix-cv-leader.html?streamId=f83ef29e-ae42-4c16-a4b3-dcf23a998936
 ```
 
 Layer as a transparent browser input over the drone feed (1920×1080).
@@ -35,7 +35,7 @@ Layer as a transparent browser input over the drone feed (1920×1080).
 ### Position monitor (debug / ops)
 
 ```
-https://traccar-overlay.vercel.app/cv-position-monitor.html?streamId=f83ef29e-ae42-4c16-a4b3-dcf23a998936
+https://ahd-livestream.vercel.app/cv-position-monitor.html?streamId=f83ef29e-ae42-4c16-a4b3-dcf23a998936
 ```
 
 Shows live x/y, overlay mapping, age, and stale status. Useful for checking the laptop → API link without vMix.
@@ -76,7 +76,7 @@ In `CV Improvements DEV`:
 
 ```powershell
 $env:CV_STREAM_ID = "f83ef29e-ae42-4c16-a4b3-dcf23a998936"
-$env:CV_API_URL = "https://traccar-overlay.vercel.app/api/cv-position"
+$env:CV_API_URL = "https://ahd-livestream.vercel.app/api/cv-position"
 # optional:
 $env:CV_INGEST_TOKEN = "your-secret"
 $env:CV_CLOUD_ENABLED = "1"

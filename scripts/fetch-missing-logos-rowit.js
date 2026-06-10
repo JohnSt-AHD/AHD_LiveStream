@@ -26,7 +26,7 @@ function fetchBuffer(url) {
         const req = https.get(
             url,
             {
-                headers: { 'User-Agent': 'AltitudeHD-traccar-overlay/1.0 (logo sync)' },
+                headers: { 'User-Agent': 'AltitudeHD-ahd-livestream/1.0 (logo sync)' },
                 timeout: 20000,
             },
             (res) => {

@@ -228,7 +228,7 @@
       ],
       "notes": [
         "270 devices @ 0.5 Hz ≈ 135 samples/s peak — see cost estimate notes in rowing_app docs.",
-        "Traccar overlay can switch source: Traccar (default) or Recorder (RNZ/KRI) in hub Settings."
+        "AHD - LiveStream can switch source: Traccar (default) or Recorder (RNZ/KRI) in hub Settings."
       ]
     }
   ]

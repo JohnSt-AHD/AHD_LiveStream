@@ -1,7 +1,7 @@
 {
-  "name": "traccar-overlay",
+  "name": "ahd-livestream",
   "version": "1.0.0",
-  "description": "Traccar overlay application for Vercel",
+  "description": "AHD - LiveStream · Altitude HD overlays and live fleet maps for Vercel",
   "main": "index.js",
   "scripts": {
     "build": "exit 0",
@@ -12,6 +12,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
+    "ahd",
+    "livestream",
     "traccar",
     "overlay"
   ],

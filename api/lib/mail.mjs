@@ -58,7 +58,7 @@ export function buildWarningEmailHtml({ subject, warnings, isTest, intro }) {
     return `<!DOCTYPE html><html><body style="font-family:Segoe UI,sans-serif;color:#1e293b">
 <p>${escapeHtml(bodyIntro)}</p>
 <ul>${rows}</ul>
-<p style="color:#64748b;font-size:13px">Open the <a href="https://traccar-overlay.vercel.app/rowsafe-map.html">RowSafe map</a> for details.</p>
+<p style="color:#64748b;font-size:13px">Open the <a href="https://ahd-livestream.vercel.app/rowsafe-map.html">RowSafe map</a> for details.</p>
 </body></html>`;
 }
 
