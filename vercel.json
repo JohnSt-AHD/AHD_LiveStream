@@ -13,6 +13,9 @@
     },
     "api/warning-alerts.js": {
       "maxDuration": 60
+    },
+    "api/cv-position.js": {
+      "maxDuration": 10
     }
   }
 }

@@ -132,6 +132,20 @@ function hubRenderVmixGuide() {
             '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size (GT layout). Set <strong>Leader lane</strong> on the hub (default 4); text fades in 2s after <code>w</code>. Video pauses at 6s; <code>o</code> fades text and finishes video. Press <code>1</code>–<code>8</code> on air to switch lane instantly.';
         examples.appendChild(leaderNote);
 
+        const cvNote = document.createElement('p');
+        cvNote.className = 'hub-vmix-map-note';
+        const cvUrl = new URL(hubVmixBaseUrl('vmix-cv-leader.html'));
+        cvUrl.searchParams.set('streamId', 'YOUR_GPS_STREAM_ID');
+        const cvMonitorUrl = new URL(hubVmixBaseUrl('cv-position-monitor.html'));
+        cvMonitorUrl.searchParams.set('streamId', 'YOUR_GPS_STREAM_ID');
+        cvNote.innerHTML =
+            '<strong>CV leader line:</strong> laptop YOLO → <code>/api/cv-position</code> → transparent overlay. vMix browser: <a href="' +
+            cvUrl.href +
+            '" target="_blank" rel="noopener">vmix-cv-leader.html</a> · monitor: <a href="' +
+            cvMonitorUrl.href +
+            '" target="_blank" rel="noopener">cv-position-monitor.html</a> · same <code>streamId</code> as GPS. Run <code>karapiro.py</code> / <code>twizel.py</code> with <code>CV_STREAM_ID</code> set.';
+        examples.appendChild(cvNote);
+
         const devNote = document.createElement('p');
         devNote.className = 'hub-vmix-map-note';
         const devLinks = Object.entries(VMIX_PAGES)

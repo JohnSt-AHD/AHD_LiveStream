@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CV position monitor</title>
+    <link rel="stylesheet" href="cv-position-monitor.css">
+</head>
+<body>
+    <main class="cv-monitor">
+        <header class="cv-monitor__header">
+            <h1>Computer vision position</h1>
+            <p>Live leader coordinates from the laptop CV system via <code>/api/cv-position</code>.</p>
+            <div class="cv-monitor__status cv-monitor__status--waiting" id="cvStatusBadge">
+                <span class="cv-monitor__status-dot" aria-hidden="true"></span>
+                <span id="cvStatusText">Waiting for data</span>
+            </div>
+        </header>
+
+        <div class="cv-monitor__grid">
+            <section class="cv-monitor__panel" aria-labelledby="cvPreviewTitle">
+                <h2 id="cvPreviewTitle">1280×720 reference frame</h2>
+                <div class="cv-monitor__preview-wrap" id="cvPreview">
+                    <div class="cv-monitor__crosshair" id="cvCrosshair" aria-hidden="true"></div>
+                </div>
+            </section>
+
+            <section class="cv-monitor__panel" aria-labelledby="cvStatsTitle">
+                <h2 id="cvStatsTitle">Latest position</h2>
+                <dl class="cv-monitor__stats">
+                    <div class="cv-monitor__stat">
+                        <dt>Stream ID</dt>
+                        <dd id="cvStreamId">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>x / y</dt>
+                        <dd id="cvCoords">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>Overlay line (1920×1080)</dt>
+                        <dd id="cvOverlayX">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>Frame</dt>
+                        <dd id="cvFrame">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>Auto leader</dt>
+                        <dd id="cvAuto">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>Venue offset</dt>
+                        <dd id="cvOffset">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>Age</dt>
+                        <dd id="cvAge">—</dd>
+                    </div>
+                    <div class="cv-monitor__stat">
+                        <dt>Updated</dt>
+                        <dd id="cvUpdated">—</dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
+
+        <section class="cv-monitor__panel" style="margin-top: 20px" aria-labelledby="cvOverlayPreviewTitle">
+            <h2 id="cvOverlayPreviewTitle">vMix overlay preview (1920×1080 line position)</h2>
+            <div class="cv-monitor__preview-wrap" id="cvOverlayPreview">
+                <div class="cv-monitor__line" id="cvOverlayLine" aria-hidden="true"></div>
+            </div>
+        </section>
+
+        <p class="cv-monitor__error" id="cvError" hidden></p>
+
+        <div class="cv-monitor__links">
+            <a id="cvVmixLink" href="vmix-cv-leader.html">Open vMix overlay</a>
+            <a href="index.html">Back to hub</a>
+        </div>
+
+        <p class="cv-monitor__hint" id="cvHint">
+            Add <code>?streamId=YOUR_GPS_ID</code> to this URL — same ID as TouchDesigner GPS and
+            <code>CV_STREAM_ID</code> on the laptop. Optional: <code>&amp;api=http://127.0.0.1:8787</code> for local testing.
+        </p>
+    </main>
+    <script src="cv-position-client.js"></script>
+    <script src="cv-position-monitor.js"></script>
+</body>
+</html>
