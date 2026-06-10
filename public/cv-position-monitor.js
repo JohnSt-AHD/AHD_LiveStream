@@ -21,8 +21,8 @@
     }
 
     function pollMs() {
-        const n = parseInt(params().get('poll') || '200', 10);
-        return Number.isFinite(n) ? Math.max(100, Math.min(n, 2000)) : 200;
+        const n = parseInt(params().get('poll') || '500', 10);
+        return Number.isFinite(n) ? Math.max(250, Math.min(n, 5000)) : 500;
     }
 
     function setText(id, text) {

@@ -47,8 +47,26 @@ Query params:
 | Param | Purpose |
 |-------|---------|
 | `streamId` | Required — ties POST and GET together |
-| `poll` | Poll interval ms (default `50`) |
+| `poll` | Poll interval ms (default `200` on overlay, `500` on monitor) |
 | `api` | Override API origin for testing |
+
+### Vercel usage (defaults tuned for Hobby limits)
+
+| Source | Default rate | ~6 h race day |
+|--------|----------------|---------------|
+| Python POST (`CV_POST_HZ`) | 5/sec | ~108k |
+| vMix overlay poll | 5/sec (200 ms) | ~108k |
+| Monitor poll | 2/sec (500 ms) | ~43k |
+
+Close the monitor tab when not debugging. For smoother overlay motion at a regatta, raise rates temporarily:
+
+```powershell
+$env:CV_POST_HZ = "10"
+```
+
+```
+.../vmix-cv-leader.html?streamId=...&poll=100
+```
 
 Layer as a transparent browser input over the drone feed (1920×1080).
 
@@ -62,6 +80,7 @@ $env:CV_API_URL = "https://traccar-overlay.vercel.app/api/cv-position"
 # optional:
 $env:CV_INGEST_TOKEN = "your-secret"
 $env:CV_CLOUD_ENABLED = "1"
+$env:CV_POST_HZ = "5"   # optional; 5 is the default
 
 python karapiro.py   # or twizel.py
 ```

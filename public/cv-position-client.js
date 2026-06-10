@@ -4,7 +4,7 @@
  * URL params:
  *   streamId  — same ID as GPS / livestream (required)
  *   venue     — karapiro | twizel (optional; uses payload venue when present)
- *   poll      — poll interval ms (default 50)
+ *   poll      — poll interval ms (default 200)
  *   api       — override API base (default same origin)
  */
 (function (global) {
@@ -33,8 +33,8 @@
     }
 
     function pollMs() {
-        const n = parseInt(params().get('poll') || '50', 10);
-        return Number.isFinite(n) ? Math.max(20, Math.min(n, 1000)) : 50;
+        const n = parseInt(params().get('poll') || '200', 10);
+        return Number.isFinite(n) ? Math.max(100, Math.min(n, 2000)) : 200;
     }
 
     function venueOffset(venue) {
