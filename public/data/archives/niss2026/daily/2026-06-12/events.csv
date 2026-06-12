@@ -1,0 +1,53 @@
+Event #,Event Type,Gender,Class,Boat,Seats,Oars,Coxed,Other,Sponsor
+1,B U17 1X,M,U17 ,1X,1,Scull,N,,Oarthentic Oars
+2,G U17 4+,W,U17 ,4+,4,Sweep,Y,,Lewis Lawyers
+3,B U15 2X,M,U15 ,2X,2,Scull,N,,Laszlo Boats
+4,G U15 4X+,W,U15 ,4X+,4,Scull,Y,,ARS Property Management 
+5,B U18 2-,M,U18 ,2-,2,Sweep,N,,776BC
+6,G U18 2X,W,U18 ,2X,2,Scull,N,,NZ Community Trust
+7,B U16 4X+,M,U16 ,4X+,4,Scull,Y,,Croker Oars - New Zealand Ltd
+8,G U16 1X,W,U16 ,1X,1,Scull,N,,Ebbett Toyota
+9,B N18 2X,M,U18 Nov,2X,2,Scull,N,,Waikato University
+10,G N18 8+,W,U18 Nov,8+,8,Sweep,Y,,Waikato University
+11,B U17 8+,M,U17 ,8+,8,Sweep,Y,,Colgan Foundation
+12,G U17 4X+,W,U17 ,4X+,4,Scull,Y,,S L Racing
+13,B U15 8X+,M,U15 ,8X+,8,Scull,Y,,Pub Charity
+14,G U15 4+,W,U15 ,4+,4,Sweep,Y,,Mazda
+15,B U18 4X+,M,U18 ,4X+,4,Scull,Y,,Mazda
+16,G U18 2-,W,U18 ,2-,2,Sweep,N,,776BC
+17,B U16 4+,M,U16 ,4+,4,Sweep,Y,,Footloose
+18,G U16 8+,W,U16 ,8+,8,Sweep,Y,,Jones Family Charitable Trust
+19,B N18 8+,M,U18 Nov,8+,8,Sweep,Y,,Goldsmiths Gallery
+20,G N18 2X,W,U18 Nov,2X,2,Scull,N,,Top Notch Calves
+21,B U17 2X,M,U17 ,2X,2,Scull,N,,Goldsmiths Gallery
+22,G U17 1X,W,U17 ,1X,1,Scull,N,,Oarthentic Oars
+23,G U15 8X+,W,U15 ,8X+,8,Scull,Y,,Fresh Choice Supermarket Leamington
+24,B U15 8+,M,U15 ,8+,8,Sweep,Y,,Fresh Choice Supermarket Leamington
+25,B U18 4+,M,U18 ,4+,4,Sweep,Y,,Grassroots Trust
+26,G U18 4+,W,U18 ,4+,4,Sweep,Y,,Grassroots Trust
+27,G U16 4X+,W,U16 ,4X+,4,Scull,Y,,MobiComm Ltd
+28,B U16 2X,M,U16 ,2X,2,Scull,N,,Rob Bristow - rowing images
+29,G U18 1X,W,U18 ,1X,1,Scull,N,,Milford
+30,B U18 1X,M,U18 ,1X,1,Scull,N,,Milford
+31,G U15 2X,W,U15 ,2X,2,Scull,N,,Waikato University
+32,B U15 4X+,M,U15 ,4X+,4,Scull,Y,,Fresh Choice Supermarket Leamington
+33,G U17 8+,W,U17 ,8+,8,Sweep,Y,,Colgan Foundation
+34,B U17 4+,M,U17 ,4+,4,Sweep,Y,,Defence Force Careers
+35,G N18 4X+,W,U18 Nov,4X+,4,Scull,Y,,Defence Force Careers
+36,B N18 4+,M,U18 Nov,4+,4,Sweep,Y,,Mitre 10 MEGA Cambridge
+37,G U16 4+,W,U16 ,4+,4,Sweep,Y,,Review Consulting
+38,B U16 8+,M,U16 ,8+,8,Sweep,Y,,Jones Family Charitable Trust
+39,G U17 2-,W,U17 ,2-,2,Sweep,N,,Pub Charity
+40,B U17 2-,M,U17 ,2-,2,Sweep,N,,Aotearoa Boat Company
+41,G U18 4X+,W,U18 ,4X+,4,Scull,Y,,Laszlo Boats
+42,B U18 2X,M,U18 ,2X,2,Scull,N,,Kerridge and Partners
+43,G U15 8+,W,U15 ,8+,8,Sweep,Y,,Kerridge and Partners
+44,B U15 4+,M,U15 ,4+,4,Sweep,Y,,Lion Foundation
+45,G U17 2X,W,U17 ,2X,2,Scull,N,,MobiComm Ltd
+46,B U17 4X+,M,U17 ,4X+,4,Scull,Y,,Neat Meat
+47,G N18 4+,W,U18 Nov,4+,4,Sweep,Y,,Waipa District Council
+48,B N18 4X+,M,U18 Nov,4X+,4,Scull,Y,,Waipa District Council
+49,G U16 2X,W,U16 ,2X,2,Scull,N,,Fresh Choice Supermarket Leamington
+50,B U16 1X,M,U16 ,1X,1,Scull,N,,S L Racing
+52,B U18 8+,M,U18 ,8+,8,Sweep,Y,,Milford
+51,G U18 8+,W,U18 ,8+,8,Sweep,Y,,Milford
