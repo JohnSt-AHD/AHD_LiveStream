@@ -26,6 +26,15 @@
     "medianSepM": "4.2",
     "p90SepM": "7.5"
   },
+  "sessionIngest": {
+    "totalSamples": 30721,
+    "sessionSpanH": "10.1",
+    "sessionAvgHz": "0.84",
+    "activeMedianGapSec": "1.0",
+    "activeRateHz": "1.00",
+    "gapsOver60s": 12,
+    "configuredHz": 1
+  },
   "battery": {
     "startPct": 96,
     "startNz": "14 Jun 2026, 06:45",
@@ -36,7 +45,11 @@
     "estFullH": "32",
     "dataUsageMb": 36,
     "online": false,
-    "totalSamples": 2173,
-    "gpsRateHz": 0.3
+    "totalSamples": 30721,
+    "gpsRateHz": "1.00",
+    "sessionAvgHz": "0.84",
+    "activeMedianGapSec": "1.0",
+    "gapsOver60s": 12,
+    "configuredHz": 1
   }
 }

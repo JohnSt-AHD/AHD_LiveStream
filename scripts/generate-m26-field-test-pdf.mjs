@@ -133,28 +133,59 @@ async function fetchJson(url) {
     return data;
 }
 
+function analyzeSessionIngest(points, sessionFromIso, sessionToIso) {
+    if (!points?.length) return null;
+    const sorted = [...points].sort(
+        (a, b) => ms(a.fixTime || a.deviceTime || a.t) - ms(b.fixTime || b.deviceTime || b.t),
+    );
+    const gaps = [];
+    for (let i = 1; i < sorted.length; i++) {
+        const t = sorted[i].fixTime || sorted[i].deviceTime || sorted[i].t;
+        const pt = sorted[i - 1].fixTime || sorted[i - 1].deviceTime || sorted[i - 1].t;
+        if (t && pt) gaps.push((ms(t) - ms(pt)) / 1000);
+    }
+    const spanSec = (ms(sorted.at(-1).fixTime || sorted.at(-1).deviceTime) - ms(sorted[0].fixTime || sorted[0].deviceTime)) / 1000;
+    const activeGaps = gaps.filter((g) => g <= 2);
+    const activeMedianGap = median(activeGaps);
+    return {
+        totalSamples: sorted.length,
+        sessionSpanH: spanSec > 0 ? (spanSec / 3600).toFixed(1) : '—',
+        sessionAvgHz: spanSec > 0 ? (sorted.length / spanSec).toFixed(2) : '—',
+        activeMedianGapSec: activeMedianGap?.toFixed(1) ?? '—',
+        activeRateHz: activeMedianGap != null && activeMedianGap > 0 ? (1 / activeMedianGap).toFixed(2) : '—',
+        gapsOver60s: gaps.filter((g) => g > 60).length,
+        configuredHz: M26_FIELD_TEST.battery.gpsRateHz,
+    };
+}
+
 async function gatherData() {
-    const now = new Date();
-    const [h6Raw, h7Raw, devicesRaw] = await Promise.all([
+    const testComplete = M26_FIELD_TEST.battery.status === 'complete';
+    const now = testComplete ? new Date(M26_FIELD_TEST.battery.endIso) : new Date();
+    const sessionTo = testComplete ? M26_FIELD_TEST.battery.endIso : now.toISOString();
+    const [h6Raw, h7Raw, h7SessionRaw, devicesRaw] = await Promise.all([
         fetchJson(`${RECORDER}/api/history?uniqueId=H6&from=${encodeURIComponent(GPS_FROM)}&to=${encodeURIComponent(GPS_TO)}`),
         fetchJson(`${RECORDER}/api/history?uniqueId=H7&from=${encodeURIComponent(GPS_FROM)}&to=${encodeURIComponent(GPS_TO)}`),
-        fetchJson(`${RECORDER}/api/devices?onlineSec=600&windowSec=300`),
+        fetchJson(`${RECORDER}/api/history?uniqueId=H7&from=${encodeURIComponent(BATTERY_START_ISO)}&to=${encodeURIComponent(sessionTo)}`),
+        testComplete ? Promise.resolve({ devices: [] }) : fetchJson(`${RECORDER}/api/devices?onlineSec=600&windowSec=300`),
     ]);
 
     const h6 = Array.isArray(h6Raw) ? h6Raw : [];
     const h7 = Array.isArray(h7Raw) ? h7Raw : [];
+    const h7Session = Array.isArray(h7SessionRaw) ? h7SessionRaw : [];
     const h6Stats = analyzeTrack(h6);
     const h7Stats = analyzeTrack(h7);
     const agreement = compareTracks(h6, h7);
+    const sessionIngest = analyzeSessionIngest(h7Session, BATTERY_START_ISO, sessionTo);
 
     const h7Dev = (devicesRaw.devices || []).find((d) => d.deviceId === 'H7');
-    const currentPct = h7Dev?.battery?.pct ?? null;
+    const b = M26_FIELD_TEST.battery;
+    const currentPct = testComplete ? b.snapshotPct : (h7Dev?.battery?.pct ?? null);
 
     const startMs = ms(BATTERY_START_ISO);
-    const elapsedH = (now.getTime() - startMs) / 3600000;
-    const dropPct = currentPct != null ? BATTERY_START_PCT - currentPct : null;
-    const drainPerH = dropPct != null && elapsedH > 0 ? dropPct / elapsedH : null;
-    const estFullH = drainPerH != null && drainPerH > 0 ? 100 / drainPerH : null;
+    const elapsedH = testComplete ? b.elapsedH : (now.getTime() - startMs) / 3600000;
+    const dropPct = testComplete ? b.dropPct : (currentPct != null ? BATTERY_START_PCT - currentPct : null);
+    const drainPerH = testComplete ? b.drainPerH : (dropPct != null && elapsedH > 0 ? dropPct / elapsedH : null);
+    const estFullH = testComplete ? b.estFullChargeH : (drainPerH != null && drainPerH > 0 ? 100 / drainPerH : null);
 
     return {
         generatedAt: now.toISOString(),
@@ -162,18 +193,23 @@ async function gatherData() {
         h6Stats,
         h7Stats,
         agreement,
+        sessionIngest,
         battery: {
             startPct: BATTERY_START_PCT,
             startNz: nzTime(BATTERY_START_ISO),
             currentPct,
-            elapsedH: elapsedH.toFixed(1),
-            dropPct: dropPct?.toFixed(0) ?? '—',
-            drainPerH: drainPerH?.toFixed(1) ?? '—',
-            estFullH: estFullH?.toFixed(0) ?? '—',
-            dataUsageMb: M26_FIELD_TEST.battery.dataUsageMb ?? null,
-            online: h7Dev?.online ?? false,
-            totalSamples: h7Dev?.totalSamples ?? '—',
-            gpsRateHz: h7Dev?.gps?.rateHz ?? '—',
+            elapsedH: typeof elapsedH === 'number' ? elapsedH.toFixed(1) : String(elapsedH),
+            dropPct: dropPct != null ? String(Math.round(dropPct)) : '—',
+            drainPerH: drainPerH != null ? (typeof drainPerH === 'number' ? drainPerH.toFixed(1) : String(drainPerH)) : '—',
+            estFullH: estFullH != null ? String(Math.round(estFullH)) : '—',
+            dataUsageMb: b.dataUsageMb ?? null,
+            online: testComplete ? false : (h7Dev?.online ?? false),
+            totalSamples: sessionIngest?.totalSamples ?? '—',
+            gpsRateHz: sessionIngest?.activeRateHz ?? '—',
+            sessionAvgHz: sessionIngest?.sessionAvgHz ?? '—',
+            activeMedianGapSec: sessionIngest?.activeMedianGapSec ?? '—',
+            gapsOver60s: sessionIngest?.gapsOver60s ?? '—',
+            configuredHz: sessionIngest?.configuredHz ?? M26_FIELD_TEST.battery.gpsRateHz,
         },
     };
 }
@@ -298,12 +334,14 @@ function reportHtml(data) {
         <tr><td>Estimated drain</td><td><strong>~${bat.drainPerH} %/h</strong> (${M26_FIELD_TEST.battery.profile})</td></tr>
         <tr><td>Est. runtime from 100%</td><td><strong>~${bat.estFullH} h</strong> at similar load</td></tr>
         <tr><td>App cellular data</td><td><strong>${bat.dataUsageMb ?? '—'} MB</strong> (OS-reported, full session)</td></tr>
-        <tr><td>Ingest</td><td>${bat.gpsRateHz} Hz GPS · ${bat.totalSamples} total samples</td></tr>
+        <tr><td>Ingest (recorder history)</td><td><strong>${bat.totalSamples}</strong> samples · active logging <strong>~${bat.gpsRateHz} Hz</strong> (median gap ${bat.activeMedianGapSec} s) · session avg ${bat.sessionAvgHz} Hz</td></tr>
+        <tr><td>GPS configured</td><td>${bat.configuredHz} Hz — map shows 1 Hz when actively logging; long idle gaps (${bat.gapsOver60s} &gt; 60 s) lower session average</td></tr>
       </tbody>
     </table>
     <ul>
       <li>Compare to prior A1 long-session reference: ~${M26_FIELD_TEST.refA1DrainPerH} %/h at 30 s GPS (~${M26_FIELD_TEST.refA1EstFullH} h from full charge).</li>
       <li>M26 at 1 Hz: ~${bat.drainPerH} %/h — an 8 h regatta day uses ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% at this rate; mixed profile uses less.</li>
+      <li>Moving-test window (11:30–11:45 NZ) confirmed ~1.0 Hz on map; earlier PDF “0.3 Hz” was a stale live-device snapshot, not session ingest.</li>
       <li>Cellular data ~${bat.dataUsageMb ?? '—'} MB over ${bat.elapsedH} h (~${bat.dataUsageMb != null ? (bat.dataUsageMb / parseFloat(bat.elapsedH)).toFixed(1) : '—'} MB/h) at 1 Hz GPS + background upload.</li>
       <li>Battery % is reported by the native app on GPS/heartbeat samples (~10 min cadence).</li>
     </ul>
