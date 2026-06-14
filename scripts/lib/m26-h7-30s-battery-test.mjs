@@ -1,6 +1,6 @@
 /**
- * H7 (One NZ Smart M26) battery + data test @ 30 s reporting — started 14 Jun 2026.
- * Update end values when the session finishes; regenerate hub entry via npm run docs:m26-30s-report (when added).
+ * H7 (One NZ Smart M26) battery + data test @ 30 s reporting — 14–15 Jun 2026.
+ * Regenerate PDF: npm run docs:m26-30s-report
  */
 export const M26_H7_30S_BATTERY_TEST = {
   id: 'battery-h7-m26-30s-2026-06-14',
@@ -8,8 +8,8 @@ export const M26_H7_30S_BATTERY_TEST = {
   handset: 'One NZ Smart M26',
   reportingIntervalSec: 30,
   reportingLabel: '30 s',
-  status: 'in_progress',
-  testDate: '14 Jun 2026',
+  status: 'complete',
+  testDate: '14–15 Jun 2026',
 
   start: {
     timeNz: '19:09',
@@ -21,37 +21,34 @@ export const M26_H7_30S_BATTERY_TEST = {
   },
 
   end: {
-    timeNz: null,
-    endNz: null,
-    endIso: null,
-    batteryPct: null,
-    dataUsageMb: null,
-    elapsedH: null,
-    dropPct: null,
-    drainPerH: null,
-    sessionDataMb: null,
-  },
-
-  /** Latest interim reading (test still in progress). */
-  snapshot: {
-    timeNz: '21:33',
-    snapshotNz: '14 Jun 2026, 21:33',
-    snapshotIso: '2026-06-14T09:33:10.869Z',
-    batteryPct: 92,
-    dataUsageMb: 38.14,
-    elapsedH: 2.4,
-    dropPct: 6,
+    timeNz: '06:11',
+    endNz: '15 Jun 2026, 06:11',
+    endIso: '2026-06-14T18:11:38.918Z',
+    batteryPct: 70,
+    dataUsageMb: 42.93,
+    elapsedH: 11.0,
+    dropPct: 28,
     drainPerH: 2.5,
-    sessionDataMb: 1.37,
+    estFullChargeH: 39,
+    sessionDataMb: 6.16,
   },
 
-  /** Completed 1 Hz test on same handset — for comparison when this session ends. */
+  ingest: {
+    totalSamples: 1023,
+    sessionAvgHz: 0.03,
+    activeMedianGapSec: 30.0,
+    activeRateHz: 0.033,
+    gapsOver60s: 193,
+  },
+
+  /** Completed 1 Hz test on same handset — comparison. */
   compareRef: {
     reportId: 'gps-h7-m26-2026-06-14',
     profile: '1 Hz',
     elapsedH: 10.3,
     drainPerH: 3.1,
     sessionDataMb: 36,
+    estFullChargeH: 32,
   },
 };
 

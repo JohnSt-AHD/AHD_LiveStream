@@ -1,33 +1,37 @@
 {
   "testId": "battery-h7-m26-30s-2026-06-14",
-  "status": "in_progress",
+  "status": "complete",
   "deviceId": "H7",
   "handset": "One NZ Smart M26",
   "reportingIntervalSec": 30,
-  "recordedAt": "2026-06-14T07:09:00.000Z",
-  "recordedNz": "14 Jun 2026, 19:09",
-  "updatedAt": "2026-06-14T09:33:10.869Z",
-  "updatedNz": "14 Jun 2026, 21:33",
+  "generatedAt": "2026-06-14T18:11:38.918Z",
+  "generatedNz": "15 Jun 2026, 06:11",
   "battery": {
     "startPct": 98,
     "startNz": "14 Jun 2026, 19:09",
-    "startIso": "2026-06-14T07:09:00.000Z",
-    "dataUsageMbAtStart": 36.77,
-    "currentPct": 92,
-    "snapshotNz": "14 Jun 2026, 21:33",
-    "snapshotIso": "2026-06-14T09:33:10.869Z",
-    "elapsedH": "2.4",
-    "dropPct": "6",
+    "endPct": 70,
+    "endNz": "15 Jun 2026, 06:11",
+    "elapsedH": "11",
+    "dropPct": "28",
     "drainPerH": "2.5",
-    "dataUsageMbCurrent": 38.14,
-    "sessionDataMb": "1.37",
-    "endNz": null,
-    "dataUsageMbAtEnd": null
+    "estFullH": "39",
+    "dataUsageMbAtStart": 36.77,
+    "dataUsageMbAtEnd": 42.93,
+    "sessionDataMb": "6.16"
   },
-  "notes": [
-    "30 s reporting interval configured on H7.",
-    "36.77 MB was OS cumulative app data at start (includes earlier 1 Hz session).",
-    "Snapshot 21:33 NZ: 92% battery, 38.14 MB cumulative (+1.37 MB this session), ~2.5 %/h over 2.4 h.",
-    "Compare to completed 1 Hz test: ~3.1 %/h, 36 MB session data over 10.3 h."
-  ]
+  "ingest": {
+    "totalSamples": 1023,
+    "sessionAvgHz": "0.03",
+    "activeMedianGapSec": "30.0",
+    "activeRateHz": "0.033",
+    "gapsOver60s": 193
+  },
+  "compareRef": {
+    "reportId": "gps-h7-m26-2026-06-14",
+    "profile": "1 Hz",
+    "elapsedH": 10.3,
+    "drainPerH": 3.1,
+    "sessionDataMb": 36,
+    "estFullChargeH": 32
+  }
 }

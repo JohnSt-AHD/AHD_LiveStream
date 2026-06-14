@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-14",
+  "updated": "2026-06-15",
   "reports": [
     {
       "id": "gps-h7-m26-2026-06-14",
@@ -50,23 +50,45 @@
       "id": "battery-h7-m26-30s-2026-06-14",
       "category": "battery",
       "date": "2026-06-14",
-      "title": "H7 M26 — battery + data @ 30 s reporting (in progress)",
-      "summary": "14 Jun 2026: H7 @ 30 s reporting. Start 19:09 NZ — 98%, 36.77 MB cumulative. Snapshot 21:33 NZ — 92% (−6% over 2.4 h, ~2.5 %/h), 38.14 MB cumulative (+1.37 MB session data).",
+      "title": "H7 M26 — battery + data @ 30 s reporting (complete)",
+      "summary": "14 Jun 19:09 → 15 Jun 06:11 NZ: H7 @ 30 s reporting. 98%→70% over 11.0 h (~2.5 %/h, ~39 h from full charge). Session data +6.16 MB (42.93 MB cumulative). vs 1 Hz: ~19% less battery, ~83% less data.",
+      "pdfUrl": "/docs/M26-H7-30s-Test-Report-2026-06-14.pdf",
       "metrics": [
         { "label": "Device", "value": "H7 (M26)" },
         { "label": "Reporting interval", "value": "30 s" },
-        { "label": "Session start", "value": "19:09 NZ · 98%" },
-        { "label": "Latest snapshot", "value": "21:33 NZ · 92%" },
-        { "label": "Elapsed (snapshot)", "value": "~2.4 h" },
-        { "label": "Drain @ snapshot", "value": "~2.5 %/h" },
-        { "label": "App data (cumulative)", "value": "38.14 MB" },
-        { "label": "Session data so far", "value": "+1.37 MB" },
-        { "label": "Status", "value": "In progress" }
+        { "label": "Session", "value": "19:09 → 06:11 NZ (11.0 h)" },
+        { "label": "Battery", "value": "98% → 70%" },
+        { "label": "Drain @ 30 s", "value": "~2.5 %/h" },
+        { "label": "Est. full charge", "value": "~39 h" },
+        { "label": "Session data", "value": "6.16 MB" },
+        { "label": "8 h regatta @ 30 s", "value": "~20% · ~5 MB" },
+        { "label": "vs 1 Hz drain", "value": "3.1 → 2.5 %/h" }
+      ],
+      "charts": [
+        {
+          "id": "m26-drain-compare",
+          "type": "bar",
+          "title": "H7 M26 battery drain (%/h)",
+          "labels": ["1 Hz (1 s)", "30 s", "A1 ref (30 s)"],
+          "values": [3.1, 2.5, 3.7],
+          "unit": "%/h",
+          "color": ["#4ade80", "#22d3ee", "#f59e0b"]
+        },
+        {
+          "id": "m26-data-compare",
+          "type": "bar",
+          "title": "Session cellular data (MB)",
+          "labels": ["1 Hz (10.3 h)", "30 s (11.0 h)"],
+          "values": [36, 6.16],
+          "unit": "MB",
+          "color": ["#4ade80", "#22d3ee"]
+        }
       ],
       "notes": [
-        "Record end battery % and OS app data total when the session finishes; session data = end cumulative minus 36.77 MB.",
-        "Compare to completed 1 Hz test on same handset: 96%→64% over 10.3 h (~3.1 %/h), 36 MB session data.",
-        "Prior A1 reference @ 30 s GPS: ~3.7 %/h (~27 h from full charge)."
+        "30 s active logging: median 30 s fix gap when app is uploading; 193 gaps > 60 s from screen-off / WiFi doze.",
+        "Session data delta = 42.93 − 36.77 MB cumulative OS total at start (includes prior 1 Hz test baseline).",
+        "Compare to 1 Hz test same handset: 96%→64% over 10.3 h, 36 MB session data, ~3.1 %/h.",
+        "Fleet default: 30 s for training/long sessions; 1 Hz for broadcast-smooth tracking."
       ]
     },
     {
