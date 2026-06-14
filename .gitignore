@@ -9,3 +9,9 @@ public/data/archives/_snapshot-*.json
 
 # Google Drive service account keys (see secrets/google-drive-service-account.example.json)
 secrets/google-drive-service-account.json
+
+# Dependencies and scratch files
+node_modules/
+.tmp-*
+scripts/tmp-*.mjs
+scripts/test-*.mjs
