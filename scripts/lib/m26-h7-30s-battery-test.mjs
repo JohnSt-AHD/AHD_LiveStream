@@ -32,6 +32,19 @@ export const M26_H7_30S_BATTERY_TEST = {
     sessionDataMb: null,
   },
 
+  /** Latest interim reading (test still in progress). */
+  snapshot: {
+    timeNz: '21:33',
+    snapshotNz: '14 Jun 2026, 21:33',
+    snapshotIso: '2026-06-14T09:33:10.869Z',
+    batteryPct: 92,
+    dataUsageMb: 38.14,
+    elapsedH: 2.4,
+    dropPct: 6,
+    drainPerH: 2.5,
+    sessionDataMb: 1.37,
+  },
+
   /** Completed 1 Hz test on same handset — for comparison when this session ends. */
   compareRef: {
     reportId: 'gps-h7-m26-2026-06-14',

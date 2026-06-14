@@ -6,22 +6,28 @@
   "reportingIntervalSec": 30,
   "recordedAt": "2026-06-14T07:09:00.000Z",
   "recordedNz": "14 Jun 2026, 19:09",
+  "updatedAt": "2026-06-14T09:33:10.869Z",
+  "updatedNz": "14 Jun 2026, 21:33",
   "battery": {
     "startPct": 98,
     "startNz": "14 Jun 2026, 19:09",
     "startIso": "2026-06-14T07:09:00.000Z",
     "dataUsageMbAtStart": 36.77,
-    "currentPct": null,
+    "currentPct": 92,
+    "snapshotNz": "14 Jun 2026, 21:33",
+    "snapshotIso": "2026-06-14T09:33:10.869Z",
+    "elapsedH": "2.4",
+    "dropPct": "6",
+    "drainPerH": "2.5",
+    "dataUsageMbCurrent": 38.14,
+    "sessionDataMb": "1.37",
     "endNz": null,
-    "elapsedH": null,
-    "dropPct": null,
-    "drainPerH": null,
-    "dataUsageMbAtEnd": null,
-    "sessionDataMb": null
+    "dataUsageMbAtEnd": null
   },
   "notes": [
     "30 s reporting interval configured on H7.",
-    "36.77 MB is OS cumulative app data at start — includes the earlier 1 Hz session; record end cumulative and compute delta when test finishes.",
-    "Compare results to completed 1 Hz test: ~3.1 %/h, 36 MB session data over 10.3 h."
+    "36.77 MB was OS cumulative app data at start (includes earlier 1 Hz session).",
+    "Snapshot 21:33 NZ: 92% battery, 38.14 MB cumulative (+1.37 MB this session), ~2.5 %/h over 2.4 h.",
+    "Compare to completed 1 Hz test: ~3.1 %/h, 36 MB session data over 10.3 h."
   ]
 }

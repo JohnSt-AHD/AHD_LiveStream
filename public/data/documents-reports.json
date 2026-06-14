@@ -51,13 +51,16 @@
       "category": "battery",
       "date": "2026-06-14",
       "title": "H7 M26 — battery + data @ 30 s reporting (in progress)",
-      "summary": "14 Jun 2026, 19:09 NZ: H7 (One NZ Smart M26) started continuous 30 s reporting test. Battery 98%; OS app data 36.77 MB cumulative at start (includes prior 1 Hz session). End results pending.",
+      "summary": "14 Jun 2026: H7 @ 30 s reporting. Start 19:09 NZ — 98%, 36.77 MB cumulative. Snapshot 21:33 NZ — 92% (−6% over 2.4 h, ~2.5 %/h), 38.14 MB cumulative (+1.37 MB session data).",
       "metrics": [
         { "label": "Device", "value": "H7 (M26)" },
         { "label": "Reporting interval", "value": "30 s" },
-        { "label": "Session start", "value": "19:09 NZ" },
-        { "label": "Battery at start", "value": "98%" },
-        { "label": "App data at start", "value": "36.77 MB (cumulative)" },
+        { "label": "Session start", "value": "19:09 NZ · 98%" },
+        { "label": "Latest snapshot", "value": "21:33 NZ · 92%" },
+        { "label": "Elapsed (snapshot)", "value": "~2.4 h" },
+        { "label": "Drain @ snapshot", "value": "~2.5 %/h" },
+        { "label": "App data (cumulative)", "value": "38.14 MB" },
+        { "label": "Session data so far", "value": "+1.37 MB" },
         { "label": "Status", "value": "In progress" }
       ],
       "notes": [
