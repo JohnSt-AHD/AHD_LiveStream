@@ -23,14 +23,16 @@ export const M26_FIELD_TEST = {
   battery: {
     startPct: 96,
     startTimeNz: '06:45',
-    snapshotNz: '13:15',
-    snapshotPct: 76,
-    elapsedH: 6.5,
-    dropPct: 20,
+    endTimeNz: '17:01',
+    snapshotPct: 64,
+    elapsedH: 10.3,
+    dropPct: 32,
     drainPerH: 3.1,
     estFullChargeH: 32,
+    dataUsageMb: 36,
     gpsRateHz: 1,
     profile: '1 Hz GPS + background recording',
+    status: 'complete',
   },
 
   /** ~8 h active day at measured 1 Hz drain — well within single-charge regatta day. */
@@ -55,7 +57,7 @@ export function m26GpsSummaryHtml() {
 export function m26BatterySummaryHtml() {
   const b = M26_FIELD_TEST.battery;
   return `<p class="muted">Battery ${M26_FIELD_TEST.testDate}: ${b.startPct}% @ ${b.startTimeNz} NZ → ${b.snapshotPct}% after ${b.elapsedH} h
-    (~${b.drainPerH} %/h at ${b.profile}; ~${b.estFullChargeH} h from full charge).
+    (~${b.drainPerH} %/h at ${b.profile}; ~${b.estFullChargeH} h from full charge; app data ${b.dataUsageMb} MB).
     An ${M26_FIELD_TEST.regattaDayActiveH}-hour active day at 1 Hz uses ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% — no mid-day charge required.</p>`;
 }
 
@@ -73,6 +75,7 @@ export function m26FieldValidationTableHtml() {
       <tr><td>Max fix gap</td><td>${g.h7.maxGapSec} s</td><td>${g.h6.maxGapSec} s</td></tr>
       <tr><td>Track agreement</td><td colspan="2">Median ${g.trackMedianSepM} m separation (${g.trackMatchedPct}% matched ±3 s)</td></tr>
       <tr><td>Battery (${b.elapsedH} h @ ${b.gpsRateHz} Hz)</td><td colspan="2">${b.startPct}% → ${b.snapshotPct}% · ~${b.drainPerH} %/h · ~${b.estFullChargeH} h from 100%</td></tr>
+      <tr><td>App cellular data (${b.elapsedH} h)</td><td colspan="2">${b.dataUsageMb} MB</td></tr>
       <tr><td>8 h regatta day @ 1 Hz (est.)</td><td colspan="2">~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% drain — overnight charge sufficient</td></tr>
     </tbody>
   </table>`;

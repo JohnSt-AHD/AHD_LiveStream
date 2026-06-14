@@ -170,6 +170,7 @@ async function gatherData() {
             dropPct: dropPct?.toFixed(0) ?? '—',
             drainPerH: drainPerH?.toFixed(1) ?? '—',
             estFullH: estFullH?.toFixed(0) ?? '—',
+            dataUsageMb: M26_FIELD_TEST.battery.dataUsageMb ?? null,
             online: h7Dev?.online ?? false,
             totalSamples: h7Dev?.totalSamples ?? '—',
             gpsRateHz: h7Dev?.gps?.rateHz ?? '—',
@@ -284,31 +285,33 @@ function reportHtml(data) {
     </div>
 
     <h2>2. H7 battery endurance (${M26_FIELD_TEST.testDate})</h2>
-    <p>Continuous session from ${bat.startNz} at ${bat.startPct}% through ${data.generatedNz} snapshot.</p>
+    <p>Continuous session from ${bat.startNz} at ${bat.startPct}% through ${data.generatedNz} NZST — test complete after ${bat.elapsedH} h.</p>
     <table>
       <thead>
         <tr><th>Parameter</th><th>Value</th></tr>
       </thead>
       <tbody>
         <tr><td>Session start</td><td>${bat.startNz} at ${bat.startPct}%</td></tr>
-        <tr><td>Snapshot (${data.generatedNz})</td><td>${bat.currentPct ?? '—'}% · device ${bat.online ? 'online' : 'offline'}</td></tr>
-        <tr><td>Elapsed</td><td>~${bat.elapsedH} h</td></tr>
-        <tr><td>Drop so far</td><td>${bat.dropPct}% (${bat.startPct}% → ${bat.currentPct ?? '—'}%)</td></tr>
-        <tr><td>Estimated drain</td><td><strong>~${bat.drainPerH} %/h</strong> (mixed use: 1 Hz GPS + background recording)</td></tr>
+        <tr><td>Session end (${data.generatedNz})</td><td>${bat.currentPct ?? '—'}% · device ${bat.online ? 'online' : 'offline'}</td></tr>
+        <tr><td>Elapsed</td><td><strong>~${bat.elapsedH} h</strong></td></tr>
+        <tr><td>Total drop</td><td>${bat.dropPct}% (${bat.startPct}% → ${bat.currentPct ?? '—'}%)</td></tr>
+        <tr><td>Estimated drain</td><td><strong>~${bat.drainPerH} %/h</strong> (${M26_FIELD_TEST.battery.profile})</td></tr>
         <tr><td>Est. runtime from 100%</td><td><strong>~${bat.estFullH} h</strong> at similar load</td></tr>
-        <tr><td>Current ingest</td><td>${bat.gpsRateHz} Hz GPS · ${bat.totalSamples} total samples</td></tr>
+        <tr><td>App cellular data</td><td><strong>${bat.dataUsageMb ?? '—'} MB</strong> (OS-reported, full session)</td></tr>
+        <tr><td>Ingest</td><td>${bat.gpsRateHz} Hz GPS · ${bat.totalSamples} total samples</td></tr>
       </tbody>
     </table>
     <ul>
-      <li>Compare to prior A1 long-session reference: ~3.7 %/h at 30 s GPS (~27 h from full charge).</li>
-      <li>M26 at 1 Hz: ~${bat.drainPerH} %/h — an 8 h regatta day uses ~24% at this rate; mixed profile uses less.</li>
+      <li>Compare to prior A1 long-session reference: ~${M26_FIELD_TEST.refA1DrainPerH} %/h at 30 s GPS (~${M26_FIELD_TEST.refA1EstFullH} h from full charge).</li>
+      <li>M26 at 1 Hz: ~${bat.drainPerH} %/h — an 8 h regatta day uses ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% at this rate; mixed profile uses less.</li>
+      <li>Cellular data ~${bat.dataUsageMb ?? '—'} MB over ${bat.elapsedH} h (~${bat.dataUsageMb != null ? (bat.dataUsageMb / parseFloat(bat.elapsedH)).toFixed(1) : '—'} MB/h) at 1 Hz GPS + background upload.</li>
       <li>Battery % is reported by the native app on GPS/heartbeat samples (~10 min cadence).</li>
     </ul>
 
     <h2>3. Conclusion</h2>
     <ul>
       <li>M26 validated for fleet use: production-ready GPS at ~1 Hz with better accuracy than S21 reference.</li>
-      <li>Battery supports full regatta day without mid-charge at measured drain rates.</li>
+      <li>Battery supports full regatta day without mid-charge: ${bat.elapsedH} h continuous test used ${bat.dropPct}% with ${bat.dataUsageMb ?? '—'} MB data.</li>
       <li>Full report archived on Documents hub (<em>documents.html</em>) with live battery chart.</li>
     </ul>
 

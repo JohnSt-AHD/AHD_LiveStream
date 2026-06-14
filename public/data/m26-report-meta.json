@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-14T01:13:26.796Z",
-  "generatedNz": "14 Jun 2026, 13:13",
+  "generatedAt": "2026-06-14T05:01:21.697Z",
+  "generatedNz": "14 Jun 2026, 17:01",
   "h6Stats": {
     "count": 956,
     "durationMin": "16.0",
@@ -29,13 +29,14 @@
   "battery": {
     "startPct": 96,
     "startNz": "14 Jun 2026, 06:45",
-    "currentPct": 76,
-    "elapsedH": "6.5",
-    "dropPct": "20",
+    "currentPct": 64,
+    "elapsedH": "10.3",
+    "dropPct": "32",
     "drainPerH": "3.1",
     "estFullH": "32",
-    "online": true,
-    "totalSamples": 2275,
-    "gpsRateHz": 0.8
+    "dataUsageMb": 36,
+    "online": false,
+    "totalSamples": 2173,
+    "gpsRateHz": 0.3
   }
 }
