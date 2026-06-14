@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { uploadPdfsToDrive } from './lib/upload-proposal-to-drive.mjs';
+import { M26_FIELD_TEST, m26BatterySummaryHtml, m26GpsSummaryHtml } from './lib/m26-field-test-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -432,6 +433,10 @@ function proposalHtml(t) {
   </ul>
   <p class="muted">See <em>CrewSight-Technical-Overview.pdf</em> for full platform capabilities including vMix overlays and broadcast integration.</p>
 
+  <h2>Handset field validation (${M26_FIELD_TEST.testDate})</h2>
+  ${m26GpsSummaryHtml()}
+  ${m26BatterySummaryHtml()}
+
   <h2>Customer requirements</h2>
   <ul>
     <li>Shared APN must allow HTTPS to cloud endpoints (pre-deployment check for data-included option)</li>
@@ -627,6 +632,10 @@ function businessCaseHtml(t50, t270) {
 
   <h2>Cellular &amp; API load check</h2>
   <p class="note">Cellular: ~267 MB/day (50) · ~1.44 GB/day (270) — within One NZ 500 MB/SIM pool. API: up to ~270 ingest POST/s during 1 s reporting hour (270 fleet). Serverless likely within Vercel Pro credits; overage modeled conservatively above.</p>
+
+  <h2>M26 field validation (${M26_FIELD_TEST.testDate})</h2>
+  ${m26GpsSummaryHtml()}
+  ${m26BatterySummaryHtml()}
 
   <footer style="margin-top:12px;font-size:8.5pt;color:#64748b">Generated ${new Date().toISOString().slice(0, 10)} · CrewSight · AHD - LiveStream</footer>
 </body>

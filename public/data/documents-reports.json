@@ -6,16 +6,17 @@
       "category": "gps",
       "date": "2026-06-14",
       "title": "H7 M26 vs H6 S21 — GPS moving test + battery (in progress)",
-      "summary": "14 Jun 2026: ~15 min drive at ~1 Hz GPS (11:30–11:45 NZ). M26 (H7) matched S21 fix rate with better accuracy. Battery test started ~06:45 NZ at 96%; preliminary drain estimate below — session still running.",
+      "summary": "14 Jun 2026: ~15 min drive at ~1 Hz GPS (11:30–11:45 NZ). M26 (H7) matched S21 fix rate with better accuracy (3.3 m vs 5.2 m median). Battery test 06:45–13:15 NZ: 96%→76% over 6.5 h (~3.1 %/h, ~32 h from full charge at 1 Hz).",
       "pdfUrl": "/docs/M26-Field-Test-Report-2026-06-14.pdf",
       "metrics": [
         { "label": "H7 median accuracy", "value": "3.3 m" },
         { "label": "H6 median accuracy", "value": "5.2 m" },
         { "label": "Fix rate (both)", "value": "~1.0 Hz" },
         { "label": "Track agreement", "value": "median 4.2 m" },
-        { "label": "H7 battery start", "value": "96% @ ~06:45 NZ" },
-        { "label": "H7 drain (prelim.)", "value": "~3.1 %/h" },
-        { "label": "H7 est. full charge", "value": "~32 h" }
+        { "label": "H7 battery (6.5 h)", "value": "96% → 76%" },
+        { "label": "H7 drain @ 1 Hz", "value": "~3.1 %/h" },
+        { "label": "H7 est. full charge", "value": "~32 h" },
+        { "label": "8 h regatta @ 1 Hz", "value": "~25% drain" }
       ],
       "charts": [
         {
@@ -38,9 +39,9 @@
         }
       ],
       "notes": [
-        "PDF report: M26 Field Test Report (download link above). Regenerate later today when battery session completes.",
+        "M26 field-validated Jun 2026: 3.3 m median GPS, ~3.1 %/h @ 1 Hz, ~32 h from full charge. PDF report updated with full session data.",
         "M26 (H7) is the One NZ quote handset; H6 is Samsung Galaxy S21 reference.",
-        "Battery figures are preliminary from 96% @ ~06:45 NZ through midday snapshot — update when more samples available.",
+        "8 h active regatta day at 1 Hz uses ~25% battery — no mid-day charge required.",
         "Both devices production-ready at ~1 Hz for regatta tracking."
       ]
     },

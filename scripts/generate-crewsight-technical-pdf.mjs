@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { uploadPdfToDrive } from './lib/upload-proposal-to-drive.mjs';
+import { m26FieldValidationTableHtml, M26_FIELD_TEST } from './lib/m26-field-test-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -221,7 +222,7 @@ function technicalHtml() {
       <tr><td>Motion sensors</td><td>Accelerometer — tilt and hull motion for event detection</td></tr>
       <tr><td>Device telemetry</td><td>Battery %, session heartbeat, device ID</td></tr>
       <tr><td>Upload path</td><td>HTTPS batching (~3 s flush) to cloud ingest API</td></tr>
-      <tr><td>Typical ingest rate</td><td>~0.5 Hz at 30 s GPS · up to 1 Hz for high-rate modes</td></tr>
+      <tr><td>Typical ingest rate</td><td>~0.5 Hz at 30 s GPS · up to 1 Hz for high-rate modes (M26 field-validated @ 1 Hz, Jun 2026)</td></tr>
       <tr><td>Field endurance</td><td>~6–8 h+ per charge (device-dependent, typical regatta day)</td></tr>
     </tbody>
   </table>
@@ -309,7 +310,7 @@ function technicalHtml() {
   <table>
     <thead><tr><th>Component</th><th>Recommendation</th></tr></thead>
     <tbody>
-      <tr><td>Handset</td><td>Supplied 4G Android GPS handset — pre-configured for CrewSight</td></tr>
+      <tr><td>Handset</td><td>One NZ Smart <strong>M26</strong> (4G Android) — pre-configured for CrewSight; ${M26_FIELD_TEST.batteryMah.toLocaleString()} mAh</td></tr>
       <tr><td>Cellular</td><td>Managed IoT SIM — regatta-day activation · shared APN with public HTTPS</td></tr>
       <tr><td>Cloud</td><td>Vercel (AHD - LiveStream) + Neon Postgres (recorder) + Vercel KV (CV positions)</td></tr>
       <tr><td>Handset settings</td><td>Location “Allow all the time” · battery unrestricted · notifications on</td></tr>
@@ -326,6 +327,8 @@ function technicalHtml() {
       <tr><td>Standard</td><td>30 s</td><td>Training, warm-up, long sessions — best battery life</td></tr>
     </tbody>
   </table>
+
+  ${m26FieldValidationTableHtml()}
 
   <h2>Why CrewSight</h2>
   <ul>

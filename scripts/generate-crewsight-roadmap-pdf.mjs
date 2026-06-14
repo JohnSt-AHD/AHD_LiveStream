@@ -8,6 +8,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { uploadPdfToDrive } from './lib/upload-proposal-to-drive.mjs';
+import {
+  M26_FIELD_BATTERY_HOURS,
+  M26_FIELD_TEST,
+} from './lib/m26-field-test-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -20,9 +24,9 @@ const PLATFORM_FEE = 6000;
 const SIM_MONTH = 5;
 const SEASON_MONTHS = 4;
 const MOUNT_SELL = 50;
-/** Field runtime estimate — Smart M26 5,000 mAh; validated against Samsung A06 in CrewSight testing. */
-const BATTERY_MAH = 5000;
-const FIELD_BATTERY_HOURS = 15;
+/** Field runtime — Smart M26 5,000 mAh; validated Jun 2026 field test (see m26-field-test-data.mjs). */
+const BATTERY_MAH = M26_FIELD_TEST.batteryMah;
+const FIELD_BATTERY_HOURS = M26_FIELD_BATTERY_HOURS;
 
 const REGATTAS = [
   { start: '2026-09-19', end: '2026-09-20', label: '19–20 Sep 2026', name: 'New Zealand Master Rowing', phase: 'PoC' },
@@ -355,20 +359,24 @@ function roadmapHtml() {
   <h3>Field battery life</h3>
   <p>
     Supplied handsets (One NZ Smart <strong>M26</strong>) have a <strong>${BATTERY_MAH.toLocaleString()} mAh</strong> battery.
-    Altitude HD estimates <strong>~${FIELD_BATTERY_HOURS} hours field runtime</strong> on a full charge under the standard CrewSight
-    regatta reporting profile — an 8-hour active tracking day (1 hr @ 1 s · 4 hr @ 5 s · 3 hr @ 30 s uploads).
-    This estimate is based on bench and on-water testing with a <strong>Samsung Galaxy A06</strong> (similar battery capacity and Android profile).
+    <strong>Field test ${M26_FIELD_TEST.testDate}:</strong> M26 at ~${M26_FIELD_TEST.battery.gpsRateHz} Hz GPS drained
+    ~${M26_FIELD_TEST.battery.drainPerH} %/h (${M26_FIELD_TEST.battery.startPct}% → ${M26_FIELD_TEST.battery.snapshotPct}% over ${M26_FIELD_TEST.battery.elapsedH} h) —
+    estimated <strong>~${FIELD_BATTERY_HOURS} h</strong> from full charge at continuous high-rate tracking.
+    An ${M26_FIELD_TEST.regattaDayActiveH}-hour active regatta day at 1 Hz uses ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% battery.
+    Standard mixed regatta profile (1 s / 5 s / 30 s intervals) uses less — validated against Samsung Galaxy S21 reference in the same vehicle test
+    (M26 median GPS ${M26_FIELD_TEST.gps.h7.medianAccM} m vs S21 ${M26_FIELD_TEST.gps.h6.medianAccM} m).
   </p>
   <table>
     <thead><tr><th>Scenario</th><th>Implication</th></tr></thead>
     <tbody>
-      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required if handsets are fully charged overnight</td></tr>
+      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required — ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% at 1 Hz; less on mixed profile</td></tr>
       <tr><td>Multi-day regatta block</td><td>Overnight industrial-cabinet charge between days; spot-check battery % in ops monitor before dispatch</td></tr>
-      <tr><td>Long sessions / warm-up days</td><td>~${FIELD_BATTERY_HOURS} hr headroom supports extended use beyond a standard race day</td></tr>
+      <tr><td>Long sessions / warm-up days</td><td>~${FIELD_BATTERY_HOURS} hr headroom at continuous 1 Hz; mixed profile extends further</td></tr>
       <tr><td>Handset settings</td><td>Battery optimisation unrestricted · Location “Allow all the time” · Notifications enabled</td></tr>
     </tbody>
   </table>
   <p class="muted">
+    Prior lab reference (Samsung A1 @ 30 s GPS): ~${M26_FIELD_TEST.refA1DrainPerH} %/h (~${M26_FIELD_TEST.refA1EstFullH} h from full charge).
     Actual runtime varies with cellular coverage, screen-off discipline, ambient temperature, and battery age. Replace or rotate units
     that no longer hold charge through a full regatta day during annual health checks.
   </p>
@@ -398,7 +406,7 @@ function roadmapHtml() {
       Recommend an <strong>industrial USB charging cabinet</strong> (multi-port, keyed, ventilated) with
       <strong>bespoke racking mounted on the number hut wall</strong> at Lake Karāpiro. Labelled slots per device ID;
       overnight charge between regatta days; spot-check battery health in the ops monitor before dispatch.
-      With ~${FIELD_BATTERY_HOURS} hr estimated field life (${BATTERY_MAH.toLocaleString()} mAh M26), a full overnight charge covers a standard
+      With ~${FIELD_BATTERY_HOURS} hr measured headroom at 1 Hz (${BATTERY_MAH.toLocaleString()} mAh M26, ${M26_FIELD_TEST.testDate} field test), a full overnight charge covers a standard
       8-hour regatta day without mid-day top-up. Phase 3 (270 fleet) may add a second cabinet or mobile charging case for away events.
     </dd>
 

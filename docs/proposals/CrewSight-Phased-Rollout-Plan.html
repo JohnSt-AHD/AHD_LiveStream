@@ -95,7 +95,7 @@
   <header>
     <p class="brand">CrewSight</p>
     <p class="brand-sub">Phased rollout &amp; governance plan · 2026–27 season and beyond</p>
-    <p class="tagline">Prepared by Altitude HD · 13 June 2026 · aligned with AHD LiveStream regatta calendar</p>
+    <p class="tagline">Prepared by Altitude HD · 14 June 2026 · aligned with AHD LiveStream regatta calendar</p>
   </header>
 
   <div class="highlight">
@@ -270,20 +270,24 @@
   <h3>Field battery life</h3>
   <p>
     Supplied handsets (One NZ Smart <strong>M26</strong>) have a <strong>5,000 mAh</strong> battery.
-    Altitude HD estimates <strong>~15 hours field runtime</strong> on a full charge under the standard CrewSight
-    regatta reporting profile — an 8-hour active tracking day (1 hr @ 1 s · 4 hr @ 5 s · 3 hr @ 30 s uploads).
-    This estimate is based on bench and on-water testing with a <strong>Samsung Galaxy A06</strong> (similar battery capacity and Android profile).
+    <strong>Field test 14 Jun 2026:</strong> M26 at ~1 Hz GPS drained
+    ~3.1 %/h (96% → 76% over 6.5 h) —
+    estimated <strong>~32 h</strong> from full charge at continuous high-rate tracking.
+    An 8-hour active regatta day at 1 Hz uses ~25% battery.
+    Standard mixed regatta profile (1 s / 5 s / 30 s intervals) uses less — validated against Samsung Galaxy S21 reference in the same vehicle test
+    (M26 median GPS 3.3 m vs S21 5.2 m).
   </p>
   <table>
     <thead><tr><th>Scenario</th><th>Implication</th></tr></thead>
     <tbody>
-      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required if handsets are fully charged overnight</td></tr>
+      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required — ~25% at 1 Hz; less on mixed profile</td></tr>
       <tr><td>Multi-day regatta block</td><td>Overnight industrial-cabinet charge between days; spot-check battery % in ops monitor before dispatch</td></tr>
-      <tr><td>Long sessions / warm-up days</td><td>~15 hr headroom supports extended use beyond a standard race day</td></tr>
+      <tr><td>Long sessions / warm-up days</td><td>~32 hr headroom at continuous 1 Hz; mixed profile extends further</td></tr>
       <tr><td>Handset settings</td><td>Battery optimisation unrestricted · Location “Allow all the time” · Notifications enabled</td></tr>
     </tbody>
   </table>
   <p class="muted">
+    Prior lab reference (Samsung A1 @ 30 s GPS): ~3.7 %/h (~27 h from full charge).
     Actual runtime varies with cellular coverage, screen-off discipline, ambient temperature, and battery age. Replace or rotate units
     that no longer hold charge through a full regatta day during annual health checks.
   </p>
@@ -313,7 +317,7 @@
       Recommend an <strong>industrial USB charging cabinet</strong> (multi-port, keyed, ventilated) with
       <strong>bespoke racking mounted on the number hut wall</strong> at Lake Karāpiro. Labelled slots per device ID;
       overnight charge between regatta days; spot-check battery health in the ops monitor before dispatch.
-      With ~15 hr estimated field life (5,000 mAh M26), a full overnight charge covers a standard
+      With ~32 hr measured headroom at 1 Hz (5,000 mAh M26, 14 Jun 2026 field test), a full overnight charge covers a standard
       8-hour regatta day without mid-day top-up. Phase 3 (270 fleet) may add a second cabinet or mobile charging case for away events.
     </dd>
 

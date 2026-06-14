@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { uploadPdfToDrive } from './lib/upload-proposal-to-drive.mjs';
+import { M26_FIELD_TEST, m26BatterySummaryHtml, m26GpsSummaryHtml } from './lib/m26-field-test-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -23,7 +24,6 @@ const SEASON_MONTHS = 4;
 const MOUNT_SELL = 50;
 const REGATTA_DAYS = 32;
 const REGATTA_COUNT = 8;
-const FIELD_BATTERY_HOURS = 15;
 
 /** Indicative EUR/NZD — update when Trimaran quote received. */
 const EUR_TO_NZD = 1.82;
@@ -277,8 +277,13 @@ function comparisonHtml() {
       <tr><td><strong>Rowing dashboard</strong></td><td class="win" colspan="2">Karāpiro · RowIT · ops monitor</td><td>Generic IoT</td><td colspan="2">Custom per event</td></tr>
       <tr><td><strong>Boat mounting</strong></td><td class="win" colspan="2">Optional ${money(MOUNT_SELL)}/boat</td><td class="gap">Not offered</td><td class="gap" colspan="2">Not offered</td></tr>
       <tr><td><strong>Device ownership</strong></td><td class="win" colspan="2">KRI owns handsets</td><td>KRI owns</td><td colspan="2">Rental / turnkey</td></tr>
+      <tr><td><strong>Handset field test (Jun 2026)</strong></td><td class="win" colspan="2">M26: ${M26_FIELD_TEST.gps.h7.medianAccM} m GPS · ~${M26_FIELD_TEST.battery.estFullChargeH} h @ 1 Hz</td><td class="na">Not quoted</td><td class="na" colspan="2">Rental hardware</td></tr>
     </tbody>
   </table>
+
+  <h2>M26 field validation (${M26_FIELD_TEST.testDate})</h2>
+  ${m26GpsSummaryHtml()}
+  ${m26BatterySummaryHtml()}
 
   <p class="muted">
     <strong>Ops / tracking</strong> (CrewSight ${money(cs.included)}): GPS fleet, platform, and data — vMix / AHD overlay feeds supported for livestream (regatta production quoted separately).
