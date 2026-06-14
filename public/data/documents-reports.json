@@ -47,6 +47,26 @@
       ]
     },
     {
+      "id": "battery-h7-m26-30s-2026-06-14",
+      "category": "battery",
+      "date": "2026-06-14",
+      "title": "H7 M26 — battery + data @ 30 s reporting (in progress)",
+      "summary": "14 Jun 2026, 19:09 NZ: H7 (One NZ Smart M26) started continuous 30 s reporting test. Battery 98%; OS app data 36.77 MB cumulative at start (includes prior 1 Hz session). End results pending.",
+      "metrics": [
+        { "label": "Device", "value": "H7 (M26)" },
+        { "label": "Reporting interval", "value": "30 s" },
+        { "label": "Session start", "value": "19:09 NZ" },
+        { "label": "Battery at start", "value": "98%" },
+        { "label": "App data at start", "value": "36.77 MB (cumulative)" },
+        { "label": "Status", "value": "In progress" }
+      ],
+      "notes": [
+        "Record end battery % and OS app data total when the session finishes; session data = end cumulative minus 36.77 MB.",
+        "Compare to completed 1 Hz test on same handset: 96%→64% over 10.3 h (~3.1 %/h), 36 MB session data.",
+        "Prior A1 reference @ 30 s GPS: ~3.7 %/h (~27 h from full charge)."
+      ]
+    },
+    {
       "id": "battery-a1-a6-long-2026-06-02",
       "category": "battery",
       "date": "2026-06-02",

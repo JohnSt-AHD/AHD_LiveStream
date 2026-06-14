@@ -1,0 +1,27 @@
+{
+  "testId": "battery-h7-m26-30s-2026-06-14",
+  "status": "in_progress",
+  "deviceId": "H7",
+  "handset": "One NZ Smart M26",
+  "reportingIntervalSec": 30,
+  "recordedAt": "2026-06-14T07:09:00.000Z",
+  "recordedNz": "14 Jun 2026, 19:09",
+  "battery": {
+    "startPct": 98,
+    "startNz": "14 Jun 2026, 19:09",
+    "startIso": "2026-06-14T07:09:00.000Z",
+    "dataUsageMbAtStart": 36.77,
+    "currentPct": null,
+    "endNz": null,
+    "elapsedH": null,
+    "dropPct": null,
+    "drainPerH": null,
+    "dataUsageMbAtEnd": null,
+    "sessionDataMb": null
+  },
+  "notes": [
+    "30 s reporting interval configured on H7.",
+    "36.77 MB is OS cumulative app data at start — includes the earlier 1 Hz session; record end cumulative and compute delta when test finishes.",
+    "Compare results to completed 1 Hz test: ~3.1 %/h, 36 MB session data over 10.3 h."
+  ]
+}
