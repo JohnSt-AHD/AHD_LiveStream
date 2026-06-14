@@ -1,6 +1,49 @@
 {
-  "updated": "2026-06-04",
+  "updated": "2026-06-14",
   "reports": [
+    {
+      "id": "gps-h7-m26-2026-06-14",
+      "category": "gps",
+      "date": "2026-06-14",
+      "title": "H7 M26 vs H6 S21 — GPS moving test + battery (in progress)",
+      "summary": "14 Jun 2026: ~15 min drive at ~1 Hz GPS (11:30–11:45 NZ). M26 (H7) matched S21 fix rate with better accuracy. Battery test started ~06:45 NZ at 96%; preliminary drain estimate below — session still running.",
+      "pdfUrl": "/docs/M26-Field-Test-Report-2026-06-14.pdf",
+      "metrics": [
+        { "label": "H7 median accuracy", "value": "3.3 m" },
+        { "label": "H6 median accuracy", "value": "5.2 m" },
+        { "label": "Fix rate (both)", "value": "~1.0 Hz" },
+        { "label": "Track agreement", "value": "median 4.2 m" },
+        { "label": "H7 battery start", "value": "96% @ ~06:45 NZ" },
+        { "label": "H7 drain (prelim.)", "value": "~3.1 %/h" },
+        { "label": "H7 est. full charge", "value": "~32 h" }
+      ],
+      "charts": [
+        {
+          "id": "gps-accuracy",
+          "type": "bar",
+          "title": "Median GPS accuracy — moving test (m)",
+          "labels": ["H6 S21", "H7 M26"],
+          "values": [5.2, 3.3],
+          "unit": "m",
+          "color": ["#3b82f6", "#4ade80"]
+        },
+        {
+          "id": "battery-drain-prelim",
+          "type": "bar",
+          "title": "H7 battery drain (preliminary, %/h)",
+          "labels": ["H7 M26 (1 Hz)", "A1 ref (30 s)"],
+          "values": [3.1, 3.7],
+          "unit": "%/h",
+          "color": ["#4ade80", "#f59e0b"]
+        }
+      ],
+      "notes": [
+        "PDF report: M26 Field Test Report (download link above). Regenerate later today when battery session completes.",
+        "M26 (H7) is the One NZ quote handset; H6 is Samsung Galaxy S21 reference.",
+        "Battery figures are preliminary from 96% @ ~06:45 NZ through midday snapshot — update when more samples available.",
+        "Both devices production-ready at ~1 Hz for regatta tracking."
+      ]
+    },
     {
       "id": "battery-a1-a6-long-2026-06-02",
       "category": "battery",

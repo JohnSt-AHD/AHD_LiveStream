@@ -388,11 +388,16 @@
             .map((n) => `<li>${escapeHtml(n)}</li>`)
             .join('');
 
+        const pdfLink = report.pdfUrl
+            ? `<a class="doc-report-pdf" href="${escapeHtml(report.pdfUrl)}" target="_blank" rel="noopener">Download PDF</a>`
+            : '';
+
         article.innerHTML = `
             <div class="doc-report-head">
                 <span class="${categoryClass(report.category)}">${escapeHtml(report.category || 'report')}</span>
                 <h3>${escapeHtml(report.title)}</h3>
                 <span class="doc-report-date">${escapeHtml(report.date || '')}</span>
+                ${pdfLink}
             </div>
             <p class="doc-report-summary">${escapeHtml(report.summary || '')}</p>
             ${metricsHtml ? `<div class="doc-report-metrics">${metricsHtml}</div>` : ''}

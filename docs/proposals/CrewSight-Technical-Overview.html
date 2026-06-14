@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CrewSight — Technical overview</title>
+  <style>
+    @page { size: A4; margin: 14mm 14mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #0f172a;
+      font-size: 9.8pt;
+      line-height: 1.42;
+      margin: 0;
+    }
+    .cover {
+      page-break-after: always;
+      padding-top: 28mm;
+      min-height: 240mm;
+    }
+    .logo {
+      font-size: 34pt;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0e7490;
+      margin: 0;
+    }
+    .logo span { color: #164e63; font-weight: 600; }
+    .subtitle {
+      font-size: 14pt;
+      color: #475569;
+      margin: 10px 0 24px;
+      max-width: 420px;
+    }
+    .hero-box {
+      background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 100%);
+      border: 1px solid #99f6e4;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 24px 0;
+    }
+    .hero-box p { margin: 0; font-size: 11pt; color: #134e4a; }
+    h2 {
+      font-size: 12pt;
+      color: #0e7490;
+      margin: 16px 0 7px;
+      border-bottom: 2px solid #ccfbf1;
+      padding-bottom: 3px;
+      page-break-after: avoid;
+    }
+    h3 { font-size: 10.5pt; color: #155e75; margin: 12px 0 5px; }
+    p { margin: 0 0 7px; }
+    ul { margin: 4px 0 8px; padding-left: 17px; }
+    li { margin-bottom: 3px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 7px 0 10px;
+      font-size: 9.2pt;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfeff; font-weight: 600; }
+    .arch {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8.5pt;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      white-space: pre;
+      line-height: 1.35;
+      margin: 8px 0 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 8px 0 12px;
+    }
+    .card {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px 11px;
+      background: #fff;
+    }
+    .card h3 { margin-top: 0; font-size: 10pt; }
+    .pill {
+      display: inline-block;
+      background: #cffafe;
+      color: #0e7490;
+      font-size: 8pt;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .disclaimer {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 8.5pt;
+      color: #78350f;
+      margin-top: 14px;
+    }
+    footer {
+      margin-top: 12px;
+      font-size: 8pt;
+      color: #64748b;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+    }
+    .page-break { page-break-before: always; }
+    .byline { color: #64748b; font-size: 10pt; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+  <section class="cover">
+    <p class="logo">Crew<span>Sight</span></p>
+    <p class="subtitle">Live crew visibility &amp; fleet intelligence for rowing regattas, training, and broadcast.</p>
+    <div class="hero-box">
+      <p><strong>CrewSight</strong> connects on-water Android devices to Altitude HD’s cloud platform —
+      delivering real-time positions, hull motion events, zone awareness, and production-ready overlays
+      for race operations and live streaming.</p>
+    </div>
+    <p class="byline">Technical overview · Altitude HD · 13 June 2026</p>
+    <p class="byline">Platform: <strong>AHD - LiveStream</strong> · ahd-livestream.vercel.app</p>
+  </section>
+
+  <h2>What CrewSight delivers</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>On-water visibility</h3>
+      <ul>
+        <li>Live GPS positions for every equipped crew</li>
+        <li>Speed, heading, and recent track trails</li>
+        <li>Configurable reporting intervals (1 s – 30 s+)</li>
+        <li>Dual data sources: CrewSight recorder or Traccar trackers</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Operations intelligence</h3>
+      <ul>
+        <li>Fleet maps with club branding and device search</li>
+        <li>Geofenced zones — course, warm-up, hazard, marshal areas</li>
+        <li>Zone-entry alerts and fleet statistics bar</li>
+        <li>Session history and route replay</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Hull &amp; crew event detection</h3>
+      <ul>
+        <li>Accelerometer-based hull event signals from the device</li>
+        <li>Capsize / SOS device alarms surfaced on the map</li>
+        <li>Sudden-stop detection after recent rowing speed</li>
+        <li>Audible ops alert with acknowledge workflow</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Broadcast &amp; regatta integration</h3>
+      <ul>
+        <li>Transparent vMix browser overlays (1920×1080)</li>
+        <li>RowIT CSV feeds — draw, results, progression, logos</li>
+        <li>CV leader-line overlay from drone computer vision</li>
+        <li>Regatta dashboards for flat-water and beach sprints</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>System architecture</h2>
+  <div class="arch">CrewSight GPS (Android)          Traccar GPS devices (optional)
+        │  HTTPS POST                         │  API poll
+        ▼                                     ▼
+   Recorder ingest API  ◄──────────►  AHD - LiveStream (Vercel)
+   (Neon Postgres)                    ├── Fleet maps &amp; zone alerts
+        │                             ├── Operations monitor
+        │                             ├── vMix overlays &amp; race graphics
+        ▼                             └── CV position API (Vercel KV)
+   Session storage · history · device registry</div>
+  <p>
+    CrewSight devices upload JSON samples to the recorder ingest endpoint. The AHD - LiveStream hub
+    polls live snapshots for maps, overlays, and alerts. Operators choose <strong>Recorder (CrewSight)</strong>
+    or <strong>Traccar</strong> as the position source per deployment.
+  </p>
+
+  <h2>CrewSight GPS — mobile app</h2>
+  <p>Native Android app for regatta and training sessions on supplied GPS handsets.</p>
+  <table>
+    <thead><tr><th>Capability</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>GPS tracking</td><td>Latitude, longitude, speed, heading, fix time; configurable interval</td></tr>
+      <tr><td>Motion sensors</td><td>Accelerometer — tilt and hull motion for event detection</td></tr>
+      <tr><td>Device telemetry</td><td>Battery %, session heartbeat, device ID</td></tr>
+      <tr><td>Upload path</td><td>HTTPS batching (~3 s flush) to cloud ingest API</td></tr>
+      <tr><td>Typical ingest rate</td><td>~0.5 Hz at 30 s GPS · up to 1 Hz for high-rate modes</td></tr>
+      <tr><td>Field endurance</td><td>~6–8 h+ per charge (device-dependent, typical regatta day)</td></tr>
+    </tbody>
+  </table>
+  <p><span class="pill">Install</span> Side-loaded APK · ingest URL configured once · “Test upload connection” before going afloat</p>
+
+  <div class="page-break"></div>
+
+  <h2>Cloud platform — AHD - LiveStream</h2>
+  <h3>Fleet maps</h3>
+  <ul>
+    <li><strong>Altitude HD fleet map</strong> — live devices, route history, custom markers, speed screen</li>
+    <li><strong>Club / venue maps</strong> — branded fleet views (e.g. Karāpiro, RNZ RowSafe-style layout)</li>
+    <li><strong>Beach Sprints map</strong> — coastal course, buoys, timing lines, head-to-head analysis</li>
+    <li>Colour-coded speed trails · predict-to-now smoothing · map refresh rate control</li>
+  </ul>
+
+  <h3>Geofencing &amp; zone alerts</h3>
+  <ul>
+    <li>Import Traccar geofences or define course boundaries</li>
+    <li>Zone types: course, warm-up line, hazard, marshal — colour-coded on map</li>
+    <li>Devices outside designated zones trigger visual alerts and stats-bar counts</li>
+    <li>Optional email notifications via Resend for zone events (configurable recipients)</li>
+  </ul>
+
+  <h3>Hull &amp; crew event panel</h3>
+  <p>Operations maps include a dedicated event panel for on-water incidents:</p>
+  <ul>
+    <li>Device-reported SOS / capsize alarm attributes</li>
+    <li>Sudden stop after confirmed rowing speed (speed &gt; 1.2 m/s, then &lt; 0.35 m/s for 45 s)</li>
+    <li>Map marker flash, fleet list highlight, audible tone for new unacknowledged events</li>
+    <li>One-click acknowledge — clears until the next event on that device</li>
+  </ul>
+
+  <h2>Operations monitor</h2>
+  <p>Web dashboard for race control and technical staff (recorder backend).</p>
+  <table>
+    <thead><tr><th>Function</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Live fleet map</td><td>All active devices with status and last fix age</td></tr>
+      <tr><td>Device list</td><td>Search, filter, ingest rate, battery level</td></tr>
+      <tr><td>Geofence editor</td><td>Define and manage course zones</td></tr>
+      <tr><td>Regatta messages</td><td>Broadcast text to device sessions</td></tr>
+      <tr><td>History API</td><td>Route replay, session export, Postgres-backed retention</td></tr>
+      <tr><td>Storage monitor</td><td>Database usage against configurable quota</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Data captured per sample</h2>
+  <table>
+    <thead><tr><th>Field group</th><th>Fields</th></tr></thead>
+    <tbody>
+      <tr><td>Position</td><td>GPS lat/lng, speed, heading, accuracy, fix timestamp</td></tr>
+      <tr><td>Motion</td><td>Accelerometer axes, tilt, stroke/motion indicators (mode-dependent)</td></tr>
+      <tr><td>Events</td><td>Hull event flags, device alarm attributes, capsize signal</td></tr>
+      <tr><td>Device</td><td>Device ID, session ID, battery %, heartbeat</td></tr>
+      <tr><td>Optional (RNZ recorder)</td><td>Heart rate where enabled on full recorder app</td></tr>
+    </tbody>
+  </table>
+  <p class="muted" style="color:#64748b;font-size:8.5pt">
+    At 30 s GPS, expect ~0.5 Hz ingest and ~43k samples/device/24 h. Cellular data per device is typically a few MB per session.
+  </p>
+
+  <div class="page-break"></div>
+
+  <h2>Broadcast &amp; production tools</h2>
+  <h3>vMix overlays (transparent 1920×1080)</h3>
+  <ul>
+    <li>Lower thirds, draw boards, results, leader lanes, live tracking graphics</li>
+    <li>Keyboard triggers from hub or direct on overlay pages</li>
+    <li>RowIT regatta code drives CSV data — club logos from AHD_lookup</li>
+    <li>Weather map, speed charts, and venue-specific layouts (Milford, Karāpiro, beach sprints)</li>
+  </ul>
+
+  <h3>CV leader line</h3>
+  <p>Computer-vision position from the drone laptop posts to <code>/api/cv-position</code> (Vercel KV). vMix polls the transparent leader overlay — same streamId as GPS / live production. TouchDesigner OSC path remains available locally.</p>
+
+  <h3>Regatta dashboards</h3>
+  <ul>
+    <li>Flat-water regatta dashboard — RowIT progression, heat results, club logos</li>
+    <li>Beach Sprints regatta dashboard — knockout trees, CSV archive fallback</li>
+    <li>Daily CSV snapshots archived locally if RowIT links go offline</li>
+  </ul>
+
+  <h2>Connectivity &amp; deployment</h2>
+  <table>
+    <thead><tr><th>Component</th><th>Recommendation</th></tr></thead>
+    <tbody>
+      <tr><td>Handset</td><td>Supplied 4G Android GPS handset — pre-configured for CrewSight</td></tr>
+      <tr><td>Cellular</td><td>Managed IoT SIM — regatta-day activation · shared APN with public HTTPS</td></tr>
+      <tr><td>Cloud</td><td>Vercel (AHD - LiveStream) + Neon Postgres (recorder) + Vercel KV (CV positions)</td></tr>
+      <tr><td>Handset settings</td><td>Location “Allow all the time” · battery unrestricted · notifications on</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Reporting rate profiles</h2>
+  <p>CrewSight supports flexible upload intervals to balance visibility, battery, and data cost:</p>
+  <table>
+    <thead><tr><th>Mode</th><th>Interval</th><th>Typical use</th></tr></thead>
+    <tbody>
+      <tr><td>High visibility</td><td>1 s</td><td>Start sequences, finals, incident monitoring</td></tr>
+      <tr><td>Active racing</td><td>5 s</td><td>Course tracking during heats and semis</td></tr>
+      <tr><td>Standard</td><td>30 s</td><td>Training, warm-up, long sessions — best battery life</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Why CrewSight</h2>
+  <ul>
+    <li><strong>End-to-end</strong> — device app, cloud ingest, ops maps, and broadcast overlays from one team</li>
+    <li><strong>Regatta-ready</strong> — RowIT integration, club logos, multi-venue support</li>
+    <li><strong>Scalable</strong> — tested architecture to 270+ concurrent devices</li>
+    <li><strong>Production-aware</strong> — built by Altitude HD for live streaming and race operations</li>
+  </ul>
+
+  <div class="disclaimer">
+    <strong>Important.</strong> CrewSight is a situational-awareness and fleet-visibility platform for rowing operations
+    and broadcast. It is not certified rescue equipment and does not replace official race rules, patrol boats,
+    qualified officials, or personal flotation requirements. Event detection features assist operators in identifying
+    possible on-water incidents — response decisions remain with event organisers and qualified personnel.
+  </div>
+
+  <footer>
+    Altitude HD · CrewSight · ged@altitudehd.nz · 28 Harvey Street South, Tauranga ·
+    Technical document 13 June 2026 · Commercial overview available on request.
+  </footer>
+</body>
+</html>

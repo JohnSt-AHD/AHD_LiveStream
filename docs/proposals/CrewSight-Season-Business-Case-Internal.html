@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CrewSight Season — Internal business case</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; font-size: 9.5pt; color: #0f172a; line-height: 1.36; }
+    h1 { font-size: 16pt; color: #0e7490; margin: 0 0 4px; }
+    h2 { font-size: 11pt; color: #0e7490; margin: 14px 0 6px; border-bottom: 1px solid #ccfbf1; page-break-after: avoid; }
+    h3 { font-size: 10pt; color: #155e75; margin: 10px 0 4px; }
+    table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9pt; }
+    th, td { border: 1px solid #cbd5e1; padding: 5px 7px; text-align: left; vertical-align: top; }
+    th { background: #ecfeff; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .conf { color: #b45309; font-weight: 600; font-size: 9pt; }
+    .rec { background: #ecfeff; padding: 10px; border-left: 4px solid #0e7490; margin: 10px 0; font-size: 9.3pt; }
+    .note { color: #64748b; font-size: 8.5pt; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+  <p class="conf">Commercial in confidence — Altitude HD internal</p>
+  <h1>CrewSight — Season business case</h1>
+  <p>4-month season · 8 regattas · 32 tracking days · Handsets @ $130.00 · Cloud infra included in net margin</p>
+
+  <h2>Profit summary (gross vs net of cloud)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th class="num">Devices</th>
+        <th class="num">Handset profit</th>
+        <th class="num">Platform fee</th>
+        <th class="num">Cloud cost</th>
+        <th class="num">Platform (net)</th>
+        <th class="num">Net profit</th>
+        <th class="num">Revenue</th>
+        <th class="num">Net margin %</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>50-device tier</td>
+        <td class="num">50</td>
+        <td class="num">$2,195.50</td>
+        <td class="num">$6,000.00</td>
+        <td class="num">$127.75</td>
+        <td class="num">$5,872.25</td>
+        <td class="num">$8,067.75</td>
+        <td class="num">$13,500.00</td>
+        <td class="num">59.8%</td>
+      </tr>
+      
+      <tr>
+        <td>270-device tier</td>
+        <td class="num">270</td>
+        <td class="num">$11,855.70</td>
+        <td class="num">$6,000.00</td>
+        <td class="num">$188.82</td>
+        <td class="num">$5,811.18</td>
+        <td class="num">$17,666.88</td>
+        <td class="num">$46,500.00</td>
+        <td class="num">38.0%</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="note">Platform fee: $6,000.00 flat per season (both tiers). Revenue column uses <strong>data-included</strong> pricing (4-month SIM). Net margin = handset margin + platform fee − cloud.</p>
+
+  <h2>Cellular data — 4-month season vs alternatives (ex GST)</h2>
+  <table>
+    <thead><tr><th></th><th class="num">50 devices</th><th class="num">270 devices</th></tr></thead>
+    <tbody>
+      <tr><td>Per SIM / month</td><td class="num">$5.00</td><td class="num">$5.00</td></tr>
+      <tr><td>Season months billed</td><td class="num">4</td><td class="num">4</td></tr>
+      <tr><th>Data included — full season (4 mo × $5.00 × devices)</th><th class="num">$1,000.00</th><th class="num">$5,400.00</th></tr>
+      <tr><td>Regatta-only reference (32 days prorated — not customer default)</td><td class="num">$266.67</td><td class="num">$1,440.00</td></tr>
+      <tr><td>Data excluded — customer SIM (AHD cost)</td><td class="num">$0.00</td><td class="num">$0.00</td></tr>
+      <tr><td>Saving: excluded vs included (customer)</td><td class="num">$1,000.00</td><td class="num">$5,400.00</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Customer pricing — data included vs excluded (ex GST)</h2>
+  <table>
+    <thead><tr><th></th><th class="num">50 — included</th><th class="num">50 — excluded</th><th class="num">270 — included</th><th class="num">270 — excluded</th></tr></thead>
+    <tbody>
+      <tr><td>Handsets @ $130.00</td><td class="num">$6,500.00</td><td class="num">$6,500.00</td><td class="num">$35,100.00</td><td class="num">$35,100.00</td></tr>
+      <tr><td>Cellular (4 mo)</td><td class="num">$1,000.00</td><td class="num">—</td><td class="num">$5,400.00</td><td class="num">—</td></tr>
+      <tr><td>CrewSight platform (season)</td><td class="num">$6,000.00</td><td class="num">$6,000.00</td><td class="num">$6,000.00</td><td class="num">$6,000.00</td></tr>
+      <tr><th>Season total</th><td class="num">$13,500.00</td><td class="num">$12,500.00</td><td class="num">$46,500.00</td><td class="num">$41,100.00</td></tr>
+      <tr><th>+ optional mounting @ $50.00</th><td class="num">$16,000.00</td><td class="num">$15,000.00</td><td class="num">$60,000.00</td><td class="num">$54,600.00</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cloud &amp; storage costs (season estimate)</h2>
+  <p class="note">Stack: <strong>Vercel Pro</strong> (AHD-LiveStream + rowing-app-recorder-pwa) · <strong>Neon Postgres</strong> (ingest/history) · <strong>Upstash Redis</strong> (CV positions, alert state) · Resend email (negligible).</p>
+  <div class="grid">
+    <div>
+      <h3>50-device pilot</h3>
+      <table><tbody>
+      <tr><td>Vercel Pro (AHD-LiveStream + recorder ingest, 4 mo @ $20)</td><td class="num">$80.00</td></tr>
+      <tr><td>Neon Postgres (~4.6 GB season samples @ $5/mo + storage)</td><td class="num">$22.75</td></tr>
+      <tr><td>Upstash Redis / KV (CV positions, alert state)</td><td class="num">$20.00</td></tr>
+      <tr><td>Bandwidth &amp; CDN (maps, overlays)</td><td class="num">$5.00</td></tr>
+      <tr><td>Serverless overage (~10.9M ingest invocations, conservative)</td><td class="num">$0.00</td></tr>
+      <tr><th>Cloud subtotal (season)</th><th class="num">$127.75</th></tr></tbody></table>
+      <p class="note">~10.9M ingest samples · ~4.6 GB Postgres (season cumulative)</p>
+    </div>
+    <div>
+      <h3>270-device fleet</h3>
+      <table><tbody>
+      <tr><td>Vercel Pro (AHD-LiveStream + recorder ingest, 4 mo @ $20)</td><td class="num">$80.00</td></tr>
+      <tr><td>Neon Postgres (~24.8 GB season samples @ $5/mo + storage)</td><td class="num">$34.86</td></tr>
+      <tr><td>Upstash Redis / KV (CV positions, alert state)</td><td class="num">$40.00</td></tr>
+      <tr><td>Bandwidth &amp; CDN (maps, overlays)</td><td class="num">$15.00</td></tr>
+      <tr><td>Serverless overage (~59.1M ingest invocations, conservative)</td><td class="num">$18.96</td></tr>
+      <tr><th>Cloud subtotal (season)</th><th class="num">$188.82</th></tr></tbody></table>
+      <p class="note">~59.1M ingest samples · ~24.8 GB Postgres (season cumulative)</p>
+    </div>
+  </div>
+  <p class="note">
+    Assumptions: 6,840 uploads/device/regatta day · ~450 B stored/sample (GPS, motion, events) ·
+    Vercel Pro $20/mo × 4 months · Neon Launch $5/mo + $0.30/GB-month ·
+    Purge old sessions between regattas to control storage. Default 512 MB monitor quota will be exceeded at full fleet — budget Neon Launch and data management.
+  </p>
+
+  <h2>Handset economics</h2>
+  <table>
+    <thead><tr><th></th><th class="num">Per unit</th><th class="num">50 fleet</th><th class="num">270 fleet</th></tr></thead>
+    <tbody>
+      <tr><td>One NZ cost (Smart M26)</td><td class="num">$86.09</td><td class="num">$4,304.50</td><td class="num">$23,244.30</td></tr>
+      <tr><td>Customer sell price</td><td class="num">$130.00</td><td class="num">$6,500.00</td><td class="num">$35,100.00</td></tr>
+      <tr><th>Handset gross profit</th><th class="num">$43.91</th><th class="num">$2,195.50</th><th class="num">$11,855.70</th></tr>
+    </tbody>
+  </table>
+
+  <div class="grid">
+    <div>
+      <h3>50-device — data included</h3>
+      <table><tbody>
+      <tr><td>Handsets — cost ($86.09 × 50)</td><td class="num">$4,304.50</td></tr>
+      <tr><td>Handsets — sell ($130.00 × 50)</td><td class="num">$6,500.00</td></tr>
+      <tr><td>Handset margin ($43.91/unit)</td><td class="num">$2,195.50</td></tr>
+      <tr><td>IoT data (4 mo @ $5.00/SIM/mo × 50)</td><td class="num">$1,000.00</td></tr>
+      <tr><td>CrewSight platform ($6,000.00 season fee)</td><td class="num">$7,000.00</td></tr>
+      <tr><th>Customer total (ex GST)</th><th class="num">$13,500.00</th></tr>
+      <tr><th>Customer total (incl GST)</th><th class="num">$15,525.00</th></tr>
+      <tr><td>Optional boat mounting ($50.00 × 50)</td><td class="num">$2,500.00</td></tr>
+      <tr><th>With mounting (ex GST)</th><th class="num">$16,000.00</th></tr></tbody></table>
+    </div>
+    <div>
+      <h3>50-device — data excluded</h3>
+      <table><tbody>
+      <tr><td>Handsets — cost ($86.09 × 50)</td><td class="num">$4,304.50</td></tr>
+      <tr><td>Handsets — sell ($130.00 × 50)</td><td class="num">$6,500.00</td></tr>
+      <tr><td>Handset margin ($43.91/unit)</td><td class="num">$2,195.50</td></tr>
+      <tr><td>IoT data (customer-provided — excluded)</td><td class="num">$0.00</td></tr>
+      <tr><td>CrewSight platform ($6,000.00 season fee only)</td><td class="num">$6,000.00</td></tr>
+      <tr><th>Customer total (ex GST)</th><th class="num">$12,500.00</th></tr>
+      <tr><th>Customer total (incl GST)</th><th class="num">$14,375.00</th></tr>
+      <tr><td>Optional boat mounting ($50.00 × 50)</td><td class="num">$2,500.00</td></tr>
+      <tr><th>With mounting (ex GST)</th><th class="num">$15,000.00</th></tr></tbody></table>
+    </div>
+  </div>
+  <div class="grid">
+    <div>
+      <h3>270-device — data included</h3>
+      <table><tbody>
+      <tr><td>Handsets — cost ($86.09 × 270)</td><td class="num">$23,244.30</td></tr>
+      <tr><td>Handsets — sell ($130.00 × 270)</td><td class="num">$35,100.00</td></tr>
+      <tr><td>Handset margin ($43.91/unit)</td><td class="num">$11,855.70</td></tr>
+      <tr><td>IoT data (4 mo @ $5.00/SIM/mo × 270)</td><td class="num">$5,400.00</td></tr>
+      <tr><td>CrewSight platform ($6,000.00 season fee)</td><td class="num">$11,400.00</td></tr>
+      <tr><th>Customer total (ex GST)</th><th class="num">$46,500.00</th></tr>
+      <tr><th>Customer total (incl GST)</th><th class="num">$53,475.00</th></tr>
+      <tr><td>Optional boat mounting ($50.00 × 270)</td><td class="num">$13,500.00</td></tr>
+      <tr><th>With mounting (ex GST)</th><th class="num">$60,000.00</th></tr></tbody></table>
+    </div>
+    <div>
+      <h3>270-device — data excluded</h3>
+      <table><tbody>
+      <tr><td>Handsets — cost ($86.09 × 270)</td><td class="num">$23,244.30</td></tr>
+      <tr><td>Handsets — sell ($130.00 × 270)</td><td class="num">$35,100.00</td></tr>
+      <tr><td>Handset margin ($43.91/unit)</td><td class="num">$11,855.70</td></tr>
+      <tr><td>IoT data (customer-provided — excluded)</td><td class="num">$0.00</td></tr>
+      <tr><td>CrewSight platform ($6,000.00 season fee only)</td><td class="num">$6,000.00</td></tr>
+      <tr><th>Customer total (ex GST)</th><th class="num">$41,100.00</th></tr>
+      <tr><th>Customer total (incl GST)</th><th class="num">$47,265.00</th></tr>
+      <tr><td>Optional boat mounting ($50.00 × 270)</td><td class="num">$13,500.00</td></tr>
+      <tr><th>With mounting (ex GST)</th><th class="num">$54,600.00</th></tr></tbody></table>
+    </div>
+  </div>
+
+  <h2>Full delivery cost vs revenue (ex GST)</h2>
+  <table>
+    <thead><tr><th></th><th class="num">50 incl.</th><th class="num">50 excl.</th><th class="num">270 incl.</th><th class="num">270 excl.</th></tr></thead>
+    <tbody>
+      <tr><td>Handset cost (One NZ)</td><td class="num">$4,304.50</td><td class="num">$4,304.50</td><td class="num">$23,244.30</td><td class="num">$23,244.30</td></tr>
+      <tr><td>IoT SIMs (4 months)</td><td class="num">$1,000.00</td><td class="num">$0.00</td><td class="num">$5,400.00</td><td class="num">$0.00</td></tr>
+      <tr><td>Cloud &amp; storage (season)</td><td class="num">$127.75</td><td class="num">$127.75</td><td class="num">$188.82</td><td class="num">$188.82</td></tr>
+      <tr><th>Total delivery cost</th><td class="num">$5,432.25</td><td class="num">$4,432.25</td><td class="num">$28,833.12</td><td class="num">$23,433.12</td></tr>
+      <tr><td>Customer revenue</td><td class="num">$13,500.00</td><td class="num">$12,500.00</td><td class="num">$46,500.00</td><td class="num">$41,100.00</td></tr>
+      <tr><th>Net profit (after cloud + SIM)</th><td class="num">$8,067.75</td><td class="num">$8,067.75</td><td class="num">$17,666.88</td><td class="num">$17,666.88</td></tr>
+      <tr><th>+ optional mounting ($50.00/unit)</th><td class="num">$2,500.00</td><td class="num">$2,500.00</td><td class="num">$13,500.00</td><td class="num">$13,500.00</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Invoice structure</h2>
+  <table>
+    <thead><tr><th>Invoice</th><th class="num">50 incl.</th><th class="num">50 excl.</th><th class="num">270 incl.</th><th class="num">270 excl.</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Invoice 1 — Handsets (CAPEX)</strong></td>
+        <td class="num">$7,475.00</td>
+        <td class="num">$7,475.00</td>
+        <td class="num">$40,365.00</td>
+        <td class="num">$40,365.00</td>
+      </tr>
+      <tr>
+        <td><strong>Invoice 2 — CrewSight season</strong> (platform ± 4-mo data)</td>
+        <td class="num">$8,050.00</td>
+        <td class="num">$6,900.00</td>
+        <td class="num">$13,110.00</td>
+        <td class="num">$6,900.00</td>
+      </tr>
+      <tr>
+        <td><strong>Optional — boat mounting</strong></td>
+        <td class="num">$2,875.00</td>
+        <td class="num">$2,875.00</td>
+        <td class="num">$15,525.00</td>
+        <td class="num">$15,525.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rec">
+    <strong>Recommendation:</strong> Quote <strong>data included</strong> for turnkey ($53,475.00 incl GST, 270 fleet) or <strong>data excluded</strong> if customer has own SIMs ($47,265.00 incl GST).
+    Mounting optional at $50.00/boat. Regatta-only SIM ($1,440.00 internal) saves $3,960.00 vs full season but is not the default customer offer.
+  </div>
+
+  <h2>Cellular &amp; API load check</h2>
+  <p class="note">Cellular: ~267 MB/day (50) · ~1.44 GB/day (270) — within One NZ 500 MB/SIM pool. API: up to ~270 ingest POST/s during 1 s reporting hour (270 fleet). Serverless likely within Vercel Pro credits; overage modeled conservatively above.</p>
+
+  <footer style="margin-top:12px;font-size:8.5pt;color:#64748b">Generated 2026-06-12 · CrewSight · AHD - LiveStream</footer>
+</body>
+</html>

@@ -6,3 +6,6 @@
 
 # Regatta archive run reports (manifest + CSVs are committed)
 public/data/archives/_snapshot-*.json
+
+# Google Drive service account keys (see secrets/google-drive-service-account.example.json)
+secrets/google-drive-service-account.json

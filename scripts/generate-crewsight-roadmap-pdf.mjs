@@ -1,0 +1,650 @@
+#!/usr/bin/env node
+/**
+ * Generate CrewSight phased rollout & governance plan PDF.
+ * Usage: node scripts/generate-crewsight-roadmap-pdf.mjs
+ */
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { uploadPdfToDrive } from './lib/upload-proposal-to-drive.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(__dirname, '..');
+const OUT_DIR = join(ROOT, 'docs', 'proposals');
+
+const GST = 0.15;
+const HANDSET_SELL = 130;
+const HANDSET_COST = 86.09;
+const PLATFORM_FEE = 6000;
+const SIM_MONTH = 5;
+const SEASON_MONTHS = 4;
+const MOUNT_SELL = 50;
+/** Field runtime estimate — Smart M26 5,000 mAh; validated against Samsung A06 in CrewSight testing. */
+const BATTERY_MAH = 5000;
+const FIELD_BATTERY_HOURS = 15;
+
+const REGATTAS = [
+  { start: '2026-09-19', end: '2026-09-20', label: '19–20 Sep 2026', name: 'New Zealand Master Rowing', phase: 'PoC' },
+  { start: '2026-11-14', end: '2026-11-15', label: '14–15 Nov 2026', name: 'KRI Memorial Rowing Regatta', phase: '1' },
+  { start: '2026-11-28', end: '2026-11-29', label: '28–29 Nov 2026', name: 'KRI Club Regatta', phase: '1' },
+  { start: '2026-12-11', end: '2026-12-13', label: '11–13 Dec 2026', name: 'KRI Christmas Regatta', phase: '1' },
+  { start: '2027-01-29', end: '2027-01-31', label: '29–31 Jan 2027', name: 'North Island Rowing Champs', phase: '2' },
+  { start: '2027-02-26', end: '2027-02-28', label: '26–28 Feb 2027', name: 'North Island Secondary School Rowing Regatta', phase: '2' },
+  { start: '2027-03-15', end: '2027-03-20', label: '15–20 Mar 2027', name: 'Maadi Cup', phase: '2' },
+];
+
+function money(n, { gst = false } = {}) {
+  const v = gst ? n * (1 + GST) : n;
+  return `$${v.toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function tierCost(devices, { simMonths = SEASON_MONTHS, includePlatform = true } = {}) {
+  const handsets = devices * HANDSET_SELL;
+  const sim = devices * SIM_MONTH * simMonths;
+  const platform = includePlatform ? PLATFORM_FEE : 0;
+  const excluded = handsets + platform;
+  const included = excluded + sim;
+  return { devices, handsets, sim, platform, excluded, included };
+}
+
+function roadmapHtml() {
+  const date = new Date().toLocaleDateString('en-NZ', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const pocDevices = 16;
+  const phase1Devices = 50;
+  const phase2AddDevices = 50;
+  const fleetAfterPhase2 = phase1Devices + phase2AddDevices;
+  const phase3AddDevices = 270 - fleetAfterPhase2; // 170 additional units
+
+  const phase1 = tierCost(phase1Devices);
+  const phase2Add = tierCost(phase2AddDevices, { simMonths: 2, includePlatform: false });
+  const phase3Add = tierCost(phase3AddDevices); // 2027–28: incremental handsets + SIM + platform
+  const season100 = {
+    handsets: phase1.handsets + phase2Add.handsets,
+    sim: phase1.sim + phase2Add.sim,
+    platform: PLATFORM_FEE,
+    excluded: phase1.handsets + phase2Add.handsets + PLATFORM_FEE,
+    included: phase1.handsets + phase2Add.handsets + phase1.sim + phase2Add.sim + PLATFORM_FEE,
+  };
+  const season270Greenfield = tierCost(270); // reference only
+  const pocAhdCost = pocDevices * HANDSET_COST + pocDevices * SIM_MONTH * SEASON_MONTHS;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CrewSight — Phased rollout &amp; governance plan</title>
+  <style>
+    @page { size: A4; margin: 14mm 14mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #0f172a;
+      font-size: 9.8pt;
+      line-height: 1.42;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #0e7490;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .brand { font-size: 20pt; font-weight: 800; color: #0e7490; margin: 0; letter-spacing: -0.02em; }
+    .brand-sub { font-weight: 600; color: #164e63; font-size: 10.5pt; margin: 2px 0 0; }
+    .tagline { color: #64748b; margin: 4px 0 0; font-size: 9.5pt; }
+    h2 {
+      font-size: 11pt;
+      color: #0e7490;
+      margin: 16px 0 6px;
+      border-bottom: 1px solid #ccfbf1;
+      padding-bottom: 3px;
+      page-break-after: avoid;
+    }
+    h3 { font-size: 10pt; color: #155e75; margin: 10px 0 4px; page-break-after: avoid; }
+    p { margin: 0 0 8px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      font-size: 9pt;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfeff; font-weight: 600; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .highlight {
+      background: #ecfeff;
+      border: 1px solid #99f6e4;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 10px 0;
+    }
+    .phase-poc { background: #fef3c7; }
+    .phase-1 { background: #dbeafe; }
+    .phase-2 { background: #d1fae5; }
+    .phase-3 { background: #ede9fe; }
+    ul { margin: 4px 0 8px; padding-left: 18px; }
+    li { margin-bottom: 3px; }
+    .faq dt { font-weight: 600; color: #0f766e; margin-top: 8px; }
+    .faq dd { margin: 2px 0 0 0; padding-left: 0; }
+    .muted { color: #64748b; font-size: 8.5pt; }
+    .disclaimer {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 8.5pt;
+      color: #78350f;
+      margin: 10px 0;
+    }
+    .legal {
+      font-size: 8.5pt;
+      color: #334155;
+      line-height: 1.38;
+    }
+    .legal h3 { font-size: 9pt; color: #0f766e; margin: 10px 0 4px; }
+    .legal ul { margin: 4px 0 6px; padding-left: 16px; }
+    .legal li { margin-bottom: 2px; }
+    .timeline { border-left: 3px solid #0e7490; margin: 8px 0 8px 8px; padding-left: 14px; }
+    .timeline-item { margin-bottom: 10px; }
+    .timeline-item strong { color: #0e7490; }
+    .page-break { page-break-before: always; }
+    footer {
+      margin-top: 14px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="brand">CrewSight</p>
+    <p class="brand-sub">Phased rollout &amp; governance plan · 2026–27 season and beyond</p>
+    <p class="tagline">Prepared by Altitude HD · ${date} · aligned with AHD LiveStream regatta calendar</p>
+  </header>
+
+  <div class="highlight">
+    <strong>Suggested path:</strong> Free proof-of-concept at NZ Master Rowing (16 units) → KRI purchases <strong>50 devices at its own risk</strong> (no grant) for early-season regattas →
+    ~50 additional units for the second half, with <strong>grant funding sought for the cumulative 100-device programme</strong> pending Phase 1 success →
+    <strong>+170 devices</strong> in 2027–28 (100 already in operation) for full <strong>270-device</strong> fleet. Timeline, costs, funding model, and governance below.
+  </div>
+
+  <h2>2026–27 regatta calendar</h2>
+  <p class="muted">Source: Altitude HD LiveStream hub calendar (ahd-livestream.vercel.app).</p>
+  <table>
+    <thead>
+      <tr><th>Dates</th><th>Event</th><th>Phase</th><th>Fleet target</th></tr>
+    </thead>
+    <tbody>
+      ${REGATTAS.map((r) => {
+        const fleet =
+          r.phase === 'PoC' ? '16 (AHD loan)' :
+          r.phase === '1' ? '50' : '~100';
+        const cls = r.phase === 'PoC' ? 'phase-poc' : r.phase === '1' ? 'phase-1' : 'phase-2';
+        const phaseLabel =
+          r.phase === 'PoC' ? 'PoC — free trial' :
+          r.phase === '1' ? 'Phase 1 — first purchase' : 'Phase 2 — mid-season expansion';
+        return `<tr class="${cls}"><td>${r.label}</td><td>${r.name}</td><td>${phaseLabel}</td><td class="num">${fleet}</td></tr>`;
+      }).join('')}
+      <tr class="phase-3"><td>2027–28 season</td><td>Full national programme (Karāpiro + Ruataniwha + partners)</td><td>Phase 3 — +170 units (270 total)</td><td class="num">270</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Rollout timeline</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <strong>Aug–Sep 2026 — PoC preparation</strong><br />
+      Altitude HD provisions 16 GPS handsets, CrewSight app, cloud hosting, and IoT connectivity.
+      On-water validation, charging setup trial, ops monitor training with KRI volunteers.
+    </div>
+    <div class="timeline-item">
+      <strong>19–20 Sep 2026 — NZ Master Rowing (PoC)</strong><br />
+      <strong>No charge to Karāpiro Rowing.</strong> Demonstrate fleet maps, zone alerts, hull events, and live-stream integration.
+      Debrief within 2 weeks; go/no-go on Phase 1 purchase.
+    </div>
+    <div class="timeline-item">
+      <strong>Oct 2026 — Phase 1 decision &amp; procurement</strong><br />
+      KRI commits to 50 handsets (+ optional mounting kits) <strong>without grant funding — KRI bears the risk</strong>.
+      Invoice 1 (CAPEX handsets) + Invoice 2 (season platform ± data). Industrial charging rack installed at number hut.
+      Device IDs and APN checks completed before Memorial. Begin grant application scoping for Phase 2 (contingent on PoC/Phase 1 outcomes).
+    </div>
+    <div class="timeline-item">
+      <strong>Nov–Dec 2026 — Phase 1 operations (50 devices)</strong><br />
+      KRI Memorial, Club Regatta, Christmas Regatta. KRI owns charging, daily prep, and on-site ops.
+      Altitude HD provides platform support during events and ingest monitoring.
+    </div>
+    <div class="timeline-item">
+      <strong>Jan 2027 — Phase 2 expansion decision</strong><br />
+      Subject to Phase 1 success, procure ~50 additional handsets ahead of North Island Champs.
+      <strong>Grant funding target:</strong> support the cumulative <strong>100-device</strong> programme for the balance of 2026–27
+      (Phase 2 hardware + connectivity; platform already paid in Phase 1). SIMs activated for balance of season (≈2 months).
+      Cumulative fleet ~100 for NICC, NISS, and Maadi block. If grant is not secured, KRI board decides whether to self-fund Phase 2 or defer.
+    </div>
+    <div class="timeline-item">
+      <strong>Mar 2027 — Season review</strong><br />
+      Review device condition, data usage, charging workflow, and partner hire model. Plan 2027–28 full 270 fleet and
+      annual service agreement.
+    </div>
+    <div class="timeline-item">
+      <strong>2027–28 season — Phase 3 expansion (+170 units)</strong><br />
+      Purchase <strong>170 additional handsets</strong> (100 already owned and operational from 2026–27) to reach 270 total.
+      Deploy across Karāpiro programme and partner events (incl. Lake Ruataniwha via hire model). Second charging cabinet / mobile case;
+      spares pool; annual CrewSight service fee (see below). Grant or RNZ capital partnerships may be revisited for national scale.
+    </div>
+  </div>
+
+  <h2>Funding model</h2>
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>Devices</th><th>Funding approach</th><th>Rationale</th></tr>
+    </thead>
+    <tbody>
+      <tr class="phase-poc">
+        <td><strong>PoC</strong></td><td class="num">16</td>
+        <td>Altitude HD — no charge to KRI</td>
+        <td>Demonstrate value before any KRI capital commitment</td>
+      </tr>
+      <tr class="phase-1">
+        <td><strong>Phase 1</strong></td><td class="num">50</td>
+        <td><strong>KRI self-funded — no grant</strong></td>
+        <td>KRI accepts risk on initial fleet; proves ops model at Memorial, Club, and Christmas regattas</td>
+      </tr>
+      <tr class="phase-2">
+        <td><strong>Phase 2</strong></td><td class="num">+50 (100 total)</td>
+        <td><strong>Grant funding sought</strong> (pending Phase 1 success)</td>
+        <td>Applications target the <strong>100-device season programme</strong> for 2026–27 — handsets, connectivity, and deployment at NICC → Maadi; platform fee already covered in Phase 1</td>
+      </tr>
+      <tr class="phase-3">
+        <td><strong>Phase 3</strong></td><td class="num">+170 (270 total)</td>
+        <td>KRI / RNZ / partners — TBC</td>
+        <td>Incremental CAPEX only; 100 units already in operation from prior season</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    <strong>Suggested grant narrative (Phase 2):</strong> After a successful PoC and Phase 1 deployment, KRI applies for community or sport
+    development funding (e.g. Rowing NZ regional development, Sport NZ community resilience, local trust, or equipment grants) to complete
+    a <strong>100-device CrewSight fleet</strong> for the remainder of the 2026–27 national regatta block. Indicative grant scope:
+    Phase 2 add-on of ${money(phase2Add.included)} ex GST (data included) or the cumulative 100-device season total of
+    ${money(season100.included)} ex GST if funders prefer a single programme figure. Grant applications should reference Phase 1
+    operational evidence (uptime, charging workflow, ops monitor usage, and event debrief outcomes).
+  </p>
+  <p class="muted">
+    Grant funding is not guaranteed. Phase 2 proceeds only on KRI board approval if funding falls short. Phase 1 commitment is independent of grant outcomes.
+  </p>
+
+  <h2>Indicative costs (ex GST)</h2>
+  <p class="muted">Handsets ${money(HANDSET_SELL)}/unit · Platform ${money(PLATFORM_FEE)}/season (flat) · IoT data ${money(SIM_MONTH)}/SIM/month · Optional mounting ${money(MOUNT_SELL)}/boat</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Stage</th>
+        <th>Scope</th>
+        <th class="num">Data included</th>
+        <th class="num">Data excluded</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="phase-poc">
+        <td><strong>PoC</strong></td>
+        <td>16 units · NZ Master Rowing</td>
+        <td class="num"><strong>$0.00</strong></td>
+        <td class="num"><strong>$0.00</strong></td>
+        <td>AHD investment (~${money(pocAhdCost)} internal cost ex GST)</td>
+      </tr>
+      <tr class="phase-1">
+        <td><strong>Phase 1</strong></td>
+        <td>50 handsets · ${SEASON_MONTHS}-month season platform &amp; SIM</td>
+        <td class="num">${money(phase1.included)}</td>
+        <td class="num">${money(phase1.excluded)}</td>
+        <td><strong>KRI self-funded</strong> · decision after PoC · Nov–Dec regattas</td>
+      </tr>
+      <tr class="phase-2">
+        <td><strong>Phase 2 add-on</strong></td>
+        <td>+50 handsets · ~2 mo SIM (no second platform fee)</td>
+        <td class="num">${money(phase2Add.included)}</td>
+        <td class="num">${money(phase2Add.excluded)}</td>
+        <td><strong>Grant target</strong> (pending Phase 1) · Jan 2027 · NICC → Maadi</td>
+      </tr>
+      <tr>
+        <td><strong>2026–27 cumulative</strong></td>
+        <td>100 handsets · one platform fee</td>
+        <td class="num"><strong>${money(season100.included)}</strong></td>
+        <td class="num"><strong>${money(season100.excluded)}</strong></td>
+        <td>Incl GST: ${money(season100.included * (1 + GST), { gst: false })} · grant scope reference</td>
+      </tr>
+      <tr class="phase-3">
+        <td><strong>Phase 3 (2027–28)</strong></td>
+        <td><strong>+170 handsets</strong> · ${SEASON_MONTHS}-mo SIM (new units) · platform · 270 total fleet</td>
+        <td class="num">${money(phase3Add.included)}</td>
+        <td class="num">${money(phase3Add.excluded)}</td>
+        <td>Incremental only — 100 units already owned · incl GST: ${money(phase3Add.included * (1 + GST), { gst: false })}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">
+    Phase 3 costs cover <strong>170 additional units</strong> only (${money(phase3Add.handsets)} handsets + ${money(phase3Add.sim)} SIM + ${money(PLATFORM_FEE)} platform).
+    Full greenfield 270-device season reference: ${money(season270Greenfield.included)} ex GST (see CrewSight-Season-Proposal-270-devices.pdf).
+    Existing 100 handsets may require SIM renewal in 2027–28 if data-included — budget separately if applicable.
+  </p>
+
+  <h3>Optional mounting (per phase)</h3>
+  <table>
+    <thead><tr><th>Fleet size</th><th class="num">Mounting (${money(MOUNT_SELL)}/boat)</th></tr></thead>
+    <tbody>
+      <tr><td>50 devices (Phase 1)</td><td class="num">${money(50 * MOUNT_SELL)} ex · ${money(50 * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
+      <tr><td>100 devices (cumulative)</td><td class="num">${money(100 * MOUNT_SELL)} ex · ${money(100 * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
+      <tr><td>Phase 3 add-on (+170)</td><td class="num">${money(phase3AddDevices * MOUNT_SELL)} ex · ${money(phase3AddDevices * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
+      <tr><td>270 devices (full fleet)</td><td class="num">${money(270 * MOUNT_SELL)} ex · ${money(270 * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Field battery life</h3>
+  <p>
+    Supplied handsets (One NZ Smart <strong>M26</strong>) have a <strong>${BATTERY_MAH.toLocaleString()} mAh</strong> battery.
+    Altitude HD estimates <strong>~${FIELD_BATTERY_HOURS} hours field runtime</strong> on a full charge under the standard CrewSight
+    regatta reporting profile — an 8-hour active tracking day (1 hr @ 1 s · 4 hr @ 5 s · 3 hr @ 30 s uploads).
+    This estimate is based on bench and on-water testing with a <strong>Samsung Galaxy A06</strong> (similar battery capacity and Android profile).
+  </p>
+  <table>
+    <thead><tr><th>Scenario</th><th>Implication</th></tr></thead>
+    <tbody>
+      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required if handsets are fully charged overnight</td></tr>
+      <tr><td>Multi-day regatta block</td><td>Overnight industrial-cabinet charge between days; spot-check battery % in ops monitor before dispatch</td></tr>
+      <tr><td>Long sessions / warm-up days</td><td>~${FIELD_BATTERY_HOURS} hr headroom supports extended use beyond a standard race day</td></tr>
+      <tr><td>Handset settings</td><td>Battery optimisation unrestricted · Location “Allow all the time” · Notifications enabled</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">
+    Actual runtime varies with cellular coverage, screen-off discipline, ambient temperature, and battery age. Replace or rotate units
+    that no longer hold charge through a full regatta day during annual health checks.
+  </p>
+
+  <h3>Partner hire — South Island &amp; Beach Sprints events</h3>
+  <p>
+    For Lake Ruataniwha (Maadi, South Island Rowing) and Beach Sprints NZ coastal events, KRI retains device ownership.
+    Partner organisations pay a <strong>device hire fee to Karāpiro Rowing</strong> (separate from CrewSight platform fees and
+    Altitude HD operational/broadcast charges). Indicative hire: cost-recovery plus margin — to be agreed per event
+    (e.g. per-device-day or flat event block). Altitude HD supports ingest and maps; event owner retains data (see below).
+  </p>
+
+  <div class="page-break"></div>
+
+  <h2>Governance &amp; frequently asked questions</h2>
+  <dl class="faq">
+    <dt>Who owns, operates, and maintains the devices and SIMs?</dt>
+    <dd>
+      <strong>Karāpiro Rowing Inc (KRI)</strong> — devices are purchased by KRI as CAPEX. KRI operates day-to-day:
+      charging, pre-regatta checks, distribution to boats, and return/storage. SIMs are either managed by KRI under the
+      data-excluded option, or billed through Altitude HD / One NZ under the data-included option with KRI responsible
+      for physical handset care. Altitude HD maintains the CrewSight platform, cloud hosting, and app updates.
+    </dd>
+
+    <dt>How are devices charged at scale?</dt>
+    <dd>
+      Recommend an <strong>industrial USB charging cabinet</strong> (multi-port, keyed, ventilated) with
+      <strong>bespoke racking mounted on the number hut wall</strong> at Lake Karāpiro. Labelled slots per device ID;
+      overnight charge between regatta days; spot-check battery health in the ops monitor before dispatch.
+      With ~${FIELD_BATTERY_HOURS} hr estimated field life (${BATTERY_MAH.toLocaleString()} mAh M26), a full overnight charge covers a standard
+      8-hour regatta day without mid-day top-up. Phase 3 (270 fleet) may add a second cabinet or mobile charging case for away events.
+    </dd>
+
+    <dt>How do South Island Rowing and Beach Sprints NZ contribute for their events?</dt>
+    <dd>
+      <strong>Device hire fee payable to Karāpiro Rowing</strong>, on top of any operational or broadcast fees.
+      KRI ships a subset of the fleet (or hires additional units) to the event; hire covers wear, logistics, and KRI staff time.
+      CrewSight platform access for that event is included in the season platform fee or pro-rated event add-on as agreed.
+      Beach Sprints coastal events may require waterproof mounting — optional ${money(MOUNT_SELL)}/boat kits.
+    </dd>
+
+    <dt>Who owns the data?</dt>
+    <dd>
+      <strong>The event owner</strong> — typically the regatta organising committee or national body for that event.
+      GPS tracks, alerts, and session history are exported or archived per event. KRI as device owner does not
+      automatically own competitor location data; usage follows event privacy policy and Rowing NZ guidance.
+    </dd>
+
+    <dt>Who pays for live-stream value?</dt>
+    <dd>
+      <strong>Rowing NZ</strong> — proposition to Milford (and existing AHD broadcast partners). Live maps, vMix overlays,
+      and enhanced storytelling are part of Altitude HD’s broadcast offering, funded through Rowing NZ’s community /
+      development budget or sponsor packages — not through KRI’s handset CAPEX. CrewSight feeds the broadcast; it is
+      complementary to the safety/ops use case.
+    </dd>
+
+    <dt>Who owns the intellectual property?</dt>
+    <dd>
+      <strong>Altitude HD</strong> — CrewSight software, cloud architecture, overlay designs, and integration IP remain
+      Altitude HD property. KRI owns physical handsets and mounting hardware. Event data ownership is separate (above).
+    </dd>
+
+    <dt>Who owns future value propositions?</dt>
+    <dd>
+      <strong>Rowing NZ and Altitude HD</strong> — national features (analytics, sponsor integrations, NZ-wide dashboards,
+      Maadi broadcast enhancements) are for RNZ and AHD to develop and commercialise. Karāpiro Rowing benefits as the
+      anchor deployment and device custodian but is not the commercialisation partner for national propositions.
+    </dd>
+
+    <dt>Can Karāpiro Rowing use these devices for other events?</dt>
+    <dd>
+      <strong>Yes.</strong> KRI-owned handsets may be used for club regattas, training camps, and approved third-party hires
+      provided CrewSight platform terms are met (device registration, event naming, data handling). Hire to external events
+      is a KRI revenue opportunity; national calendar events should prioritise RNZ/KRI agreed schedule.
+    </dd>
+  </dl>
+
+  <h2>Five-year improvement roadmap</h2>
+  <table>
+    <thead><tr><th>Horizon</th><th>Focus</th></tr></thead>
+    <tbody>
+      <tr><td><strong>2026–27</strong></td><td>PoC → 100 devices · charging rack · ops monitor · zone alerts · vMix overlay · partner hire model pilot at Maadi</td></tr>
+      <tr><td><strong>2027–28</strong></td><td>270 fleet · spares pool (≈5%) · automated pre-regatta health checks · Postgres purge policy · Ruataniwha &amp; beach sprint playbooks</td></tr>
+      <tr><td><strong>2028–29</strong></td><td>Predictive maintenance alerts · improved hull-event ML · multi-venue ops dashboard · RNZ national analytics layer</td></tr>
+      <tr><td><strong>2029–30</strong></td><td>Device refresh cycle begins · optional LTE fallback · integration with RowIT progression and results APIs</td></tr>
+      <tr><td><strong>2030–31</strong></td><td>Full fleet refresh option · 5G-ready handsets · sustained annual service model · exportable event data packages for RNZ</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Ongoing maintenance, replacement &amp; future fees</h2>
+
+  <h3>Device maintenance (KRI + AHD)</h3>
+  <ul>
+    <li><strong>KRI:</strong> daily charge checks, physical cleaning, mounting inspection, secure storage, lost-device process</li>
+    <li><strong>Altitude HD:</strong> app updates, cloud uptime, ingest monitoring, SIM provisioning (data-included), remote diagnostics</li>
+    <li><strong>Annual health check:</strong> test GPS, battery, and upload path for each handset before season start; replace failed units from spares pool</li>
+  </ul>
+
+  <h3>Replacement costs</h3>
+  <p>
+    Handsets: budget <strong>${money(HANDSET_SELL)}</strong> per replacement unit (current sell price; cost ${money(HANDSET_COST)} ex GST).
+    Recommend a <strong>5% spares pool</strong> at full scale (≈14 units at 270 fleet) — ~${money(Math.ceil(270 * 0.05) * HANDSET_SELL)} ex GST initial spares budget.
+    Mounting kits: ${money(MOUNT_SELL)}/replacement. Assume <strong>20–25% fleet refresh every 3–4 years</strong> (battery and ruggedness).
+  </p>
+
+  <h3>Future annual service fee (indicative)</h3>
+  <p>
+    From 2027–28 onward, once the full fleet is deployed, suggest a flat <strong>${money(10_000)}/season</strong> CrewSight platform &
+    support fee (ex GST, ${money(11_500, { gst: false })} incl GST) covering cloud hosting, app updates, event support, and ingest monitoring —
+    in lieu of scaling platform fee with device count. IoT data and handset CAPEX remain separate line items.
+    Per-regatta support can be quoted ad hoc for away venues if beyond season scope.
+  </p>
+
+  <div class="highlight">
+    <strong>Next steps:</strong> (1) Confirm PoC at NZ Master Rowing · (2) KRI board decision on 50-unit self-funded purchase by Oct 2026 ·
+    (3) Draft Phase 2 grant application (100-device programme) contingent on Phase 1 success ·
+    (4) Rowing NZ / Milford discussion on broadcast funding · (5) Charging rack specification with KRI facilities ·
+    (6) Partner hire terms draft for Maadi / Beach Sprints · (7) Review legal section below with respective counsel.
+  </div>
+
+  <div class="page-break"></div>
+
+  <h2>Legal</h2>
+  <p class="muted">
+    This section summarises legal and compliance matters for discussion between Karāpiro Rowing, Rowing NZ, event partners,
+    and Altitude HD. It is <strong>not legal advice</strong>. Formal terms will be set out in separate written agreements
+    (platform licence, supply/purchase, hire, and data-processing arrangements as applicable).
+  </p>
+
+  <div class="disclaimer">
+    <strong>Platform disclaimer.</strong> CrewSight is a situational-awareness and fleet-visibility platform for rowing
+    operations and broadcast. It is <strong>not certified rescue or safety-of-life equipment</strong> and does not replace
+    official race rules, patrol boats, qualified officials, emergency services, or personal flotation requirements.
+    Alerts and maps are aids to decision-making only; operators remain responsible for on-water safety at all times.
+  </div>
+
+  <div class="legal">
+    <h3>1. Status of this document</h3>
+    <p>
+      This rollout plan is an indicative commercial and operational proposal. Costs, timelines, and governance answers are
+      subject to board approval, partner agreement, and execution of binding contracts. Nothing in this document creates
+      a binding obligation until signed by the relevant parties.
+    </p>
+
+    <h3>2. PoC (NZ Master Rowing) — free trial</h3>
+    <ul>
+      <li>Altitude HD provides up to 16 handsets, connectivity, and platform access at no charge to KRI for the PoC event only.</li>
+      <li>Devices remain Altitude HD property during the PoC unless otherwise agreed in writing; KRI is responsible for reasonable care, return, and loss/theft reporting.</li>
+      <li>The PoC is provided <strong>“as is”</strong> for evaluation — no guarantee of uninterrupted service, coverage, or alert delivery.</li>
+      <li>Participation does not oblige KRI to purchase hardware or services; Phase 1 terms apply only upon signed acceptance.</li>
+    </ul>
+
+    <h3>3. Supply, ownership &amp; risk</h3>
+    <ul>
+      <li><strong>Post-PoC purchases:</strong> title to handsets and mounting hardware passes to KRI on payment (or as stated on invoice). KRI bears risk of loss, damage, and theft from delivery onward.</li>
+      <li><strong>Software:</strong> CrewSight application and cloud services remain Altitude HD intellectual property. KRI receives a non-exclusive, non-transferable licence for the agreed season(s) and fleet size.</li>
+      <li><strong>SIMs:</strong> under the data-included option, SIMs are provisioned for KRI’s registered devices; misuse, commercial resale of connectivity, or use outside approved events may breach carrier terms.</li>
+      <li>Warranty on handsets is limited to manufacturer terms passed through from supplier; Altitude HD does not warrant hardware beyond supply chain pass-through unless explicitly stated.</li>
+    </ul>
+
+    <h3>4. Limitation of liability</h3>
+    <p>
+      To the maximum extent permitted by New Zealand law, Altitude HD’s liability under any CrewSight agreement is limited to
+      fees paid for the relevant service period (or, for the PoC, a nominal cap to be agreed). Altitude HD is not liable for
+      indirect, consequential, or special loss including loss of profit, reputational harm, or claims arising from reliance on
+      GPS, cellular, or cloud availability. Nothing in this section excludes liability that cannot be excluded under the
+      <em>Contract and Commercial Law Act 2017</em> or other applicable law (including the <em>Consumer Guarantees Act 1993</em>
+      where it applies to consumer transactions).
+    </p>
+
+    <h3>5. Privacy &amp; personal data</h3>
+    <ul>
+      <li>GPS tracks and device identifiers may relate to identifiable athletes, coaches, or officials. Collection and use must comply with the <strong>Privacy Act 2020</strong> and any applicable Rowing NZ policies.</li>
+      <li><strong>Event owner</strong> (regatta organiser) is primarily responsible for privacy notices, lawful basis for processing, and retention limits for event data.</li>
+      <li>Altitude HD acts as a service provider storing and processing data on documented instructions; a data-processing or service schedule should define roles, subprocessors (e.g. Vercel, Neon, Upstash), retention, and deletion (including purge between regattas where agreed).</li>
+      <li>Broadcast overlays and public live streams should avoid displaying personal data beyond what participants have reasonably expected for that event.</li>
+    </ul>
+
+    <h3>6. Data ownership &amp; use</h3>
+    <ul>
+      <li>Raw event data (tracks, alerts, session logs) is owned or controlled by the <strong>event owner</strong>, subject to platform licence terms and privacy law.</li>
+      <li>Altitude HD may use aggregated, de-identified operational metrics to improve the service; use of identifiable data for product development or marketing requires separate consent.</li>
+      <li>Export and archive formats should be agreed per season; KRI does not acquire rights to national RNZ datasets or third-party event data by virtue of device ownership alone.</li>
+    </ul>
+
+    <h3>7. Third-party &amp; partner hire</h3>
+    <ul>
+      <li>When KRI hires devices to South Island Rowing, Beach Sprints NZ, or other organisers, KRI should use a written <strong>hire agreement</strong> covering custody, damage, return, insurance, and permitted use.</li>
+      <li>Hirers must comply with CrewSight acceptable-use terms and event privacy requirements. Altitude HD may suspend ingest for unregistered events or policy breaches.</li>
+      <li>Device hire fees are a matter between KRI and the hirer; Altitude HD is not party to hire pricing unless explicitly engaged for event support.</li>
+    </ul>
+
+    <h3>8. Insurance</h3>
+    <p>
+      Parties should confirm adequate cover with their brokers. KRI should consider asset insurance for handset fleet and public liability
+      for device deployment and charging infrastructure. Event organisers typically carry event liability cover; confirm whether
+      hire of tracking equipment affects certificates. Altitude HD maintains standard business insurance appropriate to software
+      and broadcast services; scope to be confirmed in master service terms.
+    </p>
+
+    <h3>9. Health &amp; safety</h3>
+    <p>
+      Installation of charging racking on the number hut wall must comply with KRI facility rules, electrical safety standards,
+      and any WorkSafe obligations for fixed installations and cable management. Mounting kits must be fitted so as not to impede
+      crew movement or boat equipment. CrewSight does not remove the need for RowSafe-compliant procedures and official patrol coverage.
+    </p>
+
+    <h3>10. Intellectual property &amp; broadcast</h3>
+    <ul>
+      <li>CrewSight, AHD LiveStream, overlay graphics, and related branding are Altitude HD IP. Licence for on-screen broadcast use should be confirmed with Rowing NZ / Milford where feeds are distributed publicly.</li>
+      <li>Future national propositions (analytics, sponsor integrations) remain subject to separate RNZ–AHD commercial agreements; KRI is not granted exclusive national rights through this rollout.</li>
+    </ul>
+
+    <h3>11. Governing law &amp; disputes</h3>
+    <p>
+      Formal agreements are intended to be governed by the laws of <strong>New Zealand</strong>. Disputes should first be addressed
+      through good-faith negotiation between operational contacts; escalation to mediation or courts in New Zealand as specified
+      in executed contracts.
+    </p>
+
+    <h3>12. Document validity</h3>
+    <p>
+      This plan is valid for <strong>90 days</strong> from the date shown on the cover for commercial indicatives. Legal and
+      compliance positions may be updated when formal terms are issued. Each party should obtain independent legal advice before
+      signing binding documents.
+    </p>
+  </div>
+
+  <footer>
+    Altitude HD · CrewSight · 28 Harvey Street South, Tauranga · ged@altitudehd.nz ·
+    Companion docs: CrewSight-Season-Proposal-50/270-devices.pdf · CrewSight-Technical-Overview.pdf
+  </footer>
+</body>
+</html>`;
+}
+
+async function main() {
+  await mkdir(OUT_DIR, { recursive: true });
+
+  const htmlOut = join(OUT_DIR, 'CrewSight-Phased-Rollout-Plan.html');
+  const pdfOut = join(OUT_DIR, 'CrewSight-Phased-Rollout-Plan.pdf');
+  const html = roadmapHtml();
+
+  await writeFile(htmlOut, html, 'utf8');
+
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: 'load' });
+  const tmpPdf = `${pdfOut}.tmp`;
+  try {
+    await page.pdf({
+      path: tmpPdf,
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+    await page.close();
+    const { rename, copyFile } = await import('node:fs/promises');
+    try {
+      await rename(tmpPdf, pdfOut);
+    } catch {
+      await copyFile(tmpPdf, pdfOut);
+      await unlink(tmpPdf).catch(() => {});
+    }
+    console.log('Wrote', pdfOut);
+    console.log('Wrote', htmlOut);
+  } catch (err) {
+    await page.close();
+    console.error('Failed', pdfOut, err.message);
+    process.exit(1);
+  }
+  await browser.close();
+  await uploadPdfToDrive(pdfOut);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

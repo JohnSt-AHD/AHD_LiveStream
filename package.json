@@ -9,6 +9,12 @@
     "archive:regatta:all": "node scripts/snapshot-regatta-csvs.mjs --all",
     "export-lookup": "python scripts/export-ahd-lookup.py",
     "convert-milford": "python scripts/convert-milford-videos.py",
+    "proposals:season": "node scripts/generate-kri-proposal-pdfs.mjs",
+    "proposals:crewsight": "node scripts/generate-crewsight-technical-pdf.mjs",
+    "proposals:roadmap": "node scripts/generate-crewsight-roadmap-pdf.mjs",
+    "proposals:comparison": "node scripts/generate-crewsight-comparison-pdf.mjs",
+    "docs:m26-report": "node scripts/generate-m26-field-test-pdf.mjs",
+    "proposals:all": "node scripts/generate-kri-proposal-pdfs.mjs && node scripts/generate-crewsight-technical-pdf.mjs && node scripts/generate-crewsight-roadmap-pdf.mjs && node scripts/generate-crewsight-comparison-pdf.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -20,6 +26,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@vercel/kv": "^3.0.0"
+    "@vercel/kv": "^3.0.0",
+    "googleapis": "^148.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0"
   }
 }

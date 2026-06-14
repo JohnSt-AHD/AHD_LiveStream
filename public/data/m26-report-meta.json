@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-06-14T00:09:35.175Z",
+  "generatedNz": "14 Jun 2026, 12:09",
+  "h6Stats": {
+    "count": 956,
+    "durationMin": "16.0",
+    "distanceKm": "9.90",
+    "fixRateHz": "1.00",
+    "medianGapSec": "1.0",
+    "maxGapSec": "2.0",
+    "medianAccM": "5.2",
+    "p90AccM": "7.6"
+  },
+  "h7Stats": {
+    "count": 959,
+    "durationMin": "16.0",
+    "distanceKm": "9.95",
+    "fixRateHz": "1.00",
+    "medianGapSec": "1.0",
+    "maxGapSec": "1.0",
+    "medianAccM": "3.3",
+    "p90AccM": "5.2"
+  },
+  "agreement": {
+    "matchedPct": "100",
+    "medianSepM": "4.2",
+    "p90SepM": "7.5"
+  },
+  "battery": {
+    "startPct": 96,
+    "startNz": "14 Jun 2026, 06:45",
+    "currentPct": 79,
+    "elapsedH": "5.4",
+    "dropPct": "17",
+    "drainPerH": "3.1",
+    "estFullH": "32",
+    "online": true,
+    "totalSamples": 2362,
+    "gpsRateHz": 1
+  }
+}
