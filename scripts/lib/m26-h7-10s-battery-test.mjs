@@ -35,10 +35,20 @@ export const M26_H7_10S_BATTERY_TEST = {
 
   ingest: {
     totalSamples: 3706,
+    expectedAt10s: 3706,
+    coveragePct: 100,
     sessionAvgHz: 0.1,
+    gapMedianSec: 10.0,
+    gapP90Sec: 10.0,
+    gapMaxSec: 14,
     activeMedianGapSec: 10.0,
     activeRateHz: 0.1,
+    onCadencePct: 100,
+    gapsOver15s: 0,
+    gapsOver30s: 0,
     gapsOver60s: 0,
+    maxOnCadenceStreak: 3705,
+    gapDistribution: { lte12s: 3703, sec13to15: 2 },
   },
 
   /** Prior completed tests on same handset — for comparison. */

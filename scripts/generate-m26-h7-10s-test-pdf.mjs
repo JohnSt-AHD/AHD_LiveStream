@@ -46,13 +46,44 @@ async function fetchSessionIngest() {
         1000;
     const activeGaps = gaps.filter((g) => g <= 15);
     const activeMedian = median(activeGaps);
+    const sessionSpanSec =
+        (new Date(T.end.endIso).getTime() - new Date(T.start.startIso).getTime()) / 1000;
+    const expectedAt10s = sessionSpanSec / 10;
+    let maxStreak = 0;
+    let streak = 0;
+    for (const g of gaps) {
+        if (g <= 15) {
+            streak++;
+            maxStreak = Math.max(maxStreak, streak);
+        } else {
+            streak = 0;
+        }
+    }
+    const p90 = (arr) => {
+        if (!arr.length) return null;
+        const s = [...arr].sort((a, b) => a - b);
+        return s[Math.min(s.length - 1, Math.floor(0.9 * s.length))];
+    };
 
     return {
         totalSamples: sorted.length,
+        expectedAt10s: Math.round(expectedAt10s),
+        coveragePct: Math.round((100 * sorted.length) / expectedAt10s),
         sessionAvgHz: spanSec > 0 ? Number((sorted.length / spanSec).toFixed(3)) : T.ingest.sessionAvgHz,
+        gapMedianSec: median(gaps) != null ? Number(median(gaps).toFixed(1)) : T.ingest.gapMedianSec,
+        gapP90Sec: p90(gaps) != null ? Number(p90(gaps).toFixed(1)) : T.ingest.gapP90Sec,
+        gapMaxSec: gaps.length ? Number(Math.max(...gaps).toFixed(1)) : T.ingest.gapMaxSec,
         activeMedianGapSec: activeMedian != null ? Number(activeMedian.toFixed(1)) : T.ingest.activeMedianGapSec,
         activeRateHz: activeMedian > 0 ? Number((1 / activeMedian).toFixed(3)) : T.ingest.activeRateHz,
+        onCadencePct: gaps.length ? Math.round((100 * activeGaps.length) / gaps.length) : T.ingest.onCadencePct,
+        gapsOver15s: gaps.filter((g) => g > 15).length,
+        gapsOver30s: gaps.filter((g) => g > 30).length,
         gapsOver60s: gaps.filter((g) => g > 60).length,
+        maxOnCadenceStreak: maxStreak || T.ingest.maxOnCadenceStreak,
+        gapDistribution: {
+            lte12s: gaps.filter((g) => g <= 12).length,
+            sec13to15: gaps.filter((g) => g > 12 && g <= 15).length,
+        },
     };
 }
 
@@ -117,17 +148,21 @@ function reportHtml(ingest) {
       </tbody>
     </table>
 
-    <h2>2. Ingest (recorder history)</h2>
+    <h2>2. Ingest consistency (recorder history)</h2>
     <table>
       <thead><tr><th>Metric</th><th>Value</th></tr></thead>
       <tbody>
-        <tr><td>Total samples</td><td>${ingest.totalSamples}</td></tr>
-        <tr><td>Active logging median gap</td><td><strong>${ingest.activeMedianGapSec} s</strong> (~${ingest.activeRateHz} Hz)</td></tr>
+        <tr><td>Total samples</td><td>${ingest.totalSamples} (expected @ 10 s: ${ingest.expectedAt10s})</td></tr>
+        <tr><td>Session coverage</td><td><strong>${ingest.coveragePct}%</strong></td></tr>
+        <tr><td>Median / p90 gap (all gaps)</td><td><strong>${ingest.gapMedianSec} s</strong> / ${ingest.gapP90Sec} s</td></tr>
+        <tr><td>Max gap</td><td>${ingest.gapMaxSec} s</td></tr>
+        <tr><td>On-cadence gaps (≤ 15 s)</td><td><strong>${ingest.onCadencePct}%</strong> (${ingest.gapDistribution?.lte12s ?? '—'} ≤ 12 s · ${ingest.gapDistribution?.sec13to15 ?? '—'} at 13–15 s)</td></tr>
+        <tr><td>Longest on-cadence streak</td><td>${ingest.maxOnCadenceStreak} consecutive gaps</td></tr>
+        <tr><td>Gaps &gt; 15 / 30 / 60 s</td><td>${ingest.gapsOver15s} / ${ingest.gapsOver30s} / ${ingest.gapsOver60s}</td></tr>
         <tr><td>Session average ingest</td><td>${ingest.sessionAvgHz} Hz</td></tr>
-        <tr><td>Gaps &gt; 60 s</td><td>${ingest.gapsOver60s}</td></tr>
       </tbody>
     </table>
-    <p>When actively logging, fix spacing matched the <strong>10 s</strong> configured interval. This session had no gaps &gt; 60 s — tighter upload cadence than the 30 s test (which had long doze gaps on WiFi).</p>
+    <p><strong>No dropouts.</strong> Fix spacing held at <strong>10 s</strong> for the full session — only two gaps in the 13–15 s band (max 14 s). Full hours logged <strong>360 samples/h</strong> (one every 10 s). Contrast with the 30 s test on the same handset: bimodal 30/60 s gaps and <strong>193 gaps &gt; 60 s</strong> from WiFi/screen-off doze. Continuous logging here likely explains the higher drain (~4.0 %/h) vs the 1 Hz headline (3.1 %/h), which included long idle periods.</p>
 
     <h2>3. Comparison — 10 s vs 1 Hz vs 30 s (same handset, Jun 2026)</h2>
     <table>
@@ -214,6 +249,10 @@ async function main() {
                 },
                 ingest,
                 compareRef: T.compareRef,
+                notes: [
+                    'Ingest: 100% coverage @ 10 s; median/p90 gap 10 s; max 14 s; no gaps > 15 s.',
+                    'Full hours: 360 samples/h. vs 30 s test: 193 gaps > 60 s on same handset.',
+                ],
             },
             null,
             2,

@@ -127,9 +127,12 @@
         }
       ],
       "notes": [
-        "10 s active logging: median 10 s fix gap; 3,706 samples; no gaps > 60 s.",
+        "Ingest consistency: 3,706 samples = 100% of expected @ 10 s over 10.3 h — no dropouts.",
+        "Gap stats: median/p90 10 s; max 14 s; 3,703 gaps ≤ 12 s + 2 at 13–15 s; 0 gaps > 15 s.",
+        "Full hours logged 360 samples/h (one every 10 s); partial hours only at session start/end.",
+        "vs 30 s test same handset: 193 gaps > 60 s (doze/WiFi) — 10 s run had none.",
         "Session data delta = 54.38 − 42.97 MB cumulative OS total at start.",
-        "Drain ~4.0 %/h is higher than 1 Hz headline (3.1) because this session logged continuously without long doze gaps.",
+        "Drain ~4.0 %/h above 1 Hz headline (3.1) because this session logged continuously without long idle gaps.",
         "Fleet: 30 s default · 10 s for heats/finals · 1 Hz for broadcast / incident windows."
       ]
     },

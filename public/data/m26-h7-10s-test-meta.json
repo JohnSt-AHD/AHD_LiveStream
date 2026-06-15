@@ -21,10 +21,23 @@
   },
   "ingest": {
     "totalSamples": 3706,
+    "expectedAt10s": 3706,
+    "coveragePct": 100,
     "sessionAvgHz": 0.1,
+    "gapMedianSec": 10,
+    "gapP90Sec": 10,
+    "gapMaxSec": 14,
     "activeMedianGapSec": 10,
     "activeRateHz": 0.1,
-    "gapsOver60s": 0
+    "onCadencePct": 100,
+    "gapsOver15s": 0,
+    "gapsOver30s": 0,
+    "gapsOver60s": 0,
+    "maxOnCadenceStreak": 3705,
+    "gapDistribution": {
+      "lte12s": 3703,
+      "sec13to15": 2
+    }
   },
   "compareRef": {
     "oneHz": {
@@ -41,5 +54,9 @@
       "sessionDataMb": 6.16,
       "estFullChargeH": 39
     }
-  }
+  },
+  "notes": [
+    "Ingest: 100% coverage @ 10 s; median/p90 gap 10 s; max 14 s; no gaps > 15 s.",
+    "Full hours: 360 samples/h. vs 30 s test: 193 gaps > 60 s on same handset."
+  ]
 }
