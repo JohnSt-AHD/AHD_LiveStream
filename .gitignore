@@ -15,3 +15,7 @@ node_modules/
 .tmp-*
 scripts/tmp-*.mjs
 scripts/test-*.mjs
+
+# Live device registry (use CrewSight-Device-Registry.template.csv only in repo)
+docs/device-registry/CrewSight-Device-Registry-*.csv
+!docs/device-registry/CrewSight-Device-Registry.template.csv

@@ -1,0 +1,45 @@
+{
+  "testId": "battery-h7-m26-10s-2026-06-15",
+  "status": "complete",
+  "deviceId": "H7",
+  "handset": "One NZ Smart M26",
+  "reportingIntervalSec": 10,
+  "generatedAt": "2026-06-15T04:35:16.052Z",
+  "generatedNz": "15 Jun 2026, 16:35",
+  "battery": {
+    "startPct": 69,
+    "startNz": "15 Jun 2026, 06:17",
+    "endPct": 28,
+    "endNz": "15 Jun 2026, 16:35",
+    "elapsedH": "10.3",
+    "dropPct": "41",
+    "drainPerH": "4",
+    "estFullH": "25",
+    "dataUsageMbAtStart": 42.97,
+    "dataUsageMbAtEnd": 54.38,
+    "sessionDataMb": "11.41"
+  },
+  "ingest": {
+    "totalSamples": 3706,
+    "sessionAvgHz": 0.1,
+    "activeMedianGapSec": 10,
+    "activeRateHz": 0.1,
+    "gapsOver60s": 0
+  },
+  "compareRef": {
+    "oneHz": {
+      "profile": "1 Hz",
+      "elapsedH": 10.3,
+      "drainPerH": 3.1,
+      "sessionDataMb": 36,
+      "estFullChargeH": 32
+    },
+    "thirtySec": {
+      "profile": "30 s",
+      "elapsedH": 11,
+      "drainPerH": 2.5,
+      "sessionDataMb": 6.16,
+      "estFullChargeH": 39
+    }
+  }
+}

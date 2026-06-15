@@ -92,6 +92,48 @@
       ]
     },
     {
+      "id": "battery-h7-m26-10s-2026-06-15",
+      "category": "battery",
+      "date": "2026-06-15",
+      "title": "H7 M26 — battery + data @ 10 s reporting (complete)",
+      "summary": "15 Jun 2026: H7 (M26) continuous 10 s reporting test. 06:17 → 16:35 NZ (10.3 h). Battery 69% → 28%; +11.41 MB session data (54.38 MB cumulative). ~4.0 %/h drain.",
+      "pdf": "/docs/M26-H7-10s-Test-Report-2026-06-15.pdf",
+      "metrics": [
+        { "label": "Device", "value": "H7 (M26)" },
+        { "label": "Reporting interval", "value": "10 s" },
+        { "label": "Session", "value": "10.3 h (06:17 → 16:35 NZ)" },
+        { "label": "Battery", "value": "69% → 28% (~4.0 %/h)" },
+        { "label": "Session data", "value": "+11.41 MB (54.38 MB cumulative)" },
+        { "label": "8 h regatta @ 10 s", "value": "~32% · ~8.9 MB" }
+      ],
+      "charts": [
+        {
+          "id": "h7-rate-compare",
+          "type": "bar",
+          "title": "H7 M26 session data by reporting rate (MB)",
+          "labels": ["1 Hz", "10 s", "30 s"],
+          "values": [36, 11.41, 6.16],
+          "unit": "MB",
+          "color": ["#ef4444", "#f59e0b", "#22c55e"]
+        },
+        {
+          "id": "h7-drain-compare",
+          "type": "bar",
+          "title": "H7 M26 battery drain by reporting rate (%/h)",
+          "labels": ["1 Hz", "10 s", "30 s"],
+          "values": [3.1, 4.0, 2.5],
+          "unit": "%/h",
+          "color": ["#ef4444", "#f59e0b", "#22c55e"]
+        }
+      ],
+      "notes": [
+        "10 s active logging: median 10 s fix gap; 3,706 samples; no gaps > 60 s.",
+        "Session data delta = 54.38 − 42.97 MB cumulative OS total at start.",
+        "Drain ~4.0 %/h is higher than 1 Hz headline (3.1) because this session logged continuously without long doze gaps.",
+        "Fleet: 30 s default · 10 s for heats/finals · 1 Hz for broadcast / incident windows."
+      ]
+    },
+    {
       "id": "battery-a1-a6-long-2026-06-02",
       "category": "battery",
       "date": "2026-06-02",

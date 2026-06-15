@@ -1,0 +1,6 @@
+device_id,status,season,club,boat_class,boat_label,regatta_code,handset_model,handset_asset_tag,sim_iccid,sim_apn,gps_interval_sec,provisioned_date,provisioned_by,last_seen_notes
+KRI-001,active,2026,Karāpiro RC,M8+,Boat 1,,One NZ Smart M26,M26-001,,,30,2026-06-01,ops@example.nz,
+KRI-002,active,2026,Karāpiro RC,W4-,Boat 2,,One NZ Smart M26,M26-002,,,30,2026-06-01,ops@example.nz,
+KRI-003,spare,2026,Karāpiro RC,,Spare unit,,One NZ Smart M26,M26-003,,,30,,,
+H7,active,2026,Field test,M26 quote,H7 test handset,,One NZ Smart M26,H7,,,10,2026-06-15,field-test,M26 field-test unit — 1 Hz / 30 s / 10 s tests
+H6,active,2026,Field test,S21 reference,Reference,,Samsung Galaxy S21,H6,,,1,2026-06-14,field-test,S21 reference handset
