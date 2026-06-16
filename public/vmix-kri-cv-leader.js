@@ -3,8 +3,10 @@
  * Polls /api/cv-position and places the KRI leader box up-right at 45° from the leader.
  */
 (function (global) {
-    const INTRO_MS = 900;
-    const OUTRO_MS = 900;
+    const INTRO_MS = 2500;
+    const OUTRO_MS = 2500;
+    const FADE_MS = 1500;
+    const STAGGER_MS = 1000;
     const DEFAULT_LINE_LENGTH = 136;
     const BOX_DISTANCE_FACTOR = 0.75;
     const W_THIN = 1.5;
@@ -351,6 +353,8 @@
     global.KriVmixCvLeader = {
         INTRO_MS,
         OUTRO_MS,
+        FADE_MS,
+        STAGGER_MS,
         show,
         hide,
         destroy,

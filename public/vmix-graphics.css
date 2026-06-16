@@ -2016,9 +2016,12 @@ body {
 
 .kri-cv-leader__connector {
     fill: var(--kri-brand-blue);
-    opacity: 0.92;
+    opacity: 0;
     filter: drop-shadow(0 2px 6px rgba(0, 96, 191, 0.35));
-    transition: opacity 0.25s ease;
+}
+
+.kri-cv-leader--hold .kri-cv-leader__connector {
+    opacity: 0.92;
 }
 
 .kri-cv-leader--stale .kri-cv-leader__connector {
@@ -2047,15 +2050,44 @@ body {
     background: var(--kri-brand-white);
 }
 
-.kri-cv-leader--intro .kri-cv-leader__card-wrap,
-.kri-cv-leader--intro .kri-cv-leader__connector {
+.kri-cv-leader--intro .kri-cv-leader__card-wrap {
     opacity: 0;
     animation: vg-kri-fade-in 1.5s ease-in forwards;
 }
 
-.kri-cv-leader--outro .kri-cv-leader__card-wrap,
+.kri-cv-leader--intro .kri-cv-leader__connector {
+    opacity: 0;
+    animation: kri-cv-connector-fade-in 1.5s ease-in 1s forwards;
+}
+
+.kri-cv-leader--hold .kri-cv-leader__card-wrap {
+    opacity: 1;
+}
+
 .kri-cv-leader--outro .kri-cv-leader__connector {
-    animation: vg-kri-fade-out 1.5s ease-out forwards;
+    animation: kri-cv-connector-fade-out 1.5s ease-out forwards;
+}
+
+.kri-cv-leader--outro .kri-cv-leader__card-wrap {
+    animation: vg-kri-fade-out 1.5s ease-out 1s forwards;
+}
+
+@keyframes kri-cv-connector-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 0.92;
+    }
+}
+
+@keyframes kri-cv-connector-fade-out {
+    from {
+        opacity: 0.92;
+    }
+    to {
+        opacity: 0;
+    }
 }
 
 [data-vmix-theme='kri'] .vg-layer--leader .vg-leader-wrap {
