@@ -102,19 +102,39 @@
         };
     }
 
-    function connectorPoints(ax, ay, bx, by) {
+    function lineUnit(ax, ay, bx, by) {
         const dx = bx - ax;
         const dy = by - ay;
         const len = Math.hypot(dx, dy) || 1;
-        const ux = dx / len;
-        const uy = dy / len;
+        return { ux: dx / len, uy: dy / len, len };
+    }
+
+    /** Extend connector past the box anchor so the line reads as going behind the panel. */
+    function connectorEnd(ax, ay, bx, by) {
+        const { ux, uy } = lineUnit(ax, ay, bx, by);
+        let extend = 40;
+        if (cardEl) {
+            const panel = cardEl.querySelector('.vg-kri-leader-panel');
+            const w = (panel || cardEl).offsetWidth || cardEl.offsetWidth || 180;
+            const h = cardEl.offsetHeight || 100;
+            extend = Math.max(32, Math.min(w * 0.45, h * 0.55, 80));
+        }
+        return {
+            ex: bx + ux * extend,
+            ey: by + uy * extend,
+        };
+    }
+
+    function connectorPoints(ax, ay, bx, by) {
+        const { ux, uy } = lineUnit(ax, ay, bx, by);
         const px = -uy;
         const py = ux;
+        const { ex, ey } = connectorEnd(ax, ay, bx, by);
         return [
             [ax + px * W_THIN, ay + py * W_THIN],
             [ax - px * W_THIN, ay - py * W_THIN],
-            [bx - px * W_THICK, by - py * W_THICK],
-            [bx + px * W_THICK, by + py * W_THICK],
+            [ex - px * W_THICK, ey - py * W_THICK],
+            [ex + px * W_THICK, ey + py * W_THICK],
         ]
             .map((pt) => pt.join(','))
             .join(' ');

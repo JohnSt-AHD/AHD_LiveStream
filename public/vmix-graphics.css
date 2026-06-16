@@ -2033,12 +2033,17 @@ body {
     transform-origin: bottom left;
     pointer-events: none;
     z-index: 2;
+    isolation: isolate;
 }
 
 .kri-cv-leader .vg-kri-leader-card {
     position: relative;
     left: auto;
     top: auto;
+}
+
+.kri-cv-leader .vg-kri-leader-panel {
+    background: var(--kri-brand-white);
 }
 
 .kri-cv-leader--intro .kri-cv-leader__card-wrap,
