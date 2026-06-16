@@ -2011,6 +2011,7 @@ body {
     height: 100%;
     overflow: visible;
     pointer-events: none;
+    z-index: 1;
 }
 
 .kri-cv-leader__connector {
@@ -2031,6 +2032,7 @@ body {
     transform: translate(0, -100%);
     transform-origin: bottom left;
     pointer-events: none;
+    z-index: 2;
 }
 
 .kri-cv-leader .vg-kri-leader-card {

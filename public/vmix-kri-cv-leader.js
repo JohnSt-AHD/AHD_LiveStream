@@ -6,6 +6,7 @@
     const INTRO_MS = 900;
     const OUTRO_MS = 900;
     const DEFAULT_LINE_LENGTH = 136;
+    const BOX_DISTANCE_FACTOR = 0.75;
     const W_THIN = 1.5;
     const W_THICK = 14;
     const COS45 = Math.SQRT1_2;
@@ -94,9 +95,10 @@
     }
 
     function boxAnchor(ax, ay) {
+        const dist = lineLength * BOX_DISTANCE_FACTOR;
         return {
-            bx: ax + lineLength * COS45,
-            by: ay - lineLength * SIN45,
+            bx: ax + dist * COS45,
+            by: ay - dist * SIN45,
         };
     }
 
