@@ -145,10 +145,12 @@
                 },
                 'leader-badges': {
                     marginLeft: '10px',
-                    marginBottom: '-8px',
+                    marginBottom: '-6px',
+                    width: '210px',
+                    height: '50px',
                 },
                 'leader-panel': {
-                    padding: '14px 18px 16px',
+                    padding: '7px 12px 8px',
                 },
                 'leader-logo': {
                     width: '59px',

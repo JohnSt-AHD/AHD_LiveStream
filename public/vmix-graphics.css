@@ -1879,23 +1879,24 @@ body {
 [data-vmix-theme='kri'] .vg-kri-leader-badges {
     position: relative;
     z-index: 3;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
+    width: 210px;
+    height: 50px;
     margin-left: 10px;
-    margin-bottom: -8px;
-    width: fit-content;
+    margin-bottom: -6px;
+    pointer-events: none;
 }
 
 [data-vmix-theme='kri'] .vg-kri-leader-badges .vg-leader-badge,
 [data-vmix-theme='kri'] .vg-kri-leader-badges .vg-leader-badge-lane {
-    position: relative;
+    position: absolute;
     margin: 0;
     flex-shrink: 0;
 }
 
 [data-vmix-theme='kri'] .vg-kri-leader-badges .vg-leader-badge {
+    left: 0;
+    top: 0;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1915,6 +1916,9 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-leader-badges .vg-leader-badge-lane {
+    left: 62px;
+    top: 18px;
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1939,11 +1943,10 @@ body {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 14px;
+    gap: 8px;
     width: fit-content;
     max-width: 420px;
-    min-height: 72px;
-    padding: 14px 18px 16px;
+    padding: 7px 12px 8px;
     background: var(--kri-brand-white);
     border: 2px solid var(--kri-brand-blue);
     border-radius: 8px;
