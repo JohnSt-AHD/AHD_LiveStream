@@ -1,0 +1,250 @@
+/**
+ * KRI live stream — CV-linked leader card with tapered connector line.
+ * Polls /api/cv-position and places the KRI leader box up-right at 45° from the leader.
+ */
+(function (global) {
+    const INTRO_MS = 900;
+    const OUTRO_MS = 900;
+    const DEFAULT_LINE_LENGTH = 136;
+    const W_THIN = 1.5;
+    const W_THICK = 14;
+    const COS45 = Math.SQRT1_2;
+    const SIN45 = Math.SQRT1_2;
+    const OUT_W = 1920;
+    const OUT_H = 1080;
+    const DEFAULT_REF_W = 1280;
+    const DEFAULT_REF_H = 720;
+
+    let root = null;
+    let svg = null;
+    let connector = null;
+    let cardWrap = null;
+    let cardEl = null;
+    let pollTimer = null;
+    let activeRace = null;
+    let activeLane = 4;
+    let lineLength = DEFAULT_LINE_LENGTH;
+    let lastAnchor = null;
+
+    function params() {
+        return new URLSearchParams(location.search);
+    }
+
+    function pollMs() {
+        const n = parseInt(params().get('poll') || '200', 10);
+        return Number.isFinite(n) ? Math.max(100, Math.min(n, 2000)) : 200;
+    }
+
+    function clearPoll() {
+        if (pollTimer != null) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+
+    function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function ensureRoot(stage) {
+        if (root) return root;
+        const host = stage || document.querySelector('.vg-stage');
+        if (!host) return null;
+
+        root = document.createElement('div');
+        root.id = 'kriCvLeaderRoot';
+        root.className = 'kri-cv-leader';
+        root.setAttribute('role', 'img');
+        root.setAttribute('aria-label', 'CV leader');
+
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('kri-cv-leader__svg');
+        svg.setAttribute('viewBox', `0 0 ${OUT_W} ${OUT_H}`);
+        svg.setAttribute('preserveAspectRatio', 'none');
+
+        connector = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        connector.classList.add('kri-cv-leader__connector');
+        connector.setAttribute('points', '');
+        svg.appendChild(connector);
+
+        cardWrap = document.createElement('div');
+        cardWrap.className = 'kri-cv-leader__card-wrap';
+
+        root.appendChild(svg);
+        root.appendChild(cardWrap);
+        host.appendChild(root);
+        return root;
+    }
+
+    function buildCard(race, lane) {
+        const build = global.VmixGraphics?.buildKriLeaderCard;
+        if (!build) return null;
+        return build(race, lane);
+    }
+
+    function mountCard(race, lane) {
+        if (!cardWrap) return null;
+        cardWrap.replaceChildren();
+        cardEl = buildCard(race, lane);
+        if (!cardEl) return null;
+        cardWrap.appendChild(cardEl);
+        const h = cardEl.offsetHeight;
+        if (h > 0) lineLength = Math.max(80, h * 2);
+        return cardEl;
+    }
+
+    function boxAnchor(ax, ay) {
+        return {
+            bx: ax + lineLength * COS45,
+            by: ay - lineLength * SIN45,
+        };
+    }
+
+    function connectorPoints(ax, ay, bx, by) {
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        const px = -uy;
+        const py = ux;
+        return [
+            [ax + px * W_THIN, ay + py * W_THIN],
+            [ax - px * W_THIN, ay - py * W_THIN],
+            [bx - px * W_THICK, by - py * W_THICK],
+            [bx + px * W_THICK, by + py * W_THICK],
+        ]
+            .map((pt) => pt.join(','))
+            .join(' ');
+    }
+
+    function positionCard(bx, by) {
+        if (!cardWrap) return;
+        cardWrap.style.left = `${bx}px`;
+        cardWrap.style.top = `${by}px`;
+    }
+
+    function applyAnchor(ax, ay) {
+        if (!connector) return;
+        const { bx, by } = boxAnchor(ax, ay);
+        connector.setAttribute('points', connectorPoints(ax, ay, bx, by));
+        positionCard(bx, by);
+        lastAnchor = { ax, ay, bx, by };
+    }
+
+    function mapCvPoint(data) {
+        const cv = global.AltitudeHdCvOverlay;
+        if (!cv?.mapPoint) return null;
+        const refW = Number(data.refW) || DEFAULT_REF_W;
+        const refH = Number(data.refH) || DEFAULT_REF_H;
+        const offset = data.offset || cv.venueOffset?.(data.venue) || { x: 0, y: 0 };
+        return cv.mapPoint(data.x, data.y, refW, refH, offset);
+    }
+
+    async function tick() {
+        if (!root || !global.AltitudeHdCvOverlay?.fetchPosition) return;
+        try {
+            const data = await global.AltitudeHdCvOverlay.fetchPosition();
+            if (!data || data.stale) {
+                root.classList.add('kri-cv-leader--stale');
+                return;
+            }
+            root.classList.remove('kri-cv-leader--stale');
+            const pt = mapCvPoint(data);
+            if (!pt) return;
+            const ax = Math.max(0, Math.min(OUT_W, pt.left));
+            const ay = Math.max(0, Math.min(OUT_H, pt.top));
+            applyAnchor(ax, ay);
+        } catch {
+            root.classList.add('kri-cv-leader--stale');
+        }
+    }
+
+    function startPoll() {
+        clearPoll();
+        tick();
+        pollTimer = setInterval(tick, pollMs());
+    }
+
+    async function show(opts = {}) {
+        ensureRoot(document.querySelector('.vg-stage'));
+        if (!root) return;
+
+        activeRace = opts.race || null;
+        activeLane = opts.lane ?? activeLane;
+        mountCard(activeRace, activeLane);
+
+        root.classList.remove(
+            'kri-cv-leader--outro',
+            'kri-cv-leader--hold',
+            'kri-cv-leader--stale',
+        );
+        root.classList.add('kri-cv-leader--intro');
+        void root.offsetWidth;
+        root.classList.add('kri-cv-leader--visible');
+
+        if (lastAnchor) {
+            applyAnchor(lastAnchor.ax, lastAnchor.ay);
+        } else {
+            applyAnchor(OUT_W * 0.35, OUT_H * 0.55);
+        }
+
+        startPoll();
+        await wait(INTRO_MS);
+        root.classList.remove('kri-cv-leader--intro');
+        root.classList.add('kri-cv-leader--hold');
+    }
+
+    async function hide() {
+        clearPoll();
+        if (!root) return;
+        root.classList.remove('kri-cv-leader--hold', 'kri-cv-leader--intro');
+        root.classList.add('kri-cv-leader--outro');
+        await wait(OUTRO_MS);
+        destroy();
+    }
+
+    function destroy() {
+        clearPoll();
+        if (root) {
+            root.classList.remove(
+                'kri-cv-leader--visible',
+                'kri-cv-leader--intro',
+                'kri-cv-leader--hold',
+                'kri-cv-leader--outro',
+                'kri-cv-leader--stale',
+            );
+        }
+    }
+
+    function remove() {
+        clearPoll();
+        lastAnchor = null;
+        activeRace = null;
+        cardEl = null;
+        if (root) {
+            root.remove();
+            root = null;
+            svg = null;
+            connector = null;
+            cardWrap = null;
+        }
+    }
+
+    function setLane(lane) {
+        activeLane = lane;
+        if (!activeRace || !root) return;
+        mountCard(activeRace, activeLane);
+        if (lastAnchor) applyAnchor(lastAnchor.ax, lastAnchor.ay);
+    }
+
+    global.KriVmixCvLeader = {
+        INTRO_MS,
+        OUTRO_MS,
+        show,
+        hide,
+        destroy,
+        remove,
+        setLane,
+    };
+})(typeof window !== 'undefined' ? window : globalThis);

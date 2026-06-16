@@ -110,6 +110,9 @@
     }
 
     function init() {
+        const line = document.getElementById('cvLeaderLine');
+        if (!line) return;
+
         const id = streamId();
         const errEl = document.getElementById('cvError');
         if (!id && errEl) {

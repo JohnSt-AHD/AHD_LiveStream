@@ -13,6 +13,7 @@ const VMIX_TRIGGERS = [
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Leader', desc: 'KRI — leader box top-right (Milford placement, white panel + blue accents); fade in/out with o · 1–8 switch lane · Milford — leader video + lane text' },
+    { key: 'x', graphic: 'CV leader', desc: 'KRI only — leader box follows live CV position with tapered 45° connector line; higher and right of leader · 1–8 switch lane · needs ?streamId= on overlay URL · o to fade out' },
     { key: 's', graphic: 'Schedule', desc: 'KRI only — upcoming 10 races from hub live race (CSS gradient panel); fade in/out with o' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
@@ -132,6 +133,17 @@ function hubRenderVmixGuide() {
         leaderNote.innerHTML =
             '<strong>Leader (<code>w</code>):</strong> KRI — white panel top-right (same text placement as Milford GT); fade in with <code>w</code>, out with <code>o</code>. Set <strong>Leader lane</strong> on the hub (default 4); press <code>1</code>–<code>8</code> on air to switch lane. Milford — leader video pauses at 6s; text fades in after 2s.';
         examples.appendChild(leaderNote);
+
+        const cvLeaderNote = document.createElement('p');
+        cvLeaderNote.className = 'hub-vmix-map-note';
+        const kriCvUrl = new URL(hubVmixBaseUrl('vmix-kri.html'));
+        kriCvUrl.searchParams.set('streamId', 'YOUR_GPS_STREAM_ID');
+        kriCvUrl.searchParams.set('g', 'x');
+        cvLeaderNote.innerHTML =
+            '<strong>CV leader (<code>x</code>):</strong> KRI only — same leader card as <code>w</code>, but positioned from live CV via a tapered 45° line (box sits up-right of the leader). Add <code>?streamId=</code> to the KRI overlay URL (same ID as GPS / CV laptop). Example: <a href="' +
+            kriCvUrl.href +
+            '" target="_blank" rel="noopener">vmix-kri.html?streamId=…&amp;g=x</a> · <code>1</code>–<code>8</code> switch lane on air.';
+        examples.appendChild(cvLeaderNote);
 
         const cvNote = document.createElement('p');
         cvNote.className = 'hub-vmix-map-note';

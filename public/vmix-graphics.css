@@ -1991,6 +1991,65 @@ body {
     text-overflow: ellipsis;
 }
 
+/* —— KRI CV-linked leader (x) —— */
+.kri-cv-leader {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.kri-cv-leader--visible {
+    visibility: visible;
+}
+
+.kri-cv-leader__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.kri-cv-leader__connector {
+    fill: var(--kri-brand-blue);
+    opacity: 0.92;
+    filter: drop-shadow(0 2px 6px rgba(0, 96, 191, 0.35));
+    transition: opacity 0.25s ease;
+}
+
+.kri-cv-leader--stale .kri-cv-leader__connector {
+    opacity: 0.35;
+}
+
+.kri-cv-leader__card-wrap {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(0, -100%);
+    transform-origin: bottom left;
+    pointer-events: none;
+}
+
+.kri-cv-leader .vg-kri-leader-card {
+    position: relative;
+    left: auto;
+    top: auto;
+}
+
+.kri-cv-leader--intro .kri-cv-leader__card-wrap,
+.kri-cv-leader--intro .kri-cv-leader__connector {
+    opacity: 0;
+    animation: vg-kri-fade-in 1.5s ease-in forwards;
+}
+
+.kri-cv-leader--outro .kri-cv-leader__card-wrap,
+.kri-cv-leader--outro .kri-cv-leader__connector {
+    animation: vg-kri-fade-out 1.5s ease-out forwards;
+}
+
 [data-vmix-theme='kri'] .vg-layer--leader .vg-leader-wrap {
     position: absolute;
     inset: 0;
