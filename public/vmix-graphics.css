@@ -2034,6 +2034,7 @@ body {
     pointer-events: none;
     z-index: 2;
     isolation: isolate;
+    will-change: left, top;
 }
 
 .kri-cv-leader .vg-kri-leader-card {

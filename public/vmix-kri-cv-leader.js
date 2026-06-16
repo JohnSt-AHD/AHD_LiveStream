@@ -15,6 +15,7 @@
     const OUT_H = 1080;
     const DEFAULT_REF_W = 1280;
     const DEFAULT_REF_H = 720;
+    const SMOOTH_TAU_MS = 280;
 
     let root = null;
     let svg = null;
@@ -26,6 +27,86 @@
     let activeLane = 4;
     let lineLength = DEFAULT_LINE_LENGTH;
     let lastAnchor = null;
+    let rafId = null;
+    let smoothAx = 0;
+    let smoothAy = 0;
+    let targetAx = 0;
+    let targetAy = 0;
+    let hasSmooth = false;
+    let lastFrameTs = 0;
+
+    function smoothTauMs() {
+        const n = parseInt(params().get('smooth') || String(SMOOTH_TAU_MS), 10);
+        if (n === 0) return 0;
+        return Number.isFinite(n) ? Math.max(80, Math.min(n, 1200)) : SMOOTH_TAU_MS;
+    }
+
+    function stopSmoothLoop() {
+        if (rafId != null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        lastFrameTs = 0;
+    }
+
+    function resetSmooth() {
+        stopSmoothLoop();
+        hasSmooth = false;
+        smoothAx = 0;
+        smoothAy = 0;
+        targetAx = 0;
+        targetAy = 0;
+    }
+
+    function setTargetAnchor(ax, ay) {
+        targetAx = ax;
+        targetAy = ay;
+        if (!hasSmooth) {
+            smoothAx = ax;
+            smoothAy = ay;
+            hasSmooth = true;
+            applyAnchor(ax, ay);
+            return;
+        }
+        if (rafId == null) startSmoothLoop();
+    }
+
+    function startSmoothLoop() {
+        if (rafId != null) return;
+        lastFrameTs = 0;
+        rafId = requestAnimationFrame(smoothFrame);
+    }
+
+    function smoothFrame(ts) {
+        if (!root || !hasSmooth) {
+            rafId = null;
+            return;
+        }
+        if (!lastFrameTs) lastFrameTs = ts;
+        const dt = Math.min(48, ts - lastFrameTs);
+        lastFrameTs = ts;
+        const tau = smoothTauMs();
+        if (tau <= 0) {
+            smoothAx = targetAx;
+            smoothAy = targetAy;
+        } else {
+            const blend = 1 - Math.exp(-dt / tau);
+            smoothAx += (targetAx - smoothAx) * blend;
+            smoothAy += (targetAy - smoothAy) * blend;
+        }
+        applyAnchor(smoothAx, smoothAy);
+        const dx = targetAx - smoothAx;
+        const dy = targetAy - smoothAy;
+        if (dx * dx + dy * dy < 0.25) {
+            smoothAx = targetAx;
+            smoothAy = targetAy;
+            applyAnchor(smoothAx, smoothAy);
+            rafId = null;
+            lastFrameTs = 0;
+            return;
+        }
+        rafId = requestAnimationFrame(smoothFrame);
+    }
 
     function params() {
         return new URLSearchParams(location.search);
@@ -176,7 +257,7 @@
             if (!pt) return;
             const ax = Math.max(0, Math.min(OUT_W, pt.left));
             const ay = Math.max(0, Math.min(OUT_H, pt.top));
-            applyAnchor(ax, ay);
+            setTargetAnchor(ax, ay);
         } catch {
             root.classList.add('kri-cv-leader--stale');
         }
@@ -210,9 +291,9 @@
         root.classList.add('kri-cv-leader--visible');
 
         if (lastAnchor) {
-            applyAnchor(lastAnchor.ax, lastAnchor.ay);
+            setTargetAnchor(lastAnchor.ax, lastAnchor.ay);
         } else {
-            applyAnchor(OUT_W * 0.35, OUT_H * 0.55);
+            setTargetAnchor(OUT_W * 0.35, OUT_H * 0.55);
         }
 
         startPoll();
@@ -232,6 +313,7 @@
 
     function destroy() {
         clearPoll();
+        stopSmoothLoop();
         if (root) {
             root.classList.remove(
                 'kri-cv-leader--visible',
@@ -245,6 +327,8 @@
 
     function remove() {
         clearPoll();
+        stopSmoothLoop();
+        resetSmooth();
         lastAnchor = null;
         activeRace = null;
         cardEl = null;
@@ -261,7 +345,7 @@
         activeLane = lane;
         if (!activeRace || !root) return;
         mountCard(activeRace, activeLane);
-        if (lastAnchor) applyAnchor(lastAnchor.ax, lastAnchor.ay);
+        if (lastAnchor) setTargetAnchor(lastAnchor.ax, lastAnchor.ay);
     }
 
     global.KriVmixCvLeader = {
