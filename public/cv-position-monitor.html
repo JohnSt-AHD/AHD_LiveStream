@@ -11,6 +11,29 @@
         <header class="cv-monitor__header">
             <h1>Computer vision position</h1>
             <p>Live leader coordinates from the laptop CV system via <code>/api/cv-position</code>.</p>
+            <form id="cvStreamForm" class="cv-monitor__stream-form" autocomplete="off">
+                <label class="cv-monitor__stream-label" for="cvStreamInput">Stream ID</label>
+                <input
+                    id="cvStreamInput"
+                    class="cv-monitor__stream-input"
+                    type="text"
+                    spellcheck="false"
+                    placeholder="Loads from CV laptop config when setup is running"
+                >
+                <button type="submit" class="cv-monitor__stream-btn">Apply</button>
+                <button type="button" id="cvStreamLaptopBtn" class="cv-monitor__stream-btn cv-monitor__stream-btn--secondary">
+                    Load from laptop
+                </button>
+            </form>
+            <p class="cv-monitor__stream-source" id="cvStreamSource"></p>
+            <label class="cv-monitor__laptop-api-label" for="cvLaptopApiInput">CV laptop API</label>
+            <input
+                id="cvLaptopApiInput"
+                class="cv-monitor__laptop-api-input"
+                type="text"
+                spellcheck="false"
+                placeholder="http://127.0.0.1:8790"
+            >
             <div class="cv-monitor__status cv-monitor__status--waiting" id="cvStatusBadge">
                 <span class="cv-monitor__status-dot" aria-hidden="true"></span>
                 <span id="cvStatusText">Waiting for data</span>
@@ -74,16 +97,18 @@
         <p class="cv-monitor__error" id="cvError" hidden></p>
 
         <div class="cv-monitor__links">
-            <a id="cvVmixLink" href="vmix-cv-leader.html">Open vMix overlay</a>
+            <a id="cvVmixLink" href="vmix-cv-leader.html">Open vMix CV line overlay</a>
+            <a id="cvKriLink" href="vmix-kri.html">Open KRI overlay (use <code>x</code> for CV leader)</a>
             <a href="index.html">Back to hub</a>
         </div>
 
         <p class="cv-monitor__hint" id="cvHint">
-            Add <code>?streamId=YOUR_GPS_ID</code> to this URL — same ID as TouchDesigner GPS and
-            <code>CV_STREAM_ID</code> on the laptop. Optional: <code>&amp;api=http://127.0.0.1:8787</code> for local testing.
+            On the CV laptop, stream ID defaults from <code>cv_config.json</code> (via setup server on port 8790).
+            Change it above to monitor a different stream. vMix overlay URLs use the same ID — open without
+            <code>?streamId=</code> on the CV laptop to auto-load, or paste the ID into the vMix browser URL.
         </p>
     </main>
-    <script src="cv-position-client.js"></script>
-    <script src="cv-position-monitor.js"></script>
+    <script src="cv-position-client.js?v=2"></script>
+    <script src="cv-position-monitor.js?v=2"></script>
 </body>
 </html>

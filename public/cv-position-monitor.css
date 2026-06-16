@@ -30,6 +30,77 @@ body {
     color: #9aa4b2;
 }
 
+.cv-monitor__stream-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-top: 18px;
+}
+
+.cv-monitor__stream-label,
+.cv-monitor__laptop-api-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9aa4b2;
+}
+
+.cv-monitor__stream-input {
+    flex: 1 1 280px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid #2a3544;
+    border-radius: 6px;
+    font: inherit;
+    color: #e8ecf1;
+    background: #0f1419;
+}
+
+.cv-monitor__stream-btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: #0079d1;
+    cursor: pointer;
+}
+
+.cv-monitor__stream-btn--secondary {
+    background: #2a3544;
+}
+
+.cv-monitor__stream-btn:hover {
+    filter: brightness(1.08);
+}
+
+.cv-monitor__stream-source {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: #7f8c9a;
+}
+
+.cv-monitor__laptop-api-label {
+    display: block;
+    margin-top: 12px;
+}
+
+.cv-monitor__laptop-api-input {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    margin-top: 6px;
+    padding: 7px 10px;
+    border: 1px solid #2a3544;
+    border-radius: 6px;
+    font: inherit;
+    color: #e8ecf1;
+    background: #0f1419;
+}
+
 .cv-monitor__status {
     display: inline-flex;
     align-items: center;

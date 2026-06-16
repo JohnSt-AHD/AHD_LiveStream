@@ -140,7 +140,7 @@ function hubRenderVmixGuide() {
         kriCvUrl.searchParams.set('streamId', 'YOUR_GPS_STREAM_ID');
         kriCvUrl.searchParams.set('g', 'x');
         cvLeaderNote.innerHTML =
-            '<strong>CV leader (<code>x</code>):</strong> KRI only — same leader card as <code>w</code>, but positioned from live CV via a tapered 45° line (box sits up-right of the leader). Add <code>?streamId=</code> to the KRI overlay URL (same ID as GPS / CV laptop). Example: <a href="' +
+            '<strong>CV leader (<code>x</code>):</strong> KRI only — same leader card as <code>w</code>, but positioned from live CV via a tapered 45° line (box sits up-right of the leader). On the CV laptop, stream ID loads from setup config automatically; on vMix add <code>?streamId=</code> to the browser URL. Example: <a href="' +
             kriCvUrl.href +
             '" target="_blank" rel="noopener">vmix-kri.html?streamId=…&amp;g=x</a> · <code>1</code>–<code>8</code> switch lane on air.';
         examples.appendChild(cvLeaderNote);

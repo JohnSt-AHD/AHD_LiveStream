@@ -7,22 +7,23 @@
     const OUT_W = 1920;
     const OUT_H = 1080;
 
+    let pollTimer = null;
+
     function params() {
         return new URLSearchParams(location.search);
-    }
-
-    function streamId() {
-        return (
-            params().get('streamId') ||
-            params().get('gpsId') ||
-            params().get('id') ||
-            ''
-        ).trim();
     }
 
     function pollMs() {
         const n = parseInt(params().get('poll') || '500', 10);
         return Number.isFinite(n) ? Math.max(250, Math.min(n, 5000)) : 500;
+    }
+
+    function cvApi() {
+        return window.AltitudeHdCvOverlay;
+    }
+
+    function activeStreamId() {
+        return cvApi()?.streamId?.() || '';
     }
 
     function setText(id, text) {
@@ -56,18 +57,47 @@
         }
     }
 
-    function applyData(data) {
-        const id = streamId();
-        setText('cvStreamId', id || '—');
+    function updateStreamSourceLabel(source) {
+        const el = document.getElementById('cvStreamSource');
+        if (!el) return;
+        const labels = {
+            url: 'Using stream ID from URL',
+            saved: 'Using saved stream ID (this browser)',
+            laptop: 'Using stream ID from CV laptop config',
+            manual: 'Using stream ID you entered',
+            empty: 'No stream ID yet — enter one or load from laptop',
+        };
+        el.textContent = labels[source] || '';
+    }
 
-        const vmixLink = document.getElementById('cvVmixLink');
-        if (vmixLink && id) {
-            const u = new URL('vmix-cv-leader.html', location.href);
+    function updateVmixLinks() {
+        const id = activeStreamId();
+        const api = params().get('api');
+        const cvLaptop = params().get('cvLaptop');
+
+        ['cvVmixLink', 'cvKriLink'].forEach((linkId) => {
+            const link = document.getElementById(linkId);
+            if (!link || !id) return;
+            const page = linkId === 'cvKriLink' ? 'vmix-kri.html' : 'vmix-cv-leader.html';
+            const u = new URL(page, location.href);
             u.searchParams.set('streamId', id);
-            const api = params().get('api');
             if (api) u.searchParams.set('api', api);
-            vmixLink.href = u.href;
-        }
+            if (cvLaptop) u.searchParams.set('cvLaptop', cvLaptop);
+            link.href = u.href;
+        });
+    }
+
+    function syncStreamInput() {
+        const input = document.getElementById('cvStreamInput');
+        if (input) input.value = activeStreamId();
+        setText('cvStreamId', activeStreamId() || '—');
+        updateVmixLinks();
+    }
+
+    function applyData(data) {
+        const id = activeStreamId();
+        setText('cvStreamId', id || '—');
+        updateVmixLinks();
 
         if (!data) {
             setStatus('waiting', 'No data yet');
@@ -135,16 +165,16 @@
     }
 
     async function tick() {
-        const id = streamId();
+        const id = activeStreamId();
         if (!id) {
-            setStatus('waiting', 'Missing streamId');
-            showError('Add ?streamId=YOUR_GPS_ID to the URL.');
+            setStatus('waiting', 'Missing stream ID');
+            showError('Enter a stream ID below, or click “Load from laptop” if CV setup is running on this PC.');
             return;
         }
 
         showError('');
         try {
-            const data = await window.AltitudeHdCvOverlay.fetchPosition();
+            const data = await window.AltitudeHdCvOverlay.fetchPosition(id);
             applyData(data);
         } catch (err) {
             setStatus('waiting', 'Error');
@@ -153,12 +183,89 @@
         }
     }
 
-    function init() {
-        const id = streamId();
-        if (id) setText('cvStreamId', id);
-
+    function restartPoll() {
+        if (pollTimer != null) clearInterval(pollTimer);
         tick();
-        setInterval(tick, pollMs());
+        pollTimer = setInterval(tick, pollMs());
+    }
+
+    async function applyStreamId(id, source) {
+        cvApi()?.setStreamId?.(id);
+        syncStreamInput();
+        updateStreamSourceLabel(source);
+        restartPoll();
+    }
+
+    async function loadInitialStreamId() {
+        const api = cvApi();
+        if (!api) return;
+
+        if (api.streamIdFromUrl?.()) {
+            await api.ensureStreamId();
+            updateStreamSourceLabel('url');
+            return;
+        }
+
+        const fromLaptop = await api.fetchStreamIdFromLaptop?.();
+        if (fromLaptop) {
+            api.setStreamId(fromLaptop, { updateUrl: true });
+            updateStreamSourceLabel('laptop');
+            return;
+        }
+
+        await api.ensureStreamId();
+        if (api.streamId()) {
+            updateStreamSourceLabel('saved');
+            return;
+        }
+
+        updateStreamSourceLabel('empty');
+    }
+
+    function bindStreamControls() {
+        const form = document.getElementById('cvStreamForm');
+        const input = document.getElementById('cvStreamInput');
+        const laptopBtn = document.getElementById('cvStreamLaptopBtn');
+        const laptopApiInput = document.getElementById('cvLaptopApiInput');
+
+        if (laptopApiInput) {
+            laptopApiInput.value = cvApi()?.laptopApiBase?.() || '';
+            laptopApiInput.addEventListener('change', () => {
+                const value = laptopApiInput.value.trim().replace(/\/$/, '');
+                try {
+                    if (value) localStorage.setItem(cvApi().LS_LAPTOP_API, value);
+                    else localStorage.removeItem(cvApi().LS_LAPTOP_API);
+                } catch {
+                    /* ignore */
+                }
+            });
+        }
+
+        form?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = input?.value.trim() || '';
+            if (!id) return;
+            applyStreamId(id, 'manual');
+        });
+
+        laptopBtn?.addEventListener('click', async () => {
+            const id = await cvApi()?.fetchStreamIdFromLaptop?.();
+            if (!id) {
+                showError(
+                    `Could not read stream ID from ${cvApi()?.laptopApiBase?.()}. Start launch_cv.ps1 / cv_setup_server on this laptop.`,
+                );
+                return;
+            }
+            if (input) input.value = id;
+            applyStreamId(id, 'laptop');
+        });
+    }
+
+    async function init() {
+        bindStreamControls();
+        await loadInitialStreamId();
+        syncStreamInput();
+        restartPoll();
         window.addEventListener('resize', tick);
     }
 

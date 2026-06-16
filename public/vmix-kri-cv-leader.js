@@ -170,6 +170,10 @@
         ensureRoot(document.querySelector('.vg-stage'));
         if (!root) return;
 
+        if (global.AltitudeHdCvOverlay?.ensureStreamId) {
+            await global.AltitudeHdCvOverlay.ensureStreamId();
+        }
+
         activeRace = opts.race || null;
         activeLane = opts.lane ?? activeLane;
         mountCard(activeRace, activeLane);
