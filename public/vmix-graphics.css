@@ -1894,8 +1894,8 @@ body {
 }
 
 [data-vmix-theme='kri'] .vg-kri-leader-badges .vg-leader-badge {
-    left: 0;
-    top: 2px;
+    left: -8px;
+    top: 7px;
     z-index: 4;
     display: flex;
     align-items: center;
