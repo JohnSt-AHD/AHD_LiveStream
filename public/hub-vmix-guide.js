@@ -12,7 +12,8 @@ const VMIX_TRIGGERS = [
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 1.5s; o fades text and finishes video' },
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
-    { key: 'w', graphic: 'Schedule / Leader', desc: 'KRI — upcoming 10 races from hub live race (CSS gradient panel); Milford — leader video + lane text' },
+    { key: 'w', graphic: 'Leader', desc: 'KRI — leader box top-right (Milford placement, white panel + blue accents); fade in/out with o · 1–8 switch lane · Milford — leader video + lane text' },
+    { key: 's', graphic: 'Schedule', desc: 'KRI only — upcoming 10 races from hub live race (CSS gradient panel); fade in/out with o' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'v', graphic: 'Speed chart', desc: 'KRI only — lower-third speed vs distance replay in real time (~7 min demo); ease in/out; add &loop=1 to repeat' },
@@ -129,7 +130,7 @@ function hubRenderVmixGuide() {
         const leaderNote = document.createElement('p');
         leaderNote.className = 'hub-vmix-map-note';
         leaderNote.innerHTML =
-            '<strong>Leader (<code>w</code>):</strong> Leader shot top-right at half size (GT layout). Set <strong>Leader lane</strong> on the hub (default 4); text fades in 2s after <code>w</code>. Video pauses at 6s; <code>o</code> fades text and finishes video. Press <code>1</code>–<code>8</code> on air to switch lane instantly.';
+            '<strong>Leader (<code>w</code>):</strong> KRI — white panel top-right (same text placement as Milford GT); fade in with <code>w</code>, out with <code>o</code>. Set <strong>Leader lane</strong> on the hub (default 4); press <code>1</code>–<code>8</code> on air to switch lane. Milford — leader video pauses at 6s; text fades in after 2s.';
         examples.appendChild(leaderNote);
 
         const cvNote = document.createElement('p');

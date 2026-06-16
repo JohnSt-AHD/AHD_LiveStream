@@ -45,6 +45,7 @@
             { id: 'schedule-rows', label: 'Schedule — race list', posMode: 'transform' },
         ],
         leader: [
+            { id: 'leader-panel', label: 'Leader — KRI panel background' },
             { id: 'leader-wrap', label: 'Leader — overlay root' },
             { id: 'leader-logo', label: 'Leader — school logo' },
             { id: 'leader-badge', label: 'Leader — “Leader” label' },
@@ -1009,7 +1010,8 @@
             l: 'lower',
             d: 'draw',
             r: 'results',
-            w: editor.theme === 'kri' ? 'schedule' : 'leader',
+            w: 'leader',
+            s: 'schedule',
             g: 'speed',
         };
         editor.graphic = aliases[g] || g;

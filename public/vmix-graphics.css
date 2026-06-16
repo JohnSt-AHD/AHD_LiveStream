@@ -565,7 +565,8 @@ body {
 [data-vmix-theme='kri'] .vg-layer--results,
 [data-vmix-theme='kri'] .vg-layer--schedule,
 [data-vmix-theme='kri'] .vg-layer--title,
-[data-vmix-theme='kri'] .vg-layer--lower {
+[data-vmix-theme='kri'] .vg-layer--lower,
+[data-vmix-theme='kri'] .vg-layer--leader {
     inset: 0;
 }
 
@@ -1132,7 +1133,8 @@ body {
 [data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in,
 [data-vmix-theme='kri'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in,
 [data-vmix-theme='kri'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in,
-[data-vmix-theme='kri'] .vg-layer--schedule.vg-layer--visible.vg-layer--fade-in {
+[data-vmix-theme='kri'] .vg-layer--schedule.vg-layer--visible.vg-layer--fade-in,
+[data-vmix-theme='kri'] .vg-layer--leader.vg-layer--visible.vg-layer--fade-in {
     animation: none;
     opacity: 1;
     visibility: visible;
@@ -1143,6 +1145,12 @@ body {
 [data-vmix-theme='kri'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-kri-panel,
 [data-vmix-theme='kri'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-kri-panel,
 [data-vmix-theme='kri'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-kri-lower-wrap {
+    opacity: 0;
+    animation: vg-kri-fade-in 1.5s ease-in forwards;
+}
+
+[data-vmix-theme='kri'] .vg-layer--leader.vg-layer--visible.vg-layer--fade-in .vg-kri-leader-panel,
+[data-vmix-theme='kri'] .vg-layer--leader.vg-layer--visible.vg-layer--fade-in .vg-leader-wrap {
     opacity: 0;
     animation: vg-kri-fade-in 1.5s ease-in forwards;
 }
@@ -1852,6 +1860,127 @@ body {
     line-height: 1.1;
     color: #fff;
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* —— KRI leader (Milford placement, white panel + blue accents) —— */
+[data-vmix-theme='kri'] .vg-kri-leader-panel {
+    position: absolute;
+    left: 1455px;
+    top: 38px;
+    width: 420px;
+    height: 98px;
+    background: var(--kri-brand-white);
+    border: 2px solid var(--kri-brand-blue);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0, 96, 191, 0.22);
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-vmix-theme='kri'] .vg-kri-leader-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(
+        90deg,
+        var(--kri-brand-blue-dark) 0%,
+        var(--kri-brand-blue) 55%,
+        var(--kri-brand-blue-light) 100%
+    );
+    z-index: 0;
+}
+
+[data-vmix-theme='kri'] .vg-layer--leader .vg-leader-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+[data-vmix-theme='kri'] .vg-leader-logo {
+    position: absolute;
+    left: 1476.5px;
+    top: 80px;
+    width: 59.094px;
+    height: 52.92px;
+    object-fit: contain;
+}
+
+[data-vmix-theme='kri'] .vg-leader-logo--empty {
+    position: absolute;
+    left: 1476.5px;
+    top: 80px;
+    width: 59.094px;
+    height: 52.92px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21.168px;
+    color: var(--kri-brand-blue);
+}
+
+[data-vmix-theme='kri'] .vg-leader-badge {
+    position: absolute;
+    left: 1629px;
+    top: 51px;
+    width: 92px;
+    height: 35.1px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14.4px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--kri-brand-blue);
+    border-radius: 5px;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='kri'] .vg-leader-badge-lane {
+    position: absolute;
+    left: 1705px;
+    top: 51px;
+    width: 113.85px;
+    height: 35.1px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14.4px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--kri-brand-blue-dark);
+    border-radius: 5px;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='kri'] .vg-leader-crew {
+    position: absolute;
+    left: 1556.5px;
+    top: 84px;
+    width: 308.61px;
+    height: 41.31px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    font-size: 19.2px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--kri-brand-blue-dark);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

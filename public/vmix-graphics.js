@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = schedule (KRI) or leader (Milford) · v = speed chart (KRI) · k = live tracking (KRI) · m = weather map (KRI) · g = tracker (Milford) · 1–8 = leader lane (Milford) · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = leader · s = schedule (KRI) · v = speed chart (KRI) · k = live tracking (KRI) · m = weather (KRI) · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -14,6 +14,7 @@ const VG_GRAPHIC_ALIASES = {
     results: 'results',
     w: 'leader',
     leader: 'leader',
+    s: 'schedule',
     g: 'speed',
     map: 'speed',
     gps: 'speed',
@@ -31,10 +32,10 @@ const VG_GRAPHIC_ALIASES = {
     upcoming: 'schedule',
 };
 
-/** Theme-aware shortcut → graphic (KRI uses w for upcoming schedule). */
+/** Theme-aware shortcut → graphic (KRI schedule on s). */
 function vgGraphicFromShortcut(key) {
     const k = String(key || '').toLowerCase();
-    if (k === 'w' && vgIsKriTheme()) return 'schedule';
+    if (k === 's' && vgIsKriTheme()) return 'schedule';
     if (k === 'm' && vgIsKriTheme()) return 'weather';
     return VG_GRAPHIC_ALIASES[k] || null;
 }
@@ -596,7 +597,7 @@ function vgSetLeaderLane(laneNum) {
 }
 
 function vgApplyLeaderLane(laneNum, opts = {}) {
-    if (!vgIsMilfordBroadcastTheme()) return;
+    if (!vgIsMilfordBroadcastTheme() && !vgIsKriTheme()) return;
     const race = vgFindRace(vgGetRaceParam());
     if (!race) return;
     if (!vgFindDrawLane(race, laneNum)) return;
@@ -613,13 +614,14 @@ function vgApplyLeaderLane(laneNum, opts = {}) {
 }
 
 function vgSelectLeaderLane(laneNum) {
-    if (vgPlayback.graphic !== 'leader' || !vgIsMilfordBroadcastTheme()) return;
+    if (vgPlayback.graphic !== 'leader') return;
+    if (!vgIsMilfordBroadcastTheme() && !vgIsKriTheme()) return;
     if (vgPlayback.state === 'idle') return;
     vgApplyLeaderLane(laneNum);
 }
 
 function vgShowLeaderForConfiguredLane(fadeIn = false) {
-    if (!vgIsMilfordBroadcastTheme()) return;
+    if (!vgIsMilfordBroadcastTheme() && !vgIsKriTheme()) return;
     vgApplyLeaderLane(vgGetLeaderLane(), { fadeIn });
 }
 
@@ -1103,7 +1105,9 @@ function vgGetOutroFadeMs(graphic) {
 function vgGetVideoProfile(graphic) {
     let base;
     if (graphic === 'leader') {
-        base = { pauseAtMs: 6000 };
+        base = vgIsKriTheme()
+            ? { textInMs: 0 }
+            : { pauseAtMs: 6000 };
     } else if (graphic === 'speed') {
         base = { textInMs: 1000, pauseAtMs: 3000 };
     } else if (graphic === 'lower') {
@@ -1845,7 +1849,8 @@ function vgPrepareContent(graphic, raceParam) {
     else if (graphic === 'results') vgRenderResults(layer, race);
     else if (graphic === 'schedule') vgRenderSchedule(layer, raceParam);
     else if (graphic === 'leader') {
-        vgSetLayerGraphicClass(layer, 'vg-layer--leader');
+        const lane = vgLeaderLane ?? vgGetLeaderLane();
+        vgRenderLeader(layer, race, lane);
     }
 
     vgSyncLayerVisibility(layer);
@@ -2227,6 +2232,12 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
     const club = vgParseClubCode(entry.code);
     const info = vgClubInfo(club.id, vgState.lookup);
 
+    if (vgIsKriTheme()) {
+        const panel = vgEl('div', 'vg-kri-leader-panel');
+        panel.dataset.vgLayout = 'leader-panel';
+        layer.appendChild(panel);
+    }
+
     const wrap = vgEl('div', 'vg-leader-wrap');
     wrap.dataset.vgLayout = 'leader-wrap';
     if (opts.fadeIn) {
@@ -2569,7 +2580,7 @@ function vgBindKeyboard() {
         }
         if (
             vgPlayback.graphic === 'leader' &&
-            vgIsMilfordBroadcastTheme() &&
+            (vgIsMilfordBroadcastTheme() || vgIsKriTheme()) &&
             vgPlayback.state !== 'idle'
         ) {
             const lane = parseInt(e.key, 10);

@@ -134,6 +134,47 @@
                     color: 'rgb(255, 255, 255)',
                 },
             },
+            leader: {
+                _playback: {
+                    textInMs: 0,
+                    outroMs: 1500,
+                },
+                'leader-panel': {
+                    left: '1455px',
+                    top: '38px',
+                    width: '420px',
+                    height: '98px',
+                },
+                'leader-wrap': {},
+                'leader-logo': {
+                    left: '1476.5px',
+                    top: '80px',
+                    width: '59.094px',
+                    height: '52.92px',
+                },
+                'leader-crew': {
+                    left: '1556.5px',
+                    top: '84px',
+                    width: '308.61px',
+                    height: '41.31px',
+                    fontSize: '19.2px',
+                    color: 'rgb(0, 96, 191)',
+                },
+                'leader-badge': {
+                    left: '1629px',
+                    top: '51px',
+                    width: '92px',
+                    height: '35.1px',
+                    fontSize: '14.4px',
+                },
+                'leader-badge-lane': {
+                    left: '1705px',
+                    top: '51px',
+                    width: '113.85px',
+                    height: '35.1px',
+                    fontSize: '14.4px',
+                },
+            },
             lower: {
                 'lower-meta': {
                     left: '500px',
