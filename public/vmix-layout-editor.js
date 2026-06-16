@@ -45,7 +45,9 @@
             { id: 'schedule-rows', label: 'Schedule — race list', posMode: 'transform' },
         ],
         leader: [
-            { id: 'leader-panel', label: 'Leader — KRI panel background' },
+            { id: 'leader-card', label: 'Leader — card root (top-right)' },
+            { id: 'leader-badges', label: 'Leader — badge row (above panel)' },
+            { id: 'leader-panel', label: 'Leader — white panel (logo + crew)' },
             { id: 'leader-wrap', label: 'Leader — overlay root' },
             { id: 'leader-logo', label: 'Leader — school logo' },
             { id: 'leader-badge', label: 'Leader — “Leader” label' },

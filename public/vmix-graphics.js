@@ -2232,16 +2232,47 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
     const club = vgParseClubCode(entry.code);
     const info = vgClubInfo(club.id, vgState.lookup);
 
-    if (vgIsKriTheme()) {
-        const panel = vgEl('div', 'vg-kri-leader-panel');
-        panel.dataset.vgLayout = 'leader-panel';
-        layer.appendChild(panel);
-    }
-
     const wrap = vgEl('div', 'vg-leader-wrap');
     wrap.dataset.vgLayout = 'leader-wrap';
     if (opts.fadeIn) {
         wrap.classList.add('vg-leader-wrap--fade-in');
+    }
+
+    if (vgIsKriTheme()) {
+        const card = vgEl('div', 'vg-kri-leader-card');
+        card.dataset.vgLayout = 'leader-card';
+
+        const badges = vgEl('div', 'vg-kri-leader-badges');
+        badges.dataset.vgLayout = 'leader-badges';
+        const badge = vgEl('p', 'vg-leader-badge', 'Leader');
+        badge.dataset.vgLayout = 'leader-badge';
+        badges.appendChild(badge);
+        const laneBadge = vgEl('p', 'vg-leader-badge-lane', `Lane ${laneNum}`);
+        laneBadge.dataset.vgLayout = 'leader-badge-lane';
+        badges.appendChild(laneBadge);
+        card.appendChild(badges);
+
+        const panel = vgEl('div', 'vg-kri-leader-panel');
+        panel.dataset.vgLayout = 'leader-panel';
+
+        if (info.logoUrl) {
+            const img = document.createElement('img');
+            img.className = 'vg-leader-logo';
+            img.src = info.logoUrl;
+            img.alt = '';
+            img.dataset.vgLayout = 'leader-logo';
+            panel.appendChild(img);
+        } else {
+            panel.appendChild(vgEl('span', 'vg-leader-logo vg-leader-logo--empty', '—'));
+        }
+
+        const crew = vgEl('p', 'vg-leader-crew', info.name);
+        crew.dataset.vgLayout = 'leader-crew';
+        panel.appendChild(crew);
+        card.appendChild(panel);
+        wrap.appendChild(card);
+        layer.appendChild(wrap);
+        return;
     }
 
     if (info.logoUrl) {
