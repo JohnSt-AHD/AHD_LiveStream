@@ -2115,8 +2115,9 @@ body {
 
 .kri-cv-draw__card-wrap {
     position: absolute;
-    transform: translate(-100%, -50%) scale(0.5);
-    transform-origin: center right;
+    right: 28px;
+    transform: translateY(-50%) scale(0.5);
+    transform-origin: right center;
     pointer-events: none;
     z-index: 2;
     opacity: 0;
@@ -2144,9 +2145,10 @@ body {
 
 /* Reset KRI leader-card canvas position (1455px) — same pattern as kri-cv-leader (x). */
 [data-vmix-theme='kri'] .kri-cv-draw .vg-kri-leader-card {
-    position: relative;
-    left: auto;
-    top: auto;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
     z-index: auto;
 }
 

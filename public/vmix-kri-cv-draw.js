@@ -8,6 +8,7 @@
     const W_THIN = 1;
     const W_THICK = 7;
     const CARD_SCALE = 0.5;
+    const CARD_EDGE_INSET = 28;
     const OUT_W = 1920;
     const OUT_H = 1080;
     const DEFAULT_REF_W = 1280;
@@ -90,8 +91,55 @@
         const avail = OUT_H - marginTop - marginBottom;
         const step = avail / Math.max(1, count);
         return {
-            bx: OUT_W - 28,
             by: marginTop + (slot - 0.5) * step,
+        };
+    }
+
+    function stageMetrics() {
+        const host = root?.parentElement || document.querySelector('.vg-stage');
+        if (!host) {
+            return { left: 0, top: 0, width: OUT_W, height: OUT_H };
+        }
+        const rect = host.getBoundingClientRect();
+        return {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width || OUT_W,
+            height: rect.height || OUT_H,
+        };
+    }
+
+    /** Map a screen point inside the stage to SVG viewBox coordinates. */
+    function screenToSvg(sx, sy) {
+        const stage = stageMetrics();
+        return {
+            x: ((sx - stage.left) / stage.width) * OUT_W,
+            y: ((sy - stage.top) / stage.height) * OUT_H,
+        };
+    }
+
+    function resetDrawCardLayout(cardEl) {
+        if (!cardEl) return;
+        cardEl.style.position = 'relative';
+        cardEl.style.left = '0';
+        cardEl.style.top = '0';
+        cardEl.style.margin = '0';
+    }
+
+    /** Right-centre of the rendered crew card (matches connector thick end). */
+    function cardAnchor(inst) {
+        const wrap = inst.cardWrap;
+        if (!wrap) {
+            return { bx: OUT_W - CARD_EDGE_INSET, by: inst.station.by };
+        }
+        const rect = wrap.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) {
+            return { bx: OUT_W - CARD_EDGE_INSET, by: inst.station.by };
+        }
+        const pt = screenToSvg(rect.right, rect.top + rect.height / 2);
+        return {
+            bx: Math.max(0, Math.min(OUT_W, pt.x)),
+            by: Math.max(0, Math.min(OUT_H, pt.y)),
         };
     }
 
@@ -172,11 +220,13 @@
             cardWrap.className = 'kri-cv-draw__card-wrap';
             cardWrap.dataset.slot = String(slot);
             const station = cardStation(slot, count);
-            cardWrap.style.left = `${station.bx}px`;
+            cardWrap.style.right = `${CARD_EDGE_INSET}px`;
+            cardWrap.style.left = '';
             cardWrap.style.top = `${station.by}px`;
 
             const cardEl = build(race, draw.lane, { slot, isLeader: false });
             if (!cardEl) continue;
+            resetDrawCardLayout(cardEl);
             cardWrap.appendChild(cardEl);
             root.appendChild(cardWrap);
 
@@ -198,13 +248,15 @@
     }
 
     function applyConnector(inst, ax, ay) {
-        const { bx, by } = inst.station;
+        const { bx, by } = cardAnchor(inst);
+        inst.station.bx = bx;
+        inst.station.by = by;
         const card = inst.cardEl;
-        let extend = 36;
+        let extend = 18;
         if (card) {
             const panel = card.querySelector('.vg-kri-leader-panel') || card;
             const w = (panel.offsetWidth || 160) * CARD_SCALE;
-            extend = Math.max(14, Math.min(w * 0.45, 40));
+            extend = Math.max(8, Math.min(w * 0.35, 28));
         }
         inst.connector.setAttribute('points', connectorPoints(ax, ay, bx, by, extend));
         inst.connector.classList.toggle('kri-cv-draw__connector--hidden', !inst.hasPos);
