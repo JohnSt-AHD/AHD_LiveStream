@@ -2072,6 +2072,93 @@ body {
     animation: vg-kri-fade-out 1.5s ease-out 1s forwards;
 }
 
+/* —— KRI CV draw overlay (h) —— */
+.kri-cv-draw {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.kri-cv-draw--visible {
+    visibility: visible;
+}
+
+.kri-cv-draw__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.kri-cv-draw__connector {
+    fill: var(--kri-brand-blue);
+    opacity: 0;
+    filter: drop-shadow(0 2px 5px rgba(0, 96, 191, 0.3));
+}
+
+.kri-cv-draw__connector--hidden {
+    opacity: 0 !important;
+}
+
+.kri-cv-draw--hold .kri-cv-draw__connector:not(.kri-cv-draw__connector--hidden) {
+    opacity: 0.88;
+}
+
+.kri-cv-draw--stale .kri-cv-draw__connector:not(.kri-cv-draw__connector--hidden) {
+    opacity: 0.3;
+}
+
+.kri-cv-draw__card-wrap {
+    position: absolute;
+    transform: translate(-100%, -50%);
+    transform-origin: center right;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+}
+
+.kri-cv-draw--intro .kri-cv-draw__card-wrap {
+    animation: vg-kri-fade-in 1.5s ease-out forwards;
+}
+
+.kri-cv-draw--intro .kri-cv-draw__connector:not(.kri-cv-draw__connector--hidden) {
+    animation: kri-cv-connector-fade-in 1.5s ease-out forwards;
+}
+
+.kri-cv-draw--hold .kri-cv-draw__card-wrap {
+    opacity: 1;
+}
+
+.kri-cv-draw--outro .kri-cv-draw__card-wrap {
+    animation: vg-kri-fade-out 1.5s ease-out forwards;
+}
+
+.kri-cv-draw--outro .kri-cv-draw__connector {
+    animation: kri-cv-connector-fade-out 1.5s ease-out forwards;
+}
+
+.kri-cv-draw .vg-kri-cv-draw-card {
+    transform: scale(0.92);
+    transform-origin: center right;
+}
+
+.vg-kri-cv-draw-panel--leader-glow {
+    box-shadow:
+        0 0 0 2px rgba(212, 175, 55, 0.95),
+        0 0 22px rgba(255, 215, 0, 0.55),
+        0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.vg-kri-cv-draw-card--leader .vg-kri-leader-badges .vg-leader-badge {
+    background: linear-gradient(135deg, #f5d76e, #c9a227);
+    color: #1a1200;
+}
+
 @keyframes kri-cv-connector-fade-in {
     from {
         opacity: 0;

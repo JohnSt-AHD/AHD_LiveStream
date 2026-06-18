@@ -246,30 +246,6 @@
         return cv.mapPoint(data.x, data.y, refW, refH, offset);
     }
 
-    function resolveActiveRace() {
-        return (
-            activeRace ||
-            global.VmixGraphics?.findRace?.(global.VmixGraphics?.getRaceParam?.()) ||
-            null
-        );
-    }
-
-    function updateLeaderLaneFromCv(data) {
-        const race = resolveActiveRace();
-        const map = global.AltitudeHdCvBoatMap;
-        if (!race || !map?.leaderDrawLane || !data) return activeLane;
-        const lane = map.leaderDrawLane(
-            data,
-            race,
-            global.VmixGraphics?.getLookup?.() || null,
-        );
-        if (!lane || lane === activeLane) return activeLane;
-        activeLane = lane;
-        mountCard(race, lane);
-        if (lastAnchor) setTargetAnchor(lastAnchor.ax, lastAnchor.ay);
-        return lane;
-    }
-
     async function tick() {
         if (!root || !global.AltitudeHdCvOverlay?.fetchPosition) return;
         try {
@@ -279,7 +255,6 @@
                 return;
             }
             root.classList.remove('kri-cv-leader--stale');
-            updateLeaderLaneFromCv(data);
             const pt = mapCvPoint(data);
             if (!pt) return;
             const ax = Math.max(0, Math.min(OUT_W, pt.left));
@@ -304,7 +279,7 @@
             await global.AltitudeHdCvOverlay.ensureStreamId();
         }
 
-        activeRace = opts.race || resolveActiveRace();
+        activeRace = opts.race || null;
         activeLane = opts.lane ?? activeLane;
         mountCard(activeRace, activeLane);
 
@@ -370,19 +345,10 @@
 
     function setLane(lane) {
         activeLane = lane;
-        const race = resolveActiveRace();
-        if (!race || !root) return;
-        activeRace = race;
+        if (!activeRace || !root) return;
         mountCard(activeRace, activeLane);
         if (lastAnchor) setTargetAnchor(lastAnchor.ax, lastAnchor.ay);
     }
-
-    document.addEventListener('altitudehd:liverace', () => {
-        const race = resolveActiveRace();
-        if (!race || !root) return;
-        activeRace = race;
-        mountCard(activeRace, activeLane);
-    });
 
     global.KriVmixCvLeader = {
         INTRO_MS,

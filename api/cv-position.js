@@ -73,6 +73,7 @@ function normalizePositionPayload(body) {
               })
               .filter(Boolean)
         : [];
+    const raceBoatCount = Number(body?.race_boat_count ?? body?.raceBoatCount);
 
     return {
         streamId,
@@ -85,6 +86,10 @@ function normalizePositionPayload(body) {
         refW,
         refH,
         boats,
+        race_boat_count:
+            Number.isFinite(raceBoatCount) && raceBoatCount >= 1
+                ? Math.round(raceBoatCount)
+                : undefined,
         updatedAt: Date.now(),
     };
 }
