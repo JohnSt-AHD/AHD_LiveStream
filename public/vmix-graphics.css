@@ -2115,12 +2115,15 @@ body {
 
 .kri-cv-draw__card-wrap {
     position: absolute;
-    right: 28px;
-    transform: translateY(-50%) scale(0.5);
-    transform-origin: right center;
+    left: 0;
+    top: 0;
+    transform: translate(0, -100%);
+    transform-origin: bottom left;
     pointer-events: none;
     z-index: 2;
+    isolation: isolate;
     opacity: 0;
+    will-change: left, top;
 }
 
 .kri-cv-draw--intro .kri-cv-draw__card-wrap {
@@ -2144,12 +2147,16 @@ body {
 }
 
 /* Reset KRI leader-card canvas position (1455px) — same pattern as kri-cv-leader (x). */
-[data-vmix-theme='kri'] .kri-cv-draw .vg-kri-leader-card {
+.kri-cv-draw .vg-kri-leader-card {
     position: relative !important;
     left: 0 !important;
     top: 0 !important;
     margin: 0 !important;
     z-index: auto;
+}
+
+.kri-cv-draw .vg-kri-leader-panel {
+    background: var(--kri-brand-white);
 }
 
 .kri-cv-draw .vg-kri-cv-draw-panel--leader-glow {
