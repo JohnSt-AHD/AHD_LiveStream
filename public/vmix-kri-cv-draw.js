@@ -5,8 +5,9 @@
 (function (global) {
     const INTRO_MS = 2500;
     const OUTRO_MS = 2500;
-    const W_THIN = 1.5;
-    const W_THICK = 12;
+    const W_THIN = 1;
+    const W_THICK = 7;
+    const CARD_SCALE = 0.5;
     const OUT_W = 1920;
     const OUT_H = 1080;
     const DEFAULT_REF_W = 1280;
@@ -202,8 +203,8 @@
         let extend = 36;
         if (card) {
             const panel = card.querySelector('.vg-kri-leader-panel') || card;
-            const w = panel.offsetWidth || 160;
-            extend = Math.max(28, Math.min(w * 0.4, 72));
+            const w = (panel.offsetWidth || 160) * CARD_SCALE;
+            extend = Math.max(14, Math.min(w * 0.45, 40));
         }
         inst.connector.setAttribute('points', connectorPoints(ax, ay, bx, by, extend));
         inst.connector.classList.toggle('kri-cv-draw__connector--hidden', !inst.hasPos);

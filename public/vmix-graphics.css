@@ -2115,7 +2115,7 @@ body {
 
 .kri-cv-draw__card-wrap {
     position: absolute;
-    transform: translate(-100%, -50%);
+    transform: translate(-100%, -50%) scale(0.5);
     transform-origin: center right;
     pointer-events: none;
     z-index: 2;
@@ -2143,15 +2143,16 @@ body {
 }
 
 .kri-cv-draw .vg-kri-cv-draw-card {
-    transform: scale(0.92);
-    transform-origin: center right;
+    position: relative;
+    left: auto;
+    top: auto;
 }
 
-.vg-kri-cv-draw-panel--leader-glow {
+.kri-cv-draw .vg-kri-cv-draw-panel--leader-glow {
     box-shadow:
-        0 0 0 2px rgba(212, 175, 55, 0.95),
-        0 0 22px rgba(255, 215, 0, 0.55),
-        0 4px 18px rgba(0, 0, 0, 0.35);
+        0 0 0 1px rgba(212, 175, 55, 0.95),
+        0 0 12px rgba(255, 215, 0, 0.55),
+        0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .vg-kri-cv-draw-card--leader .vg-kri-leader-badges .vg-leader-badge {
