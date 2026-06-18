@@ -43,8 +43,36 @@ function normalizePositionPayload(body) {
     const frame = Number.isFinite(Number(body?.frame)) ? Number(body.frame) : 0;
     const auto = Number(body?.auto) ? 1 : 0;
     const venue = String(body?.venue || 'karapiro').toLowerCase();
+    const boatDirection = String(body?.boat_direction || body?.boatDirection || '').trim();
     const refW = Number(body?.refW) > 0 ? Number(body.refW) : 1280;
     const refH = Number(body?.refH) > 0 ? Number(body.refH) : 720;
+
+    const boats = Array.isArray(body?.boats)
+        ? body.boats
+              .map((boat) => {
+                  const slot = Number(boat?.slot);
+                  const bx = Number(boat?.x);
+                  const by = Number(boat?.y);
+                  if (!Number.isFinite(slot) || !Number.isFinite(bx) || !Number.isFinite(by)) {
+                      return null;
+                  }
+                  const row = {
+                      slot: Math.round(slot),
+                      x: Math.round(bx),
+                      y: Math.round(by),
+                      laneCoord: Math.round(
+                          Number.isFinite(Number(boat?.laneCoord))
+                              ? Number(boat.laneCoord)
+                              : by,
+                      ),
+                  };
+                  if (Number.isFinite(Number(boat?.conf))) {
+                      row.conf = Number(boat.conf);
+                  }
+                  return row;
+              })
+              .filter(Boolean)
+        : [];
 
     return {
         streamId,
@@ -53,8 +81,10 @@ function normalizePositionPayload(body) {
         frame: Math.round(frame),
         auto,
         venue: venue === 'twizel' ? 'twizel' : 'karapiro',
+        boat_direction: boatDirection || undefined,
         refW,
         refH,
+        boats,
         updatedAt: Date.now(),
     };
 }

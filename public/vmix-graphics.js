@@ -891,6 +891,7 @@ async function vgStartCvLeaderIntro() {
             race,
             lane: vgGetLeaderLane(),
         });
+        window.CvBoatMarkers?.show?.();
         if (!vgIsCvLeaderGraphic(vgPlayback.graphic)) return;
         vgSetStageState('hold');
     } catch (e) {
@@ -910,6 +911,7 @@ async function vgStartCvLeaderOutro() {
     vgSetStageState('outro');
     try {
         if (window.KriVmixCvLeader) await window.KriVmixCvLeader.hide();
+        window.CvBoatMarkers?.hide?.();
     } finally {
         vgResetToIdle();
     }
@@ -1750,6 +1752,7 @@ function vgResetToIdle() {
     vgLeaderLane = null;
     if (window.KriVmixSpeedChart) window.KriVmixSpeedChart.remove();
     if (window.KriVmixCvLeader) window.KriVmixCvLeader.remove();
+    if (window.CvBoatMarkers) window.CvBoatMarkers.remove();
     if (window.KriVmixLiveTracking) window.KriVmixLiveTracking.remove();
     if (window.KriVmixWeather) window.KriVmixWeather.remove();
     vgSetStageState('idle');
@@ -2920,6 +2923,8 @@ window.VmixGraphics = {
     devHoldVideoTimeMs: vgDevHoldVideoTimeMs,
     buildKriLeaderCard: vgBuildKriLeaderCard,
     findRace: vgFindRace,
+    getRaceParam: vgGetRaceParam,
+    getLookup: () => vgState.lookup,
 };
 window.AltitudeHdVmix = window.VmixGraphics;
 

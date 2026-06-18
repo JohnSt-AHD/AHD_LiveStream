@@ -2655,7 +2655,51 @@ body {
     justify-self: end;
     font-size: 12px;
     font-weight: 800;
-    color: #0060bf;
-    text-align: right;
-    letter-spacing: 0.02em;
+
+/* CV boat markers — logo + short name at detected positions */
+.cv-boat-markers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.cv-boat-markers--visible {
+    opacity: 1;
+}
+
+.cv-boat-markers--stale {
+    opacity: 0.45;
+}
+
+.cv-boat-markers__wrap {
+    position: absolute;
+    transform: translate(-50%, -100%);
+}
+
+.cv-boat-markers__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 999px;
+    background: rgba(8, 16, 28, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.cv-boat-markers__logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.cv-boat-markers__name {
+    font: 600 18px/1.1 "Segoe UI", system-ui, sans-serif;
+    color: #fff;
+    white-space: nowrap;
 }
