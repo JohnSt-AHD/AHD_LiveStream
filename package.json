@@ -10,6 +10,7 @@
     "export-lookup": "python scripts/export-ahd-lookup.py",
     "convert-milford": "python scripts/convert-milford-videos.py",
     "proposals:season": "node scripts/generate-kri-proposal-pdfs.mjs",
+    "proposals:sim10": "node scripts/generate-sim10-proposals.mjs",
     "proposals:crewsight": "node scripts/generate-crewsight-technical-pdf.mjs",
     "proposals:roadmap": "node scripts/generate-crewsight-roadmap-pdf.mjs",
     "proposals:comparison": "node scripts/generate-crewsight-comparison-pdf.mjs",
