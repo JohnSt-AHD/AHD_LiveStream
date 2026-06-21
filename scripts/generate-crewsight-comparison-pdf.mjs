@@ -9,45 +9,68 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { uploadPdfToDrive } from './lib/upload-proposal-to-drive.mjs';
+import { parseProposalArgs } from './lib/proposal-cli.mjs';
 import { M26_FIELD_TEST, m26BatterySummaryHtml, m26GpsSummaryHtml } from './lib/m26-field-test-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const OUT_DIR = join(ROOT, 'docs', 'proposals');
+const DEFAULT_OUT_DIR = join(ROOT, 'docs', 'proposals');
 
 const GST = 0.15;
 const FLEET = 270;
 const HANDSET_SELL = 130;
 const PLATFORM_FEE = 6000;
-const SIM_MONTH = 5;
 const SEASON_MONTHS = 4;
 const MOUNT_SELL = 50;
 const REGATTA_DAYS = 32;
 const REGATTA_COUNT = 8;
 
-/** Indicative EUR/NZD — update when Trimaran quote received. */
+/** EUR/NZD — update if exchange rate changes. */
 const EUR_TO_NZD = 1.82;
 
 /** CrewSight virtual livestream add-on — per regatta day (NZD; not on-site cameras). */
 const CREWSIGHT_VIRTUAL_STREAM_DAY_NZD = 750;
 
 /**
- * GeoRacing indicative turnkey estimate (270 devices · 4-month season · 32 tracking days).
- * Device rental + platform in EUR.
- * Virtual livestream: Fan Experience / 2D Race Viewer package — €48,000 season add-on (GeoRacing commercial terms).
+ * GeoRacing preliminary budget (Trimaran email — hardware purchase + per-event licensing).
+ * All EUR figures excl. tax/shipping unless noted. SIM cards not included in tracker price.
+ * @see GEORACING_Fan_Experience_Package_2D_Race_Viewer_V2.pdf (hardware specs)
  */
 const GEORACING_EUR = {
-  deviceMonth: 42,
-  platformSetup: 16_500,
-  /** Virtual 2D livestream / on-air graphics — season add-on (not on-site cameras). */
-  virtualLivestreamSeason: 48_000,
+  /** One-time GPS tracker purchase (excl. tax, shipping). Quote example: 120 × €140 = €16,800. */
+  trackerPurchase: 140,
+  /** One-day online training webinar — paid upon order. */
+  training: 800,
+  /** Safety package — private fleet monitoring link. */
+  safetyPerDay: 150,
+  /** Fan Experience — public iframe, app, leaderboard (up to 20k connections/day). */
+  fanExperiencePerDay: 300,
+  /** API access — connect GeoRacing data to livestream partner graphics (e.g. vMix). */
+  apiPerDay: 200,
 };
 
 const LORA_TRACKER_NZD = 199;
 const LORA_GATEWAY_NZD = 1400;
 const LORA_SETUP_NZD = 500;
 const LORA_CLOUD_30_YR_NZD = 990;
+/** Assumed uplink interval for IQnexus LoRa trackers in comparison (confirm with vendor). */
 const LORA_UPDATE_SEC = 10;
+/** Typical outdoor LoRaWAN gateway reach — line-of-sight; obstructions reduce range. */
+const LORA_RANGE_LOS_KM = '2–5 km';
+
+/** GeoRacing LTE tracker — from Fan Experience / 2D Race Viewer package PDF (Trimaran). */
+const GEORACING_DEVICE = {
+  gpsAccuracyM: 1,
+  weightG: 93,
+  batteryMah: 2600,
+  batteryHoursMin: 14,
+  batteryHoursMax: 70,
+  bufferMessages: 10_000,
+  connectivity: 'LTE Cat M1 + 2G fallback',
+  dimensionsMm: '39.9 × 26.7 × 77.9',
+};
+
+const M26_BATTERY_MAH = M26_FIELD_TEST.batteryMah;
 
 function money(n, { gst = false, currency = 'NZD', decimals = 0 } = {}) {
   const v = gst ? n * (1 + GST) : n;
@@ -80,53 +103,181 @@ function loraSeason(devices) {
   return { devices, gateways, trackers, gatewayCost, setup, cloud, total: trackers + gatewayCost + setup + cloud };
 }
 
-function crewsightSeason(devices, { withMounting = false } = {}) {
+function crewsightSeason(devices, simMonth, { withMounting = false } = {}) {
   const handsets = devices * HANDSET_SELL;
-  const sim = devices * SIM_MONTH * SEASON_MONTHS;
+  const sim = devices * simMonth * SEASON_MONTHS;
   const platform = PLATFORM_FEE;
   const mounting = withMounting ? devices * MOUNT_SELL : 0;
   const included = handsets + platform + sim + mounting;
   return { handsets, sim, platform, mounting, included };
 }
 
-function georacingSeason({ withVirtualLiveStream = false } = {}) {
-  const deviceRental = FLEET * GEORACING_EUR.deviceMonth * SEASON_MONTHS;
-  const platform = GEORACING_EUR.platformSetup;
-  const opsEur = deviceRental + platform;
-  const virtualStreamEur = withVirtualLiveStream ? GEORACING_EUR.virtualLivestreamSeason : 0;
-  const virtualStreamNzd = virtualStreamEur * EUR_TO_NZD;
-  const opsNzd = opsEur * EUR_TO_NZD;
-  const totalNzd = opsNzd + virtualStreamNzd;
+function georacingSeason(simMonth, { withVirtualLiveStream = false } = {}) {
+  const hardware = FLEET * GEORACING_EUR.trackerPurchase;
+  const training = GEORACING_EUR.training;
+  const days = REGATTA_DAYS;
+
+  const safetyLicensing = GEORACING_EUR.safetyPerDay * days;
+  const fanLicensing = GEORACING_EUR.fanExperiencePerDay * days;
+  const apiLicensing = GEORACING_EUR.apiPerDay * days;
+  const virtualLicensing = fanLicensing + apiLicensing;
+  const virtualAddonEur = virtualLicensing - safetyLicensing;
+
+  const opsEur = hardware + training + safetyLicensing;
+  const withVirtualEur = hardware + training + virtualLicensing;
+
+  /** SIMs not in GeoRacing quote — same One NZ rate as CrewSight for like-for-like. */
+  const simNzd = FLEET * simMonth * SEASON_MONTHS;
+
   return {
-    deviceRental,
-    platform,
-    virtualStreamEur,
-    virtualStreamNzd,
+    hardware,
+    training,
+    safetyLicensing,
+    fanLicensing,
+    apiLicensing,
+    virtualLicensing,
+    virtualAddonEur,
+    simNzd,
+    opsEur,
+    withVirtualEur,
+    opsNzd: opsEur * EUR_TO_NZD + simNzd,
+    withVirtualNzd: withVirtualEur * EUR_TO_NZD + simNzd,
+    virtualAddonNzd: virtualAddonEur * EUR_TO_NZD,
     withVirtualLiveStream,
-    eur: opsEur,
-    nzd: opsNzd,
-    totalNzd,
-    totalEur: opsEur + virtualStreamEur,
+    /** Active tier totals for callers that pass withVirtualLiveStream. */
+    eur: withVirtualLiveStream ? withVirtualEur : opsEur,
+    nzd: (withVirtualLiveStream ? withVirtualEur : opsEur) * EUR_TO_NZD,
+    totalNzd: withVirtualLiveStream ? withVirtualEur * EUR_TO_NZD + simNzd : opsEur * EUR_TO_NZD + simNzd,
   };
 }
 
-function comparisonHtml() {
+function deviceHardwareComparisonHtml(simMonth) {
+  const cs = crewsightSeason(FLEET, simMonth);
+  const lora = loraSeason(FLEET);
+  const geo = georacingSeason(simMonth);
+  const loraHz = (1 / LORA_UPDATE_SEC).toFixed(2);
+  const geoHardwareNzd = geo.hardware * EUR_TO_NZD;
+
+  return `
+  <h2>Device &amp; hardware comparison</h2>
+  <p class="muted">Side-by-side tracker/handset characteristics for ops / tracking. Season costs in earlier tables include platform, data, and gateways where applicable.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>CrewSight</th>
+        <th>IQnexus LoRaWAN</th>
+        <th>GeoRacing</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Device type</strong></td>
+        <td>Android smartphone (One NZ Smart M26)</td>
+        <td>Dedicated LoRa GPS tracker</td>
+        <td>Dedicated LTE GPS tracker (purchase)</td>
+      </tr>
+      <tr>
+        <td><strong>Device cost (${FLEET} fleet)</strong></td>
+        <td class="win">${money(cs.handsets)} purchase<br /><span class="muted">${money(HANDSET_SELL)}/unit · KRI owns</span></td>
+        <td>${money(lora.trackers)} purchase<br /><span class="muted">${money(LORA_TRACKER_NZD)}/unit · KRI owns</span></td>
+        <td>${money(geoHardwareNzd)} purchase<br /><span class="muted">${money(GEORACING_EUR.trackerPurchase, { currency: 'EUR' })}/unit · KRI owns · excl. tax/shipping</span></td>
+      </tr>
+      <tr>
+        <td><strong>Extra infrastructure</strong></td>
+        <td>None (cellular)</td>
+        <td>${money(lora.gatewayCost)} — ${lora.gateways}× outdoor gateway @ ${money(LORA_GATEWAY_NZD)}<br /><span class="muted">+ ${money(lora.setup)} setup · WAN backhaul per site</span></td>
+        <td>None — cellular trackers</td>
+      </tr>
+      <tr>
+        <td><strong>Connectivity / range</strong></td>
+        <td class="win">Cellular LTE — national coverage; not line-of-sight limited</td>
+        <td>LoRaWAN to gateway — <strong>line-of-sight ~${LORA_RANGE_LOS_KM}</strong> per outdoor gateway; plan coverage for full 2 km course + return lanes</td>
+        <td>${GEORACING_DEVICE.connectivity} — cellular; not line-of-sight limited</td>
+      </tr>
+      <tr>
+        <td><strong>GPS update rate</strong></td>
+        <td class="win"><strong>1 Hz</strong> on water (field-validated); configurable <strong>1 s–30 s+</strong><br /><span class="muted">Mixed regatta profile: 1 s / 5 s / 30 s</span></td>
+        <td><strong>${LORA_UPDATE_SEC} s</strong> assumed (~${loraHz} Hz) — confirm with IQnexus</td>
+        <td class="na">Not stated in vendor materials — OTA configurable; confirm with Trimaran</td>
+      </tr>
+      <tr>
+        <td><strong>GPS accuracy</strong></td>
+        <td><strong>${M26_FIELD_TEST.gps.h7.medianAccM} m</strong> median (field test ${M26_FIELD_TEST.testDate})</td>
+        <td class="na">Not quoted — confirm with vendor</td>
+        <td><strong>${GEORACING_DEVICE.gpsAccuracyM} m</strong> (vendor spec)</td>
+      </tr>
+      <tr>
+        <td><strong>Battery / runtime</strong></td>
+        <td>${M26_BATTERY_MAH.toLocaleString()} mAh · <strong>~${M26_FIELD_TEST.battery.estFullChargeH} h</strong> @ 1 Hz continuous<br /><span class="muted">~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% for ${M26_FIELD_TEST.regattaDayActiveH} h regatta day — overnight charge</span></td>
+        <td class="na">Not quoted — typically long-life replaceable cell at low duty cycle; confirm</td>
+        <td>${GEORACING_DEVICE.batteryMah} mAh · <strong>${GEORACING_DEVICE.batteryHoursMin}–${GEORACING_DEVICE.batteryHoursMax} h</strong> autonomy (vendor spec; rate-dependent)</td>
+      </tr>
+      <tr>
+        <td><strong>Weight / size</strong></td>
+        <td>Smartphone (~${M26_BATTERY_MAH} mAh handset)</td>
+        <td class="na">Compact tracker — confirm model with IQnexus</td>
+        <td><strong>${GEORACING_DEVICE.weightG} g</strong> · ${GEORACING_DEVICE.dimensionsMm} mm</td>
+      </tr>
+      <tr>
+        <td><strong>Capsize / safety alert</strong></td>
+        <td class="win">Automatic hull &amp; crew event detection (rowing-tuned)</td>
+        <td>Generic motion — not rowing-specific</td>
+        <td>Manual emergency button only</td>
+      </tr>
+      <tr>
+        <td><strong>Offline buffer</strong></td>
+        <td>App queues uploads; cellular backfill when coverage returns</td>
+        <td>LoRa store-and-forward via gateway</td>
+        <td>Up to ${GEORACING_DEVICE.bufferMessages.toLocaleString()} messages (vendor spec)</td>
+      </tr>
+      <tr>
+        <td><strong>Rowing boat mounting</strong></td>
+        <td class="win">Optional ${money(MOUNT_SELL)}/boat</td>
+        <td class="gap">Not offered</td>
+        <td class="gap">Not offered</td>
+      </tr>
+      <tr>
+        <td><strong>Livestream / vMix data feed</strong></td>
+        <td class="win">Supported — AHD overlay APIs</td>
+        <td class="gap">Not available</td>
+        <td>Fan Experience + API (${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })} + ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}/day) — optional TV GFX rental extra</td>
+      </tr>
+      <tr>
+        <td><strong>Cellular data (season)</strong></td>
+        <td>${money(cs.sim)} (${money(simMonth)}/SIM/mo × ${FLEET})</td>
+        <td>$0 per device (gateway WAN only)</td>
+        <td class="na">Not included in tracker price — budget ${money(geo.simNzd)} (${money(simMonth)}/SIM/mo × ${FLEET}, same as CrewSight)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">
+    <strong>Sources:</strong> CrewSight — M26 field test ${M26_FIELD_TEST.testDate} (Karāpiro). LoRaWAN — IQnexus pricing &amp; ${LORA_UPDATE_SEC} s uplink assumption; gateway range indicative.
+    GeoRacing — Trimaran preliminary budget email + Fan Experience PDF (hardware specs); reporting rate not published.
+  </p>`;
+}
+
+function comparisonHtml(simMonth) {
+  const simNote =
+    simMonth !== 5
+      ? `<p class="muted"><strong>IoT data rate for this variant:</strong> ${money(simMonth)}/SIM/month (previous baseline ${money(5)}/SIM/month).</p>`
+      : '';
   const date = new Date().toLocaleDateString('en-NZ', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
 
-  const cs = crewsightSeason(FLEET);
-  const csMounted = crewsightSeason(FLEET, { withMounting: true });
+  const cs = crewsightSeason(FLEET, simMonth);
+  const csMounted = crewsightSeason(FLEET, simMonth, { withMounting: true });
   const csVirtualSeason = REGATTA_DAYS * CREWSIGHT_VIRTUAL_STREAM_DAY_NZD;
   const csWithVirtual = cs.included + csVirtualSeason;
-  const geoVirtualSeasonEur = GEORACING_EUR.virtualLivestreamSeason;
-  const geoVirtualSeasonNzd = geoVirtualSeasonEur * EUR_TO_NZD;
   const lora = loraSeason(FLEET);
-  const geoOps = georacingSeason({ withVirtualLiveStream: false });
-  const geoVirtual = georacingSeason({ withVirtualLiveStream: true });
+  const geoOps = georacingSeason(simMonth, { withVirtualLiveStream: false });
+  const geoVirtual = georacingSeason(simMonth, { withVirtualLiveStream: true });
   const cloud4moPer30 = money(loraCloudSeason(30));
+  const geoVirtualAddonEur = geoOps.virtualAddonEur;
+  const geoVirtualAddonNzd = geoOps.virtualAddonNzd;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -170,9 +321,11 @@ function comparisonHtml() {
     Two tiers: <strong>ops / tracking only</strong> (fleet + platform + data) vs <strong>+ virtual livestream</strong> (2D race viewer / on-air graphics — no on-site cameras).
     CrewSight season quote is <strong>ops / tracking</strong> at ${money(cs.included)} — vMix / AHD overlay feeds <strong>supported</strong>, regatta production not included. Optional CrewSight <strong>virtual livestream</strong> add-on:
     ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/regatta day × ${REGATTA_DAYS} days = ${money(csVirtualSeason)}.
-    GeoRacing virtual livestream per Fan Experience / 2D Race Viewer package: ${money(geoVirtualSeasonEur, { currency: 'EUR' })} season add-on (~${money(geoVirtualSeasonNzd)} NZD).
-    On-site cameras <strong>not included</strong> by either vendor. GeoRacing ops tier indicative in EUR → NZD @ ${EUR_TO_NZD}.
+    GeoRacing per Trimaran preliminary budget: tracker <strong>purchase</strong> ${money(GEORACING_EUR.trackerPurchase, { currency: 'EUR' })}/unit;
+    Safety ${money(GEORACING_EUR.safetyPerDay, { currency: 'EUR' })}/day · Fan Experience ${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })}/day + API ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}/day for public/broadcast.
+    SIMs <strong>not included</strong> in GeoRacing hardware quote — comparison adds ${money(simMonth)}/SIM/mo for parity. EUR → NZD @ ${EUR_TO_NZD}.
   </div>
+  ${simNote}
 
   <h2>Season cost summary — ${FLEET} devices (ex GST)</h2>
   <table>
@@ -198,52 +351,69 @@ function comparisonHtml() {
         <td class="gap">No livestream path — tracking portal only</td>
       </tr>
       <tr>
-        <td><strong>GeoRacing</strong> (indicative)</td>
-        <td class="num">${money(geoOps.nzd)}<br /><span class="muted">${money(geoOps.eur, { currency: 'EUR' })}</span></td>
-        <td class="num">${money(geoVirtual.totalNzd)}<br /><span class="muted">+${money(geoVirtualSeasonEur, { currency: 'EUR' })} virtual</span></td>
-        <td>Virtual livestream add-on (2D viewer / GFX) — <strong>not</strong> on-site cameras; ${money(geoVirtualSeasonEur, { currency: 'EUR' })} season (GeoRacing package)</td>
+        <td><strong>GeoRacing</strong> (Trimaran budget)</td>
+        <td class="num">${money(geoOps.opsNzd)}<br /><span class="muted">${money(geoOps.opsEur, { currency: 'EUR' })} + SIM</span></td>
+        <td class="num">${money(geoVirtual.withVirtualNzd)}<br /><span class="muted">${money(geoVirtual.withVirtualEur, { currency: 'EUR' })} + SIM</span></td>
+        <td>Ops: Safety package ${money(GEORACING_EUR.safetyPerDay, { currency: 'EUR' })}/day. Virtual: Fan Experience + API (${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })} + ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}/day × ${REGATTA_DAYS} days). TV GFX rental optional extra.</td>
       </tr>
     </tbody>
   </table>
-  <p class="muted">Per device (ops tier): CrewSight ${money(cs.included / FLEET)} · LoRa ${money(lora.total / FLEET)} · GeoRacing ${money(geoOps.nzd / FLEET)} (${money(geoOps.eur / FLEET, { currency: 'EUR' })})</p>
+  <p class="muted">Per device (ops tier, incl. modelled SIM): CrewSight ${money(cs.included / FLEET)} · LoRa ${money(lora.total / FLEET)} · GeoRacing ${money(geoOps.opsNzd / FLEET)} (${money(geoOps.opsEur / FLEET, { currency: 'EUR' })} hardware/licensing + SIM)</p>
 
   <p class="muted">CrewSight virtual livestream add-on: ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)} × ${REGATTA_DAYS} regatta days = ${money(csVirtualSeason)} ex GST.
-    GeoRacing virtual livestream: ${money(geoVirtualSeasonEur, { currency: 'EUR' })} season add-on (~${money(geoVirtualSeasonNzd)} NZD @ ${EUR_TO_NZD}).</p>
+    GeoRacing virtual tier upgrade: Fan Experience + API = ${money(geoVirtualAddonEur, { currency: 'EUR' })} (${money(geoVirtualAddonNzd)} NZD) over Safety package for ${REGATTA_DAYS} days.</p>
 
-  <h2>GeoRacing indicative estimate — EUR → NZD</h2>
-  <p class="muted">GeoRacing device/platform in EUR. Virtual livestream per Fan Experience / 2D Race Viewer package: ${money(geoVirtualSeasonEur, { currency: 'EUR' })} season add-on (not on-site cameras). Conversion: 1 EUR = ${EUR_TO_NZD} NZD.</p>
+  <h2>GeoRacing preliminary budget — EUR → NZD</h2>
+  <p class="muted">Trimaran email quote: hardware purchase + per-event licensing (excl. tax/shipping). ${FLEET} devices scaled from vendor example (120 × ${money(GEORACING_EUR.trackerPurchase, { currency: 'EUR' })}).
+    SIMs modelled at ${money(simMonth)}/device/mo × ${SEASON_MONTHS} mo (not in GeoRacing quote). Conversion: 1 EUR = ${EUR_TO_NZD} NZD.</p>
   <table>
     <thead>
       <tr>
         <th>Tier</th>
         <th>Includes</th>
-        <th class="num">EUR (ops)</th>
-        <th class="num">NZD total</th>
+        <th class="num">EUR (ex tax)</th>
+        <th class="num">NZD + SIM</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td><strong>Ops / tracking only</strong></td>
-        <td>270× tracker rental + LTE · 2D race viewer · ${SEASON_MONTHS}-mo platform</td>
-        <td class="num">${money(geoOps.eur, { currency: 'EUR' })}</td>
-        <td class="num">${money(geoOps.nzd)}</td>
+        <td>${FLEET}× tracker purchase · ${money(GEORACING_EUR.training, { currency: 'EUR' })} training · Safety ${money(GEORACING_EUR.safetyPerDay, { currency: 'EUR' })}/day × ${REGATTA_DAYS} days</td>
+        <td class="num">${money(geoOps.opsEur, { currency: 'EUR' })}</td>
+        <td class="num">${money(geoOps.opsNzd)}</td>
       </tr>
       <tr>
         <td><strong>+ Virtual livestream</strong></td>
-        <td>Above + virtual 2D livestream / on-air graphics (${money(geoVirtualSeasonEur, { currency: 'EUR' })} season add-on) — no on-site cameras</td>
-        <td class="num">${money(geoVirtual.totalEur, { currency: 'EUR' })}</td>
-        <td class="num">${money(geoVirtual.totalNzd)}</td>
+        <td>Above with Fan Experience ${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })}/day + API ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}/day (public viewer + broadcast partner) — no on-site cameras</td>
+        <td class="num">${money(geoVirtual.withVirtualEur, { currency: 'EUR' })}</td>
+        <td class="num">${money(geoVirtual.withVirtualNzd)}</td>
       </tr>
     </tbody>
   </table>
+
+  <h3>GeoRacing line items (${FLEET} devices · ${REGATTA_DAYS} tracking days)</h3>
+  <table>
+    <thead><tr><th>Item</th><th class="num">Ops (EUR)</th><th class="num">+ Virtual (EUR)</th></tr></thead>
+    <tbody>
+      <tr><td>GPS trackers (${FLEET} × ${money(GEORACING_EUR.trackerPurchase, { currency: 'EUR' })}, purchase)</td><td class="num">${money(geoOps.hardware, { currency: 'EUR' })}</td><td class="num">${money(geoVirtual.hardware, { currency: 'EUR' })}</td></tr>
+      <tr><td>Initial training (1-day webinar)</td><td class="num">${money(geoOps.training, { currency: 'EUR' })}</td><td class="num">${money(geoVirtual.training, { currency: 'EUR' })}</td></tr>
+      <tr><td>Safety package (private monitoring)</td><td class="num">${money(geoOps.safetyLicensing, { currency: 'EUR' })}<br /><span class="muted">${REGATTA_DAYS} × ${money(GEORACING_EUR.safetyPerDay, { currency: 'EUR' })}</span></td><td class="num">—</td></tr>
+      <tr><td>Fan Experience (public iframe / app / leaderboard)</td><td class="num">—</td><td class="num">${money(geoVirtual.fanLicensing, { currency: 'EUR' })}<br /><span class="muted">${REGATTA_DAYS} × ${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })}</span></td></tr>
+      <tr><td>GEORACING API (livestream partner graphics)</td><td class="num">—</td><td class="num">${money(geoVirtual.apiLicensing, { currency: 'EUR' })}<br /><span class="muted">${REGATTA_DAYS} × ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}</span></td></tr>
+      <tr><th>Subtotal (ex tax/shipping/SIM)</th><th class="num">${money(geoOps.opsEur, { currency: 'EUR' })}</th><th class="num">${money(geoVirtual.withVirtualEur, { currency: 'EUR' })}</th></tr>
+      <tr><td>Cellular SIMs (modelled — not in GeoRacing quote)</td><td class="num">${money(geoOps.simNzd)}</td><td class="num">${money(geoVirtual.simNzd)}</td></tr>
+      <tr><th>NZD total (incl. modelled SIM)</th><th class="num">${money(geoOps.opsNzd)}</th><th class="num">${money(geoVirtual.withVirtualNzd)}</th></tr>
+    </tbody>
+  </table>
+  <p class="muted">Optional extras not in totals: remote support ${money(450, { currency: 'EUR' })}/day · on-site ${money(550, { currency: 'EUR' })}/day · TV graphics rental ${money(500, { currency: 'EUR' })}/day + setup ${money(1200, { currency: 'EUR' })}–${money(3000, { currency: 'EUR' })}.</p>
 
   <h3>GeoRacing &amp; CrewSight — virtual livestream line item</h3>
   <table>
     <thead><tr><th>Item</th><th class="num">CrewSight (NZD)</th><th class="num">GeoRacing (NZD)</th></tr></thead>
     <tbody>
-      <tr><td>Fleet / platform (ops / tracking)</td><td class="num">${money(cs.included)}</td><td class="num">${money(geoOps.nzd)}</td></tr>
-      <tr><td>Virtual livestream</td><td class="num">${money(csVirtualSeason)}<br /><span class="muted">${REGATTA_DAYS} days × ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}</span></td><td class="num">${money(geoVirtualSeasonNzd)}<br /><span class="muted">${money(geoVirtualSeasonEur, { currency: 'EUR' })}</span></td></tr>
-      <tr><th>Total with virtual livestream</th><th class="num">${money(csWithVirtual)}</th><th class="num">${money(geoVirtual.totalNzd)}</th></tr>
+      <tr><td>Fleet / platform (ops / tracking)</td><td class="num">${money(cs.included)}</td><td class="num">${money(geoOps.opsNzd)}</td></tr>
+      <tr><td>Virtual livestream licensing</td><td class="num">${money(csVirtualSeason)}<br /><span class="muted">${REGATTA_DAYS} days × ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}</span></td><td class="num">${money(geoVirtualAddonNzd)}<br /><span class="muted">${money(geoVirtualAddonEur, { currency: 'EUR' })} (Fan + API − Safety)</span></td></tr>
+      <tr><th>Total with virtual livestream</th><th class="num">${money(csWithVirtual)}</th><th class="num">${money(geoVirtual.withVirtualNzd)}</th></tr>
     </tbody>
   </table>
 
@@ -251,17 +421,19 @@ function comparisonHtml() {
   <table>
     <thead><tr><th>Cost element</th><th class="num">CrewSight</th><th class="num">LoRaWAN</th><th class="num">GeoRacing (NZD)</th></tr></thead>
     <tbody>
-      <tr><td>End devices</td><td class="num">${money(cs.handsets)} purchase</td><td class="num">${money(lora.trackers)} purchase</td><td class="num">${money(geoOps.deviceRental * EUR_TO_NZD)} rental</td></tr>
-      <tr><td>Gateways / infrastructure</td><td class="num">$0</td><td class="num">${money(lora.gatewayCost)} (${lora.gateways}×)</td><td class="num">In rental</td></tr>
-      <tr><td>Platform / cloud</td><td class="num">${money(cs.platform)}</td><td class="num">${money(lora.cloud)}</td><td class="num">${money(geoOps.platform * EUR_TO_NZD)}</td></tr>
-      <tr><td>Cellular / IoT data</td><td class="num">${money(cs.sim)}</td><td class="num">$0*</td><td class="num">In rental</td></tr>
-      <tr><td>Livestream data / vMix feeds</td><td class="num">Supported</td><td class="num">Not included</td><td class="num">In platform</td></tr>
-      <tr><td>Virtual livestream</td><td class="num">Optional +${money(csVirtualSeason)}<br /><span class="muted">${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/day</span></td><td class="num">—</td><td class="num">Optional +${money(geoVirtualSeasonNzd)}<br /><span class="muted">${money(geoVirtualSeasonEur, { currency: 'EUR' })}</span></td></tr>
+      <tr><td>End devices</td><td class="num">${money(cs.handsets)} purchase</td><td class="num">${money(lora.trackers)} purchase</td><td class="num">${money(geoOps.hardware * EUR_TO_NZD)} purchase<br /><span class="muted">${money(GEORACING_EUR.trackerPurchase, { currency: 'EUR' })}/unit</span></td></tr>
+      <tr><td>Gateways / infrastructure</td><td class="num">$0</td><td class="num">${money(lora.gatewayCost)} (${lora.gateways}×)</td><td class="num">$0</td></tr>
+      <tr><td>Platform / event licensing</td><td class="num">${money(cs.platform)}</td><td class="num">${money(lora.cloud)}</td><td class="num">${money((geoOps.training + geoOps.safetyLicensing) * EUR_TO_NZD)}<br /><span class="muted">training + Safety ${REGATTA_DAYS}d</span></td></tr>
+      <tr><td>Cellular / IoT data</td><td class="num">${money(cs.sim)}</td><td class="num">$0*</td><td class="num">${money(geoOps.simNzd)}<br /><span class="muted">not in GeoRacing quote</span></td></tr>
+      <tr><td>Livestream data / vMix feeds</td><td class="num">Supported</td><td class="num">Not included</td><td class="num">API tier (+virtual)</td></tr>
+      <tr><td>Virtual livestream</td><td class="num">Optional +${money(csVirtualSeason)}<br /><span class="muted">${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/day</span></td><td class="num">—</td><td class="num">Optional +${money(geoVirtualAddonNzd)}<br /><span class="muted">Fan + API − Safety</span></td></tr>
       <tr><td>On-site cameras</td><td class="na" colspan="3">Not included — neither CrewSight nor GeoRacing virtual tier uses on-site cameras</td></tr>
       <tr><td>Boat mounting (rowing)</td><td class="win">${money(MOUNT_SELL)}/boat optional</td><td class="gap">Not offered</td><td class="gap">Not offered</td></tr>
-      <tr><th>Total ex GST</th><th class="num">${money(cs.included)}</th><th class="num">${money(lora.total)}</th><th class="num">${money(geoOps.nzd)}</th></tr>
+      <tr><th>Total ex GST</th><th class="num">${money(cs.included)}</th><th class="num">${money(lora.total)}</th><th class="num">${money(geoOps.opsNzd)}</th></tr>
     </tbody>
   </table>
+
+  ${deviceHardwareComparisonHtml(simMonth)}
 
   <h2>Ops / tracking vs virtual livestream</h2>
   <table>
@@ -269,15 +441,15 @@ function comparisonHtml() {
       <tr><th>Capability</th><th>CrewSight (ops)</th><th>CrewSight (+ virtual)</th><th>LoRaWAN</th><th>GeoRacing (ops)</th><th>GeoRacing (+ virtual)</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>Season cost (NZD)</strong></td><td class="num win">${money(cs.included)}</td><td class="num win">${money(csWithVirtual)}</td><td class="num">${money(lora.total)}</td><td class="num">${money(geoOps.nzd)}</td><td class="num">${money(geoVirtual.totalNzd)}</td></tr>
-      <tr><td><strong>Tracking data for livestream</strong></td><td class="win">Supported — vMix / AHD feeds</td><td class="win">Supported — vMix / AHD feeds</td><td class="gap">Not available</td><td class="na">2D viewer</td><td class="win">Included</td></tr>
-      <tr><td><strong>Virtual livestream (2D / GFX)</strong></td><td class="na">Optional add-on</td><td class="win">${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/regatta day</td><td class="gap">—</td><td class="na">Optional add-on</td><td class="win">${money(geoVirtualSeasonEur, { currency: 'EUR' })} season</td></tr>
+      <tr><td><strong>Season cost (NZD)</strong></td><td class="num win">${money(cs.included)}</td><td class="num win">${money(csWithVirtual)}</td><td class="num">${money(lora.total)}</td><td class="num">${money(geoOps.opsNzd)}</td><td class="num">${money(geoVirtual.withVirtualNzd)}</td></tr>
+      <tr><td><strong>Tracking data for livestream</strong></td><td class="win">Supported — vMix / AHD feeds</td><td class="win">Supported — vMix / AHD feeds</td><td class="gap">Not available</td><td class="na">Safety (private)</td><td class="win">Fan Experience + API</td></tr>
+      <tr><td><strong>Virtual livestream (2D / GFX)</strong></td><td class="na">Optional add-on</td><td class="win">${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/regatta day</td><td class="gap">—</td><td class="na">Safety only</td><td class="win">Fan ${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })}/d + API ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}/d</td></tr>
       <tr><td><strong>On-site cameras</strong></td><td class="na" colspan="2">Not included</td><td class="gap">—</td><td class="na" colspan="2">Not included</td></tr>
       <tr><td><strong>Capsize / hull alert</strong></td><td class="win" colspan="2">Yes — rowing-tuned</td><td>Generic motion</td><td colspan="2">Emergency button</td></tr>
       <tr><td><strong>Rowing dashboard</strong></td><td class="win" colspan="2">Karāpiro · RowIT · ops monitor</td><td>Generic IoT</td><td colspan="2">Custom per event</td></tr>
       <tr><td><strong>Boat mounting</strong></td><td class="win" colspan="2">Optional ${money(MOUNT_SELL)}/boat</td><td class="gap">Not offered</td><td class="gap" colspan="2">Not offered</td></tr>
-      <tr><td><strong>Device ownership</strong></td><td class="win" colspan="2">KRI owns handsets</td><td>KRI owns</td><td colspan="2">Rental / turnkey</td></tr>
-      <tr><td><strong>Handset field test (Jun 2026)</strong></td><td class="win" colspan="2">M26: ${M26_FIELD_TEST.gps.h7.medianAccM} m GPS · ~${M26_FIELD_TEST.battery.estFullChargeH} h @ 1 Hz</td><td class="na">Not quoted</td><td class="na" colspan="2">Rental hardware</td></tr>
+      <tr><td><strong>Device ownership</strong></td><td class="win" colspan="2">KRI owns handsets</td><td>KRI owns</td><td class="win" colspan="2">KRI owns trackers (purchase)</td></tr>
+      <tr><td><strong>Handset field test (Jun 2026)</strong></td><td class="win" colspan="2">M26: ${M26_FIELD_TEST.gps.h7.medianAccM} m GPS · ~${M26_FIELD_TEST.battery.estFullChargeH} h @ 1 Hz</td><td class="na">Not quoted</td><td class="na" colspan="2">${GEORACING_DEVICE.weightG} g LTE tracker (vendor spec)</td></tr>
     </tbody>
   </table>
 
@@ -287,7 +459,7 @@ function comparisonHtml() {
 
   <p class="muted">
     <strong>Ops / tracking</strong> (CrewSight ${money(cs.included)}): GPS fleet, platform, and data — vMix / AHD overlay feeds supported for livestream (regatta production quoted separately).
-    <strong>Virtual livestream</strong> optional — CrewSight at ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/regatta day (${REGATTA_DAYS} days = ${money(csVirtualSeason)}); GeoRacing ${money(geoVirtualSeasonEur, { currency: 'EUR' })} season add-on per Fan Experience package. 2D race viewer / on-air graphics; <strong>no on-site cameras</strong>.
+    <strong>Virtual livestream</strong> optional — CrewSight at ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/regatta day (${REGATTA_DAYS} days = ${money(csVirtualSeason)}); GeoRacing Fan Experience + API (${money(GEORACING_EUR.fanExperiencePerDay, { currency: 'EUR' })} + ${money(GEORACING_EUR.apiPerDay, { currency: 'EUR' })}/day). 2D race viewer / broadcast API; <strong>no on-site cameras</strong>.
   </p>
 
   <h2>CrewSight strengths</h2>
@@ -299,13 +471,13 @@ function comparisonHtml() {
 
   <h2>Summary</h2>
   <p>
-    <strong>Ops / tracking:</strong> CrewSight ${money(cs.included)} vs LoRa ${money(lora.total)} vs GeoRacing ~${money(geoOps.nzd)}.
-    <strong>+ Virtual livestream:</strong> CrewSight ${money(csWithVirtual)} (+${money(csVirtualSeason)} at ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/day) vs GeoRacing ~${money(geoVirtual.totalNzd)} (+${money(geoVirtualSeasonEur, { currency: 'EUR' })} / ~${money(geoVirtualSeasonNzd)} NZD).
-    Neither vendor includes on-site cameras in the virtual livestream tier. CrewSight owns fleet CAPEX; GeoRacing is rental-based.
+    <strong>Ops / tracking:</strong> CrewSight ${money(cs.included)} vs LoRa ${money(lora.total)} vs GeoRacing ${money(geoOps.opsNzd)} (${money(geoOps.opsEur, { currency: 'EUR' })} + modelled SIM).
+    <strong>+ Virtual livestream:</strong> CrewSight ${money(csWithVirtual)} (+${money(csVirtualSeason)} at ${money(CREWSIGHT_VIRTUAL_STREAM_DAY_NZD)}/day) vs GeoRacing ${money(geoVirtual.withVirtualNzd)} (${money(geoVirtual.withVirtualEur, { currency: 'EUR' })} + SIM).
+    Neither vendor includes on-site cameras. Both CrewSight and GeoRacing are purchase-based CAPEX; GeoRacing adds per-event licensing.
   </p>
   <p class="muted">
     Optional CrewSight mounting (${FLEET} boats): +${money(csMounted.mounting)} ex GST.
-    LoRa gateway WAN backhaul not itemised. GeoRacing estimate replaces firm € quote when received — update constants in generate-crewsight-comparison-pdf.mjs.
+    LoRa gateway WAN backhaul not itemised. GeoRacing pricing from Trimaran preliminary budget email; tax/shipping/SIM configuration extra.
   </p>
 
   <footer>Altitude HD · CrewSight · Commercial in confidence · ged@altitudehd.nz</footer>
@@ -313,8 +485,8 @@ function comparisonHtml() {
 </html>`;
 }
 
-async function writePdf(html, pdfOut, htmlOut) {
-  await mkdir(OUT_DIR, { recursive: true });
+async function writePdf(html, pdfOut, htmlOut, outDir) {
+  await mkdir(outDir, { recursive: true });
   await writeFile(htmlOut, html, 'utf8');
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -340,10 +512,15 @@ async function writePdf(html, pdfOut, htmlOut) {
 }
 
 async function main() {
-  const htmlOut = join(OUT_DIR, 'CrewSight-Competitive-Comparison.html');
-  const pdfOut = join(OUT_DIR, 'CrewSight-Competitive-Comparison.pdf');
-  await writePdf(comparisonHtml(), pdfOut, htmlOut);
-  await uploadPdfToDrive(pdfOut);
+  const { simMonth, outDir, skipDrive } = parseProposalArgs(ROOT);
+  const htmlOut = join(outDir, 'CrewSight-Competitive-Comparison.html');
+  const pdfOut = join(outDir, 'CrewSight-Competitive-Comparison.pdf');
+  await writePdf(comparisonHtml(simMonth), pdfOut, htmlOut, outDir);
+  if (!skipDrive) {
+    await uploadPdfToDrive(pdfOut);
+  } else {
+    console.log('Drive upload skipped (alternate output folder or --skip-drive).');
+  }
 }
 
 main().catch((err) => {

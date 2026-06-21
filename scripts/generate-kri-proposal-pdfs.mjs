@@ -8,11 +8,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { uploadPdfsToDrive } from './lib/upload-proposal-to-drive.mjs';
+import { parseProposalArgs } from './lib/proposal-cli.mjs';
 import { M26_FIELD_TEST, m26BatterySummaryHtml, m26GpsSummaryHtml } from './lib/m26-field-test-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const OUT_DIR = join(ROOT, 'docs', 'proposals');
+const DEFAULT_OUT_DIR = join(ROOT, 'docs', 'proposals');
 
 const GST = 0.15;
 const M26_COST = 86.09;
@@ -22,7 +23,6 @@ const DEVICE_MARGIN = M26_SELL - M26_COST;
 const PLATFORM_FEE = 6000;
 /** Customer-facing label — no model or supplier on proposals. */
 const HANDSET_LABEL = 'GPS handsets';
-const SIM_MONTH = 5;
 const REGATTA_DAYS = 32;
 const SEASON_MONTHS = 4;
 const MOUNT_SELL = 50;
@@ -168,7 +168,7 @@ function estimateCloudCosts(devices) {
   };
 }
 
-function buildTier(devices) {
+function buildTier(devices, simMonth) {
   const cloud = estimateCloudCosts(devices);
   const hardwareCost = devices * M26_COST;
   const hardwareSell = devices * M26_SELL;
@@ -178,10 +178,10 @@ function buildTier(devices) {
   const totalProfit = deviceProfit + PLATFORM_FEE;
   const netProfit = totalProfit - cloud.total;
 
-  /** IoT SIM: $5/SIM/month × full 4-month season (data-included option). */
-  const simSeason = devices * SIM_MONTH * SEASON_MONTHS;
+  /** IoT SIM: per-SIM/month × full 4-month season (data-included option). */
+  const simSeason = devices * simMonth * SEASON_MONTHS;
   /** Regatta-day-only activation (internal comparison). */
-  const simRegatta = devices * SIM_MONTH * (REGATTA_DAYS / 30);
+  const simRegatta = devices * simMonth * (REGATTA_DAYS / 30);
 
   const platformFeeOnly = PLATFORM_FEE;
   const platformWithSimSeason = simSeason + PLATFORM_FEE;
@@ -211,7 +211,7 @@ function buildTier(devices) {
     hardwareSellIncl,
     simRegatta,
     simSeason,
-    simPerDeviceSeason: SIM_MONTH * SEASON_MONTHS,
+    simPerDeviceSeason: simMonth * SEASON_MONTHS,
     simSavedVsSeason: simSeason - simRegatta,
     platformFeeOnly,
     platformWithSimSeason,
@@ -267,13 +267,13 @@ function cloudCostRows(t) {
       <tr><th>Cloud subtotal (season)</th><th class="num">${money(c.total)}</th></tr>`;
 }
 
-function tierPricingRows(t, { simIncluded = true } = {}) {
+function tierPricingRows(t, simMonth, { simIncluded = true } = {}) {
   const sim = simIncluded ? t.simSeason : 0;
   const platformInvoice = simIncluded ? t.platformWithSimSeason : t.platformFeeOnly;
   const total = simIncluded ? t.bundledDataIncluded : t.bundledDataExcluded;
   const totalIncl = simIncluded ? t.bundledDataIncludedIncl : t.bundledDataExcludedIncl;
   const simLabel = simIncluded
-    ? `IoT data (${SEASON_MONTHS} mo @ ${money(SIM_MONTH)}/SIM/mo × ${t.devices})`
+    ? `IoT data (${SEASON_MONTHS} mo @ ${money(simMonth)}/SIM/mo × ${t.devices})`
     : 'IoT data (customer-provided — excluded)';
   return `
       <tr><td>Handsets — cost (${money(M26_COST)} × ${t.devices})</td><td class="num">${money(t.hardwareCost)}</td></tr>
@@ -287,8 +287,12 @@ function tierPricingRows(t, { simIncluded = true } = {}) {
       <tr><th>With mounting (ex GST)</th><th class="num">${money(total + t.mountOptional)}</th></tr>`;
 }
 
-function proposalHtml(t) {
+function proposalHtml(t, simMonth) {
   const tierLabel = t.devices === 50 ? 'Pilot fleet' : 'Full regatta fleet';
+  const simNote =
+    simMonth !== 5
+      ? `<p class="muted"><strong>IoT data rate:</strong> ${money(simMonth)}/SIM/month (${SEASON_MONTHS}-month season).</p>`
+      : '';
   const date = new Date().toLocaleDateString('en-NZ', {
     day: 'numeric',
     month: 'long',
@@ -318,8 +322,9 @@ function proposalHtml(t) {
   <div class="highlight">
     <strong>Option A — Data included (4-month season connectivity): ${money(t.bundledDataIncludedIncl, { gst: false })} incl GST</strong><br />
     <strong>Option B — Data excluded (customer-provided SIM): ${money(t.bundledDataExcludedIncl, { gst: false })} incl GST</strong><br />
-    <span class="muted">${HANDSET_LABEL} ${money(M26_SELL)}/unit · IoT data included = ${money(SIM_MONTH)}/SIM/mo × ${SEASON_MONTHS} months × ${t.devices} devices (${money(t.simSeason)} ex GST)</span>
+    <span class="muted">${HANDSET_LABEL} ${money(M26_SELL)}/unit · IoT data included = ${money(simMonth)}/SIM/mo × ${SEASON_MONTHS} months × ${t.devices} devices (${money(t.simSeason)} ex GST)</span>
   </div>
+  ${simNote}
 
   <h2>Season schedule</h2>
   <table>
@@ -343,7 +348,7 @@ function proposalHtml(t) {
         <td class="num">${money(t.hardwareSell)}</td>
       </tr>
       <tr>
-        <td>Cellular data — ${SEASON_MONTHS}-month season (${money(SIM_MONTH)}/device/mo × ${t.devices})</td>
+        <td>Cellular data — ${SEASON_MONTHS}-month season (${money(simMonth)}/device/mo × ${t.devices})</td>
         <td class="num">${money(t.simSeason)}</td>
         <td class="num">—</td>
       </tr>
@@ -457,7 +462,11 @@ function proposalHtml(t) {
 </html>`;
 }
 
-function businessCaseHtml(t50, t270) {
+function businessCaseHtml(t50, t270, simMonth) {
+  const simNote =
+    simMonth !== 5
+      ? `<p class="note"><strong>IoT data rate for this variant:</strong> ${money(simMonth)}/SIM/month (previous baseline ${money(5)}/SIM/month).</p>`
+      : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -483,7 +492,8 @@ function businessCaseHtml(t50, t270) {
 <body>
   <p class="conf">Commercial in confidence — Altitude HD internal</p>
   <h1>CrewSight — Season business case</h1>
-  <p>4-month season · 8 regattas · ${REGATTA_DAYS} tracking days · Handsets @ ${money(M26_SELL)} · Cloud infra included in net margin</p>
+  <p>4-month season · 8 regattas · ${REGATTA_DAYS} tracking days · Handsets @ ${money(M26_SELL)} · IoT data ${money(simMonth)}/SIM/month · Cloud infra included in net margin</p>
+  ${simNote}
 
   <h2>Profit summary (gross vs net of cloud)</h2>
   <table>
@@ -511,9 +521,9 @@ function businessCaseHtml(t50, t270) {
   <table>
     <thead><tr><th></th><th class="num">50 devices</th><th class="num">270 devices</th></tr></thead>
     <tbody>
-      <tr><td>Per SIM / month</td><td class="num">${money(SIM_MONTH)}</td><td class="num">${money(SIM_MONTH)}</td></tr>
+      <tr><td>Per SIM / month</td><td class="num">${money(simMonth)}</td><td class="num">${money(simMonth)}</td></tr>
       <tr><td>Season months billed</td><td class="num">${SEASON_MONTHS}</td><td class="num">${SEASON_MONTHS}</td></tr>
-      <tr><th>Data included — full season (${SEASON_MONTHS} mo × ${money(SIM_MONTH)} × devices)</th><th class="num">${money(t50.simSeason)}</th><th class="num">${money(t270.simSeason)}</th></tr>
+      <tr><th>Data included — full season (${SEASON_MONTHS} mo × ${money(simMonth)} × devices)</th><th class="num">${money(t50.simSeason)}</th><th class="num">${money(t270.simSeason)}</th></tr>
       <tr><td>Regatta-only reference (${REGATTA_DAYS} days prorated — not customer default)</td><td class="num">${money(t50.simRegatta)}</td><td class="num">${money(t270.simRegatta)}</td></tr>
       <tr><td>Data excluded — customer SIM (AHD cost)</td><td class="num">$0.00</td><td class="num">$0.00</td></tr>
       <tr><td>Saving: excluded vs included (customer)</td><td class="num">${money(t50.simSeason)}</td><td class="num">${money(t270.simSeason)}</td></tr>
@@ -565,21 +575,21 @@ function businessCaseHtml(t50, t270) {
   <div class="grid">
     <div>
       <h3>50-device — data included</h3>
-      <table><tbody>${tierPricingRows(t50, { simIncluded: true })}</tbody></table>
+      <table><tbody>${tierPricingRows(t50, simMonth, { simIncluded: true })}</tbody></table>
     </div>
     <div>
       <h3>50-device — data excluded</h3>
-      <table><tbody>${tierPricingRows(t50, { simIncluded: false })}</tbody></table>
+      <table><tbody>${tierPricingRows(t50, simMonth, { simIncluded: false })}</tbody></table>
     </div>
   </div>
   <div class="grid">
     <div>
       <h3>270-device — data included</h3>
-      <table><tbody>${tierPricingRows(t270, { simIncluded: true })}</tbody></table>
+      <table><tbody>${tierPricingRows(t270, simMonth, { simIncluded: true })}</tbody></table>
     </div>
     <div>
       <h3>270-device — data excluded</h3>
-      <table><tbody>${tierPricingRows(t270, { simIncluded: false })}</tbody></table>
+      <table><tbody>${tierPricingRows(t270, simMonth, { simIncluded: false })}</tbody></table>
     </div>
   </div>
 
@@ -643,34 +653,37 @@ function businessCaseHtml(t50, t270) {
 }
 
 async function main() {
-  await mkdir(OUT_DIR, { recursive: true });
+  const { simMonth, outDir, skipDrive } = parseProposalArgs(ROOT);
+  await mkdir(outDir, { recursive: true });
 
-  for (const name of LEGACY_FILES) {
-    try {
-      await unlink(join(OUT_DIR, name));
-    } catch {
-      /* ignore missing */
+  if (outDir === DEFAULT_OUT_DIR) {
+    for (const name of LEGACY_FILES) {
+      try {
+        await unlink(join(outDir, name));
+      } catch {
+        /* ignore missing */
+      }
     }
   }
 
-  const t50 = buildTier(50);
-  const t270 = buildTier(270);
+  const t50 = buildTier(50, simMonth);
+  const t270 = buildTier(270, simMonth);
 
   const jobs = [
     {
-      html: businessCaseHtml(t50, t270),
-      pdf: join(OUT_DIR, 'CrewSight-Season-Business-Case-Internal.pdf'),
-      htmlOut: join(OUT_DIR, 'CrewSight-Season-Business-Case-Internal.html'),
+      html: businessCaseHtml(t50, t270, simMonth),
+      pdf: join(outDir, 'CrewSight-Season-Business-Case-Internal.pdf'),
+      htmlOut: join(outDir, 'CrewSight-Season-Business-Case-Internal.html'),
     },
     {
-      html: proposalHtml(t50),
-      pdf: join(OUT_DIR, 'CrewSight-Season-Proposal-50-devices.pdf'),
-      htmlOut: join(OUT_DIR, 'CrewSight-Season-Proposal-50-devices.html'),
+      html: proposalHtml(t50, simMonth),
+      pdf: join(outDir, 'CrewSight-Season-Proposal-50-devices.pdf'),
+      htmlOut: join(outDir, 'CrewSight-Season-Proposal-50-devices.html'),
     },
     {
-      html: proposalHtml(t270),
-      pdf: join(OUT_DIR, 'CrewSight-Season-Proposal-270-devices.pdf'),
-      htmlOut: join(OUT_DIR, 'CrewSight-Season-Proposal-270-devices.html'),
+      html: proposalHtml(t270, simMonth),
+      pdf: join(outDir, 'CrewSight-Season-Proposal-270-devices.pdf'),
+      htmlOut: join(outDir, 'CrewSight-Season-Proposal-270-devices.html'),
     },
   ];
 
@@ -705,7 +718,11 @@ async function main() {
     }
   }
   await browser.close();
-  await uploadPdfsToDrive(jobs.map((job) => job.pdf));
+  if (!skipDrive) {
+    await uploadPdfsToDrive(jobs.map((job) => job.pdf));
+  } else {
+    console.log('Drive upload skipped (alternate output folder or --skip-drive).');
+  }
 }
 
 main().catch((err) => {

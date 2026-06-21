@@ -1,88 +1,4 @@
-#!/usr/bin/env node
-/**
- * Generate CrewSight phased rollout & governance plan PDF.
- * Usage: node scripts/generate-crewsight-roadmap-pdf.mjs
- */
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright';
-import { uploadPdfToDrive } from './lib/upload-proposal-to-drive.mjs';
-import { parseProposalArgs } from './lib/proposal-cli.mjs';
-import {
-  M26_FIELD_BATTERY_HOURS,
-  M26_FIELD_TEST,
-} from './lib/m26-field-test-data.mjs';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
-const DEFAULT_OUT_DIR = join(ROOT, 'docs', 'proposals');
-
-const GST = 0.15;
-const HANDSET_SELL = 130;
-const HANDSET_COST = 86.09;
-const PLATFORM_FEE = 6000;
-const SEASON_MONTHS = 4;
-const MOUNT_SELL = 50;
-/** Field runtime — Smart M26 5,000 mAh; validated Jun 2026 field test (see m26-field-test-data.mjs). */
-const BATTERY_MAH = M26_FIELD_TEST.batteryMah;
-const FIELD_BATTERY_HOURS = M26_FIELD_BATTERY_HOURS;
-
-const REGATTAS = [
-  { start: '2026-09-19', end: '2026-09-20', label: '19–20 Sep 2026', name: 'New Zealand Master Rowing', phase: 'PoC' },
-  { start: '2026-11-14', end: '2026-11-15', label: '14–15 Nov 2026', name: 'KRI Memorial Rowing Regatta', phase: '1' },
-  { start: '2026-11-28', end: '2026-11-29', label: '28–29 Nov 2026', name: 'KRI Club Regatta', phase: '1' },
-  { start: '2026-12-11', end: '2026-12-13', label: '11–13 Dec 2026', name: 'KRI Christmas Regatta', phase: '1' },
-  { start: '2027-01-29', end: '2027-01-31', label: '29–31 Jan 2027', name: 'North Island Rowing Champs', phase: '2' },
-  { start: '2027-02-26', end: '2027-02-28', label: '26–28 Feb 2027', name: 'North Island Secondary School Rowing Regatta', phase: '2' },
-  { start: '2027-03-15', end: '2027-03-20', label: '15–20 Mar 2027', name: 'Maadi Cup', phase: '2' },
-];
-
-function money(n, { gst = false } = {}) {
-  const v = gst ? n * (1 + GST) : n;
-  return `$${v.toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function tierCost(devices, simMonth, { simMonths = SEASON_MONTHS, includePlatform = true } = {}) {
-  const handsets = devices * HANDSET_SELL;
-  const sim = devices * simMonth * simMonths;
-  const platform = includePlatform ? PLATFORM_FEE : 0;
-  const excluded = handsets + platform;
-  const included = excluded + sim;
-  return { devices, handsets, sim, platform, excluded, included };
-}
-
-function roadmapHtml(simMonth) {
-  const simNote =
-    simMonth !== 5
-      ? `<p class="muted"><strong>IoT data rate for this variant:</strong> ${money(simMonth)}/SIM/month (previous baseline ${money(5)}/SIM/month).</p>`
-      : '';
-  const date = new Date().toLocaleDateString('en-NZ', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-
-  const pocDevices = 16;
-  const phase1Devices = 50;
-  const phase2AddDevices = 50;
-  const fleetAfterPhase2 = phase1Devices + phase2AddDevices;
-  const phase3AddDevices = 270 - fleetAfterPhase2; // 170 additional units
-
-  const phase1 = tierCost(phase1Devices, simMonth);
-  const phase2Add = tierCost(phase2AddDevices, simMonth, { simMonths: 2, includePlatform: false });
-  const phase3Add = tierCost(phase3AddDevices, simMonth);
-  const season100 = {
-    handsets: phase1.handsets + phase2Add.handsets,
-    sim: phase1.sim + phase2Add.sim,
-    platform: PLATFORM_FEE,
-    excluded: phase1.handsets + phase2Add.handsets + PLATFORM_FEE,
-    included: phase1.handsets + phase2Add.handsets + phase1.sim + phase2Add.sim + PLATFORM_FEE,
-  };
-  const season270Greenfield = tierCost(270, simMonth);
-  const pocAhdCost = pocDevices * HANDSET_COST + pocDevices * simMonth * SEASON_MONTHS;
-
-  return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -179,7 +95,7 @@ function roadmapHtml(simMonth) {
   <header>
     <p class="brand">CrewSight</p>
     <p class="brand-sub">Phased rollout &amp; governance plan · 2026–27 season and beyond</p>
-    <p class="tagline">Prepared by Altitude HD · ${date} · aligned with AHD LiveStream regatta calendar</p>
+    <p class="tagline">Prepared by Altitude HD · 22 June 2026 · aligned with AHD LiveStream regatta calendar</p>
   </header>
 
   <div class="highlight">
@@ -195,16 +111,7 @@ function roadmapHtml(simMonth) {
       <tr><th>Dates</th><th>Event</th><th>Phase</th><th>Fleet target</th></tr>
     </thead>
     <tbody>
-      ${REGATTAS.map((r) => {
-        const fleet =
-          r.phase === 'PoC' ? '16 (AHD loan)' :
-          r.phase === '1' ? '50' : '~100';
-        const cls = r.phase === 'PoC' ? 'phase-poc' : r.phase === '1' ? 'phase-1' : 'phase-2';
-        const phaseLabel =
-          r.phase === 'PoC' ? 'PoC — free trial' :
-          r.phase === '1' ? 'Phase 1 — first purchase' : 'Phase 2 — mid-season expansion';
-        return `<tr class="${cls}"><td>${r.label}</td><td>${r.name}</td><td>${phaseLabel}</td><td class="num">${fleet}</td></tr>`;
-      }).join('')}
+      <tr class="phase-poc"><td>19–20 Sep 2026</td><td>New Zealand Master Rowing</td><td>PoC — free trial</td><td class="num">16 (AHD loan)</td></tr><tr class="phase-1"><td>14–15 Nov 2026</td><td>KRI Memorial Rowing Regatta</td><td>Phase 1 — first purchase</td><td class="num">50</td></tr><tr class="phase-1"><td>28–29 Nov 2026</td><td>KRI Club Regatta</td><td>Phase 1 — first purchase</td><td class="num">50</td></tr><tr class="phase-1"><td>11–13 Dec 2026</td><td>KRI Christmas Regatta</td><td>Phase 1 — first purchase</td><td class="num">50</td></tr><tr class="phase-2"><td>29–31 Jan 2027</td><td>North Island Rowing Champs</td><td>Phase 2 — mid-season expansion</td><td class="num">~100</td></tr><tr class="phase-2"><td>26–28 Feb 2027</td><td>North Island Secondary School Rowing Regatta</td><td>Phase 2 — mid-season expansion</td><td class="num">~100</td></tr><tr class="phase-2"><td>15–20 Mar 2027</td><td>Maadi Cup</td><td>Phase 2 — mid-season expansion</td><td class="num">~100</td></tr>
       <tr class="phase-3"><td>2027–28 season</td><td>Full national programme (Karāpiro + Ruataniwha + partners)</td><td>Phase 3 — +170 units (270 total)</td><td class="num">270</td></tr>
     </tbody>
   </table>
@@ -284,8 +191,8 @@ function roadmapHtml(simMonth) {
     <strong>Suggested grant narrative (Phase 2):</strong> After a successful PoC and Phase 1 deployment, KRI applies for community or sport
     development funding (e.g. Rowing NZ regional development, Sport NZ community resilience, local trust, or equipment grants) to complete
     a <strong>100-device CrewSight fleet</strong> for the remainder of the 2026–27 national regatta block. Indicative grant scope:
-    Phase 2 add-on of ${money(phase2Add.included)} ex GST (data included) or the cumulative 100-device season total of
-    ${money(season100.included)} ex GST if funders prefer a single programme figure. Grant applications should reference Phase 1
+    Phase 2 add-on of $7,500.00 ex GST (data included) or the cumulative 100-device season total of
+    $22,000.00 ex GST if funders prefer a single programme figure. Grant applications should reference Phase 1
     operational evidence (uptime, charging workflow, ops monitor usage, and event debrief outcomes).
   </p>
   <p class="muted">
@@ -293,8 +200,8 @@ function roadmapHtml(simMonth) {
   </p>
 
   <h2>Indicative costs (ex GST)</h2>
-  <p class="muted">Handsets ${money(HANDSET_SELL)}/unit · Platform ${money(PLATFORM_FEE)}/season (flat) · IoT data ${money(simMonth)}/SIM/month · Optional mounting ${money(MOUNT_SELL)}/boat</p>
-  ${simNote}
+  <p class="muted">Handsets $130.00/unit · Platform $6,000.00/season (flat) · IoT data $10.00/SIM/month · Optional mounting $50.00/boat</p>
+  <p class="muted"><strong>IoT data rate for this variant:</strong> $10.00/SIM/month (previous baseline $5.00/SIM/month).</p>
 
   <table>
     <thead>
@@ -312,76 +219,76 @@ function roadmapHtml(simMonth) {
         <td>16 units · NZ Master Rowing</td>
         <td class="num"><strong>$0.00</strong></td>
         <td class="num"><strong>$0.00</strong></td>
-        <td>AHD investment (~${money(pocAhdCost)} internal cost ex GST)</td>
+        <td>AHD investment (~$2,017.44 internal cost ex GST)</td>
       </tr>
       <tr class="phase-1">
         <td><strong>Phase 1</strong></td>
-        <td>50 handsets · ${SEASON_MONTHS}-month season platform &amp; SIM</td>
-        <td class="num">${money(phase1.included)}</td>
-        <td class="num">${money(phase1.excluded)}</td>
+        <td>50 handsets · 4-month season platform &amp; SIM</td>
+        <td class="num">$14,500.00</td>
+        <td class="num">$12,500.00</td>
         <td><strong>KRI self-funded</strong> · decision after PoC · Nov–Dec regattas</td>
       </tr>
       <tr class="phase-2">
         <td><strong>Phase 2 add-on</strong></td>
         <td>+50 handsets · ~2 mo SIM (no second platform fee)</td>
-        <td class="num">${money(phase2Add.included)}</td>
-        <td class="num">${money(phase2Add.excluded)}</td>
+        <td class="num">$7,500.00</td>
+        <td class="num">$6,500.00</td>
         <td><strong>Grant target</strong> (pending Phase 1) · Jan 2027 · NICC → Maadi</td>
       </tr>
       <tr>
         <td><strong>2026–27 cumulative</strong></td>
         <td>100 handsets · one platform fee</td>
-        <td class="num"><strong>${money(season100.included)}</strong></td>
-        <td class="num"><strong>${money(season100.excluded)}</strong></td>
-        <td>Incl GST: ${money(season100.included * (1 + GST), { gst: false })} · grant scope reference</td>
+        <td class="num"><strong>$22,000.00</strong></td>
+        <td class="num"><strong>$19,000.00</strong></td>
+        <td>Incl GST: $25,300.00 · grant scope reference</td>
       </tr>
       <tr class="phase-3">
         <td><strong>Phase 3 (2027–28)</strong></td>
-        <td><strong>+170 handsets</strong> · ${SEASON_MONTHS}-mo SIM (new units) · platform · 270 total fleet</td>
-        <td class="num">${money(phase3Add.included)}</td>
-        <td class="num">${money(phase3Add.excluded)}</td>
-        <td>Incremental only — 100 units already owned · incl GST: ${money(phase3Add.included * (1 + GST), { gst: false })}</td>
+        <td><strong>+170 handsets</strong> · 4-mo SIM (new units) · platform · 270 total fleet</td>
+        <td class="num">$34,900.00</td>
+        <td class="num">$28,100.00</td>
+        <td>Incremental only — 100 units already owned · incl GST: $40,135.00</td>
       </tr>
     </tbody>
   </table>
   <p class="muted">
-    Phase 3 costs cover <strong>170 additional units</strong> only (${money(phase3Add.handsets)} handsets + ${money(phase3Add.sim)} SIM + ${money(PLATFORM_FEE)} platform).
-    Full greenfield 270-device season reference: ${money(season270Greenfield.included)} ex GST (see CrewSight-Season-Proposal-270-devices.pdf).
+    Phase 3 costs cover <strong>170 additional units</strong> only ($22,100.00 handsets + $6,800.00 SIM + $6,000.00 platform).
+    Full greenfield 270-device season reference: $51,900.00 ex GST (see CrewSight-Season-Proposal-270-devices.pdf).
     Existing 100 handsets may require SIM renewal in 2027–28 if data-included — budget separately if applicable.
   </p>
 
   <h3>Optional mounting (per phase)</h3>
   <table>
-    <thead><tr><th>Fleet size</th><th class="num">Mounting (${money(MOUNT_SELL)}/boat)</th></tr></thead>
+    <thead><tr><th>Fleet size</th><th class="num">Mounting ($50.00/boat)</th></tr></thead>
     <tbody>
-      <tr><td>50 devices (Phase 1)</td><td class="num">${money(50 * MOUNT_SELL)} ex · ${money(50 * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
-      <tr><td>100 devices (cumulative)</td><td class="num">${money(100 * MOUNT_SELL)} ex · ${money(100 * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
-      <tr><td>Phase 3 add-on (+170)</td><td class="num">${money(phase3AddDevices * MOUNT_SELL)} ex · ${money(phase3AddDevices * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
-      <tr><td>270 devices (full fleet)</td><td class="num">${money(270 * MOUNT_SELL)} ex · ${money(270 * MOUNT_SELL * (1 + GST), { gst: false })} incl</td></tr>
+      <tr><td>50 devices (Phase 1)</td><td class="num">$2,500.00 ex · $2,875.00 incl</td></tr>
+      <tr><td>100 devices (cumulative)</td><td class="num">$5,000.00 ex · $5,750.00 incl</td></tr>
+      <tr><td>Phase 3 add-on (+170)</td><td class="num">$8,500.00 ex · $9,775.00 incl</td></tr>
+      <tr><td>270 devices (full fleet)</td><td class="num">$13,500.00 ex · $15,525.00 incl</td></tr>
     </tbody>
   </table>
 
   <h3>Field battery life</h3>
   <p>
-    Supplied handsets (One NZ Smart <strong>M26</strong>) have a <strong>${BATTERY_MAH.toLocaleString()} mAh</strong> battery.
-    <strong>Field test ${M26_FIELD_TEST.testDate}:</strong> M26 at ~${M26_FIELD_TEST.battery.gpsRateHz} Hz GPS drained
-    ~${M26_FIELD_TEST.battery.drainPerH} %/h (${M26_FIELD_TEST.battery.startPct}% → ${M26_FIELD_TEST.battery.snapshotPct}% over ${M26_FIELD_TEST.battery.elapsedH} h) —
-    estimated <strong>~${FIELD_BATTERY_HOURS} h</strong> from full charge at continuous high-rate tracking.
-    An ${M26_FIELD_TEST.regattaDayActiveH}-hour active regatta day at 1 Hz uses ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% battery.
+    Supplied handsets (One NZ Smart <strong>M26</strong>) have a <strong>5,000 mAh</strong> battery.
+    <strong>Field test 14 Jun 2026:</strong> M26 at ~1 Hz GPS drained
+    ~3.1 %/h (96% → 64% over 10.3 h) —
+    estimated <strong>~32 h</strong> from full charge at continuous high-rate tracking.
+    An 8-hour active regatta day at 1 Hz uses ~25% battery.
     Standard mixed regatta profile (1 s / 5 s / 30 s intervals) uses less — validated against Samsung Galaxy S21 reference in the same vehicle test
-    (M26 median GPS ${M26_FIELD_TEST.gps.h7.medianAccM} m vs S21 ${M26_FIELD_TEST.gps.h6.medianAccM} m).
+    (M26 median GPS 3.3 m vs S21 5.2 m).
   </p>
   <table>
     <thead><tr><th>Scenario</th><th>Implication</th></tr></thead>
     <tbody>
-      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required — ~${M26_FIELD_TEST.regattaDayDrainPctAt1Hz}% at 1 Hz; less on mixed profile</td></tr>
+      <tr><td>Single regatta day (≤8 hr on water)</td><td>No mid-day charging required — ~25% at 1 Hz; less on mixed profile</td></tr>
       <tr><td>Multi-day regatta block</td><td>Overnight industrial-cabinet charge between days; spot-check battery % in ops monitor before dispatch</td></tr>
-      <tr><td>Long sessions / warm-up days</td><td>~${FIELD_BATTERY_HOURS} hr headroom at continuous 1 Hz; mixed profile extends further</td></tr>
+      <tr><td>Long sessions / warm-up days</td><td>~32 hr headroom at continuous 1 Hz; mixed profile extends further</td></tr>
       <tr><td>Handset settings</td><td>Battery optimisation unrestricted · Location “Allow all the time” · Notifications enabled</td></tr>
     </tbody>
   </table>
   <p class="muted">
-    Prior lab reference (Samsung A1 @ 30 s GPS): ~${M26_FIELD_TEST.refA1DrainPerH} %/h (~${M26_FIELD_TEST.refA1EstFullH} h from full charge).
+    Prior lab reference (Samsung A1 @ 30 s GPS): ~3.7 %/h (~27 h from full charge).
     Actual runtime varies with cellular coverage, screen-off discipline, ambient temperature, and battery age. Replace or rotate units
     that no longer hold charge through a full regatta day during annual health checks.
   </p>
@@ -411,7 +318,7 @@ function roadmapHtml(simMonth) {
       Recommend an <strong>industrial USB charging cabinet</strong> (multi-port, keyed, ventilated) with
       <strong>bespoke racking mounted on the number hut wall</strong> at Lake Karāpiro. Labelled slots per device ID;
       overnight charge between regatta days; spot-check battery health in the ops monitor before dispatch.
-      With ~${FIELD_BATTERY_HOURS} hr measured headroom at 1 Hz (${BATTERY_MAH.toLocaleString()} mAh M26, ${M26_FIELD_TEST.testDate} field test), a full overnight charge covers a standard
+      With ~32 hr measured headroom at 1 Hz (5,000 mAh M26, 14 Jun 2026 field test), a full overnight charge covers a standard
       8-hour regatta day without mid-day top-up. Phase 3 (270 fleet) may add a second cabinet or mobile charging case for away events.
     </dd>
 
@@ -420,7 +327,7 @@ function roadmapHtml(simMonth) {
       <strong>Device hire fee payable to Karāpiro Rowing</strong>, on top of any operational or broadcast fees.
       KRI ships a subset of the fleet (or hires additional units) to the event; hire covers wear, logistics, and KRI staff time.
       CrewSight platform access for that event is included in the season platform fee or pro-rated event add-on as agreed.
-      Beach Sprints coastal events may require waterproof mounting — optional ${money(MOUNT_SELL)}/boat kits.
+      Beach Sprints coastal events may require waterproof mounting — optional $50.00/boat kits.
     </dd>
 
     <dt>Who owns the data?</dt>
@@ -482,15 +389,15 @@ function roadmapHtml(simMonth) {
 
   <h3>Replacement costs</h3>
   <p>
-    Handsets: budget <strong>${money(HANDSET_SELL)}</strong> per replacement unit (current sell price; cost ${money(HANDSET_COST)} ex GST).
-    Recommend a <strong>5% spares pool</strong> at full scale (≈14 units at 270 fleet) — ~${money(Math.ceil(270 * 0.05) * HANDSET_SELL)} ex GST initial spares budget.
-    Mounting kits: ${money(MOUNT_SELL)}/replacement. Assume <strong>20–25% fleet refresh every 3–4 years</strong> (battery and ruggedness).
+    Handsets: budget <strong>$130.00</strong> per replacement unit (current sell price; cost $86.09 ex GST).
+    Recommend a <strong>5% spares pool</strong> at full scale (≈14 units at 270 fleet) — ~$1,820.00 ex GST initial spares budget.
+    Mounting kits: $50.00/replacement. Assume <strong>20–25% fleet refresh every 3–4 years</strong> (battery and ruggedness).
   </p>
 
   <h3>Future annual service fee (indicative)</h3>
   <p>
-    From 2027–28 onward, once the full fleet is deployed, suggest a flat <strong>${money(10_000)}/season</strong> CrewSight platform &
-    support fee (ex GST, ${money(11_500, { gst: false })} incl GST) covering cloud hosting, app updates, event support, and ingest monitoring —
+    From 2027–28 onward, once the full fleet is deployed, suggest a flat <strong>$10,000.00/season</strong> CrewSight platform &
+    support fee (ex GST, $11,500.00 incl GST) covering cloud hosting, app updates, event support, and ingest monitoring —
     in lieu of scaling platform fee with device count. IoT data and handset CAPEX remain separate line items.
     Per-regatta support can be quoted ad hoc for away venues if beyond season scope.
   </p>
@@ -615,54 +522,4 @@ function roadmapHtml(simMonth) {
     Companion docs: CrewSight-Season-Proposal-50/270-devices.pdf · CrewSight-Technical-Overview.pdf
   </footer>
 </body>
-</html>`;
-}
-
-async function main() {
-  const { simMonth, outDir, skipDrive } = parseProposalArgs(ROOT);
-  await mkdir(outDir, { recursive: true });
-
-  const htmlOut = join(outDir, 'CrewSight-Phased-Rollout-Plan.html');
-  const pdfOut = join(outDir, 'CrewSight-Phased-Rollout-Plan.pdf');
-  const html = roadmapHtml(simMonth);
-
-  await writeFile(htmlOut, html, 'utf8');
-
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'load' });
-  const tmpPdf = `${pdfOut}.tmp`;
-  try {
-    await page.pdf({
-      path: tmpPdf,
-      format: 'A4',
-      printBackground: true,
-      preferCSSPageSize: true,
-    });
-    await page.close();
-    const { rename, copyFile } = await import('node:fs/promises');
-    try {
-      await rename(tmpPdf, pdfOut);
-    } catch {
-      await copyFile(tmpPdf, pdfOut);
-      await unlink(tmpPdf).catch(() => {});
-    }
-    console.log('Wrote', pdfOut);
-    console.log('Wrote', htmlOut);
-  } catch (err) {
-    await page.close();
-    console.error('Failed', pdfOut, err.message);
-    process.exit(1);
-  }
-  await browser.close();
-  if (!skipDrive) {
-    await uploadPdfToDrive(pdfOut);
-  } else {
-    console.log('Drive upload skipped (alternate output folder or --skip-drive).');
-  }
-}
-
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+</html>
