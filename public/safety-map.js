@@ -888,14 +888,16 @@ function updateKriDemoBoatMarker(device, position, latlng, fill, stroke, capsize
     if (!markersApi?.createIcon) return null;
 
     const heading = resolvePositionHeading(position);
-    const scale = markersApi.getZoomScale?.(map?.getZoom()) ?? 1;
+    const kind = device.demoMarkerKind === 'safety' ? 'safety' : 'shell';
+    const size = markersApi.getBoatPixelSize?.(map, position.latitude, kind) ?? { w: 14, h: 38 };
     const icon = markersApi.createIcon({
-        kind: device.demoMarkerKind === 'safety' ? 'safety' : 'shell',
+        kind,
         fill,
         stroke,
         heading,
         capsize: capsizeAlert,
-        scale,
+        width: size.w,
+        height: size.h,
     });
     if (!icon) return null;
 

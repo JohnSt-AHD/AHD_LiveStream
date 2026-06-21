@@ -1,14 +1,15 @@
 /**
  * KRI demo fleet icons (rowing shells + safety boat).
- * Max size at REF_ZOOM; scales down when zoomed out to reduce overlap.
+ * Icon length is fixed at BOAT_LENGTH_M on the map (meters); pixel size follows zoom.
  */
 (function (global) {
-    const SHELL_W = 14;
-    const SHELL_H = 38;
-    const SAFETY_W = 24;
-    const SAFETY_H = 34;
+    /** Bow-to-stern length on the map (meters) — shell and safety boat. */
+    const BOAT_LENGTH_M = 20;
+    const SHELL_VIEW_W = 28;
+    const SHELL_VIEW_H = 60;
+    const SAFETY_VIEW_W = 48;
+    const SAFETY_VIEW_H = 64;
     const REF_ZOOM = 14;
-    const MIN_BOAT_SCALE = 0.4;
     const MIN_LABEL_SCALE = 0.45;
     const LABEL_HIDE_BELOW_ZOOM = 11;
 
@@ -25,10 +26,32 @@
         return Math.min(1, Math.max(minScale, raw));
     }
 
-    /** Scale 1 at REF_ZOOM; shrinks when zoomed out (max size cap). */
-    function getZoomScale(zoom) {
-        if (!Number.isFinite(zoom)) return 1;
-        return clampScale(Math.pow(2, zoom - REF_ZOOM), MIN_BOAT_SCALE);
+    /** Meters along north–south at lat → screen pixels at current zoom. */
+    function metersToPixels(map, lat, meters) {
+        if (!map || !Number.isFinite(lat) || !Number.isFinite(meters) || meters <= 0) return 40;
+        const lng = map.getCenter().lng;
+        const earthR = 6378137;
+        const dLat = (meters / earthR) * (180 / Math.PI);
+        const p1 = map.latLngToLayerPoint([lat, lng]);
+        const p2 = map.latLngToLayerPoint([lat + dLat, lng]);
+        return Math.abs(p2.y - p1.y);
+    }
+
+    /**
+     * Pixel width/height for a boat icon at lat (length = BOAT_LENGTH_M on ground).
+     * @param {import('leaflet').Map} map
+     * @param {number} lat
+     * @param {'shell'|'safety'} kind
+     */
+    function getBoatPixelSize(map, lat, kind) {
+        const lengthPx = metersToPixels(map, lat, BOAT_LENGTH_M);
+        const h = Math.max(4, Math.round(lengthPx));
+        if (kind === 'safety') {
+            const w = Math.max(3, Math.round((h * SAFETY_VIEW_W) / SAFETY_VIEW_H));
+            return { w, h };
+        }
+        const w = Math.max(3, Math.round((h * SHELL_VIEW_W) / SHELL_VIEW_H));
+        return { w, h };
     }
 
     /** Course labels — hidden below LABEL_HIDE_BELOW_ZOOM. */
@@ -67,7 +90,7 @@
     }
 
     /**
-     * @param {{ kind: 'shell'|'safety', fill: string, stroke: string, heading?: number, capsize?: boolean, scale?: number }} opts
+     * @param {{ kind: 'shell'|'safety', fill: string, stroke: string, heading?: number, capsize?: boolean, width?: number, height?: number }} opts
      */
     function createIcon(opts) {
         const kind = opts.kind === 'safety' ? 'safety' : 'shell';
@@ -75,14 +98,16 @@
         const stroke = opts.stroke || '#1e40af';
         const heading = Number.isFinite(opts.heading) ? opts.heading : 0;
         const capsize = !!opts.capsize;
-        const scale =
-            opts.scale != null && Number.isFinite(opts.scale)
-                ? clampScale(opts.scale, MIN_BOAT_SCALE)
-                : 1;
-        const baseW = kind === 'safety' ? SAFETY_W : SHELL_W;
-        const baseH = kind === 'safety' ? SAFETY_H : SHELL_H;
-        const w = Math.max(4, Math.round(baseW * scale));
-        const h = Math.max(10, Math.round(baseH * scale));
+        const fallbackH = kind === 'safety' ? SAFETY_VIEW_H : SHELL_VIEW_H;
+        const fallbackW = kind === 'safety' ? SAFETY_VIEW_W : SHELL_VIEW_W;
+        const h =
+            opts.height != null && Number.isFinite(opts.height)
+                ? Math.max(4, Math.round(opts.height))
+                : fallbackH;
+        const w =
+            opts.width != null && Number.isFinite(opts.width)
+                ? Math.max(3, Math.round(opts.width))
+                : fallbackW;
         const inner = kind === 'safety' ? safetySvg(fill, stroke, w, h) : shellSvg(fill, stroke, w, h);
         const capsizeClass = capsize ? ' rnz-marker-capsize' : '';
         const html =
@@ -106,15 +131,12 @@
     global.KriSafetyMarkers = {
         createIcon,
         isDemoBoatDevice,
-        getZoomScale,
+        getBoatPixelSize,
+        metersToPixels,
         getLabelZoomScale,
+        BOAT_LENGTH_M,
         REF_ZOOM,
-        MIN_BOAT_SCALE,
         MIN_LABEL_SCALE,
         LABEL_HIDE_BELOW_ZOOM,
-        SHELL_W,
-        SHELL_H,
-        SAFETY_W,
-        SAFETY_H,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
