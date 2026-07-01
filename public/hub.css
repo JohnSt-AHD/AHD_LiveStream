@@ -231,6 +231,52 @@
     color: #7dd3fc;
 }
 
+.hub-fleet-map-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 20px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 229, 255, 0.22);
+    background: rgba(6, 20, 38, 0.55);
+}
+
+.hub-fleet-source {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.hub-fleet-map-toolbar .hub-fleet-map-toggle {
+    margin-bottom: 0;
+    flex: 0 1 auto;
+}
+
+.hub-crewsight-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.28);
+}
+
+.hub-crewsight-strip-mark {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+.hub-crewsight-strip-text {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ahd-accent);
+}
+
 .hub-fleet-map-toggle {
     display: flex;
     align-items: center;
@@ -779,6 +825,27 @@
 
 .hub-link-card--monitor {
     border-color: rgba(96, 165, 250, 0.35);
+}
+
+.hub-link-card--crewsight,
+.hub-link-card--crewsight-manager {
+    border-color: rgba(0, 229, 255, 0.35);
+}
+
+.hub-link-icon--crewsight {
+    background: rgba(10, 22, 40, 0.95) !important;
+    padding: 6px;
+}
+
+.hub-link-icon--crewsight img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+.hub-link-card--crewsight-manager {
+    border-color: rgba(13, 148, 136, 0.4);
 }
 
 .hub-panel--apps .hub-link-card:hover {

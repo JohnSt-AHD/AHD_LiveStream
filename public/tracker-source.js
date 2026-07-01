@@ -1,5 +1,5 @@
 /**
- * Client-side Traccar vs RNZ rowing tracker source (persisted in localStorage).
+ * Client-side Traccar vs CrewSight tracker source (persisted in localStorage).
  */
 (function (global) {
     const STORAGE_KEY = 'altitudehd:tracker-source';
@@ -48,7 +48,7 @@
     }
 
     function label(source) {
-        return source === 'rowing' ? 'Recorder (RNZ/KRI)' : 'Traccar';
+        return source === 'rowing' ? 'CrewSight' : 'Traccar';
     }
 
     /** Snapshot fetch — prefers shared bus; falls back to direct API with source param. */

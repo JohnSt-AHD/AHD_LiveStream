@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
+    <link rel="stylesheet" href="tracker-source-bar.css">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -144,13 +145,23 @@
             <section class="hub-panel hub-panel--fleet-map" aria-labelledby="hub-fleet-map-title">
                 <h2 id="hub-fleet-map-title" class="hub-section-title">Fleet overview</h2>
                 <p class="hub-fleet-map-lead">
-                    Live Traccar devices · default view Karāpiro (Rowing NZ).
+                    Live devices from <strong>Traccar</strong> or <strong>CrewSight</strong> · default view Karāpiro (Rowing NZ).
                     <a href="live-map.html">Open full fleet map</a>
                 </p>
-                <label class="hub-fleet-map-toggle">
-                    <input type="checkbox" id="hubFleetTracesToggle" aria-describedby="hubFleetMapStatus">
-                    <span>Show today&apos;s GPS traces (all devices)</span>
-                </label>
+                <div class="hub-fleet-map-toolbar">
+                    <div class="tracker-source-inline hub-fleet-source">
+                        <div class="tracker-source-label">Position data source</div>
+                        <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
+                            <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
+                            <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">CrewSight</button>
+                        </div>
+                        <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
+                    </div>
+                    <label class="hub-fleet-map-toggle">
+                        <input type="checkbox" id="hubFleetTracesToggle" aria-describedby="hubFleetMapStatus">
+                        <span>Show today&apos;s GPS traces (all devices)</span>
+                    </label>
+                </div>
                 <div id="hubFleetMap" class="hub-fleet-map" role="application" aria-label="Fleet map at Karāpiro"></div>
                 <p class="hub-fleet-map-status" id="hubFleetMapStatus" aria-live="polite">Loading devices…</p>
             </section>
@@ -181,7 +192,7 @@
                             <span class="hub-link-icon" aria-hidden="true">📡</span>
                             <span class="hub-link-text">
                                 <h3>Altitude HD fleet map</h3>
-                                <p>Live Traccar devices, route history, custom markers, and speed screen launcher.</p>
+                                <p>Traccar or CrewSight devices — route history, custom markers, and speed screen launcher.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -402,57 +413,46 @@
             </section>
 
             <section class="hub-panel hub-panel--apps" aria-labelledby="hub-apps-title">
+                <div class="hub-crewsight-strip">
+                    <img src="assets/crewsight/crewsight-logo-icon-only-color.png" alt="" class="hub-crewsight-strip-mark" width="44" height="44" aria-hidden="true">
+                    <span class="hub-crewsight-strip-text">CrewSight</span>
+                </div>
                 <h2 id="hub-apps-title" class="hub-section-title">Apps</h2>
                 <p class="hub-apps-lead">
-                    Phone recorder apps (GPS ingest to the RNZ backend) and the live operations monitor.
-                    Choose <strong>Recorder (RNZ/KRI)</strong> in Settings below to use this data on fleet maps.
+                    CrewSight phone app (GPS ingest to the CrewSight cloud) and CrewSight Manager for fleet operations.
+                    Switch the fleet map above or in Settings to <strong>CrewSight</strong> to use this data on AHD maps.
                 </p>
                 <ul class="hub-links">
                     <li>
                         <a
-                            class="hub-link-card hub-link-card--rnz"
+                            class="hub-link-card hub-link-card--crewsight"
                             href="https://rowing-app-recorder-pwa.vercel.app/install-native.html"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
-                                <img src="assets/rnz/rnz-logomark-dual.png" alt="" width="28" height="28">
+                            <span class="hub-link-icon hub-link-icon--crewsight" aria-hidden="true">
+                                <img src="assets/crewsight/crewsight-logo-icon-only-color.png" alt="" width="28" height="28">
                             </span>
                             <span class="hub-link-text">
-                                <h3>RNZ Row Recorder</h3>
-                                <p>Latest Android build, install guide, and PWA fallback — GPS, motion, and heart rate.</p>
+                                <h3>CrewSight</h3>
+                                <p>Android APK, install guide, and PWA — GPS, stroke rate, motion, heart rate, and capsize alerts.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">↗</span>
                         </a>
                     </li>
                     <li>
                         <a
-                            class="hub-link-card hub-link-card--kri"
-                            href="https://rowing-app-recorder-pwa.vercel.app/install-kri"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <span class="hub-link-icon hub-link-icon--kri" aria-hidden="true">
-                                <img src="assets/kri/kri-logo.png" alt="" width="28" height="28">
-                            </span>
-                            <span class="hub-link-text">
-                                <h3>KRI GPS</h3>
-                                <p>Latest KRI Safety System Android build — GPS, accelerometer, and capsize alerts.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a
-                            class="hub-link-card hub-link-card--monitor"
+                            class="hub-link-card hub-link-card--crewsight-manager"
                             href="https://rowing-app-recorder-pwa.vercel.app/dashboard.html"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            <span class="hub-link-icon" aria-hidden="true">📈</span>
+                            <span class="hub-link-icon hub-link-icon--crewsight" aria-hidden="true">
+                                <img src="assets/crewsight/crewsight-logo-icon-only-color.png" alt="" width="28" height="28">
+                            </span>
                             <span class="hub-link-text">
-                                <h3>Operations monitor</h3>
-                                <p>Live fleet map, device list, ingest rates, geofences, regatta messages, and history.</p>
+                                <h3>CrewSight Manager</h3>
+                                <p>Live fleet map, device list, geofences, regatta messages, and session history.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">↗</span>
                         </a>
@@ -486,7 +486,7 @@
                         data-tracker-source="rowing"
                         aria-pressed="false"
                     >
-                        Recorder (RNZ/KRI)
+                        CrewSight
                     </button>
                 </div>
             </div>

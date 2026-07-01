@@ -1,5 +1,5 @@
 /**
- * Wire Traccar / RNZ·KRI recorder toggle on hub and map pages.
+ * Wire Traccar / CrewSight toggle on hub and map pages.
  */
 (function () {
     const ts = window.AltitudeHdTrackerSource;
