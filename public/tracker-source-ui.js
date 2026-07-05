@@ -50,6 +50,10 @@
     }
 
     function wireToggle() {
+        if (ts.isLocked && ts.isLocked()) {
+            syncButtons();
+            return;
+        }
         document.querySelectorAll('[data-tracker-source]').forEach((btn) => {
             if (btn.dataset.trackerSourceWired === '1') return;
             btn.dataset.trackerSourceWired = '1';

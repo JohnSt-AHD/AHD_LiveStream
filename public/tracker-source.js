@@ -6,30 +6,53 @@
     const EVENT_NAME = 'altitudehd:tracker-source';
     const SOURCES = ['traccar', 'rowing'];
 
+    /** Optional per-page override: { default: 'rowing'|'traccar', lock: true } */
+    function pageConfig() {
+        return global.AltitudeHdTrackerSourceConfig || {};
+    }
+
     function normalize(value) {
         const v = String(value || '').toLowerCase();
         return v === 'rowing' || v === 'rnz' ? 'rowing' : 'traccar';
     }
 
+    function lockedSource() {
+        const cfg = pageConfig();
+        if (!cfg.lock) return null;
+        return normalize(cfg.default || 'rowing');
+    }
+
     function getSource() {
+        const locked = lockedSource();
+        if (locked) return locked;
         try {
-            return normalize(localStorage.getItem(STORAGE_KEY));
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) return normalize(stored);
         } catch {
-            return 'traccar';
+            /* ignore */
         }
+        const cfg = pageConfig();
+        return normalize(cfg.default || 'traccar');
     }
 
     function setSource(next) {
-        const value = normalize(next);
-        try {
-            localStorage.setItem(STORAGE_KEY, value);
-        } catch {
-            /* ignore */
+        const locked = lockedSource();
+        const value = locked || normalize(next);
+        if (!locked) {
+            try {
+                localStorage.setItem(STORAGE_KEY, value);
+            } catch {
+                /* ignore */
+            }
         }
         global.dispatchEvent(
             new CustomEvent(EVENT_NAME, { detail: { source: value } }),
         );
         return value;
+    }
+
+    function isLocked() {
+        return Boolean(lockedSource());
     }
 
     /** @param {URLSearchParams|Record<string,string>} params */
@@ -103,6 +126,7 @@
         SOURCES,
         getSource,
         setSource,
+        isLocked,
         applySource,
         buildTraccarUrl,
         fetchSnapshot,

@@ -78,14 +78,10 @@
                         </div>
                     </details>
 
-                    <details class="rnz-panel-details tracker-source-panel" open>
+                    <details class="rnz-panel-details" open>
                         <summary class="rnz-panel-summary">Position data source</summary>
                         <div class="rnz-panel-inner">
-                            <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
-                                <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
-                                <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">CrewSight</button>
-                            </div>
-                            <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
+                            <p class="tracker-source-status" data-ok="1">Using CrewSight for live fleet positions (RNZ ingest token).</p>
                         </div>
                     </details>
 
@@ -191,6 +187,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="map-refresh-rate.js"></script>
+    <script>
+        window.AltitudeHdTrackerSourceConfig = { default: 'rowing', lock: true };
+    </script>
     <script src="tracker-source.js"></script>
     <script src="traccar-snapshot-bus.js"></script>
     <script src="speed-color-scale.js"></script>

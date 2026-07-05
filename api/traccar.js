@@ -114,7 +114,9 @@ function canUseRowing() {
 }
 
 function rowingAuthHeaders() {
-    const token = String(process.env.ROWING_INGEST_TOKEN || process.env.INGEST_TOKEN || '').trim();
+    const token = String(
+        process.env.ROWING_INGEST_TOKEN || process.env.INGEST_TOKEN || 'rnz',
+    ).trim();
     const headers = { Accept: 'application/json' };
     if (token) {
         headers.Authorization = `Bearer ${token}`;
