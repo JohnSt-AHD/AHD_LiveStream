@@ -41,6 +41,7 @@
     function readAlarm(pos) {
         const attrs = pos?.attributes;
         if (!attrs || typeof attrs !== 'object') return null;
+        if (attrs.capsize === true) return 'capsize';
         const raw = attrs.alarm || attrs.Alarm || attrs.event || attrs.sos;
         if (typeof raw !== 'string') return null;
         if (/capsize|cap.?size|flip|overturn|sos|panic|distress|emergency/i.test(raw)) {

@@ -52,7 +52,7 @@
             mapZoom: 5,
             geofenceMatchColor: '#0f766e',
             geofenceMatchFill: '#14b8a6',
-            enableCapsize: false,
+            enableCapsize: true,
         },
         kri: {
             id: 'kri',

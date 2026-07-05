@@ -42,6 +42,14 @@
         <div class="rnz-dashboard" id="rnzLayout">
             <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Warnings">
                 <div class="rnz-left-scroll" id="rnzLeftScroll">
+                    <details class="rnz-panel-details rnz-panel-details--capsize" id="safetyCapsizeBox" hidden>
+                        <summary class="rnz-panel-summary">Capsize / distress alarm</summary>
+                        <div class="rnz-panel-inner rnz-panel-inner--critical safety-capsize-inner">
+                            <p class="rnz-block-hint">CrewSight capsize detection from the phone motion sensor. Sound plays for new alerts — acknowledge to clear until the next event. Click a boat name to fly the map there.</p>
+                            <div id="safetyCapsizeList"></div>
+                        </div>
+                    </details>
+
                     <details class="rnz-panel-details rnz-panel-details--warnings" id="rnzWarningBox" hidden>
                         <summary class="rnz-panel-summary">Warnings — outside boundary 30+ min</summary>
                         <div class="rnz-panel-inner rnz-panel-inner--critical">
@@ -197,6 +205,7 @@
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
     <script src="hub-warning-alerts.js"></script>
+    <script src="capsize-alarm.js"></script>
     <script src="safety-map-themes.js"></script>
     <script>window.SafetyMapTheme = window.SafetyMapThemes.rnz;</script>
     <script src="safety-map.js"></script>
