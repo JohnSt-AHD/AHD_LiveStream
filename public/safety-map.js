@@ -5,6 +5,7 @@
 const API_BASE = '/api/traccar';
 const SAFETY_THEME = window.SafetyMapTheme || window.SafetyMapThemes?.rnz || {};
 function mapRefreshMs() {
+    if (SAFETY_THEME.mapRefreshMs) return SAFETY_THEME.mapRefreshMs;
     return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
 }
 
@@ -247,6 +248,34 @@ function wireMapFollow() {
     };
     map.on('dragstart', onUserMapMove);
     map.on('zoomstart', onUserMapMove);
+}
+
+function updateRnzLiveSpeedChart() {
+    if (!SAFETY_THEME.enableLiveSpeedChart || !window.RowsafeLiveSpeedChart) return;
+    const activeMin = mapFollowActiveMinutes();
+    const samples = [];
+    const activeIds = [];
+
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (!pos || !isFixWithinMinutes(pos.fixTime, activeMin)) continue;
+        activeIds.push(String(d.id));
+        samples.push({
+            deviceId: d.id,
+            deviceName: d.name,
+            speed: pos.speed,
+            fixTime: pos.fixTime,
+        });
+    }
+
+    window.RowsafeLiveSpeedChart.recordSamples(samples);
+    window.RowsafeLiveSpeedChart.draw(activeIds);
+}
+
+function wireRnzLiveSpeedChart() {
+    if (!SAFETY_THEME.enableLiveSpeedChart || !document.getElementById('rnzLiveSpeedChart')) return;
+    const redraw = () => updateRnzLiveSpeedChart();
+    window.addEventListener('resize', redraw);
 }
 
 function escapeHtml(value) {
@@ -1250,6 +1279,7 @@ function updateMapMarkers() {
     }
 
     followActiveDevicesOnMap();
+    updateRnzLiveSpeedChart();
 }
 
 function renderFenceAndLists(parts, stoppedState) {
@@ -1782,6 +1812,12 @@ window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     wireMapFollow();
+    wireRnzLiveSpeedChart();
+    if (SAFETY_THEME.mapRefreshMs && window.AltitudeHdMapRefresh?.formatShort) {
+        document.querySelectorAll('[data-map-refresh-hint]').forEach((el) => {
+            el.textContent = window.AltitudeHdMapRefresh.formatShort(SAFETY_THEME.mapRefreshMs);
+        });
+    }
     wireLiveToggle();
     wireFleetDockResize();
     wireRnzMapFullscreen();

@@ -60,6 +60,8 @@
             enableMapFollow: true,
             lsMapFollow: 'rnzRowsafeMapFollow',
             mapFollowRotateSec: 30,
+            mapRefreshMs: 2000,
+            enableLiveSpeedChart: true,
         },
         kri: {
             id: 'kri',
