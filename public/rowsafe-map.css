@@ -375,6 +375,44 @@ body.rnz-page > * {
     -webkit-tap-highlight-color: transparent;
 }
 
+.rnz-map-follow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    z-index: 2;
+    top: max(8px, env(safe-area-inset-top, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: inherit;
+    border-radius: 6px;
+    border: 2px solid var(--rnz-teal);
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--rnz-navy);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+}
+
+.rnz-map-follow-btn.rnz-map-follow-btn--active {
+    background: var(--rnz-teal);
+    border-color: var(--rnz-teal-dark);
+    color: #fff;
+}
+
+.rnz-map-follow-btn:active {
+    background: var(--rnz-cream);
+}
+
+.rnz-map-follow-btn.rnz-map-follow-btn--active:active {
+    background: var(--rnz-teal-dark);
+}
+
 .rnz-map-mobile-expand-btn:active {
     background: var(--rnz-cream);
 }

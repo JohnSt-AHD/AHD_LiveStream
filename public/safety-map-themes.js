@@ -57,6 +57,9 @@
             capsizePanelAlwaysVisible: true,
             onWaterMode: 'active-recent',
             onWaterActiveMinutes: 5,
+            enableMapFollow: true,
+            lsMapFollow: 'rnzRowsafeMapFollow',
+            mapFollowRotateSec: 30,
         },
         kri: {
             id: 'kri',

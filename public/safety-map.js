@@ -49,6 +49,206 @@ let lastStoppedState = {};
 /** Device IDs with active (unacknowledged) capsize alerts. */
 let activeCapsizeDeviceIds = new Set();
 
+/** Map follow fleet (RNZ RowSafe). */
+let mapFollowFleet = false;
+let mapIgnoreMoveEvents = false;
+let followRotateIndex = 0;
+let followRotateDeviceIds = null;
+let followRotateTimer = null;
+
+function mapFollowEnabled() {
+    return Boolean(SAFETY_THEME.enableMapFollow && document.getElementById('rnzMapFollowBtn'));
+}
+
+function mapFollowRotateMs() {
+    return (SAFETY_THEME.mapFollowRotateSec ?? 30) * 1000;
+}
+
+function mapFollowActiveMinutes() {
+    return SAFETY_THEME.onWaterActiveMinutes ?? SAFETY_THEME.mapFollowActiveMinutes ?? 5;
+}
+
+function loadMapFollowPref() {
+    if (!mapFollowEnabled()) return false;
+    const key = SAFETY_THEME.lsMapFollow || 'rnzRowsafeMapFollow';
+    try {
+        return localStorage.getItem(key) !== '0';
+    } catch {
+        return true;
+    }
+}
+
+function saveMapFollowPref(enabled) {
+    const key = SAFETY_THEME.lsMapFollow || 'rnzRowsafeMapFollow';
+    try {
+        localStorage.setItem(key, enabled ? '1' : '0');
+    } catch {
+        /* ignore */
+    }
+}
+
+function updateMapFollowButton() {
+    const btn = document.getElementById('rnzMapFollowBtn');
+    if (!btn) return;
+    btn.classList.toggle('rnz-map-follow-btn--active', mapFollowFleet);
+    btn.setAttribute('aria-pressed', mapFollowFleet ? 'true' : 'false');
+    const targets = getActiveFollowTargets();
+    if (mapFollowFleet && targets.length > 1) {
+        const current = targets[followRotateIndex] || targets[0];
+        btn.setAttribute(
+            'aria-label',
+            `Follow fleet: ${current.device.name} (${followRotateIndex + 1} of ${targets.length}, rotates every ${SAFETY_THEME.mapFollowRotateSec ?? 30}s)`,
+        );
+    } else if (mapFollowFleet && targets.length === 1) {
+        btn.setAttribute('aria-label', `Follow fleet: ${targets[0].device.name}`);
+    } else {
+        btn.setAttribute('aria-label', 'Follow fleet');
+    }
+}
+
+function stopFollowRotateTimer() {
+    if (followRotateTimer) {
+        clearInterval(followRotateTimer);
+        followRotateTimer = null;
+    }
+}
+
+function startFollowRotateTimer() {
+    stopFollowRotateTimer();
+    if (!mapFollowFleet || !mapFollowEnabled()) return;
+    followRotateTimer = setInterval(() => {
+        if (!mapFollowFleet) return;
+        const targets = getActiveFollowTargets();
+        if (targets.length <= 1) return;
+        followRotateIndex = (followRotateIndex + 1) % targets.length;
+        followActiveDevicesOnMap(true);
+    }, mapFollowRotateMs());
+}
+
+function refreshFollowRotateTimer(targetCount) {
+    if (!mapFollowFleet) return;
+    if (targetCount <= 1) {
+        stopFollowRotateTimer();
+        return;
+    }
+    if (!followRotateTimer) startFollowRotateTimer();
+}
+
+function resetFollowRotationState() {
+    followRotateIndex = 0;
+    followRotateDeviceIds = null;
+}
+
+function disableMapFollowFromUser() {
+    if (!mapFollowFleet || mapIgnoreMoveEvents) return;
+    mapFollowFleet = false;
+    saveMapFollowPref(false);
+    stopFollowRotateTimer();
+    resetFollowRotationState();
+    updateMapFollowButton();
+}
+
+function getActiveFollowTargets() {
+    const activeMin = mapFollowActiveMinutes();
+    const targets = [];
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+        if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
+        if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
+        targets.push({
+            device: d,
+            pos,
+            lat: pos.latitude,
+            lng: pos.longitude,
+        });
+    }
+    targets.sort((a, b) =>
+        String(a.device.name).localeCompare(String(b.device.name), undefined, { sensitivity: 'base' }),
+    );
+    return targets;
+}
+
+function syncFollowRotationState(targets) {
+    const ids = targets.map((t) => t.device.id);
+    if (!followRotateDeviceIds || followRotateDeviceIds.join(',') !== ids.join(',')) {
+        const prevId = followRotateDeviceIds?.[followRotateIndex];
+        followRotateDeviceIds = ids;
+        const newIdx = prevId != null ? ids.indexOf(prevId) : -1;
+        followRotateIndex = newIdx >= 0 ? newIdx : 0;
+    }
+    if (followRotateIndex >= targets.length) followRotateIndex = 0;
+}
+
+function panToFollowTarget(target, animate = false) {
+    if (!map || !target) return;
+    mapIgnoreMoveEvents = true;
+    const zoom = Math.min(Math.max(map.getZoom(), 15), 17);
+    if (animate && typeof map.flyTo === 'function') {
+        map.flyTo([target.lat, target.lng], zoom, { duration: 0.85 });
+        setTimeout(() => {
+            mapIgnoreMoveEvents = false;
+        }, 950);
+        return;
+    }
+    if (typeof map.panTo === 'function') {
+        map.panTo([target.lat, target.lng], { animate: true, duration: 0.45 });
+    } else {
+        map.setView([target.lat, target.lng], zoom);
+    }
+    setTimeout(() => {
+        mapIgnoreMoveEvents = false;
+    }, 500);
+}
+
+function followActiveDevicesOnMap(animateRotate = false) {
+    if (!mapFollowFleet || !map || !mapFollowEnabled()) return;
+    const targets = getActiveFollowTargets();
+    if (targets.length === 0) return;
+
+    syncFollowRotationState(targets);
+    const target = targets[followRotateIndex] || targets[0];
+    panToFollowTarget(target, animateRotate);
+    refreshFollowRotateTimer(targets.length);
+    updateMapFollowButton();
+}
+
+function wireMapFollow() {
+    if (!mapFollowEnabled()) return;
+
+    mapFollowFleet = loadMapFollowPref();
+    updateMapFollowButton();
+    if (mapFollowFleet) {
+        mapInitialFitDone = true;
+        startFollowRotateTimer();
+    }
+
+    const btn = document.getElementById('rnzMapFollowBtn');
+    btn?.addEventListener('click', () => {
+        mapFollowFleet = !mapFollowFleet;
+        saveMapFollowPref(mapFollowFleet);
+        if (mapFollowFleet) {
+            resetFollowRotationState();
+            startFollowRotateTimer();
+            followActiveDevicesOnMap(true);
+        } else {
+            stopFollowRotateTimer();
+            resetFollowRotationState();
+            updateMapFollowButton();
+        }
+    });
+
+    if (!map || map.dataset.rnzFollowBound === '1') return;
+    map.dataset.rnzFollowBound = '1';
+
+    const onUserMapMove = () => {
+        if (mapIgnoreMoveEvents || !mapFollowFleet) return;
+        disableMapFollowFromUser();
+    };
+    map.on('dragstart', onUserMapMove);
+    map.on('zoomstart', onUserMapMove);
+}
+
 function escapeHtml(value) {
     if (value == null) return '';
     return String(value)
@@ -229,8 +429,9 @@ function refreshKriAthleteSearch(boundaryParts) {
     updateKriHubStatsFromUi(lastKriWarningCount, onWater.length);
 }
 
-function flyToDeviceOnMap(lat, lng, deviceId) {
+function flyToDeviceOnMap(lat, lng, deviceId, fromUser = false) {
     if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (fromUser) disableMapFollowFromUser();
     const targetZoom = Math.max(map.getZoom(), 15);
     if (typeof map.flyTo === 'function') {
         map.flyTo([lat, lng], targetZoom, { duration: 0.65 });
@@ -1043,10 +1244,12 @@ function updateMapMarkers() {
         markersByDeviceId.delete(id);
     });
 
-    if (latlngs.length > 0 && !mapInitialFitDone) {
+    if (latlngs.length > 0 && !mapInitialFitDone && !mapFollowFleet) {
         map.fitBounds(L.latLngBounds(latlngs), { padding: [48, 48], maxZoom: 15 });
         mapInitialFitDone = true;
     }
+
+    followActiveDevicesOnMap();
 }
 
 function renderFenceAndLists(parts, stoppedState) {
@@ -1429,16 +1632,7 @@ function wireDeviceNameFlyTo() {
         const lng = parseFloat(btn.dataset.flyLng);
         const id = Number(btn.dataset.deviceId);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-        const targetZoom = Math.max(map.getZoom(), 15);
-        if (typeof map.flyTo === 'function') {
-            map.flyTo([lat, lng], targetZoom, { duration: 0.65 });
-        } else {
-            map.setView([lat, lng], targetZoom);
-        }
-        const mk = markersByDeviceId.get(id);
-        if (mk) {
-            setTimeout(() => mk.openPopup(), 400);
-        }
+        flyToDeviceOnMap(lat, lng, id, true);
     };
 
     const fleet = document.getElementById('rnzFleetDevicesList');
@@ -1587,6 +1781,7 @@ window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
+    wireMapFollow();
     wireLiveToggle();
     wireFleetDockResize();
     wireRnzMapFullscreen();

@@ -1,143 +1,287 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>RowSafe-style fleet map · Altitude HD</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="rowsafe-map.css">
-    <link rel="stylesheet" href="tracker-source-bar.css">
-</head>
-<body class="rnz-page">
-    <a class="rnz-skip" href="#rnz-main">Skip to content</a>
-
-    <header class="rnz-header">
-        <div class="rnz-header-inner">
-            <div class="rnz-header-brand">
-                <img src="assets/rnz/rnz-logo-white.png" alt="Rowing New Zealand" class="rnz-logo-header" width="160" height="64" loading="lazy">
-                <div class="rnz-header-titles">
-                    <a class="rnz-logo-mark" href="/">Altitude HD</a>
-                    <div class="rnz-header-title">
-                        <span class="rnz-kicker">Water safety awareness</span>
-                        <h1>Live fleet map</h1>
-                    </div>
-                </div>
-            </div>
-            <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
-        </div>
-    </header>
-
-    <div class="hub-stats-bar hub-stats-bar--rnz" id="hubStatsBar" aria-live="polite">
-        <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="#safetyCapsizeBox">Capsize: —</a>
-        <span class="hub-stats-sep" aria-hidden="true">·</span>
-        <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
-        <span class="hub-stats-sep" aria-hidden="true">·</span>
-        <span class="hub-stats-item" id="hubStatDistance">Distance today: —</span>
-        <span class="hub-stats-sep" aria-hidden="true">·</span>
-        <a class="hub-stats-item hub-stats-item--event" id="hubStatEvent" href="index.html#hub-calendar-title">—</a>
-    </div>
-
-    <main class="rnz-main" id="rnz-main">
-        <div class="rnz-dashboard" id="rnzLayout">
-            <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Capsize alerts">
-                <h2 class="rnz-left-column-title">Capsize alerts</h2>
-                <p class="rnz-left-column-sub">Distress and capsize alarms appear here.</p>
-                <div class="rnz-left-scroll" id="rnzLeftScroll">
-                    <details class="rnz-panel-details rnz-panel-details--capsize" id="safetyCapsizeBox" open>
-                        <summary class="rnz-panel-summary">Active alarms</summary>
-                        <div class="rnz-panel-inner rnz-panel-inner--critical safety-capsize-inner">
-                            <p class="rnz-block-hint">CrewSight capsize detection from the phone motion sensor. Sound plays for new alerts — acknowledge to clear until the next event. Click a boat name to fly the map there.</p>
-                            <div id="safetyCapsizeList"></div>
-                        </div>
-                    </details>
-                </div>
-            </aside>
-
-            <div class="rnz-map-stage" aria-label="Map area">
-                <div id="map" class="rnz-map" role="application"></div>
-                <button type="button" id="rnzMapMobileExpandBtn" class="rnz-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
-            </div>
-
-            <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
-                <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
-                    <details class="rnz-panel-details" open>
-                        <summary class="rnz-panel-summary">Live updates</summary>
-                        <div class="rnz-panel-inner rnz-panel-inner--live">
-                            <div id="rnzSnapshotError" class="rnz-snapshot-error" hidden></div>
-                            <div class="rnz-panel-head">
-                                <label class="rnz-toggle">
-                                    <input type="checkbox" id="liveUpdatesToggle" checked>
-                                    <span>Live updates (<span data-map-refresh-hint>every 10s</span>)</span>
-                                </label>
-                            </div>
-                            <div class="rnz-footer-inline">
-                                <span id="lastUpdate">Last updated: —</span>
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="rnz-panel-details rnz-panel-stretch" open>
-                        <summary class="rnz-panel-summary">On water boats</summary>
-                        <div class="rnz-panel-inner rnz-onwater-inner">
-                            <p class="rnz-onwater-hint">
-                                Devices with a GPS fix in the last 5 minutes. Click a boat to show it on the map.
-                            </p>
-                            <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
-                        </div>
-                    </details>
-                </div>
-            </aside>
-        </div>
-
-        <section class="rnz-fleet-dock" aria-label="All devices">
-            <details class="rnz-fleet-dock-details" id="rnzFleetDock">
-                <summary class="rnz-fleet-dock-summary">
-                    <span class="rnz-fleet-dock-summary-label">All devices</span>
-                    <span class="rnz-fleet-dock-summary-hint">Expand for status and Traccar group</span>
-                </summary>
-                <div class="rnz-fleet-dock-inner">
-                    <p class="rnz-fleet-hint rnz-fleet-hint--dock">
-                        Online means last GPS fix within 5 minutes. Click a device name to show it on the map.
-                    </p>
-                    <div class="rnz-fleet-dock-grid" id="rnzFleetDevicesList">
-                        <div class="loading">Loading device data…</div>
-                    </div>
-                </div>
-            </details>
-        </section>
-
-        <button type="button" id="rnzMapFullscreenExitBtn" class="rnz-map-fullscreen-exit" hidden>Exit fullscreen</button>
-    </main>
-
-    <footer class="rnz-footer">
-        Official resources:
-        <a href="https://rowingnz.kiwi/rowsafe/">RowSafe — Rowing New Zealand</a>
-        ·
-        <a href="https://rowingnz.kiwi/">RowingHub</a>
-        ·
-        <a href="/">Altitude HD home</a>
-        ·
-        <a href="live-map.html">Fleet map</a>
-        ·
-        <a href="beachsprints-map.html">Beach Sprints map</a>
-    </footer>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="map-refresh-rate.js"></script>
-    <script>
-        window.AltitudeHdTrackerSourceConfig = { default: 'rowing', lock: true };
-    </script>
-    <script src="tracker-source.js"></script>
-    <script src="traccar-snapshot-bus.js"></script>
-    <script src="speed-color-scale.js"></script>
-    <script src="rnz-safety-core.js"></script>
-    <script src="hub-regatta-events.js"></script>
-    <script src="hub-stats-bar.js"></script>
-    <script src="capsize-alarm.js"></script>
-    <script src="safety-map-themes.js"></script>
-    <script>window.SafetyMapTheme = window.SafetyMapThemes.rnz;</script>
-    <script src="safety-map.js"></script>
-    <script src="tracker-source-ui.js"></script>
-</body>
-</html>
-
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>RowSafe-style fleet map · Altitude HD</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <link rel="stylesheet" href="rowsafe-map.css">
+
+    <link rel="stylesheet" href="tracker-source-bar.css">
+
+</head>
+
+<body class="rnz-page">
+
+    <a class="rnz-skip" href="#rnz-main">Skip to content</a>
+
+
+
+    <header class="rnz-header">
+
+        <div class="rnz-header-inner">
+
+            <div class="rnz-header-brand">
+
+                <img src="assets/rnz/rnz-logo-white.png" alt="Rowing New Zealand" class="rnz-logo-header" width="160" height="64" loading="lazy">
+
+                <div class="rnz-header-titles">
+
+                    <a class="rnz-logo-mark" href="/">Altitude HD</a>
+
+                    <div class="rnz-header-title">
+
+                        <span class="rnz-kicker">Water safety awareness</span>
+
+                        <h1>Live fleet map</h1>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
+
+        </div>
+
+    </header>
+
+
+
+    <div class="hub-stats-bar hub-stats-bar--rnz" id="hubStatsBar" aria-live="polite">
+
+        <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="#safetyCapsizeBox">Capsize: —</a>
+
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+
+        <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
+
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+
+        <span class="hub-stats-item" id="hubStatDistance">Distance today: —</span>
+
+        <span class="hub-stats-sep" aria-hidden="true">·</span>
+
+        <a class="hub-stats-item hub-stats-item--event" id="hubStatEvent" href="index.html#hub-calendar-title">—</a>
+
+    </div>
+
+
+
+    <main class="rnz-main" id="rnz-main">
+
+        <div class="rnz-dashboard" id="rnzLayout">
+
+            <aside class="rnz-left-column" id="rnzLeftColumn" aria-label="Capsize alerts">
+
+                <h2 class="rnz-left-column-title">Capsize alerts</h2>
+
+                <p class="rnz-left-column-sub">Distress and capsize alarms appear here.</p>
+
+                <div class="rnz-left-scroll" id="rnzLeftScroll">
+
+                    <details class="rnz-panel-details rnz-panel-details--capsize" id="safetyCapsizeBox" open>
+
+                        <summary class="rnz-panel-summary">Active alarms</summary>
+
+                        <div class="rnz-panel-inner rnz-panel-inner--critical safety-capsize-inner">
+
+                            <p class="rnz-block-hint">CrewSight capsize detection from the phone motion sensor. Sound plays for new alerts — acknowledge to clear until the next event. Click a boat name to fly the map there.</p>
+
+                            <div id="safetyCapsizeList"></div>
+
+                        </div>
+
+                    </details>
+
+                </div>
+
+            </aside>
+
+
+
+            <div class="rnz-map-stage" aria-label="Map area">
+
+                <div id="map" class="rnz-map" role="application"></div>
+
+                <button type="button" id="rnzMapFollowBtn" class="rnz-map-follow-btn" aria-pressed="false">Follow fleet</button>
+
+                <button type="button" id="rnzMapMobileExpandBtn" class="rnz-map-mobile-expand-btn" aria-label="Expand map to full screen">Full map</button>
+
+            </div>
+
+
+
+            <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
+
+                <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
+
+                    <details class="rnz-panel-details" open>
+
+                        <summary class="rnz-panel-summary">Live updates</summary>
+
+                        <div class="rnz-panel-inner rnz-panel-inner--live">
+
+                            <div id="rnzSnapshotError" class="rnz-snapshot-error" hidden></div>
+
+                            <div class="rnz-panel-head">
+
+                                <label class="rnz-toggle">
+
+                                    <input type="checkbox" id="liveUpdatesToggle" checked>
+
+                                    <span>Live updates (<span data-map-refresh-hint>every 10s</span>)</span>
+
+                                </label>
+
+                            </div>
+
+                            <div class="rnz-footer-inline">
+
+                                <span id="lastUpdate">Last updated: —</span>
+
+                            </div>
+
+                        </div>
+
+                    </details>
+
+
+
+                    <details class="rnz-panel-details rnz-panel-stretch" open>
+
+                        <summary class="rnz-panel-summary">On water boats</summary>
+
+                        <div class="rnz-panel-inner rnz-onwater-inner">
+
+                            <p class="rnz-onwater-hint">
+
+                                Devices with a GPS fix in the last 5 minutes. Click a boat to show it on the map.
+
+                            </p>
+
+                            <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
+
+                        </div>
+
+                    </details>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+
+
+        <section class="rnz-fleet-dock" aria-label="All devices">
+
+            <details class="rnz-fleet-dock-details" id="rnzFleetDock">
+
+                <summary class="rnz-fleet-dock-summary">
+
+                    <span class="rnz-fleet-dock-summary-label">All devices</span>
+
+                    <span class="rnz-fleet-dock-summary-hint">Expand for status and Traccar group</span>
+
+                </summary>
+
+                <div class="rnz-fleet-dock-inner">
+
+                    <p class="rnz-fleet-hint rnz-fleet-hint--dock">
+
+                        Online means last GPS fix within 5 minutes. Click a device name to show it on the map.
+
+                    </p>
+
+                    <div class="rnz-fleet-dock-grid" id="rnzFleetDevicesList">
+
+                        <div class="loading">Loading device data…</div>
+
+                    </div>
+
+                </div>
+
+            </details>
+
+        </section>
+
+
+
+        <button type="button" id="rnzMapFullscreenExitBtn" class="rnz-map-fullscreen-exit" hidden>Exit fullscreen</button>
+
+    </main>
+
+
+
+    <footer class="rnz-footer">
+
+        Official resources:
+
+        <a href="https://rowingnz.kiwi/rowsafe/">RowSafe — Rowing New Zealand</a>
+
+        ·
+
+        <a href="https://rowingnz.kiwi/">RowingHub</a>
+
+        ·
+
+        <a href="/">Altitude HD home</a>
+
+        ·
+
+        <a href="live-map.html">Fleet map</a>
+
+        ·
+
+        <a href="beachsprints-map.html">Beach Sprints map</a>
+
+    </footer>
+
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="map-refresh-rate.js"></script>
+
+    <script>
+
+        window.AltitudeHdTrackerSourceConfig = { default: 'rowing', lock: true };
+
+    </script>
+
+    <script src="tracker-source.js"></script>
+
+    <script src="traccar-snapshot-bus.js"></script>
+
+    <script src="speed-color-scale.js"></script>
+
+    <script src="rnz-safety-core.js"></script>
+
+    <script src="hub-regatta-events.js"></script>
+
+    <script src="hub-stats-bar.js"></script>
+
+    <script src="capsize-alarm.js"></script>
+
+    <script src="safety-map-themes.js"></script>
+
+    <script>window.SafetyMapTheme = window.SafetyMapThemes.rnz;</script>
+
+    <script src="safety-map.js"></script>
+
+    <script src="tracker-source-ui.js"></script>
+
+</body>
+
+</html>
+
+
