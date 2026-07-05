@@ -39,6 +39,7 @@
     }
 
     function readAlarm(pos) {
+        if (pos?.capsize === true) return 'capsize';
         const attrs = pos?.attributes;
         if (!attrs || typeof attrs !== 'object') return null;
         if (attrs.capsize === true) return 'capsize';
@@ -148,12 +149,18 @@
         saveJson(LS_ACK, ack);
     }
 
-    function renderCapsizePanel(container, alerts, onAck) {
+    function renderCapsizePanel(container, alerts, onAck, options = {}) {
         if (!container) return;
         const box = document.getElementById('safetyCapsizeBox');
+        const alwaysVisible = Boolean(options.alwaysVisible);
         if (!alerts.length) {
-            if (box) box.hidden = true;
-            container.innerHTML = '';
+            if (box) {
+                box.hidden = !alwaysVisible;
+                if (alwaysVisible && box.tagName === 'DETAILS') box.open = true;
+            }
+            container.innerHTML = alwaysVisible
+                ? '<p class="rnz-list-empty">No active capsize alarms.</p>'
+                : '';
             return;
         }
         if (box) {

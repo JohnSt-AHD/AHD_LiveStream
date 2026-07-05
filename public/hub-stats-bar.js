@@ -130,17 +130,22 @@ function hubStatsCalendarLabel() {
 function hubStatsWireBarLinks() {
     const warnings = document.getElementById('hubStatWarnings');
     if (warnings && warnings.tagName === 'A') {
-        if (document.getElementById('rnzWarningBox')) {
+        const capsizeBox = document.getElementById('safetyCapsizeBox');
+        const warnBox = document.getElementById('rnzWarningBox');
+        if (capsizeBox) {
+            warnings.href = '#safetyCapsizeBox';
+            warnings.addEventListener('click', () => {
+                capsizeBox.hidden = false;
+                if (capsizeBox.tagName === 'DETAILS') capsizeBox.open = true;
+            });
+        } else if (warnBox) {
             warnings.href = '#rnzWarningBox';
             warnings.addEventListener('click', () => {
-                const box = document.getElementById('rnzWarningBox');
-                if (box) {
-                    box.hidden = false;
-                    if (box.tagName === 'DETAILS') box.open = true;
-                }
+                warnBox.hidden = false;
+                if (warnBox.tagName === 'DETAILS') warnBox.open = true;
             });
         } else {
-            warnings.href = 'rowsafe-map.html#rnzWarningBox';
+            warnings.href = 'rowsafe-map.html#safetyCapsizeBox';
         }
     }
 
@@ -244,7 +249,8 @@ function hubStatsSnapshotFetch() {
 
 function hubStatsOnSnapshotError(err) {
     console.error('Hub stats bar:', err);
-    hubStatsSetItem('hubStatWarnings', 'Warnings: —');
+    const isRnzPage = document.body?.classList.contains('rnz-page');
+    hubStatsSetItem('hubStatWarnings', isRnzPage ? 'Capsize: —' : 'Warnings: —');
     hubStatsSetItem('hubStatOnWater', 'On water: —');
     hubStatsSetItem('hubStatDistance', 'Distance today: —');
     hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
@@ -262,22 +268,38 @@ async function hubStatsApplySnapshot(data) {
     const devices = core.mergeDevicesFromPositions(data.devices, positions);
     hubStatsLastDevices = devices;
 
-    const metrics = core.computeSafetyMetrics(devices, positions, data.geofences);
-    if (window.HubWarningAlerts?.onSafetyRefresh) {
-        window.HubWarningAlerts.onSafetyRefresh(metrics);
+    const isRnzPage = document.body?.classList.contains('rnz-page');
+
+    if (isRnzPage) {
+        const activeMin = window.SafetyMapTheme?.onWaterActiveMinutes ?? 5;
+        const onWaterCount = core.countActiveOnWater(devices, positions, activeMin);
+        const capsizeAlerts =
+            window.AltitudeHdCapsizeAlarm?.updateCapsizeAlerts?.(devices, positions) || [];
+
+        hubStatsSetItem(
+            'hubStatWarnings',
+            `Capsize: ${capsizeAlerts.length}`,
+            { alert: capsizeAlerts.length > 0 },
+        );
+        hubStatsSetItem('hubStatOnWater', `${onWaterCount} on water`);
+    } else {
+        const metrics = core.computeSafetyMetrics(devices, positions, data.geofences);
+        if (window.HubWarningAlerts?.onSafetyRefresh) {
+            window.HubWarningAlerts.onSafetyRefresh(metrics);
+        }
+
+        const warnText = metrics.boundaryReady
+            ? `${metrics.warnings} warning${metrics.warnings === 1 ? '' : 's'}`
+            : 'Warnings: —';
+        hubStatsSetItem('hubStatWarnings', warnText, {
+            alert: metrics.boundaryReady && metrics.warnings > 0,
+        });
+
+        const onWaterText = metrics.boundaryReady
+            ? `${metrics.onWater} on water`
+            : 'On water: —';
+        hubStatsSetItem('hubStatOnWater', onWaterText);
     }
-
-    const warnText = metrics.boundaryReady
-        ? `${metrics.warnings} warning${metrics.warnings === 1 ? '' : 's'}`
-        : 'Warnings: —';
-    hubStatsSetItem('hubStatWarnings', warnText, {
-        alert: metrics.boundaryReady && metrics.warnings > 0,
-    });
-
-    const onWaterText = metrics.boundaryReady
-        ? `${metrics.onWater} on water`
-        : 'On water: —';
-    hubStatsSetItem('hubStatOnWater', onWaterText);
 
     hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
 

@@ -25,12 +25,11 @@
 
 body.rnz-page {
     font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
-    background-color: var(--rnz-cream);
-    background-image:
-        linear-gradient(180deg, rgba(244, 247, 250, 0.94) 0%, rgba(244, 247, 250, 0.88) 100%),
-        url('assets/rnz/rnz-waves-black-wide.jpg');
+    background-color: #0a0a0a;
+    background-image: url('assets/rnz/rnz-waves-black-wide.png');
     background-size: cover;
-    background-position: center top;
+    background-position: center center;
+    background-repeat: no-repeat;
     background-attachment: fixed;
     color: var(--rnz-text);
     min-height: 100vh;
@@ -39,14 +38,7 @@ body.rnz-page {
 }
 
 body.rnz-page::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: url('assets/rnz/rnz-ngaru-dark.png') repeat;
-    background-size: 260px;
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 0;
+    content: none;
 }
 
 body.rnz-page > * {
@@ -141,10 +133,11 @@ body.rnz-page > * {
 .rnz-header {
     background-color: var(--rnz-navy-deep);
     background-image:
-        linear-gradient(135deg, rgba(6, 24, 41, 0.88) 0%, rgba(10, 35, 66, 0.82) 50%, rgba(26, 95, 138, 0.78) 100%),
-        url('assets/rnz/rnz-waves-black-wide.jpg');
-    background-size: cover;
-    background-position: center 40%;
+        linear-gradient(135deg, rgba(6, 24, 41, 0.82) 0%, rgba(10, 35, 66, 0.72) 50%, rgba(26, 95, 138, 0.68) 100%),
+        url('assets/rnz/rnz-waves-black-wide.png');
+    background-size: 1000% auto, 1000% auto;
+    background-position: center 35%, center 40%;
+    background-repeat: no-repeat;
     color: var(--rnz-white);
     box-shadow: 0 2px 12px rgba(6, 24, 41, 0.35);
     flex-shrink: 0;
@@ -153,13 +146,7 @@ body.rnz-page > * {
 }
 
 .rnz-header::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url('assets/rnz/rnz-ngaru-dark.png') repeat;
-    background-size: 200px;
-    opacity: 0.14;
-    pointer-events: none;
+    content: none;
 }
 
 .rnz-header-inner {
@@ -287,8 +274,8 @@ body.rnz-page > * {
 
 /* --- Dashboard: warnings (left) | fixed map | data panel (right) --- */
 .rnz-dashboard {
-    --rnz-map-w: 1056px;
-    --rnz-map-h: 660px;
+    --rnz-map-w: 1162px;
+    --rnz-map-h: 726px;
     --rnz-side-col-h: min(calc(var(--rnz-map-h) + 100px), 90vh);
     flex: 1;
     display: grid;
@@ -305,7 +292,7 @@ body.rnz-page > * {
 .rnz-left-column {
     display: flex;
     flex-direction: column;
-    background: var(--rnz-white);
+    background: rgba(255, 255, 255, 0.96);
     border: 1px solid var(--rnz-line);
     border-radius: 8px;
     border-left: 4px solid #dc2626;
@@ -314,6 +301,26 @@ body.rnz-page > * {
     max-height: var(--rnz-side-col-h);
     min-height: 0;
     overflow: hidden;
+}
+
+.rnz-left-column-title {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 14px 14px 4px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #991b1b;
+    text-transform: uppercase;
+}
+
+.rnz-left-column-sub {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0 14px 10px;
+    font-size: 0.82rem;
+    color: var(--rnz-muted);
+    border-bottom: 1px solid var(--rnz-line);
 }
 
 .rnz-left-scroll {
@@ -375,7 +382,7 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
 }
 
 .rnz-sidebar {
-    background: var(--rnz-white);
+    background: rgba(255, 255, 255, 0.96);
     border: 1px solid var(--rnz-line);
     border-radius: 8px;
     border-right: 4px solid var(--rnz-teal);
@@ -387,22 +394,6 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
     min-width: 0;
     box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
     overflow: hidden;
-}
-
-.rnz-sidebar-head {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 10px 8px;
-    border-bottom: 1px solid var(--rnz-line);
-    flex-shrink: 0;
-}
-
-.rnz-logo-sidebar {
-    width: 44px;
-    height: 44px;
-    object-fit: contain;
-    border-radius: 4px;
 }
 
 .rnz-sidebar-scroll {
@@ -1018,8 +1009,8 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
 
 @media (max-width: 1280px) {
     .rnz-dashboard {
-        --rnz-map-w: min(1056px, calc(100vw - 48px));
-        --rnz-map-h: 572px;
+        --rnz-map-w: min(1162px, calc(100vw - 48px));
+        --rnz-map-h: 629px;
         grid-template-columns: minmax(180px, 1fr) minmax(400px, var(--rnz-map-w)) minmax(220px, 1fr);
     }
 }
@@ -1046,10 +1037,6 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
     .rnz-left-column {
         height: auto;
         max-height: none;
-    }
-
-    .rnz-left-column:has(#rnzWarningBox[hidden]) {
-        display: none;
     }
 
     .rnz-left-scroll {
@@ -1228,8 +1215,7 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
 
 body.rnz-map-fullscreen .rnz-left-column,
 body.rnz-map-fullscreen .rnz-sidebar,
-body.rnz-map-fullscreen .rnz-fleet-dock,
-body.rnz-map-fullscreen .rnz-email-dock {
+body.rnz-map-fullscreen .rnz-fleet-dock {
     display: none !important;
 }
 
@@ -1325,4 +1311,70 @@ body.rnz-map-fullscreen #map.rnz-map {
 
 .safety-capsize-ack:hover {
     background: #f8fafc;
+}
+
+/* RNZ on-water device cards */
+.rnz-onwater-card {
+    border: 1px solid var(--rnz-line);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    padding: 12px 12px 10px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.rnz-onwater-card + .rnz-onwater-card {
+    margin-top: 10px;
+}
+
+.rnz-onwater-card-name {
+    display: block;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--rnz-navy);
+    cursor: pointer;
+}
+
+.rnz-onwater-card-name:hover {
+    color: var(--rnz-teal-dark);
+    text-decoration: underline;
+}
+
+.rnz-onwater-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+}
+
+.rnz-onwater-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.rnz-onwater-stats dt {
+    margin: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rnz-muted);
+}
+
+.rnz-onwater-stats dd {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--rnz-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

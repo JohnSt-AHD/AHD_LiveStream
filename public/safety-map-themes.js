@@ -53,6 +53,10 @@
             geofenceMatchColor: '#0f766e',
             geofenceMatchFill: '#14b8a6',
             enableCapsize: true,
+            disableBoundaryWarnings: true,
+            capsizePanelAlwaysVisible: true,
+            onWaterMode: 'active-recent',
+            onWaterActiveMinutes: 5,
         },
         kri: {
             id: 'kri',

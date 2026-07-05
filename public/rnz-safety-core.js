@@ -245,6 +245,46 @@
         return n;
     }
 
+    function countActiveOnWater(devices, positions, activeMinutes = 5) {
+        let n = 0;
+        for (const d of devices) {
+            const pos = positions[d.id];
+            if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+            if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
+            if (!isFixWithinMinutes(pos.fixTime, activeMinutes)) continue;
+            n += 1;
+        }
+        return n;
+    }
+
+    function boundaryReferencePoint(parts) {
+        if (!parts || !parts.length) return null;
+        let latSum = 0;
+        let lonSum = 0;
+        let n = 0;
+        for (const p of parts) {
+            if (p.type === 'circle') {
+                latSum += p.lat;
+                lonSum += p.lon;
+                n += 1;
+            } else if (p.type === 'polygon' && p.ring && p.ring.length) {
+                for (const [la, lo] of p.ring) {
+                    latSum += la;
+                    lonSum += lo;
+                    n += 1;
+                }
+            }
+        }
+        if (!n) return null;
+        return { lat: latSum / n, lon: lonSum / n };
+    }
+
+    function distanceFromRnzM(lat, lon, parts) {
+        const ref = boundaryReferencePoint(parts);
+        if (!ref) return null;
+        return haversineM(lat, lon, ref.lat, ref.lon);
+    }
+
     function mergeDevicesFromPositions(deviceList, positionsMap) {
         const list = Array.isArray(deviceList) ? deviceList.slice() : [];
         const seen = new Set(list.map((d) => d && d.id).filter((id) => id != null));
@@ -282,5 +322,8 @@
         mergeDevicesFromPositions,
         boundaryPartsFromGeofences,
         getMatchedGeofences,
+        countActiveOnWater,
+        distanceFromRnzM,
+        boundaryReferencePoint,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

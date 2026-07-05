@@ -446,6 +446,29 @@ function isCriticalOutsideAlert(device, pos, parts, stoppedState) {
     return offlineLong || stationaryLong;
 }
 
+function showBoundaryCriticalAlert(device, position) {
+    if (SAFETY_THEME.disableBoundaryWarnings) return false;
+    return isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
+}
+
+function formatSpeedKmh(speedMps) {
+    if (typeof speedMps !== 'number' || Number.isNaN(speedMps)) return '—';
+    return `${(speedMps * 3.6).toFixed(1)} km/h`;
+}
+
+function formatStrokeRate(pos) {
+    const sr = pos?.strokeRate ?? pos?.attributes?.strokeRate;
+    if (sr == null || Number.isNaN(Number(sr))) return '—';
+    if (pos?.strokeRateValid === false) return '—';
+    return `${Math.round(Number(sr))} spm`;
+}
+
+function formatDistanceFromRnz(meters) {
+    if (!Number.isFinite(meters)) return '—';
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    return `${(meters / 1000).toFixed(1)} km`;
+}
+
 function initMap() {
     const center = SAFETY_THEME.mapCenter || [-36.85, 174.76];
     const zoom = SAFETY_THEME.mapZoom || 5;
@@ -952,7 +975,7 @@ function updateMapMarkers() {
         const latlng = [position.latitude, position.longitude];
         const online = isPositionRecent(position.fixTime);
         const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
-        const critical = isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
+        const critical = showBoundaryCriticalAlert(device, position);
         let fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
         let stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
         if (capsizeAlert) {
@@ -1027,6 +1050,10 @@ function updateMapMarkers() {
 }
 
 function renderFenceAndLists(parts, stoppedState) {
+    if (SAFETY_THEME.disableBoundaryWarnings) {
+        return;
+    }
+
     const warnEl = document.getElementById('rnzWarningsList');
     const warnBox = document.getElementById('rnzWarningBox');
 
@@ -1113,11 +1140,16 @@ function renderCapsizeAlerts() {
     const alerts = window.AltitudeHdCapsizeAlarm.updateCapsizeAlerts(devices, positions);
     activeCapsizeDeviceIds = new Set(alerts.map((a) => a.deviceId));
     syncCapsizeMapAlertUi();
-    window.AltitudeHdCapsizeAlarm.renderCapsizePanel(listEl, alerts, () => {
-        renderCapsizeAlerts();
-        updateMapMarkers();
-        renderFleetDevices();
-    });
+    window.AltitudeHdCapsizeAlarm.renderCapsizePanel(
+        listEl,
+        alerts,
+        () => {
+            renderCapsizeAlerts();
+            updateMapMarkers();
+            renderFleetDevices();
+        },
+        { alwaysVisible: SAFETY_THEME.capsizePanelAlwaysVisible },
+    );
 }
 
 function rowsafeSnapshotFetch() {
@@ -1213,9 +1245,7 @@ function renderFleetDevices() {
         const isOnline = position && isPositionRecent(position.fixTime);
         const statusClass = isOnline ? 'online' : 'offline';
         const statusText = isOnline ? 'Online' : 'Offline';
-        const critical =
-            position &&
-            isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
+        const critical = showBoundaryCriticalAlert(device, position);
         const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
         const rowCriticalClass = critical ? ' rnz-fleet-row--critical' : '';
         const rowCapsizeClass = capsizeAlert ? ' rnz-fleet-row--capsize-alert' : '';
@@ -1249,6 +1279,47 @@ function renderFleetDevices() {
 function renderOnWaterBoats(boundaryParts) {
     const el = document.getElementById('rnzOnWaterBoatsList');
     if (!el) return;
+
+    if (SAFETY_THEME.onWaterMode === 'active-recent') {
+        const activeMin = SAFETY_THEME.onWaterActiveMinutes ?? 5;
+        const rnzParts = boundaryParts && boundaryParts.length ? boundaryParts : lastFenceParts;
+        const core = window.RnzSafetyCore;
+        const boats = [];
+
+        for (const d of devices) {
+            const pos = positions[d.id];
+            if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+            if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
+            if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
+            const distM =
+                core?.distanceFromRnzM?.(pos.latitude, pos.longitude, rnzParts) ?? null;
+            boats.push({ device: d, pos, distM });
+        }
+
+        boats.sort((a, b) =>
+            String(a.device.name).localeCompare(String(b.device.name), undefined, { sensitivity: 'base' }),
+        );
+
+        if (boats.length === 0) {
+            el.innerHTML = `<p class="rnz-list-empty">No devices with a GPS fix in the last ${activeMin} minutes.</p>`;
+            return;
+        }
+
+        el.innerHTML = boats
+            .map(({ device, pos, distM }) =>
+                `<article class="rnz-onwater-card">` +
+                `<button type="button" class="rnz-onwater-card-name device-name--fly" ` +
+                `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
+                `title="Show on map">${escapeHtml(device.name)}</button>` +
+                `<dl class="rnz-onwater-stats">` +
+                `<div><dt>Speed</dt><dd>${formatSpeedKmh(pos.speed)}</dd></div>` +
+                `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
+                `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
+                `</dl></article>`,
+            )
+            .join('');
+        return;
+    }
 
     const usesExclude = typeof SAFETY_THEME.onWaterExcludeGeofenceName === 'function';
     const parts = getOnWaterBoundaryParts(boundaryParts);
