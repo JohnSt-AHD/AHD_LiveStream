@@ -13,6 +13,8 @@
     const SNAPSHOT_TIMEOUT_MS = 25000;
 
     let inflight = null;
+    /** @type {AbortController | null} */
+    let inflightAbort = null;
     let lastDetail = null;
 
     function emit(detail) {
@@ -28,8 +30,14 @@
             return inflight;
         }
 
+        if (inflight && options.force && inflightAbort) {
+            inflightAbort.abort();
+        }
+
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        inflightAbort = controller;
+
         inflight = (async () => {
-            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
             const timeoutId = controller
                 ? setTimeout(() => controller.abort(), SNAPSHOT_TIMEOUT_MS)
                 : null;
@@ -58,6 +66,7 @@
                 return detail;
             } finally {
                 if (timeoutId) clearTimeout(timeoutId);
+                if (inflightAbort === controller) inflightAbort = null;
                 inflight = null;
             }
         })();

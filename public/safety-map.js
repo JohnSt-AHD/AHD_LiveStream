@@ -857,7 +857,7 @@ async function bootstrapMapData() {
     }
     ensureKriDemoSpeedRange();
     stopDemoAnimation();
-    await updateData({ forceSnapshot: true });
+    await updateData({ forceSnapshot: true, directSnapshot: true });
     startPolling();
 }
 
@@ -1407,55 +1407,61 @@ function rowsafeSnapshotFetch(options = {}) {
         }));
 }
 
+function applySnapshotResult(result) {
+    if (!result?.ok) {
+        showError(result?.error || `Request failed: ${result?.status ?? ''}`);
+        return false;
+    }
+
+    const data = result.data;
+    const rawDevices = Array.isArray(data.devices) ? data.devices : [];
+    positions = {};
+    (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
+        if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
+    });
+
+    geofences = Array.isArray(data.geofences) ? data.geofences : [];
+    groups = Array.isArray(data.groups) ? data.groups : [];
+    groupLookup = buildGroupLookup(groups);
+
+    devices = mergeDevicesFromPositions(rawDevices, positions);
+
+    const { geofences: matched } = getMatchedGeofences(geofences);
+    const parts = boundaryPartsFromGeofences(matched);
+    const stoppedState = updateStoppedTracking(parts);
+
+    lastFenceParts = parts;
+    lastStoppedState = stoppedState;
+
+    drawGeofencesOnMap(geofences, matched);
+    renderFenceAndLists(parts, stoppedState);
+    renderCapsizeAlerts();
+    clearSnapshotError();
+    refreshKriAthleteSearch(parts);
+    renderFleetDevices();
+    renderOnWaterBoats(parts);
+    recordLiveTrailSamples();
+    updateMapMarkers();
+    redrawLiveTrail();
+    updateTimestamp();
+
+    if (map) {
+        requestAnimationFrame(() => map.invalidateSize());
+    }
+    return true;
+}
+
 async function updateData(options = {}) {
     if (isKriDemoMode()) {
         applyDemoSnapshotToUi();
         return;
     }
     try {
-        const result = await rowsafeSnapshotFetch(
-            options.forceSnapshot ? { force: true } : {},
-        );
-        if (!result.ok) {
-            showError(result.error || `Request failed: ${result.status}`);
-            return;
-        }
-        const data = result.data;
-
-        const rawDevices = Array.isArray(data.devices) ? data.devices : [];
-        positions = {};
-        (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
-            if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
-        });
-
-        geofences = Array.isArray(data.geofences) ? data.geofences : [];
-        groups = Array.isArray(data.groups) ? data.groups : [];
-        groupLookup = buildGroupLookup(groups);
-
-        devices = mergeDevicesFromPositions(rawDevices, positions);
-
-        const { geofences: matched, mode } = getMatchedGeofences(geofences);
-        const parts = boundaryPartsFromGeofences(matched);
-        const stoppedState = updateStoppedTracking(parts);
-
-        lastFenceParts = parts;
-        lastStoppedState = stoppedState;
-
-        drawGeofencesOnMap(geofences, matched);
-        renderFenceAndLists(parts, stoppedState);
-        renderCapsizeAlerts();
-        clearSnapshotError();
-        refreshKriAthleteSearch(parts);
-        renderFleetDevices();
-        renderOnWaterBoats(parts);
-        recordLiveTrailSamples();
-        updateMapMarkers();
-        redrawLiveTrail();
-        updateTimestamp();
-
-        if (map) {
-            requestAnimationFrame(() => map.invalidateSize());
-        }
+        const fetchOpts = {};
+        if (options.forceSnapshot) fetchOpts.force = true;
+        if (options.directSnapshot) fetchOpts.direct = true;
+        const result = await rowsafeSnapshotFetch(fetchOpts);
+        applySnapshotResult(result);
     } catch (error) {
         console.error('Error loading snapshot:', error);
         showError(error.message || 'Failed to load device data');
@@ -1810,7 +1816,7 @@ function onTrackerSourceChanged() {
 window.trackerSourcePageRefresh = onTrackerSourceChanged;
 window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
-document.addEventListener('DOMContentLoaded', () => {
+function bootSafetyMapPage() {
     initMap();
     wireMapFollow();
     wireRnzLiveSpeedChart();
@@ -1823,5 +1829,19 @@ document.addEventListener('DOMContentLoaded', () => {
     wireFleetDockResize();
     wireRnzMapFullscreen();
     wireDeviceNameFlyTo();
-    bootstrapMapData();
-});
+    void bootstrapMapData();
+}
+
+function scheduleSafetyMapBoot() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootSafetyMapPage);
+    } else {
+        bootSafetyMapPage();
+    }
+    window.addEventListener('load', () => {
+        if (isKriDemoMode() || devices.length > 0 || !isLiveUpdatesEnabled()) return;
+        void bootstrapMapData();
+    });
+}
+
+scheduleSafetyMapBoot();
