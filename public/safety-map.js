@@ -192,11 +192,7 @@ function panToFollowTarget(target, animate = false) {
         }, 950);
         return;
     }
-    if (typeof map.panTo === 'function') {
-        map.panTo([target.lat, target.lng], { animate: true, duration: 0.45 });
-    } else {
-        map.setView([target.lat, target.lng], zoom);
-    }
+    map.setView([target.lat, target.lng], zoom);
     setTimeout(() => {
         mapIgnoreMoveEvents = false;
     }, 500);
@@ -220,7 +216,6 @@ function wireMapFollow() {
     mapFollowFleet = loadMapFollowPref();
     updateMapFollowButton();
     if (mapFollowFleet) {
-        mapInitialFitDone = true;
         startFollowRotateTimer();
     }
 
@@ -862,7 +857,7 @@ async function bootstrapMapData() {
     }
     ensureKriDemoSpeedRange();
     stopDemoAnimation();
-    await updateData();
+    await updateData({ forceSnapshot: true });
     startPolling();
 }
 
@@ -1278,7 +1273,11 @@ function updateMapMarkers() {
         mapInitialFitDone = true;
     }
 
-    followActiveDevicesOnMap();
+    const hadInitialFit = mapInitialFitDone;
+    followActiveDevicesOnMap(!hadInitialFit && latlngs.length > 0);
+    if (latlngs.length > 0 && mapFollowFleet) {
+        mapInitialFitDone = true;
+    }
     updateRnzLiveSpeedChart();
 }
 
@@ -1385,11 +1384,11 @@ function renderCapsizeAlerts() {
     );
 }
 
-function rowsafeSnapshotFetch() {
+function rowsafeSnapshotFetch(options = {}) {
     const ts = window.AltitudeHdTrackerSource;
-    if (ts) return ts.fetchSnapshot();
+    if (ts) return ts.fetchSnapshot(options);
     const bus = window.AltitudeHdTraccarSnapshot;
-    if (bus) return bus.fetchSnapshot();
+    if (bus) return bus.fetchSnapshot(options);
     return fetch(`${API_BASE}?action=snapshot`)
         .then(async (response) => {
             const data = await response.json().catch(() => ({}));
@@ -1408,13 +1407,15 @@ function rowsafeSnapshotFetch() {
         }));
 }
 
-async function updateData() {
+async function updateData(options = {}) {
     if (isKriDemoMode()) {
         applyDemoSnapshotToUi();
         return;
     }
     try {
-        const result = await rowsafeSnapshotFetch();
+        const result = await rowsafeSnapshotFetch(
+            options.forceSnapshot ? { force: true } : {},
+        );
         if (!result.ok) {
             showError(result.error || `Request failed: ${result.status}`);
             return;

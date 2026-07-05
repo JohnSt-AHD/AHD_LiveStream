@@ -10,6 +10,8 @@
         return `/api/traccar?action=snapshot&source=${encodeURIComponent(source)}`;
     }
 
+    const SNAPSHOT_TIMEOUT_MS = 25000;
+
     let inflight = null;
     let lastDetail = null;
 
@@ -27,8 +29,12 @@
         }
 
         inflight = (async () => {
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timeoutId = controller
+                ? setTimeout(() => controller.abort(), SNAPSHOT_TIMEOUT_MS)
+                : null;
             try {
-                const res = await fetch(snapshotUrl());
+                const res = await fetch(snapshotUrl(), controller ? { signal: controller.signal } : undefined);
                 const data = await res.json().catch(() => ({}));
                 const detail = {
                     ok: res.ok,
@@ -39,15 +45,19 @@
                 emit(detail);
                 return detail;
             } catch (err) {
+                const timedOut = err && err.name === 'AbortError';
                 const detail = {
                     ok: false,
                     status: 0,
                     data: {},
-                    error: err.message || 'Network error',
+                    error: timedOut
+                        ? `Snapshot timed out after ${Math.round(SNAPSHOT_TIMEOUT_MS / 1000)}s`
+                        : err.message || 'Network error',
                 };
                 emit(detail);
                 return detail;
             } finally {
+                if (timeoutId) clearTimeout(timeoutId);
                 inflight = null;
             }
         })();
