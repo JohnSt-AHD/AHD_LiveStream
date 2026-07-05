@@ -130,59 +130,17 @@
 
 
 
-            <aside class="rnz-sidebar" id="rnzSidebar" aria-label="Fleet data">
+            <aside class="rnz-sidebar rnz-sidebar--onwater" id="rnzSidebar" aria-label="On water boats">
 
-                <div class="rnz-sidebar-scroll" id="rnzSidebarScroll">
+                <h2 class="rnz-sidebar-title">On water boats</h2>
 
-                    <details class="rnz-panel-details" open>
+                <p class="rnz-sidebar-sub">Devices with a GPS fix in the last 5 minutes. Click a boat to show it on the map.</p>
 
-                        <summary class="rnz-panel-summary">Live updates</summary>
+                <div id="rnzSnapshotError" class="rnz-snapshot-error" hidden></div>
 
-                        <div class="rnz-panel-inner rnz-panel-inner--live">
+                <div class="rnz-sidebar-body">
 
-                            <div id="rnzSnapshotError" class="rnz-snapshot-error" hidden></div>
-
-                            <div class="rnz-panel-head">
-
-                                <label class="rnz-toggle">
-
-                                    <input type="checkbox" id="liveUpdatesToggle" checked>
-
-                                    <span>Live updates (<span data-map-refresh-hint>every 2s</span>)</span>
-
-                                </label>
-
-                            </div>
-
-                            <div class="rnz-footer-inline">
-
-                                <span id="lastUpdate">Last updated: —</span>
-
-                            </div>
-
-                        </div>
-
-                    </details>
-
-
-
-                    <details class="rnz-panel-details rnz-panel-stretch" open>
-
-                        <summary class="rnz-panel-summary">On water boats</summary>
-
-                        <div class="rnz-panel-inner rnz-onwater-inner">
-
-                            <p class="rnz-onwater-hint">
-
-                                Devices with a GPS fix in the last 5 minutes. Click a boat to show it on the map.
-
-                            </p>
-
-                            <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
-
-                        </div>
-
-                    </details>
+                    <div id="rnzOnWaterBoatsList" class="rnz-onwater-list"></div>
 
                 </div>
 

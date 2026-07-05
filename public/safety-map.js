@@ -425,6 +425,28 @@ function onWaterBoundaryLabel() {
     return SAFETY_THEME.onWaterExcludeLabel || SAFETY_THEME.boundaryLabel || 'boundary';
 }
 
+function geofenceNamesAtPoint(lat, lon) {
+    const names = [];
+    for (const g of geofences) {
+        if (!g) continue;
+        const parsed = parseGeofenceArea(g.area);
+        if (!parsed || (parsed.type !== 'circle' && parsed.type !== 'polygon')) continue;
+        if (isInsideBoundaryParts(lat, lon, [parsed])) {
+            const name =
+                typeof g.name === 'string' && g.name.trim() ? g.name.trim() : `Zone ${g.id}`;
+            names.push(name);
+        }
+    }
+    names.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    return names;
+}
+
+function formatGeofenceAtPoint(lat, lon) {
+    const names = geofenceNamesAtPoint(lat, lon);
+    if (names.length === 0) return '—';
+    return names.join(', ');
+}
+
 function deviceOnWaterCrew(device) {
     if (!device) return { clubName: '', logoUrl: null };
     if (device.demoClubName) {
@@ -1533,7 +1555,8 @@ function renderOnWaterBoats(boundaryParts) {
             if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
             const distM =
                 core?.distanceFromRnzM?.(pos.latitude, pos.longitude, rnzParts) ?? null;
-            boats.push({ device: d, pos, distM });
+            const geofenceLabel = formatGeofenceAtPoint(pos.latitude, pos.longitude);
+            boats.push({ device: d, pos, distM, geofenceLabel });
         }
 
         boats.sort((a, b) =>
@@ -1546,7 +1569,7 @@ function renderOnWaterBoats(boundaryParts) {
         }
 
         el.innerHTML = boats
-            .map(({ device, pos, distM }) =>
+            .map(({ device, pos, distM, geofenceLabel }) =>
                 `<article class="rnz-onwater-card">` +
                 `<button type="button" class="rnz-onwater-card-name device-name--fly" ` +
                 `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
@@ -1555,7 +1578,9 @@ function renderOnWaterBoats(boundaryParts) {
                 `<div><dt>Speed</dt><dd>${formatSpeedKmh(pos.speed)}</dd></div>` +
                 `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
                 `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
-                `</dl></article>`,
+                `</dl>` +
+                `<p class="rnz-onwater-geofence"><span class="rnz-onwater-geofence-label">Geofence</span> ` +
+                `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></p></article>`,
             )
             .join('');
         return;
