@@ -15,6 +15,8 @@
     --rnz-warn: #c2410c;
     --rnz-fs-header-h: 100px;
     --rnz-fs-footer-h: 52px;
+    --rnz-panel-bg: rgba(255, 255, 255, 0.9);
+    --rnz-panel-summary-bg: rgba(244, 247, 250, 0.9);
 }
 
 * {
@@ -26,7 +28,7 @@
 body.rnz-page {
     font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
     background-color: #0a0a0a;
-    background-image: url('assets/rnz/rnz-waves-black-wide.png');
+    background-image: url('assets/rnz/rnz-waves-black-wide.jpg');
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -133,11 +135,11 @@ body.rnz-page > * {
 .rnz-header {
     background-color: var(--rnz-navy-deep);
     background-image:
-        linear-gradient(135deg, rgba(6, 24, 41, 0.82) 0%, rgba(10, 35, 66, 0.72) 50%, rgba(26, 95, 138, 0.68) 100%),
-        url('assets/rnz/rnz-waves-black-wide.png');
-    background-size: 1000% auto, 1000% auto;
-    background-position: center 35%, center 40%;
-    background-repeat: no-repeat;
+        linear-gradient(135deg, rgba(6, 24, 41, 0.78) 0%, rgba(10, 35, 66, 0.68) 50%, rgba(26, 95, 138, 0.62) 100%),
+        url('assets/rnz/rnz-ngaru-dark.png');
+    background-repeat: no-repeat, repeat-x;
+    background-size: auto, auto 100%;
+    background-position: center, left center;
     color: var(--rnz-white);
     box-shadow: 0 2px 12px rgba(6, 24, 41, 0.35);
     flex-shrink: 0;
@@ -292,7 +294,7 @@ body.rnz-page > * {
 .rnz-left-column {
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--rnz-panel-bg);
     border: 1px solid var(--rnz-line);
     border-radius: 8px;
     border-left: 4px solid #dc2626;
@@ -382,7 +384,7 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
 }
 
 .rnz-sidebar {
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--rnz-panel-bg);
     border: 1px solid var(--rnz-line);
     border-radius: 8px;
     border-right: 4px solid var(--rnz-teal);
@@ -953,6 +955,20 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
     border-radius: 6px;
     background: var(--rnz-white);
     overflow: hidden;
+}
+
+.rnz-left-column .rnz-panel-details,
+.rnz-sidebar .rnz-panel-details {
+    background: var(--rnz-panel-bg);
+}
+
+.rnz-left-column .rnz-panel-summary,
+.rnz-sidebar .rnz-panel-summary {
+    background: var(--rnz-panel-summary-bg);
+}
+
+.rnz-sidebar .rnz-onwater-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
 }
 
 .rnz-panel-details--warnings:not([hidden]) {
