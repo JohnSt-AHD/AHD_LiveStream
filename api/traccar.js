@@ -124,6 +124,41 @@ function rowingAuthHeaders() {
     return headers;
 }
 
+async function rowingProxy(req, res, path) {
+    if (!canUseRowing()) {
+        res.status(503).json({
+            ok: false,
+            error: 'ROWING_TRACKER_URL is not configured on the server.',
+        });
+        return;
+    }
+    const base = rowingTrackerBase();
+    const url = new URL(path.startsWith('/') ? path : `/${path}`, `${base}/`);
+    const skipQuery = new Set(['action', 'source']);
+    for (const [key, value] of Object.entries(req.query)) {
+        if (skipQuery.has(key)) continue;
+        if (value != null && value !== '') {
+            url.searchParams.set(key, String(value));
+        }
+    }
+    const headers = { ...rowingAuthHeaders(), Accept: 'application/json' };
+    const init = { method: req.method, headers };
+    if (req.method === 'POST' || req.method === 'PATCH' || req.method === 'PUT') {
+        headers['Content-Type'] = 'application/json';
+        init.body =
+            typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
+    }
+    const upstream = await fetch(url.toString(), init);
+    const text = await upstream.text().catch(() => '');
+    let data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = { ok: false, error: text.slice(0, 400) };
+    }
+    res.status(upstream.status).json(data);
+}
+
 async function rowingGetJson(path, query = {}) {
     const base = rowingTrackerBase();
     if (!base) {
@@ -280,6 +315,19 @@ export default async function handler(req, res) {
             const path = `/api/reports/route?${q.toString()}`;
             const data = await traccarGetJson(traccarUrl, cookie, path);
             res.status(200).json(Array.isArray(data) ? data : []);
+            return;
+        }
+
+        if (action === 'timing-lines' && useRowingSource(req)) {
+            if (!['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'].includes(req.method)) {
+                res.status(405).json({ ok: false, error: 'Method not allowed' });
+                return;
+            }
+            if (req.method === 'OPTIONS') {
+                res.status(204).end();
+                return;
+            }
+            await rowingProxy(req, res, '/api/timing-lines');
             return;
         }
 

@@ -436,6 +436,10 @@ body.rnz-page > * {
     background: var(--rnz-teal-dark);
 }
 
+.rnz-map-course-view-btn {
+    top: calc(max(8px, env(safe-area-inset-top, 0px)) + 52px);
+}
+
 .rnz-map-mobile-expand-btn:active {
     background: var(--rnz-cream);
 }

@@ -1470,6 +1470,17 @@ function applySnapshotResult(result) {
     if (map) {
         requestAnimationFrame(() => map.invalidateSize());
     }
+
+    try {
+        window.dispatchEvent(
+            new CustomEvent('rowsafe:snapshot', {
+                detail: { devices, positions, polledAt: Date.now() },
+            }),
+        );
+    } catch {
+        /* ignore */
+    }
+
     return true;
 }
 
