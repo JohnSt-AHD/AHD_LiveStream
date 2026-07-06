@@ -59,6 +59,8 @@
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
       const deviceId = d.uniqueId || d.name || String(d.id);
       const attrs = pos.attributes || {};
+      const athleteRaw = d.athleteId ?? attrs.athleteId ?? attrs.athlete ?? '';
+      const athleteId = String(athleteRaw || '').trim() || null;
       let online = false;
       if (pos.fixTime) {
         const ageMin = (Date.now() - new Date(pos.fixTime).getTime()) / 60000;
@@ -67,6 +69,7 @@
       const rowing = d.rowing || attrs.rowing || {};
       out.push({
         deviceId,
+        athleteId,
         latitude: lat,
         longitude: lon,
         speed: pos.speed,

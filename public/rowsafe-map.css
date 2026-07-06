@@ -903,8 +903,38 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
     color: var(--rnz-text);
 }
 
+.rnz-fleet-meta--split {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.rnz-fleet-group {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rnz-fleet-athlete {
+    flex: 0 1 auto;
+    max-width: 48%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    color: var(--rnz-muted);
+}
+
 .rnz-fleet-group strong {
     font-weight: 700;
+    color: var(--rnz-navy);
+}
+
+.rnz-fleet-athlete strong {
+    font-weight: 600;
     color: var(--rnz-navy);
 }
 
@@ -1585,8 +1615,21 @@ body.rnz-page.course-view-open #courseViewOverlay {
     padding-top: 8px;
     border-top: 1px solid var(--rnz-line);
     font-size: 0.82rem;
-    line-height: 1.4;
+    line-height: 1.35;
     color: var(--rnz-text);
+}
+
+.rnz-onwater-geofence--split {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.rnz-onwater-geofence-left {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
 }
 
 .rnz-onwater-geofence-label {
@@ -1599,9 +1642,38 @@ body.rnz-page.course-view-open #courseViewOverlay {
     color: var(--rnz-muted);
 }
 
+.rnz-onwater-geofence--split .rnz-onwater-geofence-label {
+    display: inline;
+    margin-bottom: 0;
+    margin-right: 4px;
+    font-size: 0.68rem;
+}
+
 .rnz-onwater-geofence-value {
     display: block;
     font-weight: 600;
     color: var(--rnz-teal-dark);
     word-break: break-word;
+}
+
+.rnz-onwater-geofence--split .rnz-onwater-geofence-value {
+    display: inline;
+    word-break: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    max-width: 100%;
+}
+
+.rnz-meta-athlete {
+    flex: 0 1 auto;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--rnz-muted);
+    text-align: right;
 }

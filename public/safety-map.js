@@ -698,10 +698,29 @@ function showBoundaryCriticalAlert(device, position) {
     return isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
 }
 
-function formatDevicePace(speedMps, deviceLabel) {
+function athleteIdForDevice(device) {
+    if (!device) return '';
+    const attrs =
+        device.attributes && typeof device.attributes === 'object' ? device.attributes : {};
+    const raw = device.athleteId ?? attrs.athleteId ?? attrs.athlete ?? '';
+    return String(raw || '').trim();
+}
+
+function athleteMetaHtml(device, { compact = false } = {}) {
+    const id = athleteIdForDevice(device);
+    const label = id ? escapeHtml(id) : '—';
+    if (compact) {
+        return `<span class="rnz-meta-athlete" title="Athlete ID">${label}</span>`;
+    }
+    return `<span class="rnz-fleet-athlete" title="Athlete ID">Athlete: <strong>${label}</strong></span>`;
+}
+
+function formatDevicePace(speedMps, deviceLabel, athleteId) {
     const RS = window.RowingSpeed;
     if (RS && typeof speedMps === 'number' && !Number.isNaN(speedMps)) {
-        return RS.formatPaceWithPrognostic(speedMps, deviceLabel, { suffix: true });
+        const labelParts = [deviceLabel];
+        if (athleteId) labelParts.push(athleteId);
+        return RS.formatPaceWithPrognostic(speedMps, ...labelParts, { suffix: true });
     }
     if (typeof speedMps !== 'number' || Number.isNaN(speedMps)) return '—';
     return `${(speedMps * 3.6).toFixed(1)} km/h`;
@@ -1276,11 +1295,16 @@ function updateMapMarkers() {
         }
 
         if (marker) {
-            const pace = formatDevicePace(position.speed, device.name);
+            const athleteId = athleteIdForDevice(device);
+            const pace = formatDevicePace(position.speed, device.name, athleteId);
             const fix = formatDateTime(position.fixTime);
             const addr = escapeHtml(position.address || 'Unknown');
+            const athleteLine = athleteId
+                ? `<div><strong>Athlete:</strong> ${escapeHtml(athleteId)}</div>`
+                : '';
             marker.bindPopup(
                 `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
+                    athleteLine +
                     `<div><strong>Pace:</strong> ${pace}</div>` +
                     `<div><strong>Last fix:</strong> ${fix}</div>` +
                     `<div><strong>Location:</strong> ${addr}</div>`,
@@ -1547,8 +1571,9 @@ function renderFleetDevices() {
                     ${nameHtml}
                     <span class="device-status ${statusClass}">${statusText}</span>
                 </div>
-                <div class="rnz-fleet-meta">
+                <div class="rnz-fleet-meta rnz-fleet-meta--split">
                     <span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>
+                    ${athleteMetaHtml(device)}
                 </div>
             </div>
         `;
@@ -1594,12 +1619,15 @@ function renderOnWaterBoats(boundaryParts) {
                 `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
                 `title="Show on map">${escapeHtml(device.name)}</button>` +
                 `<dl class="rnz-onwater-stats">` +
-                `<div><dt>Pace</dt><dd>${formatDevicePace(pos.speed, device.name)}</dd></div>` +
+                `<div><dt>Pace</dt><dd>${formatDevicePace(pos.speed, device.name, athleteIdForDevice(device))}</dd></div>` +
                 `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
                 `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
                 `</dl>` +
-                `<p class="rnz-onwater-geofence"><span class="rnz-onwater-geofence-label">Geofence</span> ` +
-                `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></p></article>`,
+                `<p class="rnz-onwater-geofence rnz-onwater-geofence--split">` +
+                `<span class="rnz-onwater-geofence-left">` +
+                `<span class="rnz-onwater-geofence-label">Geofence</span> ` +
+                `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></span>` +
+                `${athleteMetaHtml(device, { compact: true })}</p></article>`,
             )
             .join('');
         return;
@@ -1644,7 +1672,7 @@ function renderOnWaterBoats(boundaryParts) {
 
     el.innerHTML = boats
         .map(({ device, pos }) => {
-            const pace = formatDevicePace(pos.speed, device.name);
+            const pace = formatDevicePace(pos.speed, device.name, athleteIdForDevice(device));
             const fix = formatDateTime(pos.fixTime);
             const crew = deviceOnWaterCrew(device);
             const logoHtml = crew.logoUrl
