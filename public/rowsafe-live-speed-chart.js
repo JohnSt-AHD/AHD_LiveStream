@@ -119,7 +119,7 @@
                     color: deviceColor(id),
                     points: smoothed.map((p) => ({
                         x: (p.tMs - t0) / 1000,
-                        y: p.value * 3.6,
+                        y: p.value,
                     })),
                 };
             });
@@ -299,12 +299,17 @@
         const canvas = global.document.getElementById('rnzLiveSpeedChart');
         if (!canvas) return;
         const series = liveSpeedVsTimeSeries(activeDeviceIds || []);
+        const RS = global.RowingSpeed;
+        const yFormat =
+            RS != null
+                ? (mps) => RS.formatSplit500m(mps)
+                : (mps) => `${(mps * 3.6).toFixed(0)} km/h`;
         drawMultiSeriesChart(canvas, series, {
-            title: 'Speed vs time (last 5 min)',
+            title: 'Pace vs time (last 5 min)',
             xLabel: 'seconds',
-            yLabel: 'km/h',
-            yFormat: (v) => `${v.toFixed(0)}`,
-            emptyMessage: 'No active device speeds yet',
+            yLabel: 'Pace /500m',
+            yFormat,
+            emptyMessage: 'No active device paces yet',
         });
     }
 

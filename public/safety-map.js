@@ -698,9 +698,17 @@ function showBoundaryCriticalAlert(device, position) {
     return isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
 }
 
-function formatSpeedKmh(speedMps) {
+function formatDevicePace(speedMps, deviceLabel) {
+    const RS = window.RowingSpeed;
+    if (RS && typeof speedMps === 'number' && !Number.isNaN(speedMps)) {
+        return RS.formatPaceWithPrognostic(speedMps, deviceLabel, { suffix: true });
+    }
     if (typeof speedMps !== 'number' || Number.isNaN(speedMps)) return '—';
     return `${(speedMps * 3.6).toFixed(1)} km/h`;
+}
+
+function formatSpeedKmh(speedMps, deviceLabel) {
+    return formatDevicePace(speedMps, deviceLabel);
 }
 
 function formatStrokeRate(pos) {
@@ -1268,12 +1276,12 @@ function updateMapMarkers() {
         }
 
         if (marker) {
-            const speedKmh = (position.speed * 3.6).toFixed(1);
+            const pace = formatDevicePace(position.speed, device.name);
             const fix = formatDateTime(position.fixTime);
             const addr = escapeHtml(position.address || 'Unknown');
             marker.bindPopup(
                 `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
-                    `<div><strong>Speed:</strong> ${speedKmh} km/h</div>` +
+                    `<div><strong>Pace:</strong> ${pace}</div>` +
                     `<div><strong>Last fix:</strong> ${fix}</div>` +
                     `<div><strong>Location:</strong> ${addr}</div>`,
                 { maxWidth: 260 }
@@ -1586,7 +1594,7 @@ function renderOnWaterBoats(boundaryParts) {
                 `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
                 `title="Show on map">${escapeHtml(device.name)}</button>` +
                 `<dl class="rnz-onwater-stats">` +
-                `<div><dt>Speed</dt><dd>${formatSpeedKmh(pos.speed)}</dd></div>` +
+                `<div><dt>Pace</dt><dd>${formatDevicePace(pos.speed, device.name)}</dd></div>` +
                 `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
                 `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
                 `</dl>` +
@@ -1636,7 +1644,7 @@ function renderOnWaterBoats(boundaryParts) {
 
     el.innerHTML = boats
         .map(({ device, pos }) => {
-            const kmh = (pos.speed * 3.6).toFixed(1);
+            const pace = formatDevicePace(pos.speed, device.name);
             const fix = formatDateTime(pos.fixTime);
             const crew = deviceOnWaterCrew(device);
             const logoHtml = crew.logoUrl
@@ -1686,7 +1694,7 @@ function renderOnWaterBoats(boundaryParts) {
                 logoHtml +
                 crewHtml +
                 `</span>` +
-                `<span class="rnz-onwater-meta">${kmh} km/h · last ${escapeHtml(fix)}</span>` +
+                `<span class="rnz-onwater-meta">${pace} · last ${escapeHtml(fix)}</span>` +
                 `</button>` +
                 crewToggle +
                 `</div>` +
