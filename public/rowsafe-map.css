@@ -1557,6 +1557,84 @@ body.rnz-page.course-view-open #courseViewOverlay {
     margin-top: 10px;
 }
 
+.rnz-onwater-card--follow-picked {
+    border-color: rgba(15, 118, 110, 0.45);
+}
+
+.rnz-onwater-card--follow-current {
+    border-color: var(--rnz-teal-dark);
+    box-shadow:
+        0 0 0 2px rgba(15, 118, 110, 0.28),
+        0 1px 3px rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, #f0fdfa 0%, #f8fafc 100%);
+}
+
+.rnz-onwater-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.rnz-onwater-card-head .rnz-onwater-card-name {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 10px;
+}
+
+.rnz-onwater-follow-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 10px;
+    padding: 4px 8px;
+    border: 1px solid var(--rnz-line);
+    border-radius: 999px;
+    background: #fff;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--rnz-muted);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.rnz-onwater-follow-btn:hover {
+    border-color: var(--rnz-teal);
+    color: var(--rnz-teal-dark);
+}
+
+.rnz-onwater-follow-btn--on {
+    border-color: var(--rnz-teal-dark);
+    background: rgba(20, 184, 166, 0.12);
+    color: var(--rnz-teal-dark);
+}
+
+.rnz-onwater-follow-btn__icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    background: transparent;
+}
+
+.rnz-onwater-follow-btn--on .rnz-onwater-follow-btn__icon {
+    background: currentColor;
+}
+
+.rnz-sidebar-follow-hint {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(15, 118, 110, 0.25);
+    background: rgba(240, 253, 250, 0.85);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--rnz-text);
+}
+
 .rnz-onwater-card-name {
     display: block;
     width: 100%;

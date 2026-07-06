@@ -56,6 +56,192 @@ let mapIgnoreMoveEvents = false;
 let followRotateIndex = 0;
 let followRotateDeviceIds = null;
 let followRotateTimer = null;
+/** @type {Set<number>|null} null = follow all active on-water devices */
+let followSelectedDeviceIds = null;
+
+const LS_FOLLOW_DEVICES = 'rnzRowsafeFollowDeviceIds';
+
+function loadFollowDeviceSelection() {
+    try {
+        const raw = localStorage.getItem(LS_FOLLOW_DEVICES);
+        if (!raw || raw === 'all') return null;
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr) || !arr.length) return null;
+        const ids = arr.map(Number).filter(Number.isFinite);
+        return ids.length ? new Set(ids) : null;
+    } catch {
+        return null;
+    }
+}
+
+function saveFollowDeviceSelection() {
+    try {
+        if (!followSelectedDeviceIds || followSelectedDeviceIds.size === 0) {
+            localStorage.setItem(LS_FOLLOW_DEVICES, 'all');
+        } else {
+            localStorage.setItem(LS_FOLLOW_DEVICES, JSON.stringify([...followSelectedDeviceIds]));
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
+function isFollowSelectionActive() {
+    return followSelectedDeviceIds != null && followSelectedDeviceIds.size > 0;
+}
+
+function isDeviceFollowSelected(deviceId) {
+    if (!isFollowSelectionActive()) return true;
+    return followSelectedDeviceIds.has(deviceId);
+}
+
+function getActiveFollowCandidates() {
+    const activeMin = mapFollowActiveMinutes();
+    const targets = [];
+    for (const d of devices) {
+        const pos = positions[d.id];
+        if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
+        if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
+        if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
+        targets.push({
+            device: d,
+            pos,
+            lat: pos.latitude,
+            lng: pos.longitude,
+        });
+    }
+    targets.sort((a, b) =>
+        String(a.device.name).localeCompare(String(b.device.name), undefined, { sensitivity: 'base' }),
+    );
+    return targets;
+}
+
+function getActiveFollowTargets() {
+    const targets = getActiveFollowCandidates();
+    if (!isFollowSelectionActive()) return targets;
+    return targets.filter((t) => followSelectedDeviceIds.has(t.device.id));
+}
+
+function getCurrentFollowTargetDeviceId() {
+    if (!mapFollowFleet || !mapFollowEnabled()) return null;
+    const targets = getActiveFollowTargets();
+    if (!targets.length) return null;
+    syncFollowRotationState(targets);
+    return (targets[followRotateIndex] || targets[0]).device.id;
+}
+
+function onWaterFollowUi(deviceId) {
+    if (!mapFollowFleet || !mapFollowEnabled()) {
+        return { cardClasses: '', headExtra: '' };
+    }
+    const picked = isDeviceFollowSelected(deviceId);
+    const current = getCurrentFollowTargetDeviceId() === deviceId;
+    let cardClasses = '';
+    if (picked) cardClasses += ' rnz-onwater-card--follow-picked';
+    if (current) cardClasses += ' rnz-onwater-card--follow-current';
+    const btnClass = picked ? ' rnz-onwater-follow-btn--on' : '';
+    const headExtra =
+        `<button type="button" class="rnz-onwater-follow-btn${btnClass}" data-follow-device-id="${deviceId}" ` +
+        `aria-pressed="${picked ? 'true' : 'false'}" ` +
+        `title="${picked ? 'Following on map — click to stop' : 'Follow this boat on map'}">` +
+        `<span class="rnz-onwater-follow-btn__icon" aria-hidden="true"></span>` +
+        `<span class="rnz-onwater-follow-btn__label">${picked ? 'Following' : 'Follow'}</span></button>`;
+    return { cardClasses, headExtra };
+}
+
+function updateOnWaterFollowHint() {
+    const hint = document.getElementById('rnzOnWaterFollowHint');
+    if (!hint) return;
+    const show = mapFollowFleet && mapFollowEnabled();
+    hint.hidden = !show;
+}
+
+function updateOnWaterFollowHighlights() {
+    if (!mapFollowFleet || !mapFollowEnabled()) {
+        document
+            .querySelectorAll('.rnz-onwater-card[data-device-id]')
+            .forEach((card) => {
+                card.classList.remove('rnz-onwater-card--follow-picked', 'rnz-onwater-card--follow-current');
+                const btn = card.querySelector('.rnz-onwater-follow-btn');
+                if (btn) {
+                    btn.classList.remove('rnz-onwater-follow-btn--on');
+                    btn.setAttribute('aria-pressed', 'false');
+                    const label = btn.querySelector('.rnz-onwater-follow-btn__label');
+                    if (label) label.textContent = 'Follow';
+                    btn.title = 'Follow this boat on map';
+                }
+            });
+        return;
+    }
+    const currentId = getCurrentFollowTargetDeviceId();
+    document.querySelectorAll('.rnz-onwater-card[data-device-id]').forEach((card) => {
+        const id = Number(card.dataset.deviceId);
+        const picked = isDeviceFollowSelected(id);
+        card.classList.toggle('rnz-onwater-card--follow-picked', picked);
+        card.classList.toggle('rnz-onwater-card--follow-current', id === currentId);
+        const btn = card.querySelector('.rnz-onwater-follow-btn');
+        if (btn) {
+            btn.classList.toggle('rnz-onwater-follow-btn--on', picked);
+            btn.setAttribute('aria-pressed', picked ? 'true' : 'false');
+            const label = btn.querySelector('.rnz-onwater-follow-btn__label');
+            if (label) label.textContent = picked ? 'Following' : 'Follow';
+            btn.title = picked ? 'Following on map — click to stop' : 'Follow this boat on map';
+        }
+    });
+}
+
+function refreshOnWaterFollowUi() {
+    updateOnWaterFollowHint();
+    renderOnWaterBoats(lastFenceParts);
+}
+
+function toggleFollowDeviceSelection(deviceId) {
+    if (!Number.isFinite(deviceId) || !mapFollowEnabled()) return;
+    const candidates = getActiveFollowCandidates();
+    const candidateIds = new Set(candidates.map((t) => t.device.id));
+    if (!candidateIds.has(deviceId)) return;
+
+    if (!mapFollowFleet) {
+        mapFollowFleet = true;
+        saveMapFollowPref(true);
+        startFollowRotateTimer();
+    }
+
+    if (!isFollowSelectionActive()) {
+        followSelectedDeviceIds = new Set(candidateIds);
+        followSelectedDeviceIds.delete(deviceId);
+    } else if (followSelectedDeviceIds.has(deviceId)) {
+        followSelectedDeviceIds.delete(deviceId);
+    } else {
+        followSelectedDeviceIds.add(deviceId);
+    }
+
+    if (
+        !followSelectedDeviceIds ||
+        followSelectedDeviceIds.size === 0 ||
+        followSelectedDeviceIds.size >= candidateIds.size
+    ) {
+        followSelectedDeviceIds = null;
+    }
+
+    saveFollowDeviceSelection();
+    resetFollowRotationState();
+    followActiveDevicesOnMap(true);
+    refreshOnWaterFollowUi();
+}
+
+function wireOnWaterFollowSelect() {
+    const onWater = document.getElementById('rnzOnWaterBoatsList');
+    if (!onWater || onWater.dataset.rnzFollowSelectBound === '1') return;
+    onWater.dataset.rnzFollowSelectBound = '1';
+    onWater.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-follow-device-id]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFollowDeviceSelection(Number(btn.dataset.followDeviceId));
+    });
+}
 
 function mapFollowEnabled() {
     return Boolean(SAFETY_THEME.enableMapFollow && document.getElementById('rnzMapFollowBtn'));
@@ -147,27 +333,8 @@ function disableMapFollowFromUser() {
     stopFollowRotateTimer();
     resetFollowRotationState();
     updateMapFollowButton();
-}
-
-function getActiveFollowTargets() {
-    const activeMin = mapFollowActiveMinutes();
-    const targets = [];
-    for (const d of devices) {
-        const pos = positions[d.id];
-        if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
-        if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
-        if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
-        targets.push({
-            device: d,
-            pos,
-            lat: pos.latitude,
-            lng: pos.longitude,
-        });
-    }
-    targets.sort((a, b) =>
-        String(a.device.name).localeCompare(String(b.device.name), undefined, { sensitivity: 'base' }),
-    );
-    return targets;
+    updateOnWaterFollowHint();
+    renderOnWaterBoats(lastFenceParts);
 }
 
 function syncFollowRotationState(targets) {
@@ -208,13 +375,16 @@ function followActiveDevicesOnMap(animateRotate = false) {
     panToFollowTarget(target, animateRotate);
     refreshFollowRotateTimer(targets.length);
     updateMapFollowButton();
+    updateOnWaterFollowHighlights();
 }
 
 function wireMapFollow() {
     if (!mapFollowEnabled()) return;
 
+    followSelectedDeviceIds = loadFollowDeviceSelection();
     mapFollowFleet = loadMapFollowPref();
     updateMapFollowButton();
+    updateOnWaterFollowHint();
     if (mapFollowFleet) {
         startFollowRotateTimer();
     }
@@ -232,6 +402,7 @@ function wireMapFollow() {
             resetFollowRotationState();
             updateMapFollowButton();
         }
+        refreshOnWaterFollowUi();
     });
 
     if (!map || map.dataset.rnzFollowBound === '1') return;
@@ -1461,6 +1632,21 @@ function rowsafeSnapshotFetch(options = {}) {
         }));
 }
 
+function pruneFollowDeviceSelection() {
+    if (!isFollowSelectionActive()) return;
+    const candidateIds = new Set(getActiveFollowCandidates().map((t) => t.device.id));
+    for (const id of [...followSelectedDeviceIds]) {
+        if (!candidateIds.has(id)) followSelectedDeviceIds.delete(id);
+    }
+    if (
+        !followSelectedDeviceIds.size ||
+        followSelectedDeviceIds.size >= candidateIds.size
+    ) {
+        followSelectedDeviceIds = null;
+    }
+    saveFollowDeviceSelection();
+}
+
 function applySnapshotResult(result) {
     if (!result?.ok) {
         showError(result?.error || `Request failed: ${result?.status ?? ''}`);
@@ -1479,6 +1665,7 @@ function applySnapshotResult(result) {
     groupLookup = buildGroupLookup(groups);
 
     devices = mergeDevicesFromPositions(rawDevices, positions);
+    pruneFollowDeviceSelection();
 
     const { geofences: matched } = getMatchedGeofences(geofences);
     const parts = boundaryPartsFromGeofences(matched);
@@ -1613,22 +1800,28 @@ function renderOnWaterBoats(boundaryParts) {
         }
 
         el.innerHTML = boats
-            .map(({ device, pos, distM, geofenceLabel }) =>
-                `<article class="rnz-onwater-card">` +
-                `<button type="button" class="rnz-onwater-card-name device-name--fly" ` +
-                `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
-                `title="Show on map">${escapeHtml(device.name)}</button>` +
-                `<dl class="rnz-onwater-stats">` +
-                `<div><dt>Pace</dt><dd>${formatDevicePace(pos.speed, device.name, athleteIdForDevice(device))}</dd></div>` +
-                `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
-                `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
-                `</dl>` +
-                `<p class="rnz-onwater-geofence rnz-onwater-geofence--split">` +
-                `<span class="rnz-onwater-geofence-left">` +
-                `<span class="rnz-onwater-geofence-label">Geofence</span> ` +
-                `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></span>` +
-                `${athleteMetaHtml(device, { compact: true })}</p></article>`,
-            )
+            .map(({ device, pos, distM, geofenceLabel }) => {
+                const followUi = onWaterFollowUi(device.id);
+                return (
+                    `<article class="rnz-onwater-card${followUi.cardClasses}" data-device-id="${device.id}">` +
+                    `<div class="rnz-onwater-card-head">` +
+                    `<button type="button" class="rnz-onwater-card-name device-name--fly" ` +
+                    `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
+                    `title="Show on map">${escapeHtml(device.name)}</button>` +
+                    `${followUi.headExtra}` +
+                    `</div>` +
+                    `<dl class="rnz-onwater-stats">` +
+                    `<div><dt>Pace</dt><dd>${formatDevicePace(pos.speed, device.name, athleteIdForDevice(device))}</dd></div>` +
+                    `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
+                    `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
+                    `</dl>` +
+                    `<p class="rnz-onwater-geofence rnz-onwater-geofence--split">` +
+                    `<span class="rnz-onwater-geofence-left">` +
+                    `<span class="rnz-onwater-geofence-label">Geofence</span> ` +
+                    `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></span>` +
+                    `${athleteMetaHtml(device, { compact: true })}</p></article>`
+                );
+            })
             .join('');
         return;
     }
@@ -1923,6 +2116,7 @@ function bootSafetyMapPage() {
     wireFleetDockResize();
     wireRnzMapFullscreen();
     wireDeviceNameFlyTo();
+    wireOnWaterFollowSelect();
     void bootstrapMapData();
 }
 
