@@ -110,36 +110,33 @@
     if (document.documentElement.dataset.rnzToolbarBound === '1') return;
     document.documentElement.dataset.rnzToolbarBound = '1';
 
-    document.addEventListener(
-      'click',
-      (e) => {
-        const target = e.target instanceof Element ? e.target : null;
-        if (!target) return;
+    const handleToolbarAction = (target) => {
+      if (!target) return false;
+      if (target.closest('#courseViewBtn')) {
+        window.RnzCourseView?.open?.();
+        return true;
+      }
+      if (target.closest('#rnzMapMobileExpandBtn')) {
+        window.RnzMapFullscreen?.enter?.();
+        return true;
+      }
+      if (target.closest('#rnzMapFullscreenExitBtn')) {
+        window.RnzMapFullscreen?.exit?.();
+        return true;
+      }
+      return false;
+    };
 
-        if (target.closest('#courseViewBtn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (window.RnzCourseView?.open) {
-            window.RnzCourseView.open();
-          }
-          return;
-        }
+    const onPointer = (e) => {
+      const target = e.target instanceof Element ? e.target : null;
+      if (!target) return;
+      if (!handleToolbarAction(target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
 
-        if (target.closest('#rnzMapMobileExpandBtn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.RnzMapFullscreen?.enter?.();
-          return;
-        }
-
-        if (target.closest('#rnzMapFullscreenExitBtn')) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.RnzMapFullscreen?.exit?.();
-        }
-      },
-      true,
-    );
+    document.addEventListener('click', onPointer, true);
+    document.addEventListener('touchend', onPointer, true);
   }
 
   if (document.readyState === 'loading') {

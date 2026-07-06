@@ -43,7 +43,7 @@ body.rnz-page::before {
     content: none;
 }
 
-body.rnz-page > * {
+body.rnz-page > *:not(#courseViewOverlay) {
     position: relative;
     z-index: 1;
 }
@@ -365,6 +365,25 @@ body.rnz-page > * {
     box-shadow: 0 4px 22px rgba(15, 23, 42, 0.1);
     background: #dce7ef;
     flex-shrink: 0;
+    isolation: isolate;
+}
+
+.rnz-map-toolbar {
+    position: absolute;
+    inset: 0;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.rnz-map-toolbar__right {
+    position: absolute;
+    top: max(8px, env(safe-area-inset-top, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    pointer-events: none;
 }
 
 #map.rnz-map {
@@ -377,10 +396,24 @@ body.rnz-page > * {
     background: #dce7ef;
 }
 
-.rnz-map-stage .rnz-map-follow-btn,
-.rnz-map-stage .rnz-map-mobile-expand-btn {
-    z-index: 1000;
+.rnz-map-stage .leaflet-container {
+    z-index: 0;
+}
+
+.rnz-map-toolbar .rnz-map-follow-btn,
+.rnz-map-toolbar .rnz-map-mobile-expand-btn {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    z-index: 1;
     pointer-events: auto;
+}
+
+.rnz-map-toolbar .rnz-map-mobile-expand-btn {
+    position: absolute;
+    top: max(8px, env(safe-area-inset-top, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
 }
 
 .rnz-map-mobile-expand-btn {
@@ -442,10 +475,6 @@ body.rnz-page > * {
 
 .rnz-map-follow-btn.rnz-map-follow-btn--active:active {
     background: var(--rnz-teal-dark);
-}
-
-.rnz-map-course-view-btn {
-    top: calc(max(8px, env(safe-area-inset-top, 0px)) + 52px);
 }
 
 .rnz-map-mobile-expand-btn:active {
@@ -1395,6 +1424,27 @@ body.rnz-map-fullscreen .rnz-map-stage {
 
 body.rnz-map-fullscreen #map.rnz-map {
     border-radius: 0;
+}
+
+/* Course view — true full screen on RowSafe (hide page chrome) */
+body.rnz-page.course-view-open {
+    overflow: hidden;
+}
+
+body.rnz-page.course-view-open .rnz-header,
+body.rnz-page.course-view-open .hub-stats-bar--rnz,
+body.rnz-page.course-view-open .rnz-main,
+body.rnz-page.course-view-open .rnz-footer {
+    display: none !important;
+}
+
+body.rnz-page.course-view-open #courseViewOverlay {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 30000 !important;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
 }
 
 /* Capsize alarm (CrewSight motion) */
