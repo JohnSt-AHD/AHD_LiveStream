@@ -1783,16 +1783,34 @@ function setRnzMapFullscreen(on) {
     setTimeout(() => map && map.invalidateSize(), 80);
 }
 
+window.RnzMapFullscreen = {
+    enter: () => setRnzMapFullscreen(true),
+    exit: () => setRnzMapFullscreen(false),
+    toggle: () => setRnzMapFullscreen(!document.body.classList.contains('rnz-map-fullscreen')),
+};
+
 function wireRnzMapFullscreen() {
     const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
     const mapExpand = document.getElementById('rnzMapMobileExpandBtn');
-    if (!exitBtn || exitBtn.dataset.bound === '1') return;
-    exitBtn.dataset.bound = '1';
-    exitBtn.addEventListener('click', () => setRnzMapFullscreen(false));
     if (mapExpand && mapExpand.dataset.bound !== '1') {
         mapExpand.dataset.bound = '1';
-        mapExpand.addEventListener('click', () => setRnzMapFullscreen(true));
+        mapExpand.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setRnzMapFullscreen(true);
+        });
     }
+    if (exitBtn && exitBtn.dataset.bound !== '1') {
+        exitBtn.dataset.bound = '1';
+        exitBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setRnzMapFullscreen(false);
+        });
+    }
+    if (!exitBtn && !mapExpand) return;
+    if (document.documentElement.dataset.rnzFsBound === '1') return;
+    document.documentElement.dataset.rnzFsBound = '1';
     window.addEventListener('resize', () => {
         if (document.body.classList.contains('rnz-map-fullscreen')) {
             updateRnzFullscreenLayoutVars();
@@ -1853,7 +1871,11 @@ window.trackerSourcePageRefresh = onTrackerSourceChanged;
 window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
 
 function bootSafetyMapPage() {
-    initMap();
+    try {
+        initMap();
+    } catch (err) {
+        console.error('[safety-map] initMap failed:', err);
+    }
     wireMapFollow();
     wireRnzLiveSpeedChart();
     if (SAFETY_THEME.mapRefreshMs && window.AltitudeHdMapRefresh?.formatShort) {

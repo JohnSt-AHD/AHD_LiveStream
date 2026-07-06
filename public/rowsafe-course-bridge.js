@@ -103,6 +103,43 @@
     if (typeof window.dashboardInitCourseView === 'function') {
       window.dashboardInitCourseView();
     }
+    wireMapToolbarClicks();
+  }
+
+  function wireMapToolbarClicks() {
+    if (document.documentElement.dataset.rnzToolbarBound === '1') return;
+    document.documentElement.dataset.rnzToolbarBound = '1';
+
+    document.addEventListener(
+      'click',
+      (e) => {
+        const target = e.target instanceof Element ? e.target : null;
+        if (!target) return;
+
+        if (target.closest('#courseViewBtn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (window.RnzCourseView?.open) {
+            window.RnzCourseView.open();
+          }
+          return;
+        }
+
+        if (target.closest('#rnzMapMobileExpandBtn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.RnzMapFullscreen?.enter?.();
+          return;
+        }
+
+        if (target.closest('#rnzMapFullscreenExitBtn')) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.RnzMapFullscreen?.exit?.();
+        }
+      },
+      true,
+    );
   }
 
   if (document.readyState === 'loading') {

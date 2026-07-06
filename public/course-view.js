@@ -796,6 +796,11 @@
     selectedCourse = localStorage.getItem(LS_COURSE) || '';
   };
 
+  window.RnzCourseView = {
+    open: openOverlay,
+    close: closeOverlay,
+  };
+
   window.dashboardOnPollUpdate = function (payload) {
     if (!open) return;
     processPoll(payload?.positions || [], payload?.polledAt || Date.now());
