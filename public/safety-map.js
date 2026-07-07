@@ -582,8 +582,9 @@ function wireMapFollow() {
         refreshOnWaterFollowUi();
     });
 
-    if (!map || map.dataset.rnzFollowBound === '1') return;
-    map.dataset.rnzFollowBound = '1';
+    const mapEl = document.getElementById('map');
+    if (!map || !mapEl || mapEl.dataset.rnzFollowBound === '1') return;
+    mapEl.dataset.rnzFollowBound = '1';
 
     const onUserMapMove = () => {
         if (mapIgnoreMoveEvents || !mapFollowFleet) return;
