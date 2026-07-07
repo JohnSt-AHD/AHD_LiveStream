@@ -179,6 +179,22 @@ body.rnz-page > *:not(#courseViewOverlay) {
     flex-shrink: 0;
 }
 
+.rnz-header-crewsight {
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 4px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.rnz-crewsight-logo {
+    display: block;
+    height: clamp(28px, 4vw, 36px);
+    width: auto;
+    max-width: min(160px, 28vw);
+    object-fit: contain;
+}
+
 .rnz-header-titles {
     display: flex;
     flex-direction: column;
