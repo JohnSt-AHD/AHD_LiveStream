@@ -62,6 +62,9 @@
             mapFollowRotateSec: 30,
             mapRefreshMs: 2000,
             enableLiveSpeedChart: true,
+            enableDeviceColors: true,
+            enableTrailToggle: true,
+            lsMapTrail: 'rnzRowsafeMapTrail',
         },
         kri: {
             id: 'kri',

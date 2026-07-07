@@ -1454,6 +1454,20 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
     margin-bottom: 6px;
 }
 
+.leaflet-popup.rnz-popup--device .leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+}
+
+.rnz-popup-accent {
+    height: 4px;
+    width: 100%;
+}
+
+.rnz-popup-body {
+    padding: 8px 12px 6px;
+}
+
 .rnz-map-fullscreen-exit {
     position: fixed;
     left: 50%;
@@ -1630,6 +1644,23 @@ body.rnz-page.course-view-open #courseViewOverlay {
     display: flex;
     align-items: flex-start;
     gap: 8px;
+}
+
+.rnz-onwater-color-mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+body.rnz-page .rnz-onwater-card--device-color {
+    border-left: 4px solid var(--rnz-device-color);
+}
+
+body.rnz-page .rnz-onwater-card--device-color .rnz-onwater-stats dt {
+    color: var(--rnz-device-stroke, var(--rnz-teal-dark));
 }
 
 .rnz-onwater-card-head .rnz-onwater-card-name {

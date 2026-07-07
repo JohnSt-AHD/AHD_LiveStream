@@ -2,7 +2,7 @@
  * Live speed vs time chart for RNZ RowSafe map (CrewSight Manager style).
  */
 (function (global) {
-    const DEVICE_COLORS = [
+    const DEVICE_COLORS = global.RnzDeviceColors?.PALETTE?.map((c) => c.fill) || [
         '#38bdf8',
         '#a78bfa',
         '#4ade80',
@@ -24,6 +24,8 @@
     const deviceLabels = new Map();
 
     function deviceColor(deviceId) {
+        const colors = global.RnzDeviceColors;
+        if (colors) return colors.fill(deviceId);
         if (!deviceOrder.has(deviceId)) {
             deviceOrder.set(deviceId, deviceOrder.size);
         }

@@ -26,6 +26,7 @@ const KRI_DEMO_SPEED_MAX_MPS = 10;
 let kriDemoSpeedRangeApplied = false;
 let liveTrailLayer = null;
 const deviceLiveTrails = new Map();
+let mapTrailVisible = true;
 
 /** On-water list: recent fix window and minimum speed (m/s) for “moving”. */
 const ON_WATER_FIX_MAX_MIN = 30;
@@ -49,6 +50,72 @@ let lastFenceParts = [];
 let lastStoppedState = {};
 /** Device IDs with active (unacknowledged) capsize alerts. */
 let activeCapsizeDeviceIds = new Set();
+
+function deviceColorsEnabled() {
+    return Boolean(SAFETY_THEME.enableDeviceColors && window.RnzDeviceColors);
+}
+
+function syncDeviceColorRegistry() {
+    if (!deviceColorsEnabled()) return;
+    window.RnzDeviceColors.sync(devices.map((d) => d.id));
+}
+
+function devicePalette(deviceId) {
+    if (!deviceColorsEnabled()) return null;
+    return window.RnzDeviceColors.get(deviceId);
+}
+
+function mapTrailToggleEnabled() {
+    return Boolean(SAFETY_THEME.enableTrailToggle && document.getElementById('rnzMapTrailBtn'));
+}
+
+function isLiveTrailVisible() {
+    if (!mapTrailToggleEnabled()) return true;
+    return mapTrailVisible;
+}
+
+function loadMapTrailPref() {
+    if (!mapTrailToggleEnabled()) return true;
+    try {
+        return localStorage.getItem(SAFETY_THEME.lsMapTrail || 'rnzRowsafeMapTrail') !== '0';
+    } catch {
+        return true;
+    }
+}
+
+function saveMapTrailPref(visible) {
+    const key = SAFETY_THEME.lsMapTrail || 'rnzRowsafeMapTrail';
+    try {
+        localStorage.setItem(key, visible ? '1' : '0');
+    } catch {
+        /* ignore */
+    }
+}
+
+function updateMapTrailButton() {
+    const btn = document.getElementById('rnzMapTrailBtn');
+    if (!btn) return;
+    btn.classList.toggle('rnz-map-follow-btn--active', mapTrailVisible);
+    btn.setAttribute('aria-pressed', mapTrailVisible ? 'true' : 'false');
+    btn.textContent = mapTrailVisible ? 'Path dots' : 'Path dots off';
+    btn.title = mapTrailVisible
+        ? 'Hide recent GPS path dots on the map'
+        : 'Show recent GPS path dots on the map';
+}
+
+function wireMapTrail() {
+    if (!mapTrailToggleEnabled()) return;
+    mapTrailVisible = loadMapTrailPref();
+    updateMapTrailButton();
+    const btn = document.getElementById('rnzMapTrailBtn');
+    btn?.addEventListener('click', () => {
+        mapTrailVisible = !mapTrailVisible;
+        saveMapTrailPref(mapTrailVisible);
+        updateMapTrailButton();
+        if (!mapTrailVisible) deviceLiveTrails.clear();
+        redrawLiveTrail();
+    });
+}
 
 /** Map follow fleet (RNZ RowSafe). */
 let mapFollowFleet = false;
@@ -1325,6 +1392,13 @@ function trailSpeedToColor(speedMps) {
 
 function recordLiveTrailSamples() {
     if (!isLiveUpdatesEnabled() && !isKriDemoMode()) return;
+    if (!isLiveTrailVisible()) {
+        if (deviceLiveTrails.size) {
+            deviceLiveTrails.clear();
+            redrawLiveTrail();
+        }
+        return;
+    }
     const { ttlMs, dedupeMoveM, dedupeMs, skipRecentCheck } = liveTrailSettings();
     const now = Date.now();
     const deviceIdSet = new Set(devices.map((d) => d.id));
@@ -1381,6 +1455,7 @@ function recordLiveTrailSamples() {
 function redrawLiveTrail() {
     if (!liveTrailLayer || !map) return;
     liveTrailLayer.clearLayers();
+    if (!isLiveTrailVisible()) return;
     const { ttlMs, useLines } = liveTrailSettings();
     const now = Date.now();
 
@@ -1544,7 +1619,15 @@ function updateMapMarkers() {
                 fill = '#60a5fa';
                 stroke = '#1e40af';
             }
+        } else if (deviceColorsEnabled()) {
+            const palette = devicePalette(device.id);
+            if (palette) {
+                fill = palette.fill;
+                stroke = palette.stroke;
+            }
         }
+        const fillOpacity =
+            capsizeAlert || critical ? 0.92 : online || deviceColorsEnabled() ? 0.92 : 0.55;
         const radius = capsizeAlert || critical ? 14 : 11;
         const weight = capsizeAlert || critical ? 3 : 2;
 
@@ -1564,13 +1647,13 @@ function updateMapMarkers() {
                     weight,
                     color: stroke,
                     fillColor: fill,
-                    fillOpacity: 0.92,
+                    fillOpacity,
                     className: capsizeAlert ? 'rnz-marker-capsize' : '',
                 }).addTo(map);
                 markersByDeviceId.set(device.id, marker);
             } else {
                 marker.setLatLng(latlng);
-                marker.setStyle({ fillColor: fill, color: stroke, radius, weight });
+                marker.setStyle({ fillColor: fill, color: stroke, radius, weight, fillOpacity });
                 setMarkerCapsizeFlash(marker, capsizeAlert);
             }
         }
@@ -1583,13 +1666,19 @@ function updateMapMarkers() {
             const athleteLine = athleteId
                 ? `<div><strong>Athlete:</strong> ${escapeHtml(athleteId)}</div>`
                 : '';
+            const palette = devicePalette(device.id);
+            const popupAccent = palette
+                ? `<div class="rnz-popup-accent" style="background:${palette.fill}"></div>`
+                : '';
             marker.bindPopup(
-                `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
+                popupAccent +
+                    `<div class="rnz-popup-body">` +
+                    `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
                     athleteLine +
                     `<div><strong>Pace:</strong> ${pace}</div>` +
                     `<div><strong>Last fix:</strong> ${fix}</div>` +
-                    `<div><strong>Location:</strong> ${addr}</div>`,
-                { maxWidth: 260 }
+                    `<div><strong>Location:</strong> ${addr}</div></div>`,
+                { maxWidth: 260, className: palette ? 'rnz-popup--device' : '' },
             );
         }
 
@@ -1781,7 +1870,7 @@ function applySnapshotResult(result) {
     groupLookup = buildGroupLookup(groups);
 
     devices = mergeDevicesFromPositions(rawDevices, positions);
-    migrateLegacyFollowSelectionIfNeeded();
+    syncDeviceColorRegistry();
     pruneFollowDeviceSelection();
 
     const { geofences: matched } = getMatchedGeofences(geofences);
@@ -1919,9 +2008,17 @@ function renderOnWaterBoats(boundaryParts) {
         el.innerHTML = boats
             .map(({ device, pos, distM, geofenceLabel }) => {
                 const followUi = onWaterFollowUi(device.id);
+                const palette = devicePalette(device.id);
+                const colorAttrs = palette
+                    ? ` style="--rnz-device-color:${palette.fill};--rnz-device-stroke:${palette.stroke}"`
+                    : '';
+                const colorMark = palette
+                    ? `<span class="rnz-onwater-color-mark" style="background:${palette.fill}" aria-hidden="true"></span>`
+                    : '';
                 return (
-                    `<article class="rnz-onwater-card${followUi.cardClasses}" data-device-id="${device.id}">` +
+                    `<article class="rnz-onwater-card${followUi.cardClasses}${palette ? ' rnz-onwater-card--device-color' : ''}" data-device-id="${device.id}"${colorAttrs}>` +
                     `<div class="rnz-onwater-card-head">` +
+                    colorMark +
                     `<button type="button" class="rnz-onwater-card-name device-name--fly" ` +
                     `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
                     `title="Show on map">${escapeHtml(device.name)}</button>` +
@@ -2231,6 +2328,7 @@ function bootSafetyMapPage() {
         console.error('[safety-map] initMap failed:', err);
     }
     wireMapFollow();
+    wireMapTrail();
     wireRnzLiveSpeedChart();
     if (SAFETY_THEME.mapRefreshMs && window.AltitudeHdMapRefresh?.formatShort) {
         document.querySelectorAll('[data-map-refresh-hint]').forEach((el) => {
