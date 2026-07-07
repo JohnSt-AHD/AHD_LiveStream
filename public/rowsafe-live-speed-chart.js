@@ -307,7 +307,7 @@
         drawMultiSeriesChart(canvas, series, {
             title: 'Pace vs time (last 5 min)',
             xLabel: 'seconds',
-            yLabel: 'Pace /500m',
+            yLabel: 'Pace',
             yFormat,
             emptyMessage: 'No active device paces yet',
         });

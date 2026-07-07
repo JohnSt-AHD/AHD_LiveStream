@@ -61,6 +61,11 @@ let followSelectedDeviceIds = null;
 
 const LS_FOLLOW_DEVICES = 'rnzRowsafeFollowDeviceIds';
 
+function normalizeDeviceId(id) {
+    const n = Number(id);
+    return Number.isFinite(n) ? n : id;
+}
+
 function loadFollowDeviceSelection() {
     try {
         const raw = localStorage.getItem(LS_FOLLOW_DEVICES);
@@ -92,7 +97,7 @@ function isFollowSelectionActive() {
 
 function isDeviceFollowSelected(deviceId) {
     if (!isFollowSelectionActive()) return true;
-    return followSelectedDeviceIds.has(deviceId);
+    return followSelectedDeviceIds.has(normalizeDeviceId(deviceId));
 }
 
 function getActiveFollowCandidates() {
@@ -119,7 +124,7 @@ function getActiveFollowCandidates() {
 function getActiveFollowTargets() {
     const targets = getActiveFollowCandidates();
     if (!isFollowSelectionActive()) return targets;
-    return targets.filter((t) => followSelectedDeviceIds.has(t.device.id));
+    return targets.filter((t) => followSelectedDeviceIds.has(normalizeDeviceId(t.device.id)));
 }
 
 function getCurrentFollowTargetDeviceId() {
@@ -135,7 +140,7 @@ function onWaterFollowUi(deviceId) {
         return { cardClasses: '', headExtra: '' };
     }
     const picked = isDeviceFollowSelected(deviceId);
-    const current = getCurrentFollowTargetDeviceId() === deviceId;
+    const current = normalizeDeviceId(getCurrentFollowTargetDeviceId()) === normalizeDeviceId(deviceId);
     let cardClasses = '';
     if (picked) cardClasses += ' rnz-onwater-card--follow-picked';
     if (current) cardClasses += ' rnz-onwater-card--follow-current';
@@ -175,7 +180,7 @@ function updateOnWaterFollowHighlights() {
     }
     const currentId = getCurrentFollowTargetDeviceId();
     document.querySelectorAll('.rnz-onwater-card[data-device-id]').forEach((card) => {
-        const id = Number(card.dataset.deviceId);
+        const id = normalizeDeviceId(card.dataset.deviceId);
         const picked = isDeviceFollowSelected(id);
         card.classList.toggle('rnz-onwater-card--follow-picked', picked);
         card.classList.toggle('rnz-onwater-card--follow-current', id === currentId);
@@ -196,9 +201,10 @@ function refreshOnWaterFollowUi() {
 }
 
 function toggleFollowDeviceSelection(deviceId) {
+    deviceId = normalizeDeviceId(deviceId);
     if (!Number.isFinite(deviceId) || !mapFollowEnabled()) return;
     const candidates = getActiveFollowCandidates();
-    const candidateIds = new Set(candidates.map((t) => t.device.id));
+    const candidateIds = new Set(candidates.map((t) => normalizeDeviceId(t.device.id)));
     if (!candidateIds.has(deviceId)) return;
 
     if (!mapFollowFleet) {
@@ -338,7 +344,7 @@ function disableMapFollowFromUser() {
 }
 
 function syncFollowRotationState(targets) {
-    const ids = targets.map((t) => t.device.id);
+    const ids = targets.map((t) => normalizeDeviceId(t.device.id));
     if (!followRotateDeviceIds || followRotateDeviceIds.join(',') !== ids.join(',')) {
         const prevId = followRotateDeviceIds?.[followRotateIndex];
         followRotateDeviceIds = ids;
@@ -891,7 +897,7 @@ function formatDevicePace(speedMps, deviceLabel, athleteId) {
     if (RS && typeof speedMps === 'number' && !Number.isNaN(speedMps)) {
         const labelParts = [deviceLabel];
         if (athleteId) labelParts.push(athleteId);
-        return RS.formatPaceWithPrognostic(speedMps, ...labelParts, { suffix: true });
+        return RS.formatPaceWithPrognostic(speedMps, ...labelParts, { suffix: false });
     }
     if (typeof speedMps !== 'number' || Number.isNaN(speedMps)) return '—';
     return `${(speedMps * 3.6).toFixed(1)} km/h`;
@@ -1634,9 +1640,9 @@ function rowsafeSnapshotFetch(options = {}) {
 
 function pruneFollowDeviceSelection() {
     if (!isFollowSelectionActive()) return;
-    const candidateIds = new Set(getActiveFollowCandidates().map((t) => t.device.id));
+    const candidateIds = new Set(getActiveFollowCandidates().map((t) => normalizeDeviceId(t.device.id)));
     for (const id of [...followSelectedDeviceIds]) {
-        if (!candidateIds.has(id)) followSelectedDeviceIds.delete(id);
+        if (!candidateIds.has(normalizeDeviceId(id))) followSelectedDeviceIds.delete(id);
     }
     if (
         !followSelectedDeviceIds.size ||
@@ -1928,6 +1934,7 @@ function renderOnWaterBoats(boundaryParts) {
 
 function wireDeviceNameFlyTo() {
     const handler = (e) => {
+        if (e.target.closest('[data-follow-device-id]')) return;
         const btn = e.target.closest('.device-name--fly');
         if (!btn || !map) return;
         const lat = parseFloat(btn.dataset.flyLat);
