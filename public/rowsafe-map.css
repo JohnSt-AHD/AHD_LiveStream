@@ -193,7 +193,7 @@ body.rnz-page > *:not(#courseViewOverlay) {
 
 .rnz-crewsight-logo {
     display: block;
-    height: clamp(44px, 6.25vw, 56px);
+    height: clamp(55px, 7.8vw, 70px);
     width: auto;
     object-fit: contain;
 }
