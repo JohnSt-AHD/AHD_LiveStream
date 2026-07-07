@@ -65,8 +65,20 @@ const LS_FOLLOW_EXCLUDED = 'rnzRowsafeFollowExcludedDeviceIds';
 const LS_FOLLOW_DEVICES_LEGACY = 'rnzRowsafeFollowDeviceIds';
 
 function normalizeDeviceId(id) {
+    if (id == null || id === '') return null;
     const n = Number(id);
-    return Number.isFinite(n) ? n : id;
+    return Number.isFinite(n) ? n : String(id);
+}
+
+function deviceIdsEqual(a, b) {
+    return normalizeDeviceId(a) === normalizeDeviceId(b);
+}
+
+function positionForDevice(deviceOrId) {
+    const id = typeof deviceOrId === 'object' ? deviceOrId?.id : deviceOrId;
+    const key = normalizeDeviceId(id);
+    if (key == null) return null;
+    return positions[key] ?? positions[id] ?? positions[String(id)] ?? null;
 }
 
 function loadFollowExcludedDeviceIds() {
@@ -76,7 +88,9 @@ function loadFollowExcludedDeviceIds() {
         if (rawExcluded) {
             const arr = JSON.parse(rawExcluded);
             if (Array.isArray(arr)) {
-                arr.map(normalizeDeviceId).filter(Number.isFinite).forEach((id) => excluded.add(id));
+                arr.map(normalizeDeviceId)
+                    .filter((id) => id != null && id !== '')
+                    .forEach((id) => excluded.add(id));
             }
             return excluded;
         }
@@ -85,7 +99,7 @@ function loadFollowExcludedDeviceIds() {
             const arr = JSON.parse(rawLegacy);
             if (Array.isArray(arr) && arr.length) {
                 followLegacyIncludedIds = new Set(
-                    arr.map(normalizeDeviceId).filter(Number.isFinite),
+                    arr.map(normalizeDeviceId).filter((id) => id != null && id !== ''),
                 );
             }
         }
@@ -126,7 +140,25 @@ function migrateLegacyFollowSelectionIfNeeded() {
 }
 
 function isDeviceFollowExcluded(deviceId) {
-    return followExcludedDeviceIds.has(normalizeDeviceId(deviceId));
+    const key = normalizeDeviceId(deviceId);
+    if (key == null) return false;
+    for (const id of followExcludedDeviceIds) {
+        if (deviceIdsEqual(id, key)) return true;
+    }
+    return false;
+}
+
+function addFollowExcluded(deviceId) {
+    const key = normalizeDeviceId(deviceId);
+    if (key != null) followExcludedDeviceIds.add(key);
+}
+
+function removeFollowExcluded(deviceId) {
+    const key = normalizeDeviceId(deviceId);
+    if (key == null) return;
+    for (const id of [...followExcludedDeviceIds]) {
+        if (deviceIdsEqual(id, key)) followExcludedDeviceIds.delete(id);
+    }
 }
 
 function isDeviceFollowSelected(deviceId) {
@@ -137,7 +169,7 @@ function getActiveFollowCandidates() {
     const activeMin = mapFollowActiveMinutes();
     const targets = [];
     for (const d of devices) {
-        const pos = positions[d.id];
+        const pos = positionForDevice(d);
         if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
         if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
         if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
@@ -234,25 +266,49 @@ function refreshOnWaterFollowUi() {
     updateMapFollowButton();
 }
 
+function onWaterFollowClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const btn = e.currentTarget;
+    if (!btn) return;
+    toggleFollowDeviceSelection(btn.getAttribute('data-follow-device-id'));
+}
+
+function bindOnWaterFollowButtons(container) {
+    if (!container || !mapFollowEnabled()) return;
+    container.querySelectorAll('[data-follow-device-id]').forEach((btn) => {
+        btn.removeEventListener('click', onWaterFollowClick);
+        btn.addEventListener('click', onWaterFollowClick);
+    });
+}
+
 function toggleFollowDeviceSelection(deviceId) {
     deviceId = normalizeDeviceId(deviceId);
-    if (!Number.isFinite(deviceId) || !mapFollowEnabled()) return;
-    const candidates = getActiveFollowCandidates();
-    const candidateIds = new Set(candidates.map((t) => normalizeDeviceId(t.device.id)));
-    if (!candidateIds.has(deviceId)) return;
+    if (deviceId == null || deviceId === '' || !mapFollowEnabled()) return;
+
+    const onCard = document.querySelector(
+        `.rnz-onwater-card[data-device-id="${CSS.escape(String(deviceId))}"]`,
+    );
+    const inFleet = devices.some((d) => deviceIdsEqual(d.id, deviceId));
+    if (!onCard && !inFleet) return;
 
     if (!mapFollowFleet) {
         mapFollowFleet = true;
         saveMapFollowPref(true);
+        updateMapFollowButton();
         startFollowRotateTimer();
     }
 
+    const candidates = getActiveFollowCandidates();
+    const candidateIds = new Set(candidates.map((t) => normalizeDeviceId(t.device.id)));
+
     if (isDeviceFollowExcluded(deviceId)) {
-        followExcludedDeviceIds.delete(deviceId);
+        removeFollowExcluded(deviceId);
     } else {
-        followExcludedDeviceIds.add(deviceId);
-        if (followExcludedDeviceIds.size >= candidateIds.size) {
-            followExcludedDeviceIds.delete(deviceId);
+        if (candidateIds.size && !candidateIds.has(deviceId)) return;
+        addFollowExcluded(deviceId);
+        if (candidateIds.size && followExcludedDeviceIds.size >= candidateIds.size) {
+            removeFollowExcluded(deviceId);
             return;
         }
     }
@@ -265,6 +321,22 @@ function toggleFollowDeviceSelection(deviceId) {
 }
 
 function wireOnWaterFollowSelect() {
+    const sidebar = document.getElementById('rnzSidebar');
+    if (sidebar && sidebar.dataset.rnzFollowSelectBound !== '1') {
+        sidebar.dataset.rnzFollowSelectBound = '1';
+        sidebar.addEventListener(
+            'click',
+            (e) => {
+                const btn = e.target.closest('[data-follow-device-id]');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFollowDeviceSelection(btn.getAttribute('data-follow-device-id'));
+            },
+            true,
+        );
+    }
+
     const onWater = document.getElementById('rnzOnWaterBoatsList');
     if (!onWater || onWater.dataset.rnzFollowSelectBound === '1') return;
     onWater.dataset.rnzFollowSelectBound = '1';
@@ -275,7 +347,7 @@ function wireOnWaterFollowSelect() {
             if (!btn) return;
             e.preventDefault();
             e.stopPropagation();
-            toggleFollowDeviceSelection(btn.dataset.followDeviceId);
+            toggleFollowDeviceSelection(btn.getAttribute('data-follow-device-id'));
         },
         true,
     );
@@ -1676,7 +1748,14 @@ function pruneFollowDeviceSelection() {
     if (!followExcludedDeviceIds.size) return;
     const candidateIds = new Set(getActiveFollowCandidates().map((t) => normalizeDeviceId(t.device.id)));
     for (const id of [...followExcludedDeviceIds]) {
-        if (!candidateIds.has(normalizeDeviceId(id))) followExcludedDeviceIds.delete(id);
+        let found = false;
+        for (const candidateId of candidateIds) {
+            if (deviceIdsEqual(id, candidateId)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) followExcludedDeviceIds.delete(id);
     }
     saveFollowExcludedDeviceIds();
 }
@@ -1691,7 +1770,10 @@ function applySnapshotResult(result) {
     const rawDevices = Array.isArray(data.devices) ? data.devices : [];
     positions = {};
     (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
-        if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
+        if (pos && pos.deviceId != null) {
+            const key = normalizeDeviceId(pos.deviceId);
+            if (key != null) positions[key] = pos;
+        }
     });
 
     geofences = Array.isArray(data.geofences) ? data.geofences : [];
@@ -1815,7 +1897,7 @@ function renderOnWaterBoats(boundaryParts) {
         const boats = [];
 
         for (const d of devices) {
-            const pos = positions[d.id];
+            const pos = positionForDevice(d);
             if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
             if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
             if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
@@ -1858,6 +1940,7 @@ function renderOnWaterBoats(boundaryParts) {
                 );
             })
             .join('');
+        bindOnWaterFollowButtons(el);
         return;
     }
 
@@ -2134,6 +2217,12 @@ function onTrackerSourceChanged() {
 
 window.trackerSourcePageRefresh = onTrackerSourceChanged;
 window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
+
+window.RnzFollowFleet = {
+    toggle: toggleFollowDeviceSelection,
+    getExcluded: () => [...followExcludedDeviceIds],
+    isFollowing: isDeviceFollowSelected,
+};
 
 function bootSafetyMapPage() {
     try {

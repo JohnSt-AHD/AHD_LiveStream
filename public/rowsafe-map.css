@@ -193,7 +193,7 @@ body.rnz-page > *:not(#courseViewOverlay) {
 
 .rnz-crewsight-logo {
     display: block;
-    height: clamp(35px, 5vw, 45px);
+    height: clamp(44px, 6.25vw, 56px);
     width: auto;
     object-fit: contain;
 }
@@ -1618,6 +1618,9 @@ body.rnz-page.course-view-open #courseViewOverlay {
     color: var(--rnz-muted);
     cursor: pointer;
     white-space: nowrap;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
 }
 
 .rnz-onwater-follow-btn:hover {
