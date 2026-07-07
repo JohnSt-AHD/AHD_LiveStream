@@ -182,16 +182,19 @@ body.rnz-page > *:not(#courseViewOverlay) {
 .rnz-header-crewsight {
     border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 4px;
-    padding: 6px 12px;
+    padding: 3px 5px;
     background: rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+    width: fit-content;
 }
 
 .rnz-crewsight-logo {
     display: block;
-    height: clamp(28px, 4vw, 36px);
+    height: clamp(35px, 5vw, 45px);
     width: auto;
-    max-width: min(160px, 28vw);
     object-fit: contain;
 }
 

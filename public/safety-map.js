@@ -56,48 +56,81 @@ let mapIgnoreMoveEvents = false;
 let followRotateIndex = 0;
 let followRotateDeviceIds = null;
 let followRotateTimer = null;
-/** @type {Set<number>|null} null = follow all active on-water devices */
-let followSelectedDeviceIds = null;
+/** @type {Set<number>} Device IDs excluded from map follow rotation */
+let followExcludedDeviceIds = new Set();
+/** @type {Set<number>|null} Legacy inclusion list pending migration from localStorage */
+let followLegacyIncludedIds = null;
 
-const LS_FOLLOW_DEVICES = 'rnzRowsafeFollowDeviceIds';
+const LS_FOLLOW_EXCLUDED = 'rnzRowsafeFollowExcludedDeviceIds';
+const LS_FOLLOW_DEVICES_LEGACY = 'rnzRowsafeFollowDeviceIds';
 
 function normalizeDeviceId(id) {
     const n = Number(id);
     return Number.isFinite(n) ? n : id;
 }
 
-function loadFollowDeviceSelection() {
+function loadFollowExcludedDeviceIds() {
+    const excluded = new Set();
     try {
-        const raw = localStorage.getItem(LS_FOLLOW_DEVICES);
-        if (!raw || raw === 'all') return null;
-        const arr = JSON.parse(raw);
-        if (!Array.isArray(arr) || !arr.length) return null;
-        const ids = arr.map(Number).filter(Number.isFinite);
-        return ids.length ? new Set(ids) : null;
+        const rawExcluded = localStorage.getItem(LS_FOLLOW_EXCLUDED);
+        if (rawExcluded) {
+            const arr = JSON.parse(rawExcluded);
+            if (Array.isArray(arr)) {
+                arr.map(normalizeDeviceId).filter(Number.isFinite).forEach((id) => excluded.add(id));
+            }
+            return excluded;
+        }
+        const rawLegacy = localStorage.getItem(LS_FOLLOW_DEVICES_LEGACY);
+        if (rawLegacy && rawLegacy !== 'all') {
+            const arr = JSON.parse(rawLegacy);
+            if (Array.isArray(arr) && arr.length) {
+                followLegacyIncludedIds = new Set(
+                    arr.map(normalizeDeviceId).filter(Number.isFinite),
+                );
+            }
+        }
     } catch {
-        return null;
+        /* ignore */
     }
+    return excluded;
 }
 
-function saveFollowDeviceSelection() {
+function saveFollowExcludedDeviceIds() {
     try {
-        if (!followSelectedDeviceIds || followSelectedDeviceIds.size === 0) {
-            localStorage.setItem(LS_FOLLOW_DEVICES, 'all');
+        if (!followExcludedDeviceIds.size) {
+            localStorage.removeItem(LS_FOLLOW_EXCLUDED);
         } else {
-            localStorage.setItem(LS_FOLLOW_DEVICES, JSON.stringify([...followSelectedDeviceIds]));
+            localStorage.setItem(
+                LS_FOLLOW_EXCLUDED,
+                JSON.stringify([...followExcludedDeviceIds].sort((a, b) => a - b)),
+            );
         }
     } catch {
         /* ignore */
     }
 }
 
-function isFollowSelectionActive() {
-    return followSelectedDeviceIds != null && followSelectedDeviceIds.size > 0;
+function migrateLegacyFollowSelectionIfNeeded() {
+    if (!followLegacyIncludedIds) return;
+    const candidateIds = getActiveFollowCandidates().map((t) => normalizeDeviceId(t.device.id));
+    followExcludedDeviceIds = new Set(
+        candidateIds.filter((id) => !followLegacyIncludedIds.has(id)),
+    );
+    followLegacyIncludedIds = null;
+    try {
+        localStorage.removeItem(LS_FOLLOW_DEVICES_LEGACY);
+    } catch {
+        /* ignore */
+    }
+    saveFollowExcludedDeviceIds();
+}
+
+function isDeviceFollowExcluded(deviceId) {
+    return followExcludedDeviceIds.has(normalizeDeviceId(deviceId));
 }
 
 function isDeviceFollowSelected(deviceId) {
-    if (!isFollowSelectionActive()) return true;
-    return followSelectedDeviceIds.has(normalizeDeviceId(deviceId));
+    return !isDeviceFollowExcluded(deviceId);
 }
 
 function getActiveFollowCandidates() {
@@ -123,8 +156,8 @@ function getActiveFollowCandidates() {
 
 function getActiveFollowTargets() {
     const targets = getActiveFollowCandidates();
-    if (!isFollowSelectionActive()) return targets;
-    return targets.filter((t) => followSelectedDeviceIds.has(normalizeDeviceId(t.device.id)));
+    if (!followExcludedDeviceIds.size) return targets;
+    return targets.filter((t) => !isDeviceFollowExcluded(t.device.id));
 }
 
 function getCurrentFollowTargetDeviceId() {
@@ -183,7 +216,7 @@ function updateOnWaterFollowHighlights() {
         const id = normalizeDeviceId(card.dataset.deviceId);
         const picked = isDeviceFollowSelected(id);
         card.classList.toggle('rnz-onwater-card--follow-picked', picked);
-        card.classList.toggle('rnz-onwater-card--follow-current', id === currentId);
+        card.classList.toggle('rnz-onwater-card--follow-current', normalizeDeviceId(id) === normalizeDeviceId(currentId));
         const btn = card.querySelector('.rnz-onwater-follow-btn');
         if (btn) {
             btn.classList.toggle('rnz-onwater-follow-btn--on', picked);
@@ -198,6 +231,7 @@ function updateOnWaterFollowHighlights() {
 function refreshOnWaterFollowUi() {
     updateOnWaterFollowHint();
     renderOnWaterBoats(lastFenceParts);
+    updateMapFollowButton();
 }
 
 function toggleFollowDeviceSelection(deviceId) {
@@ -213,40 +247,38 @@ function toggleFollowDeviceSelection(deviceId) {
         startFollowRotateTimer();
     }
 
-    if (!isFollowSelectionActive()) {
-        followSelectedDeviceIds = new Set(candidateIds);
-        followSelectedDeviceIds.delete(deviceId);
-    } else if (followSelectedDeviceIds.has(deviceId)) {
-        followSelectedDeviceIds.delete(deviceId);
+    if (isDeviceFollowExcluded(deviceId)) {
+        followExcludedDeviceIds.delete(deviceId);
     } else {
-        followSelectedDeviceIds.add(deviceId);
+        followExcludedDeviceIds.add(deviceId);
+        if (followExcludedDeviceIds.size >= candidateIds.size) {
+            followExcludedDeviceIds.delete(deviceId);
+            return;
+        }
     }
 
-    if (
-        !followSelectedDeviceIds ||
-        followSelectedDeviceIds.size === 0 ||
-        followSelectedDeviceIds.size >= candidateIds.size
-    ) {
-        followSelectedDeviceIds = null;
-    }
-
-    saveFollowDeviceSelection();
+    saveFollowExcludedDeviceIds();
     resetFollowRotationState();
     followActiveDevicesOnMap(true);
-    refreshOnWaterFollowUi();
+    updateOnWaterFollowHighlights();
+    updateMapFollowButton();
 }
 
 function wireOnWaterFollowSelect() {
     const onWater = document.getElementById('rnzOnWaterBoatsList');
     if (!onWater || onWater.dataset.rnzFollowSelectBound === '1') return;
     onWater.dataset.rnzFollowSelectBound = '1';
-    onWater.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-follow-device-id]');
-        if (!btn) return;
-        e.preventDefault();
-        e.stopPropagation();
-        toggleFollowDeviceSelection(Number(btn.dataset.followDeviceId));
-    });
+    onWater.addEventListener(
+        'click',
+        (e) => {
+            const btn = e.target.closest('[data-follow-device-id]');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFollowDeviceSelection(btn.dataset.followDeviceId);
+        },
+        true,
+    );
 }
 
 function mapFollowEnabled() {
@@ -387,7 +419,7 @@ function followActiveDevicesOnMap(animateRotate = false) {
 function wireMapFollow() {
     if (!mapFollowEnabled()) return;
 
-    followSelectedDeviceIds = loadFollowDeviceSelection();
+    followExcludedDeviceIds = loadFollowExcludedDeviceIds();
     mapFollowFleet = loadMapFollowPref();
     updateMapFollowButton();
     updateOnWaterFollowHint();
@@ -1639,18 +1671,14 @@ function rowsafeSnapshotFetch(options = {}) {
 }
 
 function pruneFollowDeviceSelection() {
-    if (!isFollowSelectionActive()) return;
+    if (!followExcludedDeviceIds.size && !followLegacyIncludedIds) return;
+    migrateLegacyFollowSelectionIfNeeded();
+    if (!followExcludedDeviceIds.size) return;
     const candidateIds = new Set(getActiveFollowCandidates().map((t) => normalizeDeviceId(t.device.id)));
-    for (const id of [...followSelectedDeviceIds]) {
-        if (!candidateIds.has(normalizeDeviceId(id))) followSelectedDeviceIds.delete(id);
+    for (const id of [...followExcludedDeviceIds]) {
+        if (!candidateIds.has(normalizeDeviceId(id))) followExcludedDeviceIds.delete(id);
     }
-    if (
-        !followSelectedDeviceIds.size ||
-        followSelectedDeviceIds.size >= candidateIds.size
-    ) {
-        followSelectedDeviceIds = null;
-    }
-    saveFollowDeviceSelection();
+    saveFollowExcludedDeviceIds();
 }
 
 function applySnapshotResult(result) {
@@ -1671,6 +1699,7 @@ function applySnapshotResult(result) {
     groupLookup = buildGroupLookup(groups);
 
     devices = mergeDevicesFromPositions(rawDevices, positions);
+    migrateLegacyFollowSelectionIfNeeded();
     pruneFollowDeviceSelection();
 
     const { geofences: matched } = getMatchedGeofences(geofences);
