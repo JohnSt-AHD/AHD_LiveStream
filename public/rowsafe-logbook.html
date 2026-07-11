@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RowSafe · Logbook</title>
+    <link rel="stylesheet" href="rowsafe-map.css">
+    <link rel="stylesheet" href="rowsafe-logbook.css">
+</head>
+<body class="rnz-page rnz-logbook-page">
+    <a class="rnz-skip" href="#rnz-main">Skip to content</a>
+
+    <header class="rnz-header">
+        <div class="rnz-header-crewsight">
+            <img src="assets/crewsight/crewsight-logo-full-color.png" alt="CrewSight" class="rnz-crewsight-logo" width="274" height="70" loading="lazy">
+        </div>
+        <div class="rnz-header-inner">
+            <div class="rnz-header-brand">
+                <img src="assets/rnz/rnz-logo-white.png" alt="Rowing New Zealand" class="rnz-logo-header" width="160" height="64" loading="lazy">
+                <div class="rnz-header-titles">
+                    <div class="rnz-header-title">
+                        <h1>Logbook</h1>
+                    </div>
+                </div>
+            </div>
+            <nav class="rnz-header-nav" aria-label="RowSafe pages">
+                <a class="rnz-header-menu-btn" href="rowsafe-map.html">Live map</a>
+                <a class="rnz-header-menu-btn rnz-header-menu-btn--active" href="rowsafe-logbook.html" aria-current="page">Logbook</a>
+                <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="rnz-main" class="rnz-main rnz-logbook-main">
+        <section class="rnz-logbook" aria-labelledby="logbook-heading">
+            <div class="rnz-logbook-intro">
+                <h2 id="logbook-heading">Daily sessions</h2>
+                <p>Crew outings by day — expand a day for start/finish, capsizes, and distance.</p>
+            </div>
+            <p id="logbookStatus" class="rnz-logbook-status" role="status">Loading logbook…</p>
+            <div id="logbookList" class="rnz-logbook-list" hidden></div>
+        </section>
+    </main>
+
+    <footer class="rnz-footer">
+        <p>RowSafe logbook · CrewSight sessions</p>
+    </footer>
+
+    <script src="rowsafe-logbook.js" defer></script>
+</body>
+</html>
