@@ -118,6 +118,7 @@
             active.push({
                 alertId,
                 deviceId: d.id,
+                uniqueId: d.uniqueId || d.name || String(d.id),
                 deviceName: d.name || `Device ${d.id}`,
                 pos,
                 reason: `Device alarm: ${traccarAlarm}`,
@@ -128,10 +129,29 @@
         return active;
     }
 
-    function acknowledgeCapsizeAlert(alertId) {
+    async function clearCapsizeAlertUpstream(uniqueId) {
+        const id = String(uniqueId || '').trim();
+        if (!id) return;
+        try {
+            const ts = global.AltitudeHdTrackerSource;
+            const url = ts?.buildTraccarUrl
+                ? ts.buildTraccarUrl({ action: 'capsize-clear' })
+                : '/api/traccar?action=capsize-clear&source=rowing';
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deviceId: id }),
+            });
+        } catch {
+            /* ignore — local ack still hides the banner */
+        }
+    }
+
+    function acknowledgeCapsizeAlert(alertId, uniqueId) {
         const ack = loadJson(LS_ACK, {});
         ack[alertId] = Date.now();
         saveJson(LS_ACK, ack);
+        void clearCapsizeAlertUpstream(uniqueId);
     }
 
     function renderCapsizePanel(container, alerts, onAck, options = {}) {
@@ -166,7 +186,7 @@
                     return (
                         `<li class="safety-capsize-item">` +
                         `${nameHtml} — ${escapeHtml(a.reason)} ` +
-                        `<button type="button" class="safety-capsize-ack" data-capsize-ack="${escapeHtml(a.alertId)}">Acknowledge</button>` +
+                        `<button type="button" class="safety-capsize-ack" data-capsize-ack="${escapeHtml(a.alertId)}" data-capsize-device="${escapeHtml(a.uniqueId || a.deviceName || '')}">Acknowledge</button>` +
                         `</li>`
                     );
                 })
@@ -176,8 +196,9 @@
         container.querySelectorAll('[data-capsize-ack]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-capsize-ack');
+                const uniqueId = btn.getAttribute('data-capsize-device');
                 if (id) {
-                    acknowledgeCapsizeAlert(id);
+                    acknowledgeCapsizeAlert(id, uniqueId);
                     if (typeof onAck === 'function') onAck();
                 }
             });
