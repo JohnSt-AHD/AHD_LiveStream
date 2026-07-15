@@ -12,23 +12,23 @@
     padding: 20px 16px 48px;
 }
 
-.rnz-logbook-intro h2 {
+.rnz-logbook-page .rnz-logbook-intro h2 {
     margin: 0 0 6px;
     font-size: clamp(1.35rem, 3vw, 1.75rem);
-    color: #0f2740;
+    color: #f8fafc;
 }
 
-.rnz-logbook-intro p {
+.rnz-logbook-page .rnz-logbook-intro p {
     margin: 0 0 18px;
-    color: #3d556e;
+    color: #cbd5e1;
     font-size: 0.98rem;
     line-height: 1.45;
     max-width: 42rem;
 }
 
-.rnz-logbook-status {
+.rnz-logbook-page .rnz-logbook-status {
     margin: 0 0 16px;
-    color: #3d556e;
+    color: #94a3b8;
     font-size: 0.95rem;
 }
 
@@ -114,6 +114,37 @@
     border-top: 1px solid #d7e3ee;
     background: #f6fafc;
     padding: 8px 10px 12px;
+}
+
+.rnz-logbook-older-bucket > .rnz-logbook-older-body {
+    border-top: 1px solid #d7e3ee;
+    background: #f6fafc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rnz-logbook-day--nested {
+    border-color: #d7e3ee;
+    box-shadow: none;
+}
+
+.rnz-logbook-day--nested .rnz-logbook-day-summary {
+    padding: 12px 14px;
+    grid-template-columns: minmax(6.5rem, auto) repeat(4, minmax(0, 1fr));
+}
+
+.rnz-logbook-day--nested .rnz-logbook-day-date {
+    font-size: 0.95rem;
+}
+
+.rnz-logbook-day-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b8299;
 }
 
 .rnz-logbook-crew-table {

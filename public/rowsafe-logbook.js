@@ -1,5 +1,6 @@
 (function () {
     const TZ = 'Pacific/Auckland';
+    const RECENT_DAYS = 7;
     const statusEl = document.getElementById('logbookStatus');
     const listEl = document.getElementById('logbookList');
 
@@ -58,6 +59,15 @@
         }).format(d);
     }
 
+    function dateKeyDaysAgo(daysAgo) {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(new Date(Date.now() - daysAgo * 86400000));
+    }
+
     function renderSessions(sessions) {
         if (!sessions?.length) {
             return '<p class="rnz-logbook-status">No crew sessions for this day.</p>';
@@ -88,6 +98,70 @@
         );
     }
 
+    function renderDaySummaryStats(day) {
+        const capClass = day.capsizeCount > 0 ? ' is-warn' : '';
+        return (
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Crews</span>` +
+            `<span class="rnz-logbook-stat-value">${escapeHtml(String(day.sessionCount))}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Capsizes</span>` +
+            `<span class="rnz-logbook-stat-value${capClass}">${escapeHtml(String(day.capsizeCount))}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Distance</span>` +
+            `<span class="rnz-logbook-stat-value">${escapeHtml(formatDistance(day.distanceM))}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">On water</span>` +
+            `<span class="rnz-logbook-stat-value">${escapeHtml(formatDuration(day.onWaterMs))}</span></span>`
+        );
+    }
+
+    function renderDayCard(day, options = {}) {
+        const nestedClass = options.nested ? ' rnz-logbook-day--nested' : '';
+        return (
+            `<details class="rnz-logbook-day${nestedClass}">` +
+            `<summary class="rnz-logbook-day-summary">` +
+            `<span class="rnz-logbook-day-date">${escapeHtml(formatDayLabel(day.date))}</span>` +
+            renderDaySummaryStats(day) +
+            `</summary>` +
+            `<div class="rnz-logbook-day-body">${renderSessions(day.sessions)}</div>` +
+            `</details>`
+        );
+    }
+
+    function aggregateDays(days) {
+        return days.reduce(
+            (acc, day) => ({
+                sessionCount: acc.sessionCount + (day.sessionCount || 0),
+                capsizeCount: acc.capsizeCount + (day.capsizeCount || 0),
+                distanceM: acc.distanceM + (day.distanceM || 0),
+                onWaterMs: acc.onWaterMs + (day.onWaterMs || 0),
+                dayCount: acc.dayCount + 1,
+            }),
+            { sessionCount: 0, capsizeCount: 0, distanceM: 0, onWaterMs: 0, dayCount: 0 },
+        );
+    }
+
+    function renderOlderBucket(days) {
+        const agg = aggregateDays(days);
+        const capClass = agg.capsizeCount > 0 ? ' is-warn' : '';
+        const dayLabel =
+            agg.dayCount === 1 ? '1 day' : `${agg.dayCount} days`;
+        return (
+            `<details class="rnz-logbook-day rnz-logbook-older-bucket">` +
+            `<summary class="rnz-logbook-day-summary">` +
+            `<span class="rnz-logbook-day-date">Older than ${RECENT_DAYS} days` +
+            `<span class="rnz-logbook-day-sub">${escapeHtml(dayLabel)}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Crews</span>` +
+            `<span class="rnz-logbook-stat-value">${escapeHtml(String(agg.sessionCount))}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Capsizes</span>` +
+            `<span class="rnz-logbook-stat-value${capClass}">${escapeHtml(String(agg.capsizeCount))}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Distance</span>` +
+            `<span class="rnz-logbook-stat-value">${escapeHtml(formatDistance(agg.distanceM))}</span></span>` +
+            `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">On water</span>` +
+            `<span class="rnz-logbook-stat-value">${escapeHtml(formatDuration(agg.onWaterMs))}</span></span>` +
+            `</summary>` +
+            `<div class="rnz-logbook-older-body">${days.map((day) => renderDayCard(day, { nested: true })).join('')}</div>` +
+            `</details>`
+        );
+    }
+
     function renderDays(days) {
         if (!days?.length) {
             setStatus('No sessions found in the last 45 days.', false);
@@ -97,27 +171,20 @@
         }
         setStatus('', false);
         listEl.hidden = false;
-        listEl.innerHTML = days
-            .map((day) => {
-                const capClass = day.capsizeCount > 0 ? ' is-warn' : '';
-                return (
-                    `<details class="rnz-logbook-day">` +
-                    `<summary class="rnz-logbook-day-summary">` +
-                    `<span class="rnz-logbook-day-date">${escapeHtml(formatDayLabel(day.date))}</span>` +
-                    `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Crews</span>` +
-                    `<span class="rnz-logbook-stat-value">${escapeHtml(String(day.sessionCount))}</span></span>` +
-                    `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Capsizes</span>` +
-                    `<span class="rnz-logbook-stat-value${capClass}">${escapeHtml(String(day.capsizeCount))}</span></span>` +
-                    `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">Distance</span>` +
-                    `<span class="rnz-logbook-stat-value">${escapeHtml(formatDistance(day.distanceM))}</span></span>` +
-                    `<span class="rnz-logbook-stat"><span class="rnz-logbook-stat-label">On water</span>` +
-                    `<span class="rnz-logbook-stat-value">${escapeHtml(formatDuration(day.onWaterMs))}</span></span>` +
-                    `</summary>` +
-                    `<div class="rnz-logbook-day-body">${renderSessions(day.sessions)}</div>` +
-                    `</details>`
-                );
-            })
-            .join('');
+
+        const cutoff = dateKeyDaysAgo(RECENT_DAYS);
+        const recent = [];
+        const older = [];
+        for (const day of days) {
+            if (String(day.date) >= cutoff) recent.push(day);
+            else older.push(day);
+        }
+
+        const html = [
+            ...recent.map((day) => renderDayCard(day)),
+            ...(older.length ? [renderOlderBucket(older)] : []),
+        ].join('');
+        listEl.innerHTML = html;
     }
 
     async function loadLogbook() {
