@@ -12,6 +12,7 @@ let hubStatsPollTimer = null;
 let hubStatsLastDistanceM = null;
 let hubStatsLastDistanceAt = 0;
 let hubStatsLastDevices = [];
+let hubStatsLastGeofences = [];
 let hubStatsDistanceEverLoaded = false;
 
 function hubStatsTodayRangeIso() {
@@ -260,6 +261,11 @@ async function hubStatsApplySnapshot(data) {
     const core = window.RnzSafetyCore;
     if (!core) return;
 
+    const isLite = data.lite === true;
+    if (!isLite && Array.isArray(data.geofences)) {
+        hubStatsLastGeofences = data.geofences;
+    }
+
     const positions = {};
     (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
         if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;
@@ -283,7 +289,12 @@ async function hubStatsApplySnapshot(data) {
         );
         hubStatsSetItem('hubStatOnWater', `${onWaterCount} on water`);
     } else {
-        const metrics = core.computeSafetyMetrics(devices, positions, data.geofences);
+        const geofencesForMetrics = isLite
+            ? hubStatsLastGeofences
+            : Array.isArray(data.geofences)
+              ? data.geofences
+              : hubStatsLastGeofences;
+        const metrics = core.computeSafetyMetrics(devices, positions, geofencesForMetrics);
         if (window.HubWarningAlerts?.onSafetyRefresh) {
             window.HubWarningAlerts.onSafetyRefresh(metrics);
         }
@@ -303,10 +314,12 @@ async function hubStatsApplySnapshot(data) {
 
     hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
 
-    const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
-    hubStatsDistanceEverLoaded = true;
-    if (distanceM != null) {
-        hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
+    if (!isLite) {
+        const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
+        hubStatsDistanceEverLoaded = true;
+        if (distanceM != null) {
+            hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
+        }
     }
 }
 

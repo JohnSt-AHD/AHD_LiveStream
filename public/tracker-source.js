@@ -81,7 +81,34 @@
             return bus.fetchSnapshot(options);
         }
         try {
-            const res = await fetch(buildTraccarUrl({ action: 'snapshot' }));
+            const query = { action: 'snapshot' };
+            if (options.refreshGeofences) query.refreshGeofences = '1';
+            const res = await fetch(buildTraccarUrl(query));
+            const data = await res.json().catch(() => ({}));
+            return {
+                ok: res.ok,
+                status: res.status,
+                data,
+                error: res.ok ? null : data.error || `Request failed (${res.status})`,
+            };
+        } catch (err) {
+            return {
+                ok: false,
+                status: 0,
+                data: {},
+                error: err.message || 'Network error',
+            };
+        }
+    }
+
+    /** Lite positions poll — devices + positions only. */
+    async function fetchPositions(options = {}) {
+        const bus = global.AltitudeHdTraccarSnapshot;
+        if (bus && !options.direct) {
+            return bus.fetchPositions(options);
+        }
+        try {
+            const res = await fetch(buildTraccarUrl({ action: 'positions' }));
             const data = await res.json().catch(() => ({}));
             return {
                 ok: res.ok,
@@ -130,6 +157,7 @@
         applySource,
         buildTraccarUrl,
         fetchSnapshot,
+        fetchPositions,
         fetchRoute,
         label,
     };

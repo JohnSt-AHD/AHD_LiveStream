@@ -194,6 +194,65 @@ async function traccarGetJson(traccarUrl, cookie, path) {
     return upstream.json();
 }
 
+const GEOFENCE_CACHE_TTL_MS = Number(process.env.TRACCAR_GEOFENCE_CACHE_MS) || 15 * 60 * 1000;
+const TRACCAR_SESSION_CACHE_TTL_MS = Number(process.env.TRACCAR_SESSION_CACHE_MS) || 30 * 60 * 1000;
+
+/** @type {{ traccarUrl: string, cookie: string, fetchedAt: number }} */
+let traccarSessionCache = { traccarUrl: '', cookie: '', fetchedAt: 0 };
+/** @type {{ geofences: object[], groups: object[], fetchedAt: number }} */
+let geofenceMetaCache = { geofences: [], groups: [], fetchedAt: 0 };
+
+async function getTraccarSession(force = false) {
+    const now = Date.now();
+    if (
+        !force &&
+        traccarSessionCache.cookie &&
+        now - traccarSessionCache.fetchedAt < TRACCAR_SESSION_CACHE_TTL_MS
+    ) {
+        return {
+            traccarUrl: traccarSessionCache.traccarUrl,
+            cookie: traccarSessionCache.cookie,
+        };
+    }
+    const session = await traccarLogin();
+    traccarSessionCache = { ...session, fetchedAt: now };
+    return session;
+}
+
+async function getTraccarGeofenceMeta(force = false) {
+    const now = Date.now();
+    if (
+        !force &&
+        geofenceMetaCache.fetchedAt &&
+        now - geofenceMetaCache.fetchedAt < GEOFENCE_CACHE_TTL_MS
+    ) {
+        return { geofences: geofenceMetaCache.geofences, groups: geofenceMetaCache.groups };
+    }
+    try {
+        const { traccarUrl, cookie } = await getTraccarSession();
+        const [geofencesRaw, groupsRaw] = await Promise.all([
+            traccarGetJson(traccarUrl, cookie, '/api/geofences').catch(() => []),
+            traccarGetJson(traccarUrl, cookie, '/api/groups').catch(() => []),
+        ]);
+        const geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
+        const groups = Array.isArray(groupsRaw) ? groupsRaw : [];
+        geofenceMetaCache = { geofences, groups, fetchedAt: now };
+        return { geofences, groups };
+    } catch (e) {
+        console.error('Traccar geofence metadata fetch failed:', e);
+        if (geofenceMetaCache.fetchedAt) {
+            return { geofences: geofenceMetaCache.geofences, groups: geofenceMetaCache.groups };
+        }
+        return { geofences: [], groups: [] };
+    }
+}
+
+async function rowingLiveSnapshot(onlineSec) {
+    return rowingGetJson('/api/snapshot', {
+        onlineSec: onlineSec || '120',
+    });
+}
+
 export default async function handler(req, res) {
     const { action } = req.query;
 
@@ -221,6 +280,38 @@ export default async function handler(req, res) {
             return;
         }
 
+        if (action === 'positions' && useRowingSource(req)) {
+            if (!canUseRowing()) {
+                res.status(503).json({
+                    error: 'ROWING_TRACKER_URL is not configured on the server.',
+                });
+                return;
+            }
+            const data = await rowingLiveSnapshot(req.query.onlineSec);
+            res.status(200).json({
+                devices: Array.isArray(data.devices) ? data.devices : [],
+                positions: Array.isArray(data.positions) ? data.positions : [],
+                source: 'rowing',
+                lite: true,
+            });
+            return;
+        }
+
+        if (action === 'positions') {
+            const { traccarUrl, cookie } = await getTraccarSession();
+            const [devicesRaw, positionsRaw] = await Promise.all([
+                traccarGetJson(traccarUrl, cookie, '/api/devices'),
+                traccarGetJson(traccarUrl, cookie, '/api/positions'),
+            ]);
+            res.status(200).json({
+                devices: normalizeDevicesPayload(devicesRaw),
+                positions: normalizePositionsPayload(positionsRaw),
+                source: 'traccar',
+                lite: true,
+            });
+            return;
+        }
+
         if (action === 'snapshot' && useRowingSource(req)) {
             if (!canUseRowing()) {
                 res.status(503).json({
@@ -228,25 +319,9 @@ export default async function handler(req, res) {
                 });
                 return;
             }
-            const data = await rowingGetJson('/api/snapshot', {
-                onlineSec: req.query.onlineSec || '120',
-            });
-            // Keep safety-map behaviour consistent in Recorder mode:
-            // warnings/on-water rely on geofences/groups from Traccar.
-            let geofences = [];
-            let groups = [];
-            try {
-                const { traccarUrl, cookie } = await traccarLogin();
-                const [geofencesRaw, groupsRaw] = await Promise.all([
-                    traccarGetJson(traccarUrl, cookie, '/api/geofences').catch(() => []),
-                    traccarGetJson(traccarUrl, cookie, '/api/groups').catch(() => []),
-                ]);
-                geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
-                groups = Array.isArray(groupsRaw) ? groupsRaw : [];
-            } catch (e) {
-                // Recorder data can still be returned even if Traccar geofence metadata fails.
-                console.error('Recorder snapshot geofence/group fetch failed:', e);
-            }
+            const data = await rowingLiveSnapshot(req.query.onlineSec);
+            const refreshMeta = String(req.query.refreshGeofences || '') === '1';
+            const { geofences, groups } = await getTraccarGeofenceMeta(refreshMeta);
             res.status(200).json({
                 devices: Array.isArray(data.devices) ? data.devices : [],
                 positions: Array.isArray(data.positions) ? data.positions : [],
@@ -258,27 +333,15 @@ export default async function handler(req, res) {
         }
 
         if (action === 'snapshot') {
-            const { traccarUrl, cookie } = await traccarLogin();
+            const { traccarUrl, cookie } = await getTraccarSession();
             const [devicesRaw, positionsRaw] = await Promise.all([
                 traccarGetJson(traccarUrl, cookie, '/api/devices'),
                 traccarGetJson(traccarUrl, cookie, '/api/positions'),
             ]);
-            let geofencesRaw = [];
-            let groupsRaw = [];
-            try {
-                geofencesRaw = await traccarGetJson(traccarUrl, cookie, '/api/geofences');
-            } catch (e) {
-                console.error('Geofences optional fetch failed:', e);
-            }
-            try {
-                groupsRaw = await traccarGetJson(traccarUrl, cookie, '/api/groups');
-            } catch (e) {
-                console.error('Groups optional fetch failed:', e);
-            }
+            const refreshMeta = String(req.query.refreshGeofences || '') === '1';
+            const { geofences, groups } = await getTraccarGeofenceMeta(refreshMeta);
             const devices = normalizeDevicesPayload(devicesRaw);
             const positions = normalizePositionsPayload(positionsRaw);
-            const geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
-            const groups = Array.isArray(groupsRaw) ? groupsRaw : [];
             res.status(200).json({ devices, positions, geofences, groups, source: 'traccar' });
             return;
         }
@@ -306,7 +369,7 @@ export default async function handler(req, res) {
                 res.status(200).json(Array.isArray(data) ? data : []);
                 return;
             }
-            const { traccarUrl, cookie } = await traccarLogin();
+            const { traccarUrl, cookie } = await getTraccarSession();
             const q = new URLSearchParams({
                 deviceId: String(deviceId),
                 from: String(from),
@@ -361,10 +424,9 @@ export default async function handler(req, res) {
             return;
         }
 
-        if (action === 'devices' || action === 'positions') {
-            const { traccarUrl, cookie } = await traccarLogin();
-            const path = action === 'devices' ? '/api/devices' : '/api/positions';
-            const data = await traccarGetJson(traccarUrl, cookie, path);
+        if (action === 'devices') {
+            const { traccarUrl, cookie } = await getTraccarSession();
+            const data = await traccarGetJson(traccarUrl, cookie, '/api/devices');
             res.status(200).json(data);
             return;
         }

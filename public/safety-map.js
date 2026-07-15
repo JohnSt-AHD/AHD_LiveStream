@@ -8,6 +8,13 @@ function mapRefreshMs() {
     if (SAFETY_THEME.mapRefreshMs) return SAFETY_THEME.mapRefreshMs;
     return window.AltitudeHdMapRefresh?.getIntervalMs() ?? 10000;
 }
+function mapRefreshHiddenMs() {
+    if (SAFETY_THEME.mapRefreshHiddenMs) return SAFETY_THEME.mapRefreshHiddenMs;
+    return mapRefreshMs();
+}
+function fullSnapshotRefreshMs() {
+    return SAFETY_THEME.fullSnapshotRefreshMs || 15 * 60 * 1000;
+}
 
 const STOP_SPEED_MPS = 0.5;
 const STOP_MIN_MS = 30 * 60 * 1000;
@@ -41,6 +48,7 @@ let map = null;
 const markersByDeviceId = new Map();
 let mapInitialFitDone = false;
 let pollTimer = null;
+let lastFullSnapshotAt = 0;
 let demoAnimTimer = null;
 let geofenceLayer = null;
 let courseOverlayLayer = null;
@@ -1282,6 +1290,13 @@ function applyQuietHoursUi(paused) {
     }
 }
 
+function currentPollIntervalMs() {
+    if (typeof document !== 'undefined' && document.hidden && SAFETY_THEME.mapRefreshHiddenMs) {
+        return mapRefreshHiddenMs();
+    }
+    return mapRefreshMs();
+}
+
 function startPolling() {
     if (pollTimer) {
         clearInterval(pollTimer);
@@ -1294,7 +1309,15 @@ function startPolling() {
         return;
     }
     applyQuietHoursUi(false);
-    pollTimer = setInterval(updateData, mapRefreshMs());
+    pollTimer = setInterval(updateData, currentPollIntervalMs());
+}
+
+function onMapVisibilityChange() {
+    if (!pollTimer || isKriDemoMode() || !isLiveUpdatesEnabled()) return;
+    startPolling();
+    if (!document.hidden) {
+        void updateData();
+    }
 }
 
 function stopPolling() {
@@ -1842,7 +1865,39 @@ function rowsafeSnapshotFetch(options = {}) {
     if (ts) return ts.fetchSnapshot(options);
     const bus = window.AltitudeHdTraccarSnapshot;
     if (bus) return bus.fetchSnapshot(options);
-    return fetch(`${API_BASE}?action=snapshot`)
+    const params = new URLSearchParams({ action: 'snapshot' });
+    if (options.refreshGeofences) params.set('refreshGeofences', '1');
+    if (window.AltitudeHdTrackerSource) {
+        window.AltitudeHdTrackerSource.applySource(params);
+    }
+    return fetch(`${API_BASE}?${params.toString()}`)
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            return {
+                ok: response.ok,
+                status: response.status,
+                data,
+                error: response.ok ? null : data.error || `Request failed: ${response.status}`,
+            };
+        })
+        .catch((err) => ({
+            ok: false,
+            status: 0,
+            data: {},
+            error: err.message || 'Network error',
+        }));
+}
+
+function rowsafePositionsFetch(options = {}) {
+    const ts = window.AltitudeHdTrackerSource;
+    if (ts) return ts.fetchPositions(options);
+    const bus = window.AltitudeHdTraccarSnapshot;
+    if (bus) return bus.fetchPositions(options);
+    const params = new URLSearchParams({ action: 'positions' });
+    if (window.AltitudeHdTrackerSource) {
+        window.AltitudeHdTrackerSource.applySource(params);
+    }
+    return fetch(`${API_BASE}?${params.toString()}`)
         .then(async (response) => {
             const data = await response.json().catch(() => ({}));
             return {
@@ -1885,6 +1940,7 @@ function applySnapshotResult(result) {
     }
 
     const data = result.data;
+    const isLite = data.lite === true;
     const rawDevices = Array.isArray(data.devices) ? data.devices : [];
     positions = {};
     (Array.isArray(data.positions) ? data.positions : []).forEach((pos) => {
@@ -1894,9 +1950,12 @@ function applySnapshotResult(result) {
         }
     });
 
-    geofences = Array.isArray(data.geofences) ? data.geofences : [];
-    groups = Array.isArray(data.groups) ? data.groups : [];
-    groupLookup = buildGroupLookup(groups);
+    if (!isLite) {
+        geofences = Array.isArray(data.geofences) ? data.geofences : [];
+        groups = Array.isArray(data.groups) ? data.groups : [];
+        groupLookup = buildGroupLookup(groups);
+        lastFullSnapshotAt = Date.now();
+    }
 
     devices = mergeDevicesFromPositions(rawDevices, positions);
     syncDeviceColorRegistry();
@@ -1909,7 +1968,9 @@ function applySnapshotResult(result) {
     lastFenceParts = parts;
     lastStoppedState = stoppedState;
 
-    drawGeofencesOnMap(geofences, matched);
+    if (!isLite) {
+        drawGeofencesOnMap(geofences, matched);
+    }
     renderFenceAndLists(parts, stoppedState);
     renderCapsizeAlerts();
     clearSnapshotError();
@@ -1949,10 +2010,19 @@ async function updateData(options = {}) {
         return;
     }
     try {
+        const needFull =
+            options.forceSnapshot ||
+            !lastFullSnapshotAt ||
+            Date.now() - lastFullSnapshotAt >= fullSnapshotRefreshMs();
         const fetchOpts = {};
         if (options.forceSnapshot) fetchOpts.force = true;
         if (options.directSnapshot) fetchOpts.direct = true;
-        const result = await rowsafeSnapshotFetch(fetchOpts);
+        if (needFull && lastFullSnapshotAt && !options.forceSnapshot) {
+            fetchOpts.refreshGeofences = true;
+        }
+        const result = needFull
+            ? await rowsafeSnapshotFetch(fetchOpts)
+            : await rowsafePositionsFetch(fetchOpts);
         applySnapshotResult(result);
     } catch (error) {
         console.error('Error loading snapshot:', error);
@@ -2343,7 +2413,8 @@ window.addEventListener('kri-fly-to-device', (e) => {
 
 function onTrackerSourceChanged() {
     if (isKriDemoMode()) return;
-    updateData();
+    lastFullSnapshotAt = 0;
+    updateData({ forceSnapshot: true });
 }
 
 window.trackerSourcePageRefresh = onTrackerSourceChanged;
@@ -2398,6 +2469,9 @@ function bootSafetyMapPage() {
     wireDeviceNameFlyTo();
     wireOnWaterFollowSelect();
     wireQuietHours();
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', onMapVisibilityChange);
+    }
     void bootstrapMapData();
 }
 

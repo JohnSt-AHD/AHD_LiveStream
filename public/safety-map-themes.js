@@ -61,6 +61,8 @@
             lsMapFollow: 'rnzRowsafeMapFollow',
             mapFollowRotateSec: 30,
             mapRefreshMs: 2000,
+            mapRefreshHiddenMs: 30000,
+            fullSnapshotRefreshMs: 15 * 60 * 1000,
             enableLiveSpeedChart: true,
             enableDeviceColors: true,
             enableTrailToggle: true,
