@@ -1255,8 +1255,31 @@ async function bootstrapMapData() {
     }
     ensureKriDemoSpeedRange();
     stopDemoAnimation();
+    if (window.CrewSightQuietHours?.isQuietHours?.()) {
+        applyQuietHoursUi(true);
+        stopPolling();
+        return;
+    }
     await updateData({ forceSnapshot: true, directSnapshot: true });
     startPolling();
+}
+
+function applyQuietHoursUi(paused) {
+    const quiet = window.CrewSightQuietHours;
+    if (!quiet) return;
+    quiet.setBannerVisible?.('quietHoursBanner', paused, {
+        parent: document.body,
+        insertBefore: document.getElementById('hubStatsBar') || document.querySelector('main'),
+    });
+    const ts = document.getElementById('lastUpdate');
+    if (ts && paused) {
+        ts.textContent = quiet.MESSAGE || 'Monitoring paused overnight';
+    }
+    const err = document.getElementById('rnzSnapshotError');
+    if (err && paused) {
+        err.hidden = true;
+        err.textContent = '';
+    }
 }
 
 function startPolling() {
@@ -1266,6 +1289,11 @@ function startPolling() {
     }
     if (isKriDemoMode()) return;
     if (!isLiveUpdatesEnabled()) return;
+    if (window.CrewSightQuietHours?.isQuietHours?.()) {
+        applyQuietHoursUi(true);
+        return;
+    }
+    applyQuietHoursUi(false);
     pollTimer = setInterval(updateData, mapRefreshMs());
 }
 
@@ -1915,6 +1943,11 @@ async function updateData(options = {}) {
         applyDemoSnapshotToUi();
         return;
     }
+    if (window.CrewSightQuietHours?.isQuietHours?.()) {
+        applyQuietHoursUi(true);
+        stopPolling();
+        return;
+    }
     try {
         const fetchOpts = {};
         if (options.forceSnapshot) fetchOpts.force = true;
@@ -2322,6 +2355,29 @@ window.RnzFollowFleet = {
     isFollowing: isDeviceFollowSelected,
 };
 
+function wireQuietHours() {
+    const quiet = window.CrewSightQuietHours;
+    if (!quiet?.onQuietHoursChange) return;
+    let primed = false;
+    quiet.onQuietHoursChange((paused) => {
+        applyQuietHoursUi(paused);
+        if (!primed) {
+            primed = true;
+            // bootstrapMapData owns the first fetch / poll start
+            if (paused) stopPolling();
+            return;
+        }
+        if (paused) {
+            stopPolling();
+            return;
+        }
+        if (isKriDemoMode()) return;
+        if (!isLiveUpdatesEnabled()) return;
+        void updateData({ forceSnapshot: true, directSnapshot: true });
+        startPolling();
+    });
+}
+
 function bootSafetyMapPage() {
     try {
         initMap();
@@ -2341,6 +2397,7 @@ function bootSafetyMapPage() {
     wireRnzMapFullscreen();
     wireDeviceNameFlyTo();
     wireOnWaterFollowSelect();
+    wireQuietHours();
     void bootstrapMapData();
 }
 

@@ -63,6 +63,14 @@
 
 
 
+    <div
+        class="quiet-hours-banner"
+        id="quietHoursBanner"
+        hidden
+        role="status"
+        aria-hidden="true"
+    >Monitoring paused overnight</div>
+
     <div class="hub-stats-bar hub-stats-bar--rnz" id="hubStatsBar" aria-live="polite">
 
         <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="#safetyCapsizeBox">Capsize: —</a>
@@ -313,6 +321,8 @@
 
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="quiet-hours.js"></script>
 
     <script src="map-refresh-rate.js"></script>
 
