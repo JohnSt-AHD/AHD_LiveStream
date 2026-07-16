@@ -20,26 +20,6 @@
         { id: 'finish', label: 'Finish', short: 'Fin' },
     ];
 
-    const SIM_COURSE = {
-        originLat: -36.628375,
-        originLng: 174.758363,
-        headingDeg: 45,
-        totalDistM: 720,
-        laneOffsetM: { C1X_A: -6, C1X_B: 6 },
-    };
-
-    const SIM_SPLIT_PROGRESS = {
-        boatEntry: 0.08,
-        b1: 0.18,
-        b2: 0.32,
-        b3: 0.48,
-        turn: 0.55,
-        b2r: 0.72,
-        b1r: 0.82,
-        boatExit: 0.92,
-        finish: 1.0,
-    };
-
     /** @type {object|null} */
     let meta = null;
     /** @type {Map<string, {name:string, club:string}>} */
@@ -240,123 +220,6 @@
             return n.includes(gpsLabel.replace('_', '')) || n === gpsLabel.toUpperCase();
         });
         return found ? String(found.id) : '';
-    }
-
-    function localMetersToLatLng(originLat, originLng, headingDeg, alongM, crossM) {
-        const rad = (headingDeg * Math.PI) / 180;
-        const north = alongM * Math.cos(rad) - crossM * Math.sin(rad);
-        const east = alongM * Math.sin(rad) + crossM * Math.cos(rad);
-        return {
-            latitude: originLat + north / 111320,
-            longitude: originLng + east / (111320 * Math.cos((originLat * Math.PI) / 180)),
-        };
-    }
-
-    function progressAtElapsed(elapsedMs, splits, totalMs) {
-        let prevT = 0;
-        let prevP = 0;
-        for (const sp of MANUAL_SPLITS) {
-            const st = splits[sp.id];
-            if (st == null) break;
-            if (elapsedMs <= st) {
-                const pNow = SIM_SPLIT_PROGRESS[sp.id] ?? 1;
-                const frac = (elapsedMs - prevT) / (st - prevT || 1);
-                return prevP + frac * (pNow - prevP);
-            }
-            prevT = st;
-            prevP = SIM_SPLIT_PROGRESS[sp.id] ?? prevP;
-        }
-        return totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 0;
-    }
-
-    function simulateGpsForSlot(raceNum, lane, slot) {
-        const total = finishMs(slot);
-        if (total == null) {
-            slot.notes = 'Mark finish before Sim GPS';
-            saveStore();
-            renderPanel();
-            return;
-        }
-        const cross = SIM_COURSE.laneOffsetM[slot.gps] ?? 0;
-        const startMs = slot.startAt || Date.now() - total;
-        slot.startAt = startMs;
-        const points = [];
-        for (let t = 0; t <= total; t += 1000) {
-            const progress = progressAtElapsed(t, slot.splits, total);
-            const along = progress * SIM_COURSE.totalDistM;
-            const pos = localMetersToLatLng(
-                SIM_COURSE.originLat,
-                SIM_COURSE.originLng,
-                SIM_COURSE.headingDeg,
-                along,
-                cross,
-            );
-            points.push({
-                ...pos,
-                speed: 4.2 + Math.sin(t / 12000) * 0.4 + (slot.gps === 'C1X_B' ? 0.15 : 0),
-                fixTime: new Date(startMs + t).toISOString(),
-                deviceTime: new Date(startMs + t).toISOString(),
-            });
-        }
-        slot.gpsPoints = points;
-        slot.gpsMs = total;
-        slot.notes = `Simulated GPS (${slot.gps || 'course'}) · ${points.length} pts`;
-        saveStore();
-        renderPanel();
-    }
-
-    function sampleSplits(baseMs) {
-        const splits = {};
-        let t = 0;
-        const legs = [12000, 22000, 18000, 20000, 15000, 19000, 17000, 14000, 16000];
-        for (let i = 0; i < MANUAL_SPLITS.length; i++) {
-            t += legs[i] || 15000;
-            splits[MANUAL_SPLITS[i].id] = t + (baseMs || 0);
-        }
-        return splits;
-    }
-
-    async function runSimGpsDeviceTest() {
-        const rows = buildEventRows();
-        const used = new Set();
-        const targets = ['C1X_A', 'C1X_B']
-            .map((gps) => {
-                let row = rows.find((r) => {
-                    const k = slotKey(r.raceNum, r.lane);
-                    if (used.has(k)) return false;
-                    return getSlot(r.raceNum, r.lane).gps === gps;
-                });
-                if (row) {
-                    used.add(slotKey(row.raceNum, row.lane));
-                } else {
-                    row = rows.find((r) => {
-                        const k = slotKey(r.raceNum, r.lane);
-                        if (used.has(k)) return false;
-                        used.add(k);
-                        return true;
-                    });
-                }
-                return row ? { row, gps } : null;
-            })
-            .filter(Boolean);
-        if (!targets.length) {
-            statusFlash = 'No rows available for GPS simulation';
-            renderPanel();
-            return;
-        }
-        for (let i = 0; i < targets.length; i++) {
-            const { row, gps } = targets[i];
-            const slot = getSlot(row.raceNum, row.lane);
-            if (!slot.crew) slot.crew = resolvedCrewForRow(row) || row.crewDefault;
-            slot.gps = gps;
-            slot.startAt = Date.now() - 180000;
-            slot.splits = sampleSplits(i * 8000);
-            slot.runningAt = null;
-            slot.saved = false;
-            simulateGpsForSlot(row.raceNum, row.lane, slot);
-        }
-        statusFlash = `Sim GPS test — ${targets.map((t) => t.gps).join(' & ')} tracks generated`;
-        renderPanel();
     }
 
     function clipPoints(points, startMs, endMs) {
@@ -727,7 +590,6 @@
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--primary bsr-trial-save" data-action="save"${!canSave ? ' disabled' : ''}>${slot.saved ? 'Saved' : 'Save'}</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-reset" data-action="reset"${running ? ' disabled' : ''}>Reset</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-gps-fetch" data-action="gps">GPS</button> ` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-sim-gps" data-action="sim-gps"${total == null ? ' disabled' : ''}>Sim GPS</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-map-one" data-action="map">Map</button>` +
             `</td>` +
             `<td class="bsr-trial-note">${slot.saved ? '<span class="bsr-trial-saved-tag">Saved</span> ' : ''}${esc(slot.notes || '')}${slot.gpsPoints?.length ? ` · ${slot.gpsPoints.length} pts` : ''}</td>` +
@@ -881,9 +743,8 @@
             statusHtml +
             ttNote +
             `<div class="bsr-trial-event-toolbar">` +
-            `<button type="button" class="bsr-btn bsr-btn--primary bsr-trial-publish-lb" data-action="publish-lb">Publish leaderboard</button> ` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-sim-gps-test" data-action="sim-gps-test">Sim GPS test (C1X_A & B)</button>` +
-            `<span class="bsr-note">Publish TT results to seed later rounds. Sim GPS generates test tracks on Big Manly course.</span>` +
+            `<button type="button" class="bsr-btn bsr-btn--primary bsr-trial-publish-lb" data-action="publish-lb">Publish leaderboard</button>` +
+            `<span class="bsr-note">Publish TT results to seed later rounds.</span>` +
             `</div>` +
             `<div class="bsr-trial-table-wrap bsr-trial-table-wrap--wide"><table class="bsr-trial-table bsr-trial-table--splits">` +
             `<thead><tr><th>#</th><th>Sched</th><th>Code</th><th>Athlete</th><th>GPS</th>${splitHeaders}<th>Total</th><th></th><th>Notes</th></tr></thead>` +
@@ -924,10 +785,6 @@
             showMapTraces(null);
             return;
         }
-        if (action === 'sim-gps-test') {
-            void runSimGpsDeviceTest();
-            return;
-        }
         if (!ctx) return;
         const { raceNum, lane, key } = ctx;
         const slot = getSlot(raceNum, lane);
@@ -936,7 +793,6 @@
         else if (action === 'save') saveRow(raceNum, lane);
         else if (action === 'reset') resetRow(raceNum, lane);
         else if (action === 'gps') await fetchGpsForSlot(raceNum, lane, slot);
-        else if (action === 'sim-gps') simulateGpsForSlot(raceNum, lane, slot);
         else if (action === 'map') {
             store.selectedKey = key;
             saveStore();
