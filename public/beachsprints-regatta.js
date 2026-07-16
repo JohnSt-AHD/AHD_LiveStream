@@ -3606,7 +3606,7 @@
         }
         const idx = placings.findIndex((p) => p.competitor === payload.crew);
         const row = {
-            place: payload.lane || 1,
+            place: payload.rank || payload.lane || 1,
             competitor: payload.crew,
             time: payload.time,
         };
@@ -3614,7 +3614,7 @@
         else placings.push(row);
         placings.sort((a, b) => a.place - b.place);
         state.results.set(raceNum, {
-            status: 'Live',
+            status: 'Official',
             eventNum: race.eventNum,
             round: race.round,
             division: race.division,
@@ -3623,6 +3623,12 @@
         renderTimeTrialPanel();
         renderEventSchedule();
         renderKnockoutTree();
+    }
+
+    function refreshTrialLeaderboard(eventKey) {
+        if (String(state.selectedEventKey) !== String(eventKey)) return;
+        renderTimeTrialPanel();
+        renderEventSchedule();
     }
 
     async function loadMissingLogosReport() {
@@ -3933,6 +3939,7 @@
         },
         fetchRoute,
         applyTrialResult,
+        refreshTrialLeaderboard,
         getSelectedEventKey: () => state.selectedEventKey,
         getEventRaces(eventKey) {
             const g = getEventGroup(eventKey);

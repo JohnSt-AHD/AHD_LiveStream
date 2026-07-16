@@ -4,7 +4,7 @@
  */
 (function (global) {
     const TRIAL_CODE = 'u19_ct_26';
-    const LS_TRIAL = 'bsrTrialLive_v2';
+    const LS_TRIAL = 'bsrTrialLive_v3';
     const GPS_LABELS = ['C1X_A', 'C1X_B'];
     const GPS_TO_ALIAS = { C1X_A: 'boat_1', C1X_B: 'boat_2' };
 
@@ -24,12 +24,18 @@
     let meta = null;
     /** @type {Map<string, {name:string, club:string}>} */
     let codeLookup = new Map();
-    /** @type {{ races: Record<string, object>, rankings: { women: string[], men: string[] }, selectedKey: string }} */
-    let store = { races: {}, rankings: { women: [], men: [] }, selectedKey: '' };
+    let store = {
+        races: {},
+        rankings: { women: [], men: [] },
+        selectedKey: '',
+        publishedEvents: {},
+    };
     let activeEventKey = '';
     let activeRaceNum = null;
     const tickers = new Map();
     const trialMapHolder = { map: null, layers: [] };
+    let panelBound = false;
+    let statusFlash = '';
 
     function esc(s) {
         return String(s ?? '')
@@ -52,6 +58,7 @@
                     races: parsed.races || {},
                     rankings: parsed.rankings || { women: [], men: [] },
                     selectedKey: parsed.selectedKey || '',
+                    publishedEvents: parsed.publishedEvents || {},
                 };
             }
         } catch {
@@ -80,6 +87,8 @@
             splits: {},
             gpsPoints: [],
             gpsMs: null,
+            saved: false,
+            savedAt: null,
             notes: '',
         };
     }
@@ -180,10 +189,7 @@
             slot.startAt ||
             slot.runningAt ||
             (race.startAt ? race.startAt.getTime() : Date.now());
-        const endMs =
-            finishMs(slot) != null ?
-                startMs + finishMs(slot)
-            :   startMs + 240000;
+        const endMs = finishMs(slot) != null ? startMs + finishMs(slot) : startMs + 240000;
         const from = new Date(startMs - 45 * 1000);
         const to = new Date(endMs + 45 * 1000);
         try {
@@ -214,12 +220,9 @@
         }
         saveStore();
         renderPanel();
-        if (finishMs(slot) != null) {
-            pushResultToDashboard(raceNum, lane, slot);
-        }
     }
 
-    function pushResultToDashboard(raceNum, lane, slot) {
+    function pushResultToDashboard(raceNum, lane, slot, rank) {
         const api = global.BsrRegatta;
         const total = finishMs(slot);
         if (!api?.applyTrialResult || total == null) return;
@@ -229,22 +232,78 @@
             time: formatTimeCsv(total),
             manualMs: total,
             gpsMs: slot.gpsMs,
+            rank,
         });
     }
 
-    function updateRankingsFromTt(eventNum) {
-        const api = global.BsrRegatta;
-        if (!api?.getRacesForEvent) return;
-        const races = api.getRacesForEvent(String(eventNum)) || [];
-        const ttRaces = races.filter((r) => /time trial/i.test(r.round || ''));
-        const ranked = ttRaces
-            .map((r) => {
-                const slot = getSlot(r.raceNum, 1);
-                return { code: slot.crew || r.lanes?.[0]?.crew, ms: finishMs(slot), raceNum: r.raceNum };
+    function savedEventEntries() {
+        return buildEventRows()
+            .map((row) => {
+                const slot = getSlot(row.raceNum, row.lane);
+                const ms = finishMs(slot);
+                if (!slot.saved || ms == null) return null;
+                return { ...row, slot, ms };
             })
-            .filter((x) => x.code && x.ms != null)
+            .filter(Boolean)
             .sort((a, b) => a.ms - b.ms);
-        const codes = ranked.map((x) => x.code);
+    }
+
+    function finishedUnsavedEntries() {
+        return buildEventRows()
+            .map((row) => {
+                const slot = getSlot(row.raceNum, row.lane);
+                const ms = finishMs(slot);
+                if (ms == null || slot.saved) return null;
+                return { ...row, slot, ms };
+            })
+            .filter(Boolean);
+    }
+
+    function saveRow(raceNum, lane) {
+        const slot = getSlot(raceNum, lane);
+        const total = finishMs(slot);
+        if (total == null) {
+            slot.notes = 'Mark finish (Fin split or Stop) before Save';
+            saveStore();
+            renderPanel();
+            return;
+        }
+        slot.saved = true;
+        slot.savedAt = Date.now();
+        saveStore();
+        publishEventLeaderboard(false);
+        statusFlash = `Saved ${athleteName(slot.crew)} — ${formatMs(total)}`;
+        renderPanel();
+    }
+
+    function publishEventLeaderboard(showMessage = true) {
+        const entries = savedEventEntries();
+        if (!entries.length) {
+            if (showMessage) statusFlash = 'No saved results yet — tap Save on each finished row';
+            renderPanel();
+            return;
+        }
+        entries.forEach((entry, idx) => {
+            pushResultToDashboard(entry.raceNum, entry.lane, entry.slot, idx + 1);
+        });
+        const api = global.BsrRegatta;
+        if (api?.refreshTrialLeaderboard) {
+            api.refreshTrialLeaderboard(activeEventKey);
+        }
+        if (activeEventKey === '1' || activeEventKey === '2') {
+            updateRankingsFromTt(activeEventKey);
+        }
+        store.publishedEvents[activeEventKey] = Date.now();
+        saveStore();
+        if (showMessage) {
+            statusFlash = `Leaderboard published — ${entries.length} result${entries.length === 1 ? '' : 's'} ranked by total time`;
+        }
+        renderPanel();
+    }
+
+    function updateRankingsFromTt(eventNum) {
+        if (String(eventNum) !== String(activeEventKey)) return;
+        const codes = savedEventEntries().map((e) => e.slot.crew || e.crewDefault);
         if (eventNum === 1 || eventNum === '1') store.rankings.women = codes;
         if (eventNum === 2 || eventNum === '2') store.rankings.men = codes;
         saveStore();
@@ -257,11 +316,13 @@
         slot.splits = {};
         slot.gpsPoints = [];
         slot.gpsMs = null;
+        slot.saved = false;
+        slot.savedAt = null;
         slot.notes = '';
         saveStore();
         const k = slotKey(raceNum, lane);
         if (tickers.has(k)) clearInterval(tickers.get(k));
-        tickers.set(k, setInterval(() => renderPanel(), 100));
+        tickers.set(k, setInterval(() => updateLiveTimes(), 100));
         store.selectedKey = k;
         saveStore();
         renderPanel();
@@ -270,14 +331,16 @@
     function markSplit(raceNum, lane, splitId) {
         const slot = getSlot(raceNum, lane);
         if (!slot.runningAt) return;
+        if (slot.splits[splitId] != null) return;
         const elapsed = Date.now() - slot.runningAt;
         slot.splits[splitId] = elapsed;
+        slot.saved = false;
         if (splitId === 'finish') {
             stopRow(raceNum, lane, { skipFinishMark: true });
-        } else {
-            saveStore();
-            renderPanel();
+            return;
         }
+        saveStore();
+        updateLiveTimes();
     }
 
     async function stopRow(raceNum, lane, opts = {}) {
@@ -294,14 +357,12 @@
             }
             slot.runningAt = null;
         }
+        slot.saved = false;
         saveStore();
-        const race = global.BsrRegatta?.getRace?.(raceNum);
-        if (race && /time trial/i.test(race.round || '')) {
-            updateRankingsFromTt(race.eventNum);
-        }
         renderPanel();
-        pushResultToDashboard(raceNum, lane, slot);
-        if (slot.gps) await fetchGpsForSlot(raceNum, lane, slot);
+        if (slot.gps) {
+            void fetchGpsForSlot(raceNum, lane, slot);
+        }
     }
 
     function buildEventRows() {
@@ -310,10 +371,7 @@
         const races = api.getEventRaces?.(activeEventKey) || api.getRacesForEvent?.(activeEventKey) || [];
         const rows = [];
         for (const race of races) {
-            const lanes =
-                race.lanes?.length ?
-                    race.lanes
-                :   [{ lane: 1, crew: '' }];
+            const lanes = race.lanes?.length ? race.lanes : [{ lane: 1, crew: '' }];
             for (const l of lanes) {
                 rows.push({
                     raceNum: race.raceNum,
@@ -323,7 +381,6 @@
                     sched: race.startAt ?
                         race.startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     :   '',
-                    division: race.division || '',
                 });
             }
         }
@@ -331,11 +388,10 @@
     }
 
     function traceForSlot(row, slot, traceIdx) {
-        const pts = slot.gpsPoints?.length ? slot.gpsPoints : [];
         return {
             lane: row.lane,
             label: `${athleteName(slot.crew || row.crewDefault)} (${slot.crew || row.crewDefault})`,
-            points: pts,
+            points: slot.gpsPoints?.length ? slot.gpsPoints : [],
             colorIdx: traceIdx,
         };
     }
@@ -357,51 +413,56 @@
     function showMapTraces(keys) {
         const api = global.BsrRegatta;
         const el = document.getElementById('bsrTrialMap');
-        const wrap = document.getElementById('bsrTrialMapWrap');
         if (!api?.renderTraceMap || !el) return;
         const traces = tracesForKeys(keys);
         if (!traces.length) {
-            if (wrap) wrap.hidden = false;
-            el.innerHTML = '<p class="bsr-note">No GPS traces loaded — assign GPS, finish a run, and tap Fetch GPS.</p>';
+            el.innerHTML =
+                '<p class="bsr-note">No GPS traces loaded — assign GPS, finish a run, and tap Fetch GPS.</p>';
             return;
         }
-        if (wrap) wrap.hidden = false;
         el.innerHTML = '';
         api.renderTraceMap(el, traces, trialMapHolder);
         requestAnimationFrame(() => trialMapHolder.map?.invalidateSize());
     }
 
-    function renderSplitCells(slot) {
+    function nextOpenSplitIndex(slot) {
+        if (!slot.runningAt) return -1;
+        for (let i = 0; i < MANUAL_SPLITS.length; i++) {
+            if (slot.splits[MANUAL_SPLITS[i].id] == null) return i;
+        }
+        return -1;
+    }
+
+    function renderSplitCells(slot, rowKey) {
         const running = slot.runningAt != null;
-        const liveMs = running ? Date.now() - slot.runningAt : null;
+        const nextIdx = nextOpenSplitIndex(slot);
         return MANUAL_SPLITS.map((sp, idx) => {
             const cum = slot.splits[sp.id];
             const leg = cum != null ? splitLegMs(slot.splits, idx) : null;
-            const showLive = running && cum == null && (idx === 0 || slot.splits[MANUAL_SPLITS[idx - 1].id] != null);
-            const display = cum != null ? formatMs(cum) : showLive ? formatMs(liveMs) : '—';
+            const isLive = running && idx === nextIdx;
+            const display = cum != null ? formatMs(cum) : isLive ? formatMs(Date.now() - slot.runningAt) : '—';
             const legHtml =
-                leg != null && idx > 0 ?
-                    `<span class="bsr-trial-leg">+${formatMs(leg)}</span>`
-                :   '';
+                leg != null && idx > 0 ? `<span class="bsr-trial-leg">+${formatMs(leg)}</span>` : '';
             const btn =
                 running && cum == null ?
-                    `<button type="button" class="bsr-trial-split-btn" data-split="${esc(sp.id)}" title="Mark ${esc(sp.label)}">${esc(sp.short)}</button>`
+                    `<button type="button" class="bsr-trial-split-btn" data-action="split" data-split="${esc(sp.id)}" title="Mark ${esc(sp.label)}">${esc(sp.short)}</button>`
                 :   '';
             return (
-                `<td class="bsr-trial-split-col${showLive ? ' bsr-trial-split-col--live' : ''}">` +
+                `<td class="bsr-trial-split-col${isLive ? ' bsr-trial-split-col--live' : ''}" data-split-col="${esc(sp.id)}">` +
                 `<div class="bsr-trial-split-time">${display}${legHtml}</div>${btn}</td>`
             );
         }).join('');
     }
 
     function renderAthleteRow(row, orderIdx) {
-        const { raceNum, lane, crewDefault, race, sched, division } = row;
+        const { raceNum, lane, crewDefault, sched } = row;
         const slot = getSlot(raceNum, lane);
         if (!slot.crew && crewDefault) slot.crew = crewDefault;
         const k = slotKey(raceNum, lane);
         const selected = store.selectedKey === k || activeRaceNum === raceNum;
         const running = slot.runningAt != null;
         const total = finishMs(slot);
+        const canSave = total != null && !running;
         const gpsOpts = ['', ...GPS_LABELS]
             .map(
                 (g) =>
@@ -409,23 +470,104 @@
             )
             .join('');
         return (
-            `<tr class="bsr-trial-row${selected ? ' bsr-trial-row--selected' : ''}" data-key="${esc(k)}" data-race="${raceNum}" data-lane="${lane}">` +
+            `<tr class="bsr-trial-row${selected ? ' bsr-trial-row--selected' : ''}${slot.saved ? ' bsr-trial-row--saved' : ''}" data-key="${esc(k)}" data-race="${raceNum}" data-lane="${lane}">` +
             `<td class="bsr-trial-order">${orderIdx + 1}</td>` +
             `<td class="bsr-trial-sched">${esc(sched)}</td>` +
             `<td><input type="text" class="bsr-trial-crew" value="${esc(slot.crew)}" placeholder="${esc(crewDefault || '')}"></td>` +
             `<td><span class="bsr-trial-athlete-name">${esc(athleteName(slot.crew || crewDefault))}</span></td>` +
             `<td><select class="bsr-trial-gps">${gpsOpts}</select></td>` +
-            renderSplitCells(slot) +
-            `<td class="bsr-trial-total${running ? ' bsr-trial-time--live' : ''}">${total != null ? formatMs(total) : running ? formatMs(Date.now() - slot.runningAt) : '—'}</td>` +
+            renderSplitCells(slot, k) +
+            `<td class="bsr-trial-total${running ? ' bsr-trial-time--live' : ''}" data-live-total="1">${total != null ? formatMs(total) : running ? formatMs(Date.now() - slot.runningAt) : '—'}</td>` +
             `<td class="bsr-trial-actions">` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-start"${running ? ' disabled' : ''}>Start</button> ` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-stop"${!running ? ' disabled' : ''}>Stop</button> ` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-gps-fetch">GPS</button> ` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-map-one">Map</button>` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-start" data-action="start"${running ? ' disabled' : ''}>Start</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-stop" data-action="stop"${!running ? ' disabled' : ''}>Stop</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--primary bsr-trial-save" data-action="save"${!canSave ? ' disabled' : ''}>${slot.saved ? 'Saved' : 'Save'}</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-gps-fetch" data-action="gps">GPS</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-map-one" data-action="map">Map</button>` +
             `</td>` +
-            `<td class="bsr-trial-note">${esc(slot.notes || '')}${slot.gpsPoints?.length ? ` · ${slot.gpsPoints.length} pts` : ''}</td>` +
+            `<td class="bsr-trial-note">${slot.saved ? '<span class="bsr-trial-saved-tag">Saved</span> ' : ''}${esc(slot.notes || '')}${slot.gpsPoints?.length ? ` · ${slot.gpsPoints.length} pts` : ''}</td>` +
             `</tr>`
         );
+    }
+
+    function renderEventLeaderboard() {
+        const entries = savedEventEntries();
+        if (!entries.length) {
+            return '<p class="bsr-note">Saved results appear here ranked by total time. Tap <strong>Save</strong> on each finished row, then <strong>Publish leaderboard</strong>.</p>';
+        }
+        let rows = '';
+        entries.forEach((entry, idx) => {
+            rows +=
+                `<tr><td class="bsr-trial-lb-rank">${idx + 1}</td>` +
+                `<td>${esc(athleteName(entry.slot.crew || entry.crewDefault))} <span class="bsr-trial-code">${esc(entry.slot.crew || entry.crewDefault)}</span></td>` +
+                `<td class="bsr-trial-lb-time">${formatMs(entry.ms)}</td>` +
+                `<td>R${entry.raceNum}</td></tr>`;
+        });
+        const unsaved = finishedUnsavedEntries().length;
+        const hint =
+            unsaved ?
+                `<p class="bsr-note bsr-note--warn">${unsaved} finished row${unsaved === 1 ? '' : 's'} not saved yet.</p>`
+            :   '';
+        return (
+            `<div class="bsr-trial-leaderboard"><h3>Event leaderboard (saved, ranked by total time)</h3>` +
+            hint +
+            `<table class="bsr-trial-lb-table"><thead><tr><th>Rank</th><th>Athlete</th><th>Total</th><th>Race</th></tr></thead>` +
+            `<tbody>${rows}</tbody></table></div>`
+        );
+    }
+
+    function renderRankings() {
+        const w = store.rankings.women;
+        const m = store.rankings.men;
+        if (!w.length && !m.length) return '';
+        let html =
+            '<div class="bsr-trial-ranks"><h3>Trial plan seeding (published TT times)</h3><div class="bsr-trial-ranks-grid">';
+        if (w.length) {
+            html += '<div><strong>Women</strong><ol>';
+            w.forEach((c, i) => {
+                html += `<li>W${i + 1} — ${esc(athleteName(c))} <span class="bsr-trial-code">(${esc(c)})</span></li>`;
+            });
+            html += '</ol></div>';
+        }
+        if (m.length) {
+            html += '<div><strong>Men</strong><ol>';
+            m.forEach((c, i) => {
+                html += `<li>M${i + 1} — ${esc(athleteName(c))} <span class="bsr-trial-code">(${esc(c)})</span></li>`;
+            });
+            html += '</ol></div>';
+        }
+        html += '</div></div>';
+        return html;
+    }
+
+    function updateLiveTimes() {
+        const panel = document.getElementById('bsrTrialLive');
+        if (!panel) return;
+        const now = Date.now();
+        panel.querySelectorAll('tr[data-key]').forEach((row) => {
+            const parts = String(row.dataset.key || '').split(':');
+            if (parts.length !== 2) return;
+            const slot = getSlot(parseInt(parts[0], 10), parseInt(parts[1], 10));
+            if (!slot.runningAt) return;
+            const elapsed = now - slot.runningAt;
+            const totalEl = row.querySelector('[data-live-total]');
+            if (totalEl) totalEl.textContent = formatMs(elapsed);
+            const nextIdx = nextOpenSplitIndex(slot);
+            row.querySelectorAll('.bsr-trial-split-col').forEach((cell, idx) => {
+                const sp = MANUAL_SPLITS[idx];
+                if (!sp) return;
+                const cum = slot.splits[sp.id];
+                const timeEl = cell.querySelector('.bsr-trial-split-time');
+                if (!timeEl) return;
+                if (cum != null) {
+                    const leg = idx > 0 ? splitLegMs(slot.splits, idx) : null;
+                    timeEl.innerHTML =
+                        `${formatMs(cum)}${leg != null && idx > 0 ? `<span class="bsr-trial-leg">+${formatMs(leg)}</span>` : ''}`;
+                } else if (idx === nextIdx) {
+                    timeEl.innerHTML = formatMs(elapsed);
+                }
+            });
+        });
     }
 
     function renderPanel() {
@@ -446,118 +588,138 @@
         const eventName = group?.eventName || `Event ${activeEventKey}`;
         const isTt = rows.every((r) => /time trial/i.test(r.race.round || ''));
         const ttNote = isTt ?
-            '<p class="bsr-note bsr-note--trial">Time trial — all athletes in this event. Tap split buttons as each mark is passed. Swap C1X_A / C1X_B between starts.</p>'
-        :   '<p class="bsr-note bsr-note--trial">Tap <strong>Start</strong> at the line, then mark each split. Use <strong>Map</strong> for one trace or overlay all below.</p>';
+            '<p class="bsr-note bsr-note--trial">Time trial — tap <strong>Start</strong>, mark each split button as the athlete passes, then <strong>Save</strong> to publish to the leaderboard below.</p>'
+        :   '<p class="bsr-note bsr-note--trial">Start → mark splits → Stop or Fin → Save to publish. Use <strong>Publish leaderboard</strong> to refresh the Time trial panel.</p>';
 
         const splitHeaders = MANUAL_SPLITS.map((s) => `<th class="bsr-trial-split-h">${esc(s.short)}</th>`).join('');
         const body = rows.map((r, i) => renderAthleteRow(r, i)).join('');
+        const statusHtml = statusFlash ?
+            `<p class="bsr-trial-status" role="status">${esc(statusFlash)}</p>`
+        :   '';
 
         panel.innerHTML =
             `<header class="bsr-trial-live-header">` +
             `<h2>Live trial — Event ${esc(activeEventKey)} · ${esc(eventName)}</h2>` +
             `<p class="bsr-trial-sched">${rows.length} athlete${rows.length === 1 ? '' : 's'} in this event</p>` +
             `</header>` +
+            statusHtml +
             ttNote +
+            `<div class="bsr-trial-event-toolbar">` +
+            `<button type="button" class="bsr-btn bsr-btn--primary bsr-trial-publish-lb" data-action="publish-lb">Publish leaderboard</button>` +
+            `<span class="bsr-note">Ranks all saved results by total time into the Time trial / qualifying panel.</span>` +
+            `</div>` +
             `<div class="bsr-trial-table-wrap bsr-trial-table-wrap--wide"><table class="bsr-trial-table bsr-trial-table--splits">` +
             `<thead><tr><th>#</th><th>Sched</th><th>Code</th><th>Athlete</th><th>GPS</th>${splitHeaders}<th>Total</th><th></th><th>Notes</th></tr></thead>` +
             `<tbody>${body}</tbody></table></div>` +
+            renderEventLeaderboard() +
             `<div class="bsr-trial-map-toolbar">` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-map-selected">Show selected on map</button> ` +
-            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--primary bsr-trial-map-all">Overlay all GPS in event</button>` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-map-selected" data-action="map-selected">Show selected on map</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-map-all" data-action="map-all">Overlay all GPS in event</button>` +
             `</div>` +
             `<div id="bsrTrialMapWrap" class="bsr-trial-map-wrap"><div id="bsrTrialMap" class="bsr-trial-map"></div></div>` +
             renderRankings();
+
+        statusFlash = '';
+        bindPanelEvents();
     }
 
-    function renderRankings() {
-        const w = store.rankings.women;
-        const m = store.rankings.men;
-        if (!w.length && !m.length) return '';
-        let html = '<div class="bsr-trial-ranks"><h3>Trial plan rankings (from TT finish times)</h3><div class="bsr-trial-ranks-grid">';
-        if (w.length) {
-            html += '<div><strong>Women</strong><ol>';
-            w.forEach((c, i) => {
-                html += `<li>W${i + 1} — ${esc(athleteName(c))} <span class="bsr-trial-code">(${esc(c)})</span></li>`;
-            });
-            html += '</ol></div>';
+    function rowFromEventTarget(target) {
+        const row = target.closest('tr[data-race]');
+        if (!row) return null;
+        return {
+            raceNum: parseInt(row.dataset.race, 10),
+            lane: parseInt(row.dataset.lane, 10),
+            key: row.dataset.key,
+            row,
+        };
+    }
+
+    async function handlePanelAction(action, ctx) {
+        if (action === 'publish-lb') {
+            publishEventLeaderboard(true);
+            return;
         }
-        if (m.length) {
-            html += '<div><strong>Men</strong><ol>';
-            m.forEach((c, i) => {
-                html += `<li>M${i + 1} — ${esc(athleteName(c))} <span class="bsr-trial-code">(${esc(c)})</span></li>`;
-            });
-            html += '</ol></div>';
+        if (action === 'map-selected') {
+            showMapTraces(store.selectedKey ? [store.selectedKey] : []);
+            return;
         }
-        html += '</div></div>';
-        return html;
+        if (action === 'map-all') {
+            showMapTraces(null);
+            return;
+        }
+        if (!ctx) return;
+        const { raceNum, lane, key } = ctx;
+        const slot = getSlot(raceNum, lane);
+        if (action === 'start') startRow(raceNum, lane);
+        else if (action === 'stop') await stopRow(raceNum, lane);
+        else if (action === 'save') saveRow(raceNum, lane);
+        else if (action === 'gps') await fetchGpsForSlot(raceNum, lane, slot);
+        else if (action === 'map') {
+            store.selectedKey = key;
+            saveStore();
+            showMapTraces([key]);
+            renderPanel();
+        }
     }
 
     function bindPanelEvents() {
         const panel = document.getElementById('bsrTrialLive');
-        if (!panel || panel.dataset.bound === '2') return;
-        panel.dataset.bound = '2';
+        if (!panel || panelBound) return;
+        panelBound = true;
 
-        panel.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('bsr-trial-map-selected')) {
-                showMapTraces(store.selectedKey ? [store.selectedKey] : []);
+        const onPointer = (e) => {
+            if (!panel.contains(e.target)) return;
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const ctx = rowFromEventTarget(btn);
+                const action = btn.dataset.action;
+                if (action === 'split') {
+                    if (ctx) markSplit(ctx.raceNum, ctx.lane, btn.dataset.split);
+                    return;
+                }
+                void handlePanelAction(action, ctx);
                 return;
             }
-            if (e.target.classList.contains('bsr-trial-map-all')) {
-                showMapTraces(null);
-                return;
-            }
-            const row = e.target.closest('tr[data-race]');
-            if (!row) return;
-            const raceNum = parseInt(row.dataset.race, 10);
-            const lane = parseInt(row.dataset.lane, 10);
-            const key = row.dataset.key;
-            if (e.target.classList.contains('bsr-trial-start')) startRow(raceNum, lane);
-            if (e.target.classList.contains('bsr-trial-stop')) await stopRow(raceNum, lane);
-            if (e.target.classList.contains('bsr-trial-gps-fetch')) {
-                await fetchGpsForSlot(raceNum, lane, getSlot(raceNum, lane));
-            }
-            if (e.target.classList.contains('bsr-trial-map-one')) {
-                store.selectedKey = key;
+            const ctx = rowFromEventTarget(e.target);
+            if (
+                ctx &&
+                !e.target.closest('button') &&
+                !e.target.closest('input') &&
+                !e.target.closest('select')
+            ) {
+                store.selectedKey = ctx.key;
                 saveStore();
-                showMapTraces([key]);
-                renderPanel();
-                return;
+                ctx.row.classList.add('bsr-trial-row--selected');
+                panel.querySelectorAll('.bsr-trial-row--selected').forEach((el) => {
+                    if (el !== ctx.row) el.classList.remove('bsr-trial-row--selected');
+                });
             }
-            if (e.target.classList.contains('bsr-trial-split-btn')) {
-                markSplit(raceNum, lane, e.target.dataset.split);
-                return;
-            }
-            if (!e.target.closest('button') && !e.target.closest('input') && !e.target.closest('select')) {
-                store.selectedKey = key;
-                saveStore();
-                renderPanel();
-            }
-        });
+        };
+
+        panel.addEventListener('pointerdown', onPointer, { passive: false });
 
         panel.addEventListener('change', (e) => {
-            const row = e.target.closest('tr[data-race]');
-            if (!row) return;
-            const raceNum = parseInt(row.dataset.race, 10);
-            const lane = parseInt(row.dataset.lane, 10);
-            const slot = getSlot(raceNum, lane);
+            const ctx = rowFromEventTarget(e.target);
+            if (!ctx) return;
+            const slot = getSlot(ctx.raceNum, ctx.lane);
             if (e.target.classList.contains('bsr-trial-crew')) {
                 slot.crew = e.target.value.trim().toUpperCase();
+                slot.saved = false;
                 saveStore();
-                renderPanel();
             }
             if (e.target.classList.contains('bsr-trial-gps')) {
                 slot.gps = e.target.value;
                 saveStore();
-                renderPanel();
             }
         });
 
         panel.addEventListener('input', (e) => {
             if (!e.target.classList.contains('bsr-trial-crew')) return;
-            const row = e.target.closest('tr[data-race]');
-            if (!row) return;
-            getSlot(parseInt(row.dataset.race, 10), parseInt(row.dataset.lane, 10)).crew =
-                e.target.value.trim().toUpperCase();
+            const ctx = rowFromEventTarget(e.target);
+            if (!ctx) return;
+            getSlot(ctx.raceNum, ctx.lane).crew = e.target.value.trim().toUpperCase();
             saveStore();
         });
     }
@@ -601,7 +763,6 @@
     async function init() {
         loadStore();
         await loadMeta();
-        bindPanelEvents();
         global.addEventListener('bsr:race-selected', (e) => onRaceSelected(e.detail));
         global.addEventListener('bsr:event-selected', (e) => onEventSelected(e.detail));
         global.addEventListener('bsr:regatta-loaded', (e) => onRegattaLoaded(e.detail));
@@ -612,7 +773,7 @@
         isTrialRegatta,
         getRankings: () => ({ ...store.rankings }),
         reset: () => {
-            store = { races: {}, rankings: { women: [], men: [] }, selectedKey: '' };
+            store = { races: {}, rankings: { women: [], men: [] }, selectedKey: '', publishedEvents: {} };
             saveStore();
             renderPanel();
         },
