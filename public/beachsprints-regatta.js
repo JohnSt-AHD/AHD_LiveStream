@@ -1459,6 +1459,11 @@
             renderKnockoutTree();
             renderEventSchedule();
         }
+        window.dispatchEvent(
+            new CustomEvent('bsr:event-selected', {
+                detail: { eventKey: key || '', group: group || null },
+            }),
+        );
     }
 
     function renderTimeTrialPanel() {
@@ -1755,11 +1760,9 @@
 
 
     function destroyMiniMap() {
+        if (state.miniMap) destroyTraceMapHolder(state.miniMap);
         state.miniMapLayers = [];
-        if (state.miniMap) {
-            state.miniMap.remove();
-            state.miniMap = null;
-        }
+        state.miniMap = null;
     }
 
     function decimateGpsPoints(points, maxPts) {
@@ -2867,15 +2870,22 @@
         );
     }
 
-    function renderMiniMap(traces, courseBuoys, traceAnalyses, mapCourse) {
-        const el = document.getElementById('bsrRaceMap');
-        if (!el || typeof L === 'undefined') return;
-        destroyMiniMap();
-        state.miniMap = L.map(el, { zoomControl: true, attributionControl: false });
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(
-            state.miniMap,
-        );
-        state.miniMapLayers = [];
+    function destroyTraceMapHolder(holder) {
+        if (!holder) return;
+        holder.layers = [];
+        if (holder.map) {
+            holder.map.remove();
+            holder.map = null;
+        }
+    }
+
+    function renderTraceMapInto(containerEl, traces, holder, courseBuoys, traceAnalyses, mapCourse) {
+        if (!containerEl || typeof L === 'undefined') return;
+        destroyTraceMapHolder(holder);
+        holder.map = L.map(containerEl, { zoomControl: true, attributionControl: false });
+        const map = holder.map;
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        holder.layers = [];
         const bounds = [];
 
         const coastal = window.BeachSprintsCoastal;
@@ -2895,10 +2905,10 @@
                 mapCourse,
             });
             if (overlay?.ok) {
-                beachLayer = renderBeachRunOverlayLayer(state.miniMap, overlay, (i) =>
+                beachLayer = renderBeachRunOverlayLayer(map, overlay, (i) =>
                     boatTheme(i).color,
                 );
-                if (beachLayer) state.miniMapLayers.push(beachLayer);
+                if (beachLayer) holder.layers.push(beachLayer);
                 for (const leg of [overlay.tideLine, overlay.startFinishGate]) {
                     if (!leg) continue;
                     bounds.push([leg.a.lat, leg.a.lng], [leg.b.lat, leg.b.lng]);
@@ -2912,14 +2922,14 @@
             }
         }
 
-        const routeLayer = L.layerGroup().addTo(state.miniMap);
-        state.miniMapLayers.push(routeLayer);
+        const routeLayer = L.layerGroup().addTo(map);
+        holder.layers.push(routeLayer);
         const buoyLayer = renderCourseBuoysLayer(
-            state.miniMap,
+            map,
             courseBuoys,
             mapCourse?.flags,
         );
-        if (buoyLayer) state.miniMapLayers.push(buoyLayer);
+        if (buoyLayer) holder.layers.push(buoyLayer);
 
         (traces || []).forEach((t, traceIdx) => {
             const segments = gpsSegmentsAboveSpeed(t.points, MIN_TRACE_DISPLAY_MPS);
@@ -2977,16 +2987,24 @@
         if (mapCourse?.startFinish) {
             bounds.push([mapCourse.startFinish.lat, mapCourse.startFinish.lng]);
         }
-        if (bounds.length) state.miniMap.fitBounds(bounds, { padding: [28, 28] });
+        if (bounds.length) map.fitBounds(bounds, { padding: [28, 28] });
         else if (mapCourse?.startFinish) {
-            state.miniMap.setView(
+            map.setView(
                 [mapCourse.startFinish.lat, mapCourse.startFinish.lng],
                 17,
             );
         } else {
-            state.miniMap.setView([-36.592, 174.703], 16);
+            map.setView([-36.628, 174.758], 16);
         }
-        requestAnimationFrame(() => state.miniMap?.invalidateSize());
+        requestAnimationFrame(() => map?.invalidateSize());
+    }
+
+    function renderMiniMap(traces, courseBuoys, traceAnalyses, mapCourse) {
+        const el = document.getElementById('bsrRaceMap');
+        if (!el) return;
+        destroyMiniMap();
+        state.miniMap = { map: null, layers: [] };
+        renderTraceMapInto(el, traces, state.miniMap, courseBuoys, traceAnalyses, mapCourse);
     }
 
     function renderRaceList() {
@@ -3915,6 +3933,25 @@
         },
         fetchRoute,
         applyTrialResult,
+        getSelectedEventKey: () => state.selectedEventKey,
+        getEventRaces(eventKey) {
+            const g = getEventGroup(eventKey);
+            return g ? getRacesForEvent(g) : [];
+        },
+        renderTraceMap(containerEl, traces, mapHolder, opts = {}) {
+            const coastal = window.BeachSprintsCoastal;
+            const courseBuoys = opts.courseBuoys || coastal?.getCourseBuoys?.() || [];
+            const mapCourse = coastal?.getMapCourseGeometry?.() || null;
+            renderTraceMapInto(
+                containerEl,
+                traces || [],
+                mapHolder || { map: null, layers: [] },
+                courseBuoys,
+                opts.traceAnalyses,
+                mapCourse,
+            );
+            return mapHolder;
+        },
     };
 
     document.addEventListener('DOMContentLoaded', init);
