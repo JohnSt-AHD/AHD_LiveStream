@@ -1151,7 +1151,10 @@
                 const placing =
                     matchingPlacing(crewCode, res?.placings) || matchingPlacing(lane.crew, res?.placings);
                 const info = clubInfo(crewCode);
-                if (trial?.display && trial.display !== info.name) {
+                const trialDisplay = window.BsrTrialProgression?.formatAthleteDisplay?.(crewCode);
+                if (trialDisplay) {
+                    info.name = trialDisplay;
+                } else if (trial?.display && trial.display !== info.name) {
                     info.name = trial.display;
                 }
                 slots.push({
@@ -1747,12 +1750,18 @@
                 crews = escapeHtml(trialProg.formatCrewsForSchedule(race));
             }
             if (res?.placings?.length) {
-                crews = res.placings
-                    .map((p) => {
-                        const ci = clubInfo(p.competitor);
-                        return `${p.place}. ${escapeHtml(ci.name)} (${escapeHtml(p.time || '—')})`;
-                    })
-                    .join(' · ');
+                if (state.regattaCode === 'u19_ct_26' && trialProg?.formatResultLine) {
+                    crews = res.placings
+                        .map((p) => escapeHtml(trialProg.formatResultLine(p.place, p.competitor, p.time)))
+                        .join(' · ');
+                } else {
+                    crews = res.placings
+                        .map((p) => {
+                            const ci = clubInfo(p.competitor);
+                            return `${p.place}. ${escapeHtml(ci.name)} (${escapeHtml(p.time || '—')})`;
+                        })
+                        .join(' · ');
+                }
             }
             const current = race.raceNum === state.selectedRaceNum;
             html +=
@@ -3112,7 +3121,10 @@
             const crewCode = trialLane?.code || lane.crew;
             const resolved = resolveClubFromCrew(crewCode);
             const info = clubInfo(resolved.clubId || crewCode);
-            if (trialLane?.display && trialLane.display !== info.name) {
+            const trialDisplay = window.BsrTrialProgression?.formatAthleteDisplay?.(crewCode);
+            if (trialDisplay) {
+                info.name = trialDisplay;
+            } else if (trialLane?.display && trialLane.display !== info.name) {
                 info.name = trialLane.display;
             }
             const placing =
@@ -3666,6 +3678,7 @@
         renderEventSchedule();
         renderKnockoutTree();
         if (state.selectedRaceNum) renderRaceDetail();
+        if (window.BsrTrialLive?.rerender) window.BsrTrialLive.rerender();
     }
 
     function getRaceResult(raceNum) {

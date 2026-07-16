@@ -4,7 +4,7 @@
 (function (global) {
     const TRIAL_CODE = 'u19_ct_26';
 
-    /** Division id → winner slot ref for semi/final lane labels. */
+    /** Division id → race number for play-in / semi winners. */
     const DIVISION_WINNER = {
         WP1: 12,
         WP2: 13,
@@ -27,6 +27,42 @@
     function athleteName(code) {
         const meta = global.BsrTrialLive?.getAthleteMeta?.(code);
         return meta?.name || code || '—';
+    }
+
+    function isAthleteCode(code) {
+        return /^[A-Z]{2,5}$/i.test(String(code || '').trim());
+    }
+
+    function seedLabelForCode(code) {
+        const c = String(code || '').toUpperCase();
+        if (!c) return '';
+        const w = rankings().women || [];
+        const m = rankings().men || [];
+        const wi = w.findIndex((x) => String(x).toUpperCase() === c);
+        if (wi >= 0) return `W${wi + 1}`;
+        const mi = m.findIndex((x) => String(x).toUpperCase() === c);
+        if (mi >= 0) return `M${mi + 1}`;
+        return '';
+    }
+
+    /** e.g. Hazel Church (W6) */
+    function formatAthleteDisplay(code) {
+        const c = String(code || '').trim().toUpperCase();
+        if (!isAthleteCode(c)) return '';
+        const name = athleteName(c);
+        const seed = seedLabelForCode(c);
+        return seed ? `${name} (${seed})` : name;
+    }
+
+    function formatPendingLabel(raw) {
+        const s = String(raw || '').trim();
+        if (/^winner /i.test(s)) return s.replace(/^winner /i, 'Winner ');
+        return s;
+    }
+
+    function resolvedDisplay(code, raw) {
+        if (code && isAthleteCode(code)) return formatAthleteDisplay(code);
+        return formatPendingLabel(raw || code);
     }
 
     function rankCode(gender, n) {
@@ -62,10 +98,11 @@
         if (!m) return null;
         const mc = rankCode('M', m[1]);
         const wc = rankCode('W', m[2]);
-        if (!mc && !wc) return { code: label, display: label };
-        const display = `${athleteName(wc)} + ${athleteName(mc)}`;
+        if (!mc && !wc) return { code: label, display: label, raw: label };
+        const wPart = wc ? formatAthleteDisplay(wc) : `W${m[2]}`;
+        const mPart = mc ? formatAthleteDisplay(mc) : `M${m[1]}`;
         const code = wc && mc ? `${wc}+${mc}` : label;
-        return { code, display, raw: label };
+        return { code, display: `${wPart} + ${mPart}`, raw: label };
     }
 
     function resolveDoublesLabel(label) {
@@ -75,9 +112,10 @@
             const a = rankCode('W', pair[1]);
             const b = rankCode('W', pair[2]);
             if (a || b) {
+                const parts = [a, b].map((c) => (c ? formatAthleteDisplay(c) : '')).filter(Boolean);
                 return {
                     code: [a, b].filter(Boolean).join('+'),
-                    display: `${athleteName(a)} + ${athleteName(b)}`,
+                    display: parts.join(' + '),
                     raw: label,
                 };
             }
@@ -87,9 +125,10 @@
             const a = rankCode('M', mpair[1]);
             const b = rankCode('M', mpair[2]);
             if (a || b) {
+                const parts = [a, b].map((c) => (c ? formatAthleteDisplay(c) : '')).filter(Boolean);
                 return {
                     code: [a, b].filter(Boolean).join('+'),
-                    display: `${athleteName(a)} + ${athleteName(b)}`,
+                    display: parts.join(' + '),
                     raw: label,
                 };
             }
@@ -98,6 +137,15 @@
             return { code: s, display: s, raw: label };
         }
         return null;
+    }
+
+    function winnerFromPlayIn(gender, which) {
+        if (gender === 'M') {
+            return which === 'low' ? winnerByDivision('MP1') : '';
+        }
+        if (which === 'high') return winnerByDivision('WP1');
+        if (which === 'low') return winnerByDivision('WP2');
+        return '';
     }
 
     /**
@@ -121,49 +169,34 @@
             const code = rankCode(wm[1].toUpperCase(), wm[2]);
             return {
                 code: code || raw,
-                display: code ? athleteName(code) : raw,
+                display: resolvedDisplay(code, raw),
                 raw,
             };
         }
 
         if (/^winner \(3 v 6\)$/i.test(raw)) {
-            const code = gender === 'M' ? winnerByDivision('MP1') : winnerByDivision('WP1');
-            return {
-                code: code || raw,
-                display: code ? athleteName(code) : raw,
-                raw,
-            };
+            const code = winnerFromPlayIn(gender, 'high');
+            return { code: code || raw, display: resolvedDisplay(code, raw), raw };
         }
         if (/^winner \(4 v 5\)$/i.test(raw)) {
-            const code = gender === 'M' ? winnerByDivision('MP1') : winnerByDivision('WP2');
-            return {
-                code: code || raw,
-                display: code ? athleteName(code) : raw,
-                raw,
-            };
+            const code = winnerFromPlayIn(gender, 'low');
+            return { code: code || raw, display: resolvedDisplay(code, raw), raw };
         }
 
         const sf = raw.match(/^(WSF|MSF)(\d+)$/i);
         if (sf) {
             const code = winnerByDivision(`${sf[1].toUpperCase()}${sf[2]}`);
-            return {
-                code: code || raw,
-                display: code ? athleteName(code) : raw,
-                raw,
-            };
+            return { code: code || raw, display: resolvedDisplay(code, raw), raw };
         }
 
         if (/^\d+$/.test(raw) && gender) {
             const code = rankCode(gender, raw);
-            return {
-                code: code || raw,
-                display: code ? athleteName(code) : raw,
-                raw,
-            };
+            return { code: code || raw, display: resolvedDisplay(code, raw), raw };
         }
 
-        if (/^[A-Z]{2,5}$/.test(raw)) {
-            return { code: raw, display: athleteName(raw), raw };
+        if (isAthleteCode(raw)) {
+            const code = raw.toUpperCase();
+            return { code, display: formatAthleteDisplay(code), raw };
         }
 
         return { code: raw, display: raw, raw };
@@ -174,18 +207,20 @@
         return race.lanes
             .map((l) => {
                 const r = resolveLane(race, l.crew);
-                if (r.code && r.display !== r.raw && r.raw) {
-                    return `${r.display} (${r.raw})`;
-                }
                 return r.display || r.code || l.crew;
             })
             .join(' vs ');
     }
 
+    function formatResultLine(place, competitor, time) {
+        const label = formatAthleteDisplay(competitor) || athleteName(competitor);
+        return `${place}. ${label} (${time || '—'})`;
+    }
+
     function refreshViews() {
         const api = global.BsrRegatta;
-        if (!api?.refreshTrialProgression) return;
-        api.refreshTrialProgression();
+        if (api?.refreshTrialProgression) api.refreshTrialProgression();
+        if (global.BsrTrialLive?.rerender) global.BsrTrialLive.rerender();
     }
 
     global.BsrTrialProgression = {
@@ -193,6 +228,9 @@
         isTrial,
         resolveLane,
         formatCrewsForSchedule,
+        formatAthleteDisplay,
+        formatResultLine,
+        seedLabelForCode,
         refreshViews,
         rankCode,
         athleteName,
