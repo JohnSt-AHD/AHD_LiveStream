@@ -1,0 +1,73 @@
+{
+  "code": "u19_ct_26",
+  "name": "U19 Coastal Selection Trial 2026",
+  "location": "Big Manly Beach",
+  "venue": "Manly Sailing Club",
+  "date": "2026-07-18",
+  "trialPlan": true,
+  "gpsDevices": [
+    "C1X_A",
+    "C1X_B"
+  ],
+  "athletes": {
+    "women": [
+      {
+        "name": "Elizabeth Keddell",
+        "club": "Petone Rowing Club",
+        "code": "KEDD"
+      },
+      {
+        "name": "Emily Pengelly",
+        "club": "Bay of Plenty Coast Rowing Club",
+        "code": "PENG"
+      },
+      {
+        "name": "Tallulah Kubaisi-Gallagher",
+        "club": "Bay of Plenty Coast Rowing Club",
+        "code": "KUBA"
+      },
+      {
+        "name": "Millie Brooks",
+        "club": "Avon / Cashmere High School",
+        "code": "BROO"
+      },
+      {
+        "name": "Sophie Harrison",
+        "club": "Bay of Plenty Coast / Aquinas College",
+        "code": "HARR"
+      },
+      {
+        "name": "Hazel Church",
+        "club": "Waikato Rowing Club / St Paul's Collegiate School",
+        "code": "CHUR"
+      }
+    ],
+    "men": [
+      {
+        "name": "Arthur Crimmins",
+        "club": "Tauranga Rowing Club",
+        "code": "CRIM"
+      },
+      {
+        "name": "Guy Smith",
+        "club": "—",
+        "code": "SMIT"
+      },
+      {
+        "name": "Henry Johnston",
+        "club": "—",
+        "code": "JOHN"
+      },
+      {
+        "name": "Leonardo Bacchus",
+        "club": "Takapuna Grammar Rowing Club",
+        "code": "BACC"
+      },
+      {
+        "name": "Jacob Haley",
+        "club": "Canterbury Rowing Club / Cashmere High School",
+        "code": "HALE"
+      }
+    ]
+  }
+}

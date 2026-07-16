@@ -18,6 +18,7 @@
     "docs:m26-30s-report": "node scripts/generate-m26-h7-30s-test-pdf.mjs",
     "docs:m26-10s-report": "node scripts/generate-m26-h7-10s-test-pdf.mjs",
     "docs:m1-report": "node scripts/generate-m1-field-test-pdf.mjs",
+    "trial:u19-csv": "node scripts/generate-u19-trial-regatta-csv.mjs",
     "proposals:all": "node scripts/generate-kri-proposal-pdfs.mjs && node scripts/generate-crewsight-technical-pdf.mjs && node scripts/generate-crewsight-roadmap-pdf.mjs && node scripts/generate-crewsight-comparison-pdf.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

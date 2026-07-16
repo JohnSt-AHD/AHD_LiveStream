@@ -35,6 +35,19 @@
                 tideLineC: 25,
             },
         },
+        {
+            id: 'big-manly',
+            name: 'Big Manly Beach',
+            builtin: true,
+            layout: {
+                originLat: -36.628375,
+                originLng: 174.758363,
+                headingDeg: 45,
+                laneSpacingA: 25,
+                buoySpacingB: 85,
+                tideLineC: 50,
+            },
+        },
     ];
 
     function slugify(name) {

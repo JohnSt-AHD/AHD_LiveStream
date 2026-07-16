@@ -7,6 +7,12 @@
     const ROWIT_CSV_BASES = ['https://l.rowit.nz/altitude', 'https://rowit.nz/altitude'];
     const LOCAL_REGATTA_CSV = {
         cnzb2026: { results: 'data/cnzb2026-results.csv' },
+        u19_ct_26: {
+            events: 'data/archives/u19_ct_26/latest/events.csv',
+            daysheet: 'data/archives/u19_ct_26/latest/daysheet.csv',
+            results: 'data/archives/u19_ct_26/latest/results.csv',
+            competitors: 'data/archives/u19_ct_26/latest/competitors.csv',
+        },
     };
     const REGATTA_META = {
         cnzb2026: {
@@ -14,7 +20,17 @@
             location: 'Orewa, Auckland',
             venue: 'Orewa Beach',
         },
+        u19_ct_26: {
+            name: 'U19 Coastal Selection Trial 2026',
+            location: 'Big Manly Beach',
+            venue: 'Manly Sailing Club',
+            trial: true,
+        },
     };
+    const TRIAL_GPS_NAMES = [
+        { alias: 'boat_1', pattern: /c1x[_\s-]?a/i },
+        { alias: 'boat_2', pattern: /c1x[_\s-]?b/i },
+    ];
     const LS_REGATTA = 'bsrRegattaCode_v1';
     const LS_GPS_OFFSET = 'bsrGpsOffsetMin_v1';
     const LS_DEVICE_ALIASES = 'bsrDeviceAliases_v1';
@@ -291,6 +307,7 @@
         for (const line of text.split(/\r?\n/)) {
             const trimmed = line.trim();
             if (!trimmed || !/^\d/.test(trimmed)) continue;
+            if (trimmed.startsWith('#')) continue;
             const cols = parseCsvLine(trimmed);
             const raceNum = parseInt(cols[0], 10);
             if (!Number.isFinite(raceNum)) continue;
@@ -1229,15 +1246,30 @@
         }
     }
 
+    function applyTrialDefaults() {
+        state.laneDevices[1] = state.laneDevices[1] || 'boat_1';
+        state.laneDevices[2] = state.laneDevices[2] || 'boat_2';
+        if (window.AltitudeHdTrackerSource?.setSource) {
+            window.AltitudeHdTrackerSource.setSource('rowing');
+        }
+    }
+
     function applyRegattaPreset(code) {
+        const normalized = normalizeRegattaCode(code);
         const presets = loadRegattaPresets();
-        const p = presets[normalizeRegattaCode(code)];
-        if (!p) return false;
-        state.gpsOffsetMin = p.gpsOffsetMin ?? 0;
-        state.deviceAliases = { ...(p.deviceAliases || {}) };
-        state.laneDevices = { ...(p.laneDevices || {}) };
-        ensureDeviceAliases();
-        return true;
+        const p = presets[normalized];
+        if (p) {
+            state.gpsOffsetMin = p.gpsOffsetMin ?? 0;
+            state.deviceAliases = { ...(p.deviceAliases || {}) };
+            state.laneDevices = { ...(p.laneDevices || {}) };
+            ensureDeviceAliases();
+            return true;
+        }
+        if (normalized === 'u19_ct_26') {
+            applyTrialDefaults();
+            return true;
+        }
+        return false;
     }
 
     function loadSettings() {
@@ -3279,11 +3311,19 @@
             ensureDeviceAliases();
             for (const alias of BOAT_ALIASES.slice(0, maxLaneCount())) {
                 if (state.deviceAliases[alias]) continue;
-                const found = state.devices.find(
+                let found = state.devices.find(
                     (d) =>
                         String(d.name || '').toLowerCase() === alias ||
                         String(d.uniqueId || '').toLowerCase() === alias,
                 );
+                if (!found && state.regattaCode === 'u19_ct_26') {
+                    const trialMatch = TRIAL_GPS_NAMES.find((t) => t.alias === alias);
+                    if (trialMatch) {
+                        found = state.devices.find((d) =>
+                            trialMatch.pattern.test(String(d.name || d.uniqueId || '')),
+                        );
+                    }
+                }
                 if (found) state.deviceAliases[alias] = String(found.id);
             }
         } catch {
@@ -3533,6 +3573,38 @@
         const url = new URL(location.href);
         url.searchParams.set('race', String(raceNum));
         history.replaceState(null, '', url);
+        window.dispatchEvent(
+            new CustomEvent('bsr:race-selected', { detail: { raceNum, race: race || null } }),
+        );
+    }
+
+    function applyTrialResult(raceNum, payload) {
+        const race = findRace(raceNum);
+        if (!race || !payload?.time) return;
+        const placings = [];
+        const existing = state.results.get(raceNum);
+        if (existing?.placings?.length) {
+            for (const p of existing.placings) placings.push({ ...p });
+        }
+        const idx = placings.findIndex((p) => p.competitor === payload.crew);
+        const row = {
+            place: payload.lane || 1,
+            competitor: payload.crew,
+            time: payload.time,
+        };
+        if (idx >= 0) placings[idx] = row;
+        else placings.push(row);
+        placings.sort((a, b) => a.place - b.place);
+        state.results.set(raceNum, {
+            status: 'Live',
+            eventNum: race.eventNum,
+            round: race.round,
+            division: race.division,
+            placings,
+        });
+        renderTimeTrialPanel();
+        renderEventSchedule();
+        renderKnockoutTree();
     }
 
     async function loadMissingLogosReport() {
@@ -3632,7 +3704,11 @@
             statusMsg +=
                 ' — daysheet parsed empty; check daysheet.csv format (race numbers and lane columns).';
         } else if (state.results.size === 0) {
-            statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
+            if (normalizeRegattaCode(code) === 'u19_ct_26') {
+                statusMsg += ' — live trial mode: use Live trial panel for manual times + GPS.';
+            } else {
+                statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
+            }
         }
         setStatus(statusMsg);
         renderStatsOverview();
@@ -3651,6 +3727,11 @@
             selectRace(state.selectedRaceNum);
         }
         if (!options.skipGpsProbe) probeGpsForDays();
+        window.dispatchEvent(
+            new CustomEvent('bsr:regatta-loaded', {
+                detail: { code: normalizeRegattaCode(code), races: state.races.length },
+            }),
+        );
     }
 
     function stopLiveRefresh() {
@@ -3815,6 +3896,26 @@
 
     window.trackerSourcePageRefresh = onTrackerSourceChanged;
     window.addEventListener('altitudehd:tracker-source', onTrackerSourceChanged);
+
+    window.BsrRegatta = {
+        getRace: findRace,
+        getRacesForEvent(eventNum) {
+            const g = buildEventGroups().find((x) => x.key === String(eventNum));
+            return g ? getRacesForEvent(g) : [];
+        },
+        getDevices: () => state.devices.slice(),
+        getDeviceAliases: () => ({ ...state.deviceAliases }),
+        setDeviceAlias(alias, id) {
+            state.deviceAliases[alias] = id || '';
+            saveSettings();
+        },
+        setLaneDevice(lane, alias) {
+            state.laneDevices[lane] = alias || '';
+            saveSettings();
+        },
+        fetchRoute,
+        applyTrialResult,
+    };
 
     document.addEventListener('DOMContentLoaded', init);
 })();

@@ -1048,6 +1048,42 @@
           "changed": true
         }
       }
+    },
+    "u19_ct_26": {
+      "name": "U19 Coastal Selection Trial 2026",
+      "daily": ["2026-07-18"],
+      "latest": {
+        "events": "data/archives/u19_ct_26/latest/events.csv",
+        "daysheet": "data/archives/u19_ct_26/latest/daysheet.csv",
+        "results": "data/archives/u19_ct_26/latest/results.csv",
+        "competitors": "data/archives/u19_ct_26/latest/competitors.csv"
+      },
+      "files": {
+        "events": {
+          "bytes": 0,
+          "sourceUrl": "local",
+          "archivedAt": "2026-07-17T00:00:00.000Z",
+          "changed": true
+        },
+        "daysheet": {
+          "bytes": 0,
+          "sourceUrl": "local",
+          "archivedAt": "2026-07-17T00:00:00.000Z",
+          "changed": true
+        },
+        "results": {
+          "bytes": 0,
+          "sourceUrl": "local",
+          "archivedAt": "2026-07-17T00:00:00.000Z",
+          "changed": true
+        },
+        "competitors": {
+          "bytes": 0,
+          "sourceUrl": "local",
+          "archivedAt": "2026-07-17T00:00:00.000Z",
+          "changed": true
+        }
+      }
     }
   }
 }
