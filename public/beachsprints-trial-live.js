@@ -161,29 +161,53 @@
         const prog = global.BsrTrialProgression;
         if (prog?.resolveLane && row.race) {
             const hit = prog.resolveLane(row.race, row.crewDefault);
-            if (hit?.code && /^[A-Z]{2,5}$/i.test(hit.code)) return hit.code;
+            if (hit?.code && prog.isAthleteCode?.(hit.code)) return hit.code;
         }
-        return row.crewDefault || '';
+        const raw = String(row.crewDefault || '').trim();
+        if (prog?.isAthleteCode?.(raw)) return raw.toUpperCase();
+        return '';
     }
 
     function displayNameForRow(row, slot) {
         const prog = global.BsrTrialProgression;
         const hit = prog?.resolveLane?.(row.race, row.crewDefault);
-        const code = slot.crew || (hit?.code && /^[A-Z]{2,5}$/i.test(hit.code) ? hit.code : '');
+        const bracket = prog?.isBracketLabel?.(row.crewDefault);
+        if (bracket && hit?.display) return hit.display;
+        const code =
+            slot.crew && prog?.isAthleteCode?.(slot.crew) ? slot.crew
+            : hit?.code && prog?.isAthleteCode?.(hit.code) ? hit.code
+            :   '';
         if (code && prog?.formatAthleteDisplay) {
             const labelled = prog.formatAthleteDisplay(code);
             if (labelled) return labelled;
         }
-        if (hit?.display) return hit.display;
-        return athleteName(code || row.crewDefault);
+        return hit?.display || athleteName(code || row.crewDefault);
     }
 
     function syncProgressionCrew(row, slot) {
         if (slot.runningAt || slot.saved) return;
-        const code = resolvedCrewForRow(row);
-        if (!code || slot.crew === code) return;
-        slot.crew = code;
-        saveStore();
+        const prog = global.BsrTrialProgression;
+        const hit = prog?.resolveLane?.(row.race, row.crewDefault);
+        const resolved = hit?.code && prog?.isAthleteCode?.(hit.code) ? hit.code : '';
+        const bracket = prog?.isBracketLabel?.(row.crewDefault);
+        if (bracket) {
+            if (resolved && slot.crew !== resolved) {
+                slot.crew = resolved;
+                saveStore();
+            } else if (!resolved && slot.crew && !prog?.isAthleteCode?.(slot.crew)) {
+                slot.crew = '';
+                saveStore();
+            }
+        } else if (resolved && !slot.crew) {
+            slot.crew = resolved;
+            saveStore();
+        }
+    }
+
+    function refreshBracketCrews() {
+        for (const row of buildEventRows()) {
+            syncProgressionCrew(row, getSlot(row.raceNum, row.lane));
+        }
     }
 
     function buildCodeLookup() {
@@ -432,7 +456,13 @@
     function saveRow(raceNum, lane) {
         const slot = getSlot(raceNum, lane);
         const row = buildEventRows().find((r) => r.raceNum === raceNum && r.lane === lane);
-        if (row) syncProgressionCrew(row, slot);
+        if (row) {
+            syncProgressionCrew(row, slot);
+            const hit = global.BsrTrialProgression?.resolveLane?.(row.race, row.crewDefault);
+            if (hit?.code && global.BsrTrialProgression?.isAthleteCode?.(hit.code)) {
+                slot.crew = hit.code;
+            }
+        }
         const total = finishMs(slot);
         if (total == null) {
             slot.notes = 'Mark finish (Fin split or Stop) before Save';
@@ -444,6 +474,7 @@
         slot.savedAt = Date.now();
         saveStore();
         publishEventLeaderboard(false);
+        refreshBracketCrews();
         statusFlash = `Saved ${athleteName(slot.crew)} — ${formatMs(total)}`;
         global.BsrTrialProgression?.refreshViews?.();
         renderPanel();
@@ -667,7 +698,7 @@
         const { raceNum, lane, crewDefault, sched } = row;
         const slot = getSlot(raceNum, lane);
         syncProgressionCrew(row, slot);
-        const defaultCrew = resolvedCrewForRow(row) || crewDefault;
+        const defaultCrew = resolvedCrewForRow(row) || (global.BsrTrialProgression?.isAthleteCode?.(crewDefault) ? crewDefault : '');
         if (!slot.crew && defaultCrew) slot.crew = defaultCrew;
         const athleteDisplay = displayNameForRow(row, slot);
         const k = slotKey(raceNum, lane);
@@ -685,7 +716,7 @@
             `<tr class="bsr-trial-row${selected ? ' bsr-trial-row--selected' : ''}${slot.saved ? ' bsr-trial-row--saved' : ''}" data-key="${esc(k)}" data-race="${raceNum}" data-lane="${lane}">` +
             `<td class="bsr-trial-order">${orderIdx + 1}</td>` +
             `<td class="bsr-trial-sched">${esc(sched)}</td>` +
-            `<td><input type="text" class="bsr-trial-crew" value="${esc(slot.crew)}" placeholder="${esc(crewDefault || '')}"></td>` +
+            `<td><input type="text" class="bsr-trial-crew" value="${esc(slot.crew)}" placeholder="${esc(global.BsrTrialProgression?.isAthleteCode?.(crewDefault) ? crewDefault : '')}"></td>` +
             `<td><span class="bsr-trial-athlete-name">${esc(athleteDisplay)}</span></td>` +
             `<td><select class="bsr-trial-gps">${gpsOpts}</select></td>` +
             renderSplitCells(slot, k) +

@@ -30,7 +30,21 @@
     }
 
     function isAthleteCode(code) {
-        return /^[A-Z]{2,5}$/i.test(String(code || '').trim());
+        const c = String(code || '').trim();
+        if (/^[WM]\d+$/i.test(c)) return false;
+        if (/^winner /i.test(c)) return false;
+        if (/^(WSF|MSF)\d*$/i.test(c)) return false;
+        return /^[A-Z]{2,5}$/i.test(c);
+    }
+
+    function isBracketLabel(label) {
+        const s = String(label || '').trim();
+        return (
+            /^winner /i.test(s) ||
+            /^[WM]\d+$/i.test(s) ||
+            /^(WSF|MSF)\d*$/i.test(s) ||
+            /^\d+$/.test(s)
+        );
     }
 
     function seedLabelForCode(code) {
@@ -77,7 +91,16 @@
         if (!api?.getRaceResult) return '';
         const res = api.getRaceResult(raceNum);
         const win = res?.placings?.find((p) => p.place === 1);
-        return win?.competitor || '';
+        const code = win?.competitor || '';
+        return isAthleteCode(code) ? code.toUpperCase() : normalizeWinnerCode(code, raceNum);
+    }
+
+    function normalizeWinnerCode(competitor, raceNum) {
+        const api = global.BsrRegatta;
+        const race = api?.getRace?.(raceNum);
+        if (!race || !competitor) return '';
+        const hit = resolveLane(race, competitor);
+        return hit?.code && isAthleteCode(hit.code) ? hit.code.toUpperCase() : '';
     }
 
     function winnerByDivision(division) {
@@ -231,6 +254,8 @@
         formatAthleteDisplay,
         formatResultLine,
         seedLabelForCode,
+        isBracketLabel,
+        isAthleteCode,
         refreshViews,
         rankCode,
         athleteName,
