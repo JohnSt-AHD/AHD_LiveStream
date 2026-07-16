@@ -1129,6 +1129,12 @@
         });
     }
 
+    function trialResolveLane(race, crewLabel) {
+        const prog = window.BsrTrialProgression;
+        if (state.regattaCode !== 'u19_ct_26' || !prog?.resolveLane) return null;
+        return prog.resolveLane(race, crewLabel);
+    }
+
     function getRaceMatchData(raceNum) {
         const race =
             findRace(raceNum) ||
@@ -1140,13 +1146,21 @@
 
         if (race?.lanes?.length) {
             for (const lane of race.lanes) {
-                const placing = matchingPlacing(lane.crew, res?.placings);
+                const trial = trialResolveLane(race, lane.crew);
+                const crewCode = trial?.code || lane.crew;
+                const placing =
+                    matchingPlacing(crewCode, res?.placings) || matchingPlacing(lane.crew, res?.placings);
+                const info = clubInfo(crewCode);
+                if (trial?.display && trial.display !== info.name) {
+                    info.name = trial.display;
+                }
                 slots.push({
-                    crew: lane.crew,
-                    info: clubInfo(lane.crew),
+                    crew: crewCode,
+                    info,
                     time: placing?.time || '',
                     place: placing?.place,
                     lane: lane.lane,
+                    seedLabel: trial?.raw !== crewCode ? trial?.raw : '',
                 });
             }
         } else if (res?.placings?.length) {
@@ -1728,6 +1742,10 @@
             const res = state.results.get(race.raceNum);
             const kind = classifyRound(race.round);
             let crews = race.lanes.map((l) => escapeHtml(l.crew)).join(' vs ');
+            const trialProg = window.BsrTrialProgression;
+            if (state.regattaCode === 'u19_ct_26' && trialProg?.formatCrewsForSchedule) {
+                crews = escapeHtml(trialProg.formatCrewsForSchedule(race));
+            }
             if (res?.placings?.length) {
                 crews = res.placings
                     .map((p) => {
@@ -3090,9 +3108,15 @@
 
         let lanesHtml = '';
         for (const lane of race.lanes) {
-            const resolved = resolveClubFromCrew(lane.crew);
-            const info = clubInfo(resolved.clubId || lane.crew);
-            const placing = matchingPlacing(lane.crew, res?.placings);
+            const trialLane = trialResolveLane(race, lane.crew);
+            const crewCode = trialLane?.code || lane.crew;
+            const resolved = resolveClubFromCrew(crewCode);
+            const info = clubInfo(resolved.clubId || crewCode);
+            if (trialLane?.display && trialLane.display !== info.name) {
+                info.name = trialLane.display;
+            }
+            const placing =
+                matchingPlacing(crewCode, res?.placings) || matchingPlacing(lane.crew, res?.placings);
             const isWinner = placing?.place === 1;
             const alias = state.laneDevices[lane.lane] || '';
             let matchHint = '';
@@ -3106,12 +3130,16 @@
                 matchHint =
                     ' <span class="bsr-match-tag" title="Matched school name to club code">matched</span>';
             }
+            const seedNote =
+                trialLane?.raw && trialLane.raw !== crewCode ?
+                    `<span class="bsr-note"> (${escapeHtml(trialLane.raw)})</span>`
+                :   '';
             lanesHtml +=
                 `<div class="bsr-lane-row${isWinner ? ' bsr-lane-row--winner' : ''}">` +
                 `<span class="bsr-lane-n">${lane.lane}</span>` +
                 logoImgHtml('bsr-lane-logo', info.logoUrl, info.name) +
-                `<div><div class="bsr-lane-club">${escapeHtml(info.name)}${matchHint}</div>` +
-                `<div class="bsr-lane-names">${escapeHtml(lane.crew || '')}${alias ? ` · GPS: ${escapeHtml(alias)}` : ''}</div></div>` +
+                `<div><div class="bsr-lane-club">${escapeHtml(info.name)}${matchHint}${seedNote}</div>` +
+                `<div class="bsr-lane-names">${escapeHtml(crewCode || lane.crew || '')}${alias ? ` · GPS: ${escapeHtml(alias)}` : ''}</div></div>` +
                 (placing
                     ? `<span class="bsr-lane-time">${escapeHtml(placing.time)}</span>`
                     : '<span class="bsr-lane-time">—</span>') +
@@ -3623,12 +3651,47 @@
         renderTimeTrialPanel();
         renderEventSchedule();
         renderKnockoutTree();
+        if (window.BsrTrialProgression?.refreshViews) {
+            window.BsrTrialProgression.refreshViews();
+        }
     }
 
     function refreshTrialLeaderboard(eventKey) {
         if (String(state.selectedEventKey) !== String(eventKey)) return;
         renderTimeTrialPanel();
         renderEventSchedule();
+    }
+
+    function refreshTrialProgression() {
+        renderEventSchedule();
+        renderKnockoutTree();
+        if (state.selectedRaceNum) renderRaceDetail();
+    }
+
+    function getRaceResult(raceNum) {
+        return state.results.get(raceNum) || null;
+    }
+
+    function removeTrialResult(raceNum, crew) {
+        const existing = state.results.get(raceNum);
+        if (!existing) return;
+        if (crew) {
+            const placings = (existing.placings || []).filter((p) => p.competitor !== crew);
+            if (placings.length) {
+                state.results.set(raceNum, { ...existing, placings });
+            } else {
+                state.results.delete(raceNum);
+            }
+        } else {
+            state.results.delete(raceNum);
+        }
+        renderTimeTrialPanel();
+        renderEventSchedule();
+        renderKnockoutTree();
+        if (state.selectedRaceNum === raceNum) renderRaceDetail();
+        if (window.BsrTrialProgression?.refreshViews) {
+            window.BsrTrialProgression.refreshViews();
+        }
     }
 
     async function loadMissingLogosReport() {
@@ -3940,6 +4003,10 @@
         fetchRoute,
         applyTrialResult,
         refreshTrialLeaderboard,
+        refreshTrialProgression,
+        getRaceResult,
+        removeTrialResult,
+        getRegattaCode: () => state.regattaCode,
         getSelectedEventKey: () => state.selectedEventKey,
         getEventRaces(eventKey) {
             const g = getEventGroup(eventKey);

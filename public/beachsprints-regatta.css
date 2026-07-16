@@ -1796,3 +1796,32 @@ body.bsr-page {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
 }
+
+.bsr-trial-lb-wrap {
+    overflow-x: auto;
+}
+
+.bsr-trial-lb-table--splits {
+    min-width: 720px;
+}
+
+.bsr-trial-lb-split-h {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--bsr-muted);
+    text-align: center;
+}
+
+.bsr-trial-lb-split {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.bsr-trial-lb-split--leader {
+    background: rgba(22, 163, 74, 0.22);
+    color: #4ade80;
+    font-weight: 700;
+}

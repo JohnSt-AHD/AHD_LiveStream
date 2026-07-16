@@ -20,6 +20,26 @@
         { id: 'finish', label: 'Finish', short: 'Fin' },
     ];
 
+    const SIM_COURSE = {
+        originLat: -36.628375,
+        originLng: 174.758363,
+        headingDeg: 45,
+        totalDistM: 720,
+        laneOffsetM: { C1X_A: -6, C1X_B: 6 },
+    };
+
+    const SIM_SPLIT_PROGRESS = {
+        boatEntry: 0.08,
+        b1: 0.18,
+        b2: 0.32,
+        b3: 0.48,
+        turn: 0.55,
+        b2r: 0.72,
+        b1r: 0.82,
+        boatExit: 0.92,
+        finish: 1.0,
+    };
+
     /** @type {object|null} */
     let meta = null;
     /** @type {Map<string, {name:string, club:string}>} */
@@ -133,6 +153,19 @@
         return hit?.name || code || '—';
     }
 
+    function athleteMeta(code) {
+        return codeLookup.get(String(code || '').toUpperCase()) || null;
+    }
+
+    function resolvedCrewForRow(row) {
+        const prog = global.BsrTrialProgression;
+        if (prog?.isTrial?.() && row.race) {
+            const hit = prog.resolveLane(row.race, row.crewDefault);
+            if (hit?.code && /^[A-Z]{2,5}$/.test(hit.code)) return hit.code;
+        }
+        return row.crewDefault || '';
+    }
+
     function buildCodeLookup() {
         codeLookup = new Map();
         if (!meta?.athletes) return;
@@ -163,6 +196,123 @@
             return n.includes(gpsLabel.replace('_', '')) || n === gpsLabel.toUpperCase();
         });
         return found ? String(found.id) : '';
+    }
+
+    function localMetersToLatLng(originLat, originLng, headingDeg, alongM, crossM) {
+        const rad = (headingDeg * Math.PI) / 180;
+        const north = alongM * Math.cos(rad) - crossM * Math.sin(rad);
+        const east = alongM * Math.sin(rad) + crossM * Math.cos(rad);
+        return {
+            latitude: originLat + north / 111320,
+            longitude: originLng + east / (111320 * Math.cos((originLat * Math.PI) / 180)),
+        };
+    }
+
+    function progressAtElapsed(elapsedMs, splits, totalMs) {
+        let prevT = 0;
+        let prevP = 0;
+        for (const sp of MANUAL_SPLITS) {
+            const st = splits[sp.id];
+            if (st == null) break;
+            if (elapsedMs <= st) {
+                const pNow = SIM_SPLIT_PROGRESS[sp.id] ?? 1;
+                const frac = (elapsedMs - prevT) / (st - prevT || 1);
+                return prevP + frac * (pNow - prevP);
+            }
+            prevT = st;
+            prevP = SIM_SPLIT_PROGRESS[sp.id] ?? prevP;
+        }
+        return totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 0;
+    }
+
+    function simulateGpsForSlot(raceNum, lane, slot) {
+        const total = finishMs(slot);
+        if (total == null) {
+            slot.notes = 'Mark finish before Sim GPS';
+            saveStore();
+            renderPanel();
+            return;
+        }
+        const cross = SIM_COURSE.laneOffsetM[slot.gps] ?? 0;
+        const startMs = slot.startAt || Date.now() - total;
+        slot.startAt = startMs;
+        const points = [];
+        for (let t = 0; t <= total; t += 1000) {
+            const progress = progressAtElapsed(t, slot.splits, total);
+            const along = progress * SIM_COURSE.totalDistM;
+            const pos = localMetersToLatLng(
+                SIM_COURSE.originLat,
+                SIM_COURSE.originLng,
+                SIM_COURSE.headingDeg,
+                along,
+                cross,
+            );
+            points.push({
+                ...pos,
+                speed: 4.2 + Math.sin(t / 12000) * 0.4 + (slot.gps === 'C1X_B' ? 0.15 : 0),
+                fixTime: new Date(startMs + t).toISOString(),
+                deviceTime: new Date(startMs + t).toISOString(),
+            });
+        }
+        slot.gpsPoints = points;
+        slot.gpsMs = total;
+        slot.notes = `Simulated GPS (${slot.gps || 'course'}) · ${points.length} pts`;
+        saveStore();
+        renderPanel();
+    }
+
+    function sampleSplits(baseMs) {
+        const splits = {};
+        let t = 0;
+        const legs = [12000, 22000, 18000, 20000, 15000, 19000, 17000, 14000, 16000];
+        for (let i = 0; i < MANUAL_SPLITS.length; i++) {
+            t += legs[i] || 15000;
+            splits[MANUAL_SPLITS[i].id] = t + (baseMs || 0);
+        }
+        return splits;
+    }
+
+    async function runSimGpsDeviceTest() {
+        const rows = buildEventRows();
+        const used = new Set();
+        const targets = ['C1X_A', 'C1X_B']
+            .map((gps) => {
+                let row = rows.find((r) => {
+                    const k = slotKey(r.raceNum, r.lane);
+                    if (used.has(k)) return false;
+                    return getSlot(r.raceNum, r.lane).gps === gps;
+                });
+                if (row) {
+                    used.add(slotKey(row.raceNum, row.lane));
+                } else {
+                    row = rows.find((r) => {
+                        const k = slotKey(r.raceNum, r.lane);
+                        if (used.has(k)) return false;
+                        used.add(k);
+                        return true;
+                    });
+                }
+                return row ? { row, gps } : null;
+            })
+            .filter(Boolean);
+        if (!targets.length) {
+            statusFlash = 'No rows available for GPS simulation';
+            renderPanel();
+            return;
+        }
+        for (let i = 0; i < targets.length; i++) {
+            const { row, gps } = targets[i];
+            const slot = getSlot(row.raceNum, row.lane);
+            if (!slot.crew) slot.crew = resolvedCrewForRow(row) || row.crewDefault;
+            slot.gps = gps;
+            slot.startAt = Date.now() - 180000;
+            slot.splits = sampleSplits(i * 8000);
+            slot.runningAt = null;
+            slot.saved = false;
+            simulateGpsForSlot(row.raceNum, row.lane, slot);
+        }
+        statusFlash = `Sim GPS test — ${targets.map((t) => t.gps).join(' & ')} tracks generated`;
+        renderPanel();
     }
 
     function clipPoints(points, startMs, endMs) {
@@ -273,7 +423,43 @@
         saveStore();
         publishEventLeaderboard(false);
         statusFlash = `Saved ${athleteName(slot.crew)} — ${formatMs(total)}`;
+        global.BsrTrialProgression?.refreshViews?.();
         renderPanel();
+    }
+
+    function resetRow(raceNum, lane) {
+        const k = slotKey(raceNum, lane);
+        const slot = getSlot(raceNum, lane);
+        const crew = slot.crew;
+        if (tickers.has(k)) {
+            clearInterval(tickers.get(k));
+            tickers.delete(k);
+        }
+        const row = buildEventRows().find((r) => r.raceNum === raceNum && r.lane === lane);
+        store.races[k] = emptySlot();
+        const def = row ? resolvedCrewForRow(row) || row.crewDefault : '';
+        if (def) getSlot(raceNum, lane).crew = def;
+        saveStore();
+        const api = global.BsrRegatta;
+        if (api?.removeTrialResult && crew) {
+            api.removeTrialResult(raceNum, crew);
+        }
+        publishEventLeaderboard(false);
+        global.BsrTrialProgression?.refreshViews?.();
+        statusFlash = `Reset ${athleteName(crew || def)} — ready to re-run`;
+        renderPanel();
+    }
+
+    function rankForPublishedEntry(entry, entries) {
+        const ttEvents = new Set(['1', '2', '6']);
+        if (ttEvents.has(String(activeEventKey))) {
+            return entries.findIndex((e) => e.raceNum === entry.raceNum && e.lane === entry.lane) + 1;
+        }
+        const sameRace = entries
+            .filter((e) => e.raceNum === entry.raceNum)
+            .sort((a, b) => a.ms - b.ms);
+        const idx = sameRace.findIndex((e) => e.raceNum === entry.raceNum && e.lane === entry.lane);
+        return idx >= 0 ? idx + 1 : 1;
     }
 
     function publishEventLeaderboard(showMessage = true) {
@@ -283,8 +469,8 @@
             renderPanel();
             return;
         }
-        entries.forEach((entry, idx) => {
-            pushResultToDashboard(entry.raceNum, entry.lane, entry.slot, idx + 1);
+        entries.forEach((entry) => {
+            pushResultToDashboard(entry.raceNum, entry.lane, entry.slot, rankForPublishedEntry(entry, entries));
         });
         const api = global.BsrRegatta;
         if (api?.refreshTrialLeaderboard) {
@@ -293,6 +479,7 @@
         if (activeEventKey === '1' || activeEventKey === '2') {
             updateRankingsFromTt(activeEventKey);
         }
+        global.BsrTrialProgression?.refreshViews?.();
         store.publishedEvents[activeEventKey] = Date.now();
         saveStore();
         if (showMessage) {
@@ -457,7 +644,8 @@
     function renderAthleteRow(row, orderIdx) {
         const { raceNum, lane, crewDefault, sched } = row;
         const slot = getSlot(raceNum, lane);
-        if (!slot.crew && crewDefault) slot.crew = crewDefault;
+        const defaultCrew = resolvedCrewForRow(row) || crewDefault;
+        if (!slot.crew && defaultCrew) slot.crew = defaultCrew;
         const k = slotKey(raceNum, lane);
         const selected = store.selectedKey === k || activeRaceNum === raceNum;
         const running = slot.runningAt != null;
@@ -482,7 +670,9 @@
             `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-start" data-action="start"${running ? ' disabled' : ''}>Start</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-stop" data-action="stop"${!running ? ' disabled' : ''}>Stop</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--primary bsr-trial-save" data-action="save"${!canSave ? ' disabled' : ''}>${slot.saved ? 'Saved' : 'Save'}</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-reset" data-action="reset"${running ? ' disabled' : ''}>Reset</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-gps-fetch" data-action="gps">GPS</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-sim-gps" data-action="sim-gps"${total == null ? ' disabled' : ''}>Sim GPS</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-map-one" data-action="map">Map</button>` +
             `</td>` +
             `<td class="bsr-trial-note">${slot.saved ? '<span class="bsr-trial-saved-tag">Saved</span> ' : ''}${esc(slot.notes || '')}${slot.gpsPoints?.length ? ` · ${slot.gpsPoints.length} pts` : ''}</td>` +
@@ -490,16 +680,46 @@
         );
     }
 
+    function splitLeaders(entries) {
+        const leaders = {};
+        for (const sp of MANUAL_SPLITS) {
+            let bestMs = null;
+            const ids = [];
+            for (const entry of entries) {
+                const cum = entry.slot.splits?.[sp.id];
+                if (cum == null) continue;
+                if (bestMs == null || cum < bestMs) {
+                    bestMs = cum;
+                    ids.length = 0;
+                    ids.push(entry.slot.crew || entry.crewDefault);
+                } else if (cum === bestMs) {
+                    ids.push(entry.slot.crew || entry.crewDefault);
+                }
+            }
+            leaders[sp.id] = ids;
+        }
+        return leaders;
+    }
+
     function renderEventLeaderboard() {
         const entries = savedEventEntries();
         if (!entries.length) {
             return '<p class="bsr-note">Saved results appear here ranked by total time. Tap <strong>Save</strong> on each finished row, then <strong>Publish leaderboard</strong>.</p>';
         }
+        const leaders = splitLeaders(entries);
+        const splitHeaders = MANUAL_SPLITS.map((s) => `<th class="bsr-trial-lb-split-h">${esc(s.short)}</th>`).join('');
         let rows = '';
         entries.forEach((entry, idx) => {
+            const code = entry.slot.crew || entry.crewDefault;
+            const splitCells = MANUAL_SPLITS.map((sp) => {
+                const cum = entry.slot.splits?.[sp.id];
+                const isLeader = cum != null && leaders[sp.id]?.includes(code);
+                return `<td class="bsr-trial-lb-split${isLeader ? ' bsr-trial-lb-split--leader' : ''}">${cum != null ? formatMs(cum) : '—'}</td>`;
+            }).join('');
             rows +=
                 `<tr><td class="bsr-trial-lb-rank">${idx + 1}</td>` +
-                `<td>${esc(athleteName(entry.slot.crew || entry.crewDefault))} <span class="bsr-trial-code">${esc(entry.slot.crew || entry.crewDefault)}</span></td>` +
+                `<td>${esc(athleteName(code))} <span class="bsr-trial-code">${esc(code)}</span></td>` +
+                splitCells +
                 `<td class="bsr-trial-lb-time">${formatMs(entry.ms)}</td>` +
                 `<td>R${entry.raceNum}</td></tr>`;
         });
@@ -510,9 +730,10 @@
             :   '';
         return (
             `<div class="bsr-trial-leaderboard"><h3>Event leaderboard (saved, ranked by total time)</h3>` +
+            `<p class="bsr-note">Green split cells = fastest cumulative time at that section.</p>` +
             hint +
-            `<table class="bsr-trial-lb-table"><thead><tr><th>Rank</th><th>Athlete</th><th>Total</th><th>Race</th></tr></thead>` +
-            `<tbody>${rows}</tbody></table></div>`
+            `<div class="bsr-trial-lb-wrap"><table class="bsr-trial-lb-table bsr-trial-lb-table--splits"><thead><tr><th>Rank</th><th>Athlete</th>${splitHeaders}<th>Total</th><th>Race</th></tr></thead>` +
+            `<tbody>${rows}</tbody></table></div></div>`
         );
     }
 
@@ -605,8 +826,9 @@
             statusHtml +
             ttNote +
             `<div class="bsr-trial-event-toolbar">` +
-            `<button type="button" class="bsr-btn bsr-btn--primary bsr-trial-publish-lb" data-action="publish-lb">Publish leaderboard</button>` +
-            `<span class="bsr-note">Ranks all saved results by total time into the Time trial / qualifying panel.</span>` +
+            `<button type="button" class="bsr-btn bsr-btn--primary bsr-trial-publish-lb" data-action="publish-lb">Publish leaderboard</button> ` +
+            `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-sim-gps-test" data-action="sim-gps-test">Sim GPS test (C1X_A & B)</button>` +
+            `<span class="bsr-note">Publish TT results to seed later rounds. Sim GPS generates test tracks on Big Manly course.</span>` +
             `</div>` +
             `<div class="bsr-trial-table-wrap bsr-trial-table-wrap--wide"><table class="bsr-trial-table bsr-trial-table--splits">` +
             `<thead><tr><th>#</th><th>Sched</th><th>Code</th><th>Athlete</th><th>GPS</th>${splitHeaders}<th>Total</th><th></th><th>Notes</th></tr></thead>` +
@@ -647,13 +869,19 @@
             showMapTraces(null);
             return;
         }
+        if (action === 'sim-gps-test') {
+            void runSimGpsDeviceTest();
+            return;
+        }
         if (!ctx) return;
         const { raceNum, lane, key } = ctx;
         const slot = getSlot(raceNum, lane);
         if (action === 'start') startRow(raceNum, lane);
         else if (action === 'stop') await stopRow(raceNum, lane);
         else if (action === 'save') saveRow(raceNum, lane);
+        else if (action === 'reset') resetRow(raceNum, lane);
         else if (action === 'gps') await fetchGpsForSlot(raceNum, lane, slot);
+        else if (action === 'sim-gps') simulateGpsForSlot(raceNum, lane, slot);
         else if (action === 'map') {
             store.selectedKey = key;
             saveStore();
@@ -772,6 +1000,8 @@
         TRIAL_CODE,
         isTrialRegatta,
         getRankings: () => ({ ...store.rankings }),
+        getAthleteMeta: (code) => athleteMeta(code),
+        refreshProgression: () => global.BsrTrialProgression?.refreshViews?.(),
         reset: () => {
             store = { races: {}, rankings: { women: [], men: [] }, selectedKey: '', publishedEvents: {} };
             saveStore();
