@@ -35,6 +35,8 @@
     const tickers = new Map();
     const trialMapHolder = { map: null, layers: [] };
     let panelBound = false;
+    /** @type {string[]|null|undefined} null = all traces with GPS; undefined = map not shown */
+    let lastMapTraceKeys = undefined;
     let statusFlash = '';
 
     function esc(s) {
@@ -276,6 +278,14 @@
             slot.notes = `GPS fetch failed: ${err.message || err}`;
         }
         saveStore();
+        const k = slotKey(raceNum, lane);
+        if (store.selectedKey === k && slot.gpsPoints?.length) {
+            lastMapTraceKeys = [k];
+        } else if (lastMapTraceKeys === null && slot.gpsPoints?.length) {
+            /* keep overlay-all mode */
+        } else if (Array.isArray(lastMapTraceKeys) && lastMapTraceKeys.includes(k) && slot.gpsPoints?.length) {
+            /* refresh visible overlay */
+        }
         renderPanel();
     }
 
@@ -506,11 +516,32 @@
         return rows;
     }
 
+    function gpsPointTimeMs(p) {
+        const t = p?.fixTime || p?.deviceTime;
+        if (!t) return NaN;
+        const ms = new Date(t).getTime();
+        return Number.isFinite(ms) ? ms : NaN;
+    }
+
+    function pointsForRaceWindow(slot) {
+        const points = slot.gpsPoints || [];
+        if (!points.length || slot.startAt == null) return points;
+        const fin = finishMs(slot);
+        const from = slot.startAt - 45 * 1000;
+        const to = fin != null ? slot.startAt + fin + 45 * 1000 : slot.startAt + 15 * 60 * 1000;
+        const filtered = points.filter((p) => {
+            const t = gpsPointTimeMs(p);
+            return Number.isFinite(t) && t >= from && t <= to;
+        });
+        return filtered.length ? filtered : points;
+    }
+
     function traceForSlot(row, slot, traceIdx) {
         return {
             lane: row.lane,
             label: `${global.BsrTrialProgression?.formatAthleteDisplay?.(slot.crew || row.crewDefault) || athleteName(slot.crew || row.crewDefault)} (${slot.crew || row.crewDefault})`,
-            points: slot.gpsPoints?.length ? slot.gpsPoints : [],
+            points: pointsForRaceWindow(slot),
+            raceStartMs: slot.startAt ?? null,
             colorIdx: traceIdx,
         };
     }
@@ -529,7 +560,31 @@
         return traces;
     }
 
+    function renderTrialSpeedChart(traces) {
+        const wrap = document.getElementById('bsrTrialSpeedChartWrap');
+        const api = global.BsrRegatta;
+        if (!wrap || !api?.renderSpeedChartForTraces) return;
+        if (!traces?.length) {
+            wrap.hidden = true;
+            return;
+        }
+        const boatCount = traces.length;
+        const title =
+            boatCount === 1 ?
+                `Speed vs time — ${traces[0].label || 'selected boat'}`
+            :   `Speed vs time — ${boatCount} boats`;
+        api.renderSpeedChartForTraces(traces, {
+            canvasId: 'bsrTrialSpeedChart',
+            wrapId: 'bsrTrialSpeedChartWrap',
+            stateKey: null,
+            enableTrim: false,
+            title,
+        });
+        wrap.hidden = false;
+    }
+
     function showMapTraces(keys) {
+        lastMapTraceKeys = keys;
         const api = global.BsrRegatta;
         const el = document.getElementById('bsrTrialMap');
         if (!api?.renderTraceMap || !el) return;
@@ -537,10 +592,13 @@
         if (!traces.length) {
             el.innerHTML =
                 '<p class="bsr-note">No GPS traces loaded — assign GPS, finish a run, and tap Fetch GPS.</p>';
+            const chartWrap = document.getElementById('bsrTrialSpeedChartWrap');
+            if (chartWrap) chartWrap.hidden = true;
             return;
         }
         el.innerHTML = '';
         api.renderTraceMap(el, traces, trialMapHolder);
+        renderTrialSpeedChart(traces);
         requestAnimationFrame(() => trialMapHolder.map?.invalidateSize());
     }
 
@@ -843,10 +901,17 @@
             `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-map-all" data-action="map-all">Overlay all GPS in event</button>` +
             `</div>` +
             `<div id="bsrTrialMapWrap" class="bsr-trial-map-wrap"><div id="bsrTrialMap" class="bsr-trial-map"></div></div>` +
+            `<div id="bsrTrialSpeedChartWrap" class="bsr-speed-chart-wrap bsr-trial-speed-chart-wrap" hidden>` +
+            `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
+            `<div class="bsr-speed-chart-canvas-box bsr-speed-chart-canvas-box--trim"><canvas id="bsrTrialSpeedChart" aria-label="Speed versus time chart"></canvas></div>` +
+            `</div>` +
             renderRankings();
 
         statusFlash = '';
         bindPanelEvents();
+        if (lastMapTraceKeys !== undefined) {
+            requestAnimationFrame(() => showMapTraces(lastMapTraceKeys));
+        }
     }
 
     function rowFromEventTarget(target) {
@@ -883,8 +948,8 @@
         else if (action === 'gps') await fetchGpsForSlot(raceNum, lane, slot);
         else if (action === 'map') {
             store.selectedKey = key;
+            lastMapTraceKeys = [key];
             saveStore();
-            showMapTraces([key]);
             renderPanel();
         }
     }

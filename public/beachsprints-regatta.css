@@ -608,6 +608,12 @@ body.bsr-page {
     gap: 16px;
 }
 
+.bsr-gps-map-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .bsr-analysis-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -716,10 +722,9 @@ body.bsr-page {
 }
 
 .bsr-race-map {
-    height: 280px;
+    height: 560px;
     border-radius: 8px;
     border: 1px solid var(--bsr-border);
-    margin-top: 12px;
 }
 
 .bsr-buoy-toolbar {
@@ -1725,11 +1730,19 @@ body.bsr-page {
 }
 
 .bsr-trial-map {
-    height: 320px;
+    height: 640px;
     width: 100%;
     border-radius: 8px;
     border: 1px solid var(--bsr-border);
     background: #0a1628;
+}
+
+.bsr-trial-speed-chart-wrap {
+    margin-top: 4px;
+}
+
+.bsr-trial-speed-chart-wrap[hidden] {
+    display: none;
 }
 
 .bsr-trial-event-toolbar {

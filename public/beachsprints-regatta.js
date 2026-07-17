@@ -1980,6 +1980,35 @@
         return { x: t, y };
     }
 
+    function resolveTraceRaceStartMs(tr) {
+        if (Number.isFinite(tr?.raceStartMs)) return tr.raceStartMs;
+        if (Number.isFinite(tr?.trimStartMs)) return tr.trimStartMs;
+        const bounds = traceTimeBounds(tr);
+        return bounds?.minT ?? NaN;
+    }
+
+    function formatElapsedRaceSec(sec) {
+        if (!Number.isFinite(sec)) return '';
+        const sign = sec < 0 ? '−' : '';
+        const s = Math.abs(sec);
+        const m = Math.floor(s / 60);
+        const rem = s - m * 60;
+        if (m > 0) return `${sign}${m}:${rem.toFixed(1).padStart(4, '0')}`;
+        return `${sign}${rem.toFixed(1)}s`;
+    }
+
+    function speedChartXFromAbsoluteMs(chart, absoluteMs, traceIdx) {
+        if (!chart.$bsrRelativeMode) return absoluteMs;
+        const start = chart.$bsrRaceStarts?.[traceIdx];
+        return Number.isFinite(start) ? (absoluteMs - start) / 1000 : absoluteMs;
+    }
+
+    function absoluteMsFromSpeedChartX(chart, chartX, traceIdx) {
+        if (!chart.$bsrRelativeMode) return chartX;
+        const start = chart.$bsrRaceStarts?.[traceIdx];
+        return Number.isFinite(start) ? chartX * 1000 + start : chartX;
+    }
+
     function traceTimeBounds(tr) {
         const pts = tr?.rawPoints || tr?.points || [];
         let minT = Infinity;
@@ -2212,8 +2241,18 @@
                     if (!Number.isFinite(tr.trimStartMs) || !Number.isFinite(tr.trimEndMs)) return;
                     const color = boatTheme(ti).color;
                     const xs = [
-                        { edge: 'start', px: chart.scales.x.getPixelForValue(tr.trimStartMs) },
-                        { edge: 'end', px: chart.scales.x.getPixelForValue(tr.trimEndMs) },
+                        {
+                            edge: 'start',
+                            px: chart.scales.x.getPixelForValue(
+                                speedChartXFromAbsoluteMs(chart, tr.trimStartMs, ti),
+                            ),
+                        },
+                        {
+                            edge: 'end',
+                            px: chart.scales.x.getPixelForValue(
+                                speedChartXFromAbsoluteMs(chart, tr.trimEndMs, ti),
+                            ),
+                        },
                     ];
                     for (const h of xs) {
                         const d = Math.abs(x - h.px);
@@ -2237,9 +2276,10 @@
             const onMove = (e) => {
                 const x = getPos(e);
                 if (drag.active) {
-                    const ms = chart.scales.x.getValueForPixel(x);
-                    if (Number.isFinite(ms)) {
-                        chart.$bsrTrimPreview = { ...drag.active, timeMs: ms };
+                    const chartX = chart.scales.x.getValueForPixel(x);
+                    if (Number.isFinite(chartX)) {
+                        const timeMs = absoluteMsFromSpeedChartX(chart, chartX, drag.active.traceIdx);
+                        chart.$bsrTrimPreview = { ...drag.active, timeMs };
                         chart.draw();
                     }
                     e.preventDefault();
@@ -2251,9 +2291,10 @@
             const onUp = (e) => {
                 if (drag.active) {
                     const x = getPos(e);
-                    const ms = chart.scales.x.getValueForPixel(x);
-                    if (Number.isFinite(ms) && chart.$bsrOnTrimChange) {
-                        chart.$bsrOnTrimChange(drag.active.traceIdx, drag.active.edge, ms);
+                    const chartX = chart.scales.x.getValueForPixel(x);
+                    if (Number.isFinite(chartX) && chart.$bsrOnTrimChange) {
+                        const timeMs = absoluteMsFromSpeedChartX(chart, chartX, drag.active.traceIdx);
+                        chart.$bsrOnTrimChange(drag.active.traceIdx, drag.active.edge, timeMs);
                     }
                 }
                 drag.active = null;
@@ -2287,8 +2328,8 @@
             const xScale = chart.scales.x;
             const preview = chart.$bsrTrimPreview;
 
-            const drawLine = (ms, color, dashed) => {
-                const x = xScale.getPixelForValue(ms);
+            const drawLine = (absoluteMs, color, dashed, traceIdx) => {
+                const x = xScale.getPixelForValue(speedChartXFromAbsoluteMs(chart, absoluteMs, traceIdx));
                 if (x < chartArea.left || x > chartArea.right) return;
                 ctx.save();
                 ctx.strokeStyle = color;
@@ -2301,8 +2342,8 @@
                 ctx.restore();
             };
 
-            const drawHandle = (ms, color, label) => {
-                const x = xScale.getPixelForValue(ms);
+            const drawHandle = (absoluteMs, color, label, traceIdx) => {
+                const x = xScale.getPixelForValue(speedChartXFromAbsoluteMs(chart, absoluteMs, traceIdx));
                 if (x < chartArea.left - 20 || x > chartArea.right + 20) return;
                 const y = chartArea.top + 14;
                 ctx.save();
@@ -2330,30 +2371,45 @@
                     if (preview.edge === 'start') startMs = preview.timeMs;
                     else endMs = preview.timeMs;
                 }
-                drawLine(startMs, color, false);
-                drawLine(endMs, color, true);
-                drawHandle(startMs, color, '▶');
-                drawHandle(endMs, color, '■');
+                drawLine(startMs, color, false, ti);
+                drawLine(endMs, color, true, ti);
+                drawHandle(startMs, color, '▶', ti);
+                drawHandle(endMs, color, '■', ti);
             });
         },
     };
 
-    function renderBsrSpeedChart(traces, onTrimChange) {
-        const wrap = document.getElementById('bsrSpeedChartWrap');
-        const canvas = document.getElementById('bsrSpeedChart');
+    function renderBsrSpeedChart(traces, onTrimChange, opts = {}) {
+        const canvasId = opts.canvasId || 'bsrSpeedChart';
+        const wrapId = opts.wrapId || 'bsrSpeedChartWrap';
+        const stateKey = opts.stateKey === undefined ? 'speedChart' : opts.stateKey;
+        const enableTrim = opts.enableTrim !== false && typeof onTrimChange === 'function';
+        const wrap = document.getElementById(wrapId);
+        const canvas = document.getElementById(canvasId);
         const chartCtor = getChartCtor();
-        destroyChartOnCanvas('bsrSpeedChart', 'speedChart');
-        if (!wrap || !canvas || !chartCtor) return;
+        destroyChartOnCanvas(canvasId, stateKey);
+        if (!wrap || !canvas || !chartCtor) return null;
 
-        if (chartCtor?.register && !state._bsrTrimPluginRegistered) {
+        if (enableTrim && chartCtor?.register && !state._bsrTrimPluginRegistered) {
             chartCtor.register(bsrSpeedTrimPlugin);
             state._bsrTrimPluginRegistered = true;
         }
 
+        const useRelative = (traces?.length ?? 0) > 1;
+        const raceStarts = (traces || []).map((tr) => resolveTraceRaceStartMs(tr));
+
         const datasets = (traces || [])
             .map((t, i) => {
+                const raceStart = raceStarts[i];
                 const data = (t.rawPoints || t.points || [])
-                    .map(gpsChartPointAll)
+                    .map((p) => {
+                        const pt = gpsChartPointAll(p);
+                        if (!pt) return null;
+                        if (useRelative && Number.isFinite(raceStart)) {
+                            return { x: (pt.x - raceStart) / 1000, y: pt.y };
+                        }
+                        return pt;
+                    })
                     .filter(Boolean)
                     .sort((a, b) => a.x - b.x);
                 if (!data.length) return null;
@@ -2372,20 +2428,31 @@
             })
             .filter(Boolean);
 
-        if (!datasets.length) return;
+        if (!datasets.length) {
+            wrap.hidden = true;
+            return null;
+        }
 
-        const hasTrim = (traces || []).some(
-            (t) => Number.isFinite(t.trimStartMs) && Number.isFinite(t.trimEndMs),
-        );
+        const hasTrim =
+            enableTrim &&
+            (traces || []).some((t) => Number.isFinite(t.trimStartMs) && Number.isFinite(t.trimEndMs));
         const titleEl = wrap.querySelector('.bsr-speed-chart-title');
         if (titleEl) {
-            titleEl.textContent = hasTrim
-                ? 'Speed vs time — drag ▶ launch / ■ stop handles per boat'
-                : 'Speed vs time';
+            if (hasTrim) {
+                titleEl.textContent =
+                    'Speed vs time — drag ▶ launch / ■ stop handles per boat (race time from start)';
+            } else if (useRelative) {
+                titleEl.textContent = opts.title ?
+                    `${opts.title} · zero at race start`
+                :   'Speed vs time — zero at race start';
+            } else {
+                titleEl.textContent = opts.title || 'Speed vs time';
+            }
         }
 
         wrap.hidden = false;
-        state.speedChart = new chartCtor(canvas, {
+        const xAxisTitle = useRelative ? 'Race time (s from start)' : 'Time';
+        const chartInstance = new chartCtor(canvas, {
             type: 'line',
             data: { datasets },
             options: {
@@ -2397,15 +2464,20 @@
                 scales: {
                     x: {
                         type: 'linear',
-                        title: { display: true, text: 'Time', color: '#9ec4d8' },
+                        title: { display: true, text: xAxisTitle, color: '#9ec4d8' },
                         ticks: {
                             color: '#9ec4d8',
                             maxTicksLimit: 8,
                             callback(value) {
+                                if (useRelative) return formatElapsedRaceSec(value);
                                 const d = new Date(value);
                                 return Number.isNaN(d.getTime())
                                     ? ''
-                                    : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                                    : d.toLocaleTimeString(undefined, {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          second: '2-digit',
+                                      });
                             },
                         },
                         grid: { color: 'rgba(255, 255, 255, 0.06)' },
@@ -2425,7 +2497,9 @@
                         callbacks: {
                             title(items) {
                                 if (!items.length) return '';
-                                const d = new Date(items[0].parsed.x);
+                                const x = items[0].parsed.x;
+                                if (useRelative) return formatElapsedRaceSec(x);
+                                const d = new Date(x);
                                 return Number.isNaN(d.getTime()) ? '' : d.toLocaleString();
                             },
                             label(item) {
@@ -2435,12 +2509,16 @@
                     },
                 },
             },
-            plugins: [bsrSpeedTrimPlugin],
+            plugins: enableTrim ? [bsrSpeedTrimPlugin] : [],
         });
-        state.speedChart.$bsrTraces = traces;
-        state.speedChart.$bsrOnTrimChange = onTrimChange || null;
-        state.speedChart.canvas.style.touchAction = 'none';
-        requestAnimationFrame(() => state.speedChart?.resize());
+        chartInstance.$bsrTraces = enableTrim ? traces : [];
+        chartInstance.$bsrOnTrimChange = enableTrim ? onTrimChange : null;
+        chartInstance.$bsrRelativeMode = useRelative;
+        chartInstance.$bsrRaceStarts = raceStarts;
+        chartInstance.canvas.style.touchAction = enableTrim ? 'none' : '';
+        if (stateKey) state[stateKey] = chartInstance;
+        requestAnimationFrame(() => chartInstance?.resize());
+        return chartInstance;
     }
 
     function renderBsrSplitsChart(analyses, labels) {
@@ -3238,14 +3316,17 @@
             `<div class="bsr-buoy-toolbar" id="bsrBuoyToolbar">` +
             `<p class="bsr-note" id="bsrBuoyFitNote">Course buoys, LF/RF flags, tide line, and start/finish are loaded from the <a href="beachsprints-map.html">Beach Sprints map</a> (same browser storage).</p></div>` +
             `<div id="bsrCompareAnalysis"></div>` +
-            `<div class="bsr-gps-layout"><div class="bsr-analysis-grid"><div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
+            `<div class="bsr-gps-layout">` +
+            `<div class="bsr-gps-map-stack">` +
             `<div id="bsrRaceMap" class="bsr-race-map" aria-label="GPS trace map"></div>` +
-            `<p class="bsr-speed-legend-note">Boat trace = lane colour, only points &gt; 1 m/s. Orange = buoys · pink = LF/RF flags · blue dashed = tide · white = START/FINISH from map · dashed = run paths.</p></div>` +
-            `<div class="bsr-gps-charts-grid">` +
+            `<p class="bsr-speed-legend-note">Boat trace = lane colour, only points &gt; 1 m/s. Orange = buoys · pink = LF/RF flags · blue dashed = tide · white = START/FINISH from map · dashed = run paths.</p>` +
             `<div id="bsrSpeedChartWrap" class="bsr-speed-chart-wrap bsr-speed-chart-wrap--wide" hidden>` +
             `<h4 class="bsr-speed-chart-title">Speed vs time</h4>` +
             `<p class="bsr-trim-toolbar" id="bsrTrimToolbar" hidden></p>` +
             `<div class="bsr-speed-chart-canvas-box bsr-speed-chart-canvas-box--trim"><canvas id="bsrSpeedChart" aria-label="Speed versus time chart"></canvas></div></div>` +
+            `</div>` +
+            `<div id="bsrGpsContent"><p class="bsr-note">Loading GPS…</p></div>` +
+            `<div class="bsr-gps-charts-grid">` +
             `<div id="bsrSplitsChartWrap" class="bsr-speed-chart-wrap" hidden>` +
             `<h4 class="bsr-speed-chart-title">Leg splits</h4>` +
             `<div class="bsr-speed-chart-canvas-box"><canvas id="bsrSplitsChart" aria-label="Leg split durations"></canvas></div></div>` +
@@ -3606,6 +3687,7 @@
                     rawPoints,
                     label,
                     lane: lane.lane,
+                    raceStartMs: win.center.getTime(),
                     officialTimeMs: Number.isFinite(officialTimeMs) ? officialTimeMs : null,
                     devName: dev?.name || alias,
                     laneMapUrl,
@@ -4067,6 +4149,15 @@
                 mapCourse,
             );
             return mapHolder;
+        },
+        renderSpeedChartForTraces(traces, opts = {}) {
+            return renderBsrSpeedChart(traces, opts.onTrimChange || null, {
+                canvasId: opts.canvasId || 'bsrSpeedChart',
+                wrapId: opts.wrapId || 'bsrSpeedChartWrap',
+                stateKey: opts.stateKey,
+                enableTrim: opts.enableTrim,
+                title: opts.title,
+            });
         },
     };
 
