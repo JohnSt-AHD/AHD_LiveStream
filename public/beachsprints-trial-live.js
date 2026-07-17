@@ -6,6 +6,7 @@
     const TRIAL_CODE = 'u19_ct_26';
     const LS_TRIAL = 'bsrTrialLive_v3';
     const LS_WRITE_TOKEN = 'bsrTrialWriteToken';
+    const LS_TRIAL_SCORER = 'bsrTrialScorerMode_v1';
     const TRIAL_SYNC_API = '/api/trial-results';
     const TRIAL_SYNC_POLL_MS = 10000;
     /** Must match DEFAULT_WRITE_TOKEN in api/trial-results.js (or TRIAL_RESULTS_TOKEN on Vercel). */
@@ -92,6 +93,28 @@
         if (!applyingFromServer) schedulePushServer();
     }
 
+    function captureTrialModeFromUrl() {
+        try {
+            const params = new URLSearchParams(location.search);
+            if (params.get('trialScorer') === '1' || params.get('trialWriteToken')) {
+                sessionStorage.setItem(LS_TRIAL_SCORER, '1');
+            } else {
+                sessionStorage.setItem(LS_TRIAL_SCORER, '0');
+            }
+            captureWriteTokenFromUrl();
+        } catch {
+            /* ignore */
+        }
+    }
+
+    function isTrialScorerMode() {
+        try {
+            return sessionStorage.getItem(LS_TRIAL_SCORER) === '1';
+        } catch {
+            return false;
+        }
+    }
+
     function captureWriteTokenFromUrl() {
         try {
             const token = new URLSearchParams(location.search).get('trialWriteToken');
@@ -102,6 +125,7 @@
     }
 
     function getWriteToken() {
+        if (!isTrialScorerMode()) return '';
         try {
             return sessionStorage.getItem(LS_WRITE_TOKEN) || DEFAULT_WRITE_TOKEN;
         } catch {
@@ -193,7 +217,7 @@
     }
 
     function schedulePushServer() {
-        if (!syncEnabled || applyingFromServer) return;
+        if (!syncEnabled || applyingFromServer || !isTrialScorerMode()) return;
         if (pushTimer) clearTimeout(pushTimer);
         pushTimer = setTimeout(() => {
             pushTimer = null;
@@ -202,7 +226,7 @@
     }
 
     async function pushToServer() {
-        if (!syncEnabled) return;
+        if (!syncEnabled || !isTrialScorerMode()) return;
         const payload = buildServerPayload();
         const headers = { 'Content-Type': 'application/json' };
         const token = getWriteToken();
@@ -1325,7 +1349,13 @@
     function renderEventLeaderboard() {
         const entries = savedEventEntries();
         if (!entries.length) {
-            return '<p class="bsr-note">Saved results appear here ranked by total time. Tap <strong>Save</strong> on each finished row, then <strong>Publish leaderboard</strong>.</p>';
+            return (
+                '<p class="bsr-note">' +
+                (isTrialScorerMode() ?
+                    'Saved results appear here ranked by total time. Tap <strong>Save</strong> on each finished row, then <strong>Publish leaderboard</strong>.'
+                :   'No published results for this event yet — waiting for scorer sync.') +
+                '</p>'
+            );
         }
         const prog = global.BsrTrialPrognostic;
         const displayEntries =
@@ -1422,6 +1452,26 @@
         });
     }
 
+    function renderViewerPanel() {
+        const panel = document.getElementById('bsrTrialLive');
+        if (!panel) return;
+        const api = global.BsrRegatta;
+        const group = api?.getEventRaces?.(activeEventKey)?.[0];
+        const eventName = group?.eventName || `Event ${activeEventKey}`;
+        panel.hidden = false;
+        panel.classList.add('bsr-trial-live--view-only');
+        panel.innerHTML =
+            `<header class="bsr-trial-live-header">` +
+            `<h2>Trial results — Event ${esc(activeEventKey)} · ${esc(eventName)}</h2>` +
+            `<p class="bsr-trial-sched bsr-trial-view-badge">View only</p>` +
+            `</header>` +
+            `<p class="bsr-note bsr-trial-view-note">Results sync from the scorer every 10 seconds. ` +
+            `To time races, open the scorer link with <code>?trialScorer=1</code> on the timing device only.</p>` +
+            renderEventLeaderboard() +
+            renderRankings();
+        statusFlash = '';
+    }
+
     function renderPanel() {
         const panel = document.getElementById('bsrTrialLive');
         if (!panel) return;
@@ -1435,6 +1485,11 @@
             panel.hidden = true;
             return;
         }
+        if (!isTrialScorerMode()) {
+            renderViewerPanel();
+            return;
+        }
+        panel.classList.remove('bsr-trial-live--view-only');
         panel.hidden = false;
         const group = api.getEventRaces?.(activeEventKey)?.[0];
         const eventName = group?.eventName || `Event ${activeEventKey}`;
@@ -1631,11 +1686,12 @@
         }
         startTrialSync();
         syncEventKey();
+        captureTrialModeFromUrl();
         renderPanel();
     }
 
     async function init() {
-        captureWriteTokenFromUrl();
+        captureTrialModeFromUrl();
         loadStore();
         await loadMeta();
         global.addEventListener('bsr:race-selected', (e) => onRaceSelected(e.detail));
@@ -1649,6 +1705,7 @@
     global.BsrTrialLive = {
         TRIAL_CODE,
         isTrialRegatta,
+        isTrialScorerMode,
         getRankings: () => ({ ...store.rankings }),
         getAthleteMeta: (code) => athleteMeta(code),
         rerender: () => renderPanel(),

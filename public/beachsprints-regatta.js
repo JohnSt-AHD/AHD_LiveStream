@@ -3962,7 +3962,9 @@
         } else if (state.results.size === 0) {
             if (normalizeRegattaCode(code) === 'u19_ct_26') {
                 statusMsg +=
-                    ' — live trial mode: Save in Live trial panel; results sync every 10s when published.';
+                    window.BsrTrialLive?.isTrialScorerMode?.() ?
+                        ' — scorer mode: Live trial panel active; results sync every 10s.'
+                    :   ' — view only: results sync every 10s (add ?trialScorer=1 on timing device).';
             } else {
                 statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
             }

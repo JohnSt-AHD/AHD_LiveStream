@@ -1529,6 +1529,24 @@ body.bsr-page {
     }
 }
 
+.bsr-trial-live--view-only .bsr-trial-view-badge {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(100, 181, 246, 0.15);
+    border: 1px solid rgba(100, 181, 246, 0.45);
+    color: #64b5f6;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.bsr-trial-view-note code {
+    font-size: 0.85em;
+}
+
 .bsr-trial-live {
     border-color: rgba(14, 116, 144, 0.45);
 }
