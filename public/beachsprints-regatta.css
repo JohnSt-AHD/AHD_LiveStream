@@ -951,6 +951,17 @@ body.bsr-page {
     border-color: var(--bsr-border);
 }
 
+.bsr-btn--recall {
+    background: rgba(255, 193, 7, 0.12);
+    border-color: rgba(255, 193, 7, 0.55);
+    color: #ffc107;
+}
+
+.bsr-btn--recall:hover {
+    background: rgba(255, 193, 7, 0.22);
+    color: #ffe082;
+}
+
 .bsr-status {
     max-width: 1600px;
     margin: 0 auto;

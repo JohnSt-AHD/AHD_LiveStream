@@ -34,6 +34,7 @@
         rankings: { women: [], men: [] },
         selectedKey: '',
         publishedEvents: {},
+        recall: {},
     };
     let activeEventKey = '';
     let activeRaceNum = null;
@@ -73,6 +74,7 @@
                     publishedEvents: parsed.publishedEvents || {},
                     mixRecommendation: parsed.mixRecommendation || null,
                     serverUpdatedAt: parsed.serverUpdatedAt || 0,
+                    recall: parsed.recall || {},
                 };
                 serverUpdatedAt = store.serverUpdatedAt || 0;
             }
@@ -634,15 +636,61 @@
         renderPanel();
     }
 
-    function resetRow(raceNum, lane) {
+    function cloneSlot(slot) {
+        return {
+            crew: slot.crew || '',
+            gps: slot.gps || '',
+            runningAt: slot.runningAt ?? null,
+            startAt: slot.startAt ?? null,
+            splits: { ...(slot.splits || {}) },
+            gpsPoints: Array.isArray(slot.gpsPoints) ? slot.gpsPoints.slice() : [],
+            gpsMs: slot.gpsMs ?? null,
+            saved: !!slot.saved,
+            savedAt: slot.savedAt ?? null,
+            notes: slot.notes || '',
+        };
+    }
+
+    function snapshotSlotForRecall(raceNum, lane, slot) {
+        const ms = finishMs(slot);
+        const hasSplits = Object.keys(slot.splits || {}).length > 0;
+        if (!slot.saved && ms == null && !slot.runningAt && !hasSplits) return;
         const k = slotKey(raceNum, lane);
+        if (!store.recall) store.recall = {};
+        store.recall[k] = {
+            at: Date.now(),
+            slot: cloneSlot(slot),
+        };
+    }
+
+    function recallAvailable(raceNum, lane) {
+        const hit = store.recall?.[slotKey(raceNum, lane)];
+        return !!(hit?.slot && (hit.slot.saved || finishMs(hit.slot) != null));
+    }
+
+    function resetRow(raceNum, lane, opts = {}) {
+        const row = findEventRow(raceNum, lane);
         const slot = getSlot(raceNum, lane);
+        if (!opts.skipConfirm) {
+            const name = row ? displayNameForRow(row, slot) : athleteName(slot.crew);
+            const total = finishMs(slot);
+            const msg =
+                total != null ?
+                    `Reset ${name} (${formatMs(total)})?\n\nThis clears the saved result on this row. Tap Recall on this row to restore it if needed.`
+                : slot.saved || Object.keys(slot.splits || {}).length ?
+                    `Reset ${name}?\n\nThis clears splits and timer data for this row. Tap Recall on this row to restore the last version if needed.`
+                :   `Reset ${name}?\n\nThis clears any partial entry on this row.`;
+            if (!global.confirm(msg)) return;
+        }
+
+        snapshotSlotForRecall(raceNum, lane, slot);
+
+        const k = slotKey(raceNum, lane);
         const crew = slot.crew;
         if (tickers.has(k)) {
             clearInterval(tickers.get(k));
             tickers.delete(k);
         }
-        const row = findEventRow(raceNum, lane);
         store.races[k] = emptySlot();
         const def = row ? (row.rowKind === 'prog-ref' ? row.crewDefault : resolvedCrewForRow(row) || row.crewDefault) : '';
         if (def) getSlot(raceNum, lane).crew = def;
@@ -653,7 +701,43 @@
         }
         publishEventLeaderboard(false);
         global.BsrTrialProgression?.refreshViews?.();
-        statusFlash = `Reset ${athleteName(crew || def)} — ready to re-run`;
+        statusFlash = `Reset ${athleteName(crew || def)} — ready to re-run${recallAvailable(raceNum, lane) ? ' · Recall available' : ''}`;
+        renderPanel();
+    }
+
+    function recallRow(raceNum, lane) {
+        const k = slotKey(raceNum, lane);
+        const hit = store.recall?.[k];
+        if (!hit?.slot) {
+            statusFlash = 'Nothing to recall for this row';
+            renderPanel();
+            return;
+        }
+        const row = findEventRow(raceNum, lane);
+        const prev = hit.slot;
+        const name = row ? displayNameForRow(row, prev) : athleteName(prev.crew);
+        const total = finishMs(prev);
+        const msg =
+            total != null ?
+                `Recall ${name} (${formatMs(total)})?\n\nThis restores the last reset result on this row.`
+            :   `Recall ${name}?\n\nThis restores the last reset entry on this row.`;
+        if (!global.confirm(msg)) return;
+
+        if (tickers.has(k)) {
+            clearInterval(tickers.get(k));
+            tickers.delete(k);
+        }
+
+        store.races[k] = cloneSlot(prev);
+        delete store.recall[k];
+        saveStore();
+        publishEventLeaderboard(false);
+        refreshBracketCrews();
+        global.BsrTrialProgression?.refreshViews?.();
+        statusFlash =
+            total != null ?
+                `Recalled ${name} — ${formatMs(total)}`
+            :   `Recalled ${name}`;
         renderPanel();
     }
 
@@ -980,6 +1064,7 @@
         const running = slot.runningAt != null;
         const total = finishMs(slot);
         const canSave = total != null && !running;
+        const canRecall = recallAvailable(raceNum, lane);
         const refNote =
             rowKind === 'prog-ref' ?
                 `<span class="bsr-trial-ref-tag">${refClass === 'CJW1X' ? 'W1 solo ref' : 'M1 solo ref'}</span> `
@@ -1007,6 +1092,9 @@
             `<button type="button" class="bsr-btn bsr-btn--small bsr-trial-stop" data-action="stop"${!running ? ' disabled' : ''}>Stop</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--primary bsr-trial-save" data-action="save"${!canSave ? ' disabled' : ''}>${slot.saved ? 'Saved' : 'Save'}</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-reset" data-action="reset"${running ? ' disabled' : ''}>Reset</button> ` +
+            (canRecall ?
+                `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--recall bsr-trial-recall" data-action="recall"${running ? ' disabled' : ''}>Recall</button> `
+            :   '') +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-gps-fetch" data-action="gps">GPS</button> ` +
             `<button type="button" class="bsr-btn bsr-btn--small bsr-btn--ghost bsr-trial-map-one" data-action="map">Map</button>` +
             `</td>` +
@@ -1436,6 +1524,7 @@
         else if (action === 'stop') await stopRow(raceNum, lane);
         else if (action === 'save') saveRow(raceNum, lane);
         else if (action === 'reset') resetRow(raceNum, lane);
+        else if (action === 'recall') recallRow(raceNum, lane);
         else if (action === 'gps') await fetchGpsForSlot(raceNum, lane, slot);
         else if (action === 'map') {
             store.selectedKey = key;
@@ -1568,6 +1657,13 @@
         pullFromServer,
         pushToServer,
         reset: () => {
+            if (
+                !global.confirm(
+                    'Reset all trial data on this device?\n\nSaved results, rankings, and recall buffers will be cleared.',
+                )
+            ) {
+                return;
+            }
             store = {
                 races: {},
                 rankings: { women: [], men: [] },
@@ -1575,6 +1671,7 @@
                 publishedEvents: {},
                 mixRecommendation: null,
                 serverUpdatedAt: 0,
+                recall: {},
             };
             serverUpdatedAt = 0;
             saveStore();
