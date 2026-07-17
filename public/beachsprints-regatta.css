@@ -1825,3 +1825,78 @@ body.bsr-page {
     color: #4ade80;
     font-weight: 700;
 }
+
+.bsr-trial-lb-prog,
+.bsr-tt-progn {
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.bsr-prognostic-panel {
+    margin: 12px 16px 0;
+    padding: 14px 16px;
+}
+
+.bsr-prognostic-title {
+    margin: 0 0 6px;
+    font-size: 1rem;
+}
+
+.bsr-prognostic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px 16px;
+    margin-top: 10px;
+}
+
+.bsr-prog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bsr-prog-field label {
+    font-size: 0.78rem;
+    color: var(--bsr-muted);
+}
+
+.bsr-prog-input {
+    font-variant-numeric: tabular-nums;
+    padding: 6px 8px;
+    border: 1px solid var(--bsr-border);
+    border-radius: 4px;
+    background: var(--bsr-surface);
+    color: inherit;
+    max-width: 8rem;
+}
+
+.bsr-prognostic-actions {
+    margin-top: 10px;
+}
+
+.bsr-mix-matrix {
+    margin-bottom: 8px;
+}
+
+.bsr-mix-recommend {
+    margin: 8px 0 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(22, 163, 74, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.bsr-mix-row--best td {
+    background: rgba(22, 163, 74, 0.18);
+    font-weight: 600;
+}
+
+.bsr-mix-row--pending {
+    opacity: 0.65;
+}
+
+.bsr-mix-label {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}

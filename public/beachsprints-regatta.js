@@ -1556,6 +1556,9 @@
             return `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">${escapeHtml(title)}</h3><p class="bsr-note">No times yet.</p></div>`;
         }
         const { seedPrefix, column, directCutoff, repCutoff, getStandingsRank, getProgression } = options;
+        const showProgn =
+            normalizeRegattaCode(state.regattaCode) === 'u19_ct_26' && window.BsrTrialPrognostic;
+        const eventKey = state.selectedEventKey;
         let rows = '';
         entries.forEach((row, i) => {
             const listRank = i + 1;
@@ -1563,6 +1566,12 @@
             const info = clubInfo(row.crew);
             const seed = seedPrefix ? `${listRank}.${seedPrefix}` : String(listRank);
             const prog = getProgression ? getProgression(row, standingsRank) : { label: '—', cls: '' };
+            let prognPct = '—';
+            if (showProgn) {
+                const classCode = window.BsrTrialPrognostic.prognosticClassForEvent(eventKey, row);
+                const pct = window.BsrTrialPrognostic.prognosticPct(row.timeMs, classCode);
+                prognPct = window.BsrTrialPrognostic.formatPrognosticPct(pct);
+            }
             let rowClass = '';
             if (column === 'tt1' && standingsRank) {
                 if (standingsRank === directCutoff) rowClass += ' bsr-tt-cutoff';
@@ -1576,13 +1585,26 @@
                 `<td>${logoImgHtml('bsr-tt-logo', info.logoUrl, info.name)}` +
                 `<span class="bsr-tt-crew-name">${escapeHtml(info.name)}</span><span class="bsr-note"> ${escapeHtml(row.crew)}</span></td>` +
                 `<td class="bsr-tt-time">${escapeHtml(row.time)}</td>` +
+                (showProgn ? `<td class="bsr-tt-progn">${escapeHtml(prognPct)}</td>` : '') +
                 `<td class="bsr-tt-race">R${row.raceNum || '—'}</td>` +
                 `<td class="bsr-tt-prog"><span class="bsr-tt-prog-pill ${escapeHtml(prog.cls)}">${escapeHtml(prog.label)}</span></td></tr>`;
         });
+        const prognHead = showProgn ? '<th>Prog %</th>' : '';
         return (
             `<div class="bsr-tt-col"><h3 class="bsr-tt-col-head">${escapeHtml(title)}</h3>` +
-            `<table class="bsr-tt-table"><thead><tr><th>Seed</th><th>Crew</th><th>Time</th><th>Race</th><th>Progression</th></tr></thead><tbody>${rows}</tbody></table></div>`
+            `<table class="bsr-tt-table"><thead><tr><th>Seed</th><th>Crew</th><th>Time</th>${prognHead}<th>Race</th><th>Progression</th></tr></thead><tbody>${rows}</tbody></table></div>`
         );
+    }
+
+    function mountPrognosticPanel() {
+        const mount = document.getElementById('bsrPrognosticMount');
+        const prog = window.BsrTrialPrognostic;
+        if (!mount || !prog) return;
+        if (!mount.querySelector('#bsrPrognosticPanel')) {
+            mount.innerHTML = prog.renderPanelHtml();
+            prog.bindPanel();
+        }
+        prog.showPanel(normalizeRegattaCode(state.regattaCode) === 'u19_ct_26');
     }
 
     function renderTreeCrewLine(slot) {
@@ -3817,6 +3839,7 @@
             }
         }
         setStatus(statusMsg);
+        mountPrognosticPanel();
         renderStatsOverview();
         renderFilters();
         renderRaceList();

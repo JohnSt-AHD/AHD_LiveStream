@@ -397,9 +397,25 @@
         }
         global.BsrTrialProgression?.refreshViews?.();
         store.publishedEvents[activeEventKey] = Date.now();
+        if (String(activeEventKey) === '5') {
+            const best = computeMixRecommendation();
+            if (best) {
+                store.mixRecommendation = {
+                    label: best.label,
+                    ms: best.ms,
+                    run: best.run,
+                    raceNum: best.raceNum,
+                    at: Date.now(),
+                };
+            }
+        }
         saveStore();
         if (showMessage) {
-            statusFlash = `Leaderboard published — ${entries.length} result${entries.length === 1 ? '' : 's'} ranked by total time`;
+            let msg = `Leaderboard published — ${entries.length} result${entries.length === 1 ? '' : 's'} ranked by total time`;
+            if (String(activeEventKey) === '5' && store.mixRecommendation) {
+                msg += `. Recommended mix pair: ${store.mixRecommendation.label} (${formatMs(store.mixRecommendation.ms)})`;
+            }
+            statusFlash = msg;
         }
         renderPanel();
     }
@@ -618,16 +634,85 @@
         return leaders;
     }
 
+    function normalizeMixLabel(str) {
+        return String(str || '')
+            .replace(/\s/g, '')
+            .toUpperCase();
+    }
+
+    function buildMixMatrixResults() {
+        const prog = global.BsrTrialPrognostic;
+        if (!prog?.MIX_MATRIX) return [];
+        const entries = savedEventEntries();
+        return prog.MIX_MATRIX.map((def) => {
+            const hit =
+                entries.find((e) => e.raceNum === def.raceNum && e.lane === def.lane) ||
+                entries.find(
+                    (e) =>
+                        normalizeMixLabel(e.slot.crew || e.crewDefault) === normalizeMixLabel(def.label),
+                );
+            return { ...def, entry: hit || null, ms: hit?.ms ?? null };
+        });
+    }
+
+    function computeMixRecommendation() {
+        const withTimes = buildMixMatrixResults().filter((r) => r.ms != null);
+        if (!withTimes.length) return null;
+        return withTimes.reduce((best, row) => (row.ms < best.ms ? row : best));
+    }
+
+    function renderMixMatrixLeaderboard() {
+        if (String(activeEventKey) !== '5') return '';
+        const prog = global.BsrTrialPrognostic;
+        if (!prog) return '';
+        const results = buildMixMatrixResults();
+        if (!results.some((r) => r.ms != null)) return '';
+
+        const best = computeMixRecommendation();
+        const sorted = [...results].sort((a, b) => (a.ms ?? Infinity) - (b.ms ?? Infinity));
+        let rows = '';
+        for (const r of sorted) {
+            const pct = r.ms != null ? prog.prognosticPct(r.ms, 'CJMix2X') : null;
+            const isBest = best && r.label === best.label && r.ms != null;
+            rows +=
+                `<tr class="${isBest ? 'bsr-mix-row--best' : ''}${r.ms == null ? ' bsr-mix-row--pending' : ''}">` +
+                `<td class="bsr-mix-label">${esc(r.label)}</td>` +
+                `<td>${esc(r.run)} · R${r.raceNum} L${r.lane}</td>` +
+                `<td class="bsr-trial-lb-time">${r.ms != null ? formatMs(r.ms) : '—'}</td>` +
+                `<td class="bsr-trial-lb-prog">${prog.formatPrognosticPct(pct)}</td></tr>`;
+        }
+
+        const recHtml =
+            best ?
+                `<p class="bsr-mix-recommend" role="status">` +
+                `<strong>Recommended mixed double:</strong> ${esc(best.label)} — ${formatMs(best.ms)} ` +
+                `(${prog.formatPrognosticPct(prog.prognosticPct(best.ms, 'CJMix2X'))} vs reference)</p>`
+            :   '';
+
+        return (
+            `<div class="bsr-mix-matrix bsr-trial-leaderboard">` +
+            `<h3>Mixed double matrix — MX1 + MX2 total times</h3>` +
+            `<p class="bsr-note">All four pairings across the two matrix heats. Fastest combination is recommended for the U19 mixed double crew.</p>` +
+            recHtml +
+            `<div class="bsr-trial-lb-wrap"><table class="bsr-trial-lb-table">` +
+            `<thead><tr><th>Pair</th><th>Heat</th><th>Total</th><th>Prog %</th></tr></thead>` +
+            `<tbody>${rows}</tbody></table></div></div>`
+        );
+    }
+
     function renderEventLeaderboard() {
         const entries = savedEventEntries();
         if (!entries.length) {
             return '<p class="bsr-note">Saved results appear here ranked by total time. Tap <strong>Save</strong> on each finished row, then <strong>Publish leaderboard</strong>.</p>';
         }
+        const prog = global.BsrTrialPrognostic;
         const leaders = splitLeaders(entries);
         const splitHeaders = MANUAL_SPLITS.map((s) => `<th class="bsr-trial-lb-split-h">${esc(s.short)}</th>`).join('');
         let rows = '';
         entries.forEach((entry, idx) => {
             const code = entry.slot.crew || entry.crewDefault;
+            const classCode = prog?.prognosticClassForEvent(activeEventKey, entry);
+            const pct = prog?.prognosticPct(entry.ms, classCode);
             const splitCells = MANUAL_SPLITS.map((sp) => {
                 const cum = entry.slot.splits?.[sp.id];
                 const isLeader = cum != null && leaders[sp.id]?.includes(code);
@@ -638,6 +723,7 @@
                 `<td>${esc(global.BsrTrialProgression?.formatAthleteDisplay?.(code) || athleteName(code))} <span class="bsr-trial-code">${esc(code)}</span></td>` +
                 splitCells +
                 `<td class="bsr-trial-lb-time">${formatMs(entry.ms)}</td>` +
+                `<td class="bsr-trial-lb-prog">${prog ? prog.formatPrognosticPct(pct) : '—'}</td>` +
                 `<td>R${entry.raceNum}</td></tr>`;
         });
         const unsaved = finishedUnsavedEntries().length;
@@ -645,11 +731,13 @@
             unsaved ?
                 `<p class="bsr-note bsr-note--warn">${unsaved} finished row${unsaved === 1 ? '' : 's'} not saved yet.</p>`
             :   '';
+        const mixMatrix = renderMixMatrixLeaderboard();
         return (
+            mixMatrix +
             `<div class="bsr-trial-leaderboard"><h3>Event leaderboard (saved, ranked by total time)</h3>` +
-            `<p class="bsr-note">Green split cells = fastest cumulative time at that section.</p>` +
+            `<p class="bsr-note">Green split cells = fastest cumulative time at that section. Prog % compares total time to the reference for this boat class (100% = reference pace).</p>` +
             hint +
-            `<div class="bsr-trial-lb-wrap"><table class="bsr-trial-lb-table bsr-trial-lb-table--splits"><thead><tr><th>Rank</th><th>Athlete</th>${splitHeaders}<th>Total</th><th>Race</th></tr></thead>` +
+            `<div class="bsr-trial-lb-wrap"><table class="bsr-trial-lb-table bsr-trial-lb-table--splits"><thead><tr><th>Rank</th><th>Athlete</th>${splitHeaders}<th>Total</th><th>Prog %</th><th>Race</th></tr></thead>` +
             `<tbody>${rows}</tbody></table></div></div>`
         );
     }
@@ -915,10 +1003,17 @@
         rerender: () => renderPanel(),
         refreshProgression: () => global.BsrTrialProgression?.refreshViews?.(),
         reset: () => {
-            store = { races: {}, rankings: { women: [], men: [] }, selectedKey: '', publishedEvents: {} };
+            store = {
+                races: {},
+                rankings: { women: [], men: [] },
+                selectedKey: '',
+                publishedEvents: {},
+                mixRecommendation: null,
+            };
             saveStore();
             renderPanel();
         },
+        getMixRecommendation: () => store.mixRecommendation || null,
     };
 
     if (document.readyState === 'loading') {
