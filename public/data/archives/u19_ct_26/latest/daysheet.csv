@@ -17,12 +17,12 @@ Race,Time,Event #,Event Type,Round,Division,lane_1,lane_2
 14,09:26,3,G U19 CJW1X,sf,WSF1,1,winner (3 v 6)
 15,09:34,3,G U19 CJW1X,sf,WSF2,2,winner (4 v 5)
 16,09:42,3,G U19 CJW1X,final,WF,WSF1,WSF2
-17,09:50,3,G U19 CJW1X,final,WB,WSF1,WSF2
+17,09:50,3,G U19 CJW1X,final,WB,loser (WSF1),loser (WSF2)
 18,09:35,4,B U19 CJM1X,heat,MP1,M4,M5
 19,09:43,4,B U19 CJM1X,sf,MSF1,1,3
 20,09:51,4,B U19 CJM1X,sf,MSF2,2,winner (4 v 5)
 21,09:59,4,B U19 CJM1X,final,MF,MSF1,MSF2
-22,10:07,4,B U19 CJM1X,final,MB,MSF1,MSF2
+22,10:07,4,B U19 CJM1X,final,MB,loser (MSF1),loser (MSF2)
 23,11:25,5,Mx U19 CJMix2X,heat,MX1,M2+W2,M3+W3
 24,11:45,5,Mx U19 CJMix2X,heat,MX2,M2+W3,M3+W2
 25,13:05,6,U19 Doubles TT,time trial,D1,CJMix2X,

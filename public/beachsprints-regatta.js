@@ -769,6 +769,9 @@
         const div = String(
             race?.division ?? state.results.get(race?.raceNum)?.division ?? '',
         ).trim();
+        const upper = div.toUpperCase();
+        if (upper === 'WF' || upper === 'MF') return 1;
+        if (upper === 'WB' || upper === 'MB') return 2;
         const num = parseInt(div, 10);
         if (Number.isFinite(num) && num >= 1 && num <= 9) return num;
         const lower = div.toLowerCase();
@@ -779,6 +782,9 @@
     }
 
     function finalLabelForRace(race) {
+        const div = String(race?.division || '').toUpperCase();
+        if (div === 'WF' || div === 'MF') return 'Gold Final';
+        if (div === 'WB' || div === 'MB') return 'Bronze Final';
         const rank = finalDivisionRank(race);
         if (rank === 1) return 'A Final';
         if (rank === 2) return 'B Final';
@@ -1693,7 +1699,7 @@
             html += renderTreeColumn('Semi-finals', sfFeeders, 'bsr-tree-col--sf');
         }
         if (fin.length) {
-            html += renderTreeColumn('Final', finFeeders, 'bsr-tree-col--final');
+            html += renderTreeColumn('Finals', finFeeders, 'bsr-tree-col--final');
         }
         html += renderTreeColumn('Winner', renderTreeChampion(fin), 'bsr-tree-col--winner');
         html += '</div>';

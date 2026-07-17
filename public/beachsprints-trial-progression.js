@@ -33,6 +33,7 @@
         const c = String(code || '').trim();
         if (/^[WM]\d+$/i.test(c)) return false;
         if (/^winner /i.test(c)) return false;
+        if (/^loser /i.test(c)) return false;
         if (/^(WSF|MSF)\d*$/i.test(c)) return false;
         return /^[A-Z]{2,5}$/i.test(c);
     }
@@ -41,6 +42,7 @@
         const s = String(label || '').trim();
         return (
             /^winner /i.test(s) ||
+            /^loser /i.test(s) ||
             /^[WM]\d+$/i.test(s) ||
             /^(WSF|MSF)\d*$/i.test(s) ||
             /^\d+$/.test(s)
@@ -71,6 +73,7 @@
     function formatPendingLabel(raw) {
         const s = String(raw || '').trim();
         if (/^winner /i.test(s)) return s.replace(/^winner /i, 'Winner ');
+        if (/^loser /i.test(s)) return s.replace(/^loser /i, 'Loser ');
         return s;
     }
 
@@ -101,6 +104,22 @@
         if (!race || !competitor) return '';
         const hit = resolveLane(race, competitor);
         return hit?.code && isAthleteCode(hit.code) ? hit.code.toUpperCase() : '';
+    }
+
+    function raceLoserCode(raceNum) {
+        const api = global.BsrRegatta;
+        if (!api?.getRaceResult) return '';
+        const res = api.getRaceResult(raceNum);
+        const lose = res?.placings?.find((p) => p.place === 2);
+        const code = lose?.competitor || '';
+        if (isAthleteCode(code)) return code.toUpperCase();
+        return normalizeWinnerCode(code, raceNum);
+    }
+
+    function loserBySemiRef(ref) {
+        const raceNum = DIVISION_WINNER[String(ref || '').toUpperCase()];
+        if (!raceNum) return '';
+        return raceLoserCode(raceNum);
     }
 
     function winnerByDivision(division) {
@@ -203,6 +222,12 @@
         }
         if (/^winner \(4 v 5\)$/i.test(raw)) {
             const code = winnerFromPlayIn(gender, 'low');
+            return { code: code || raw, display: resolvedDisplay(code, raw), raw };
+        }
+
+        const loserSf = raw.match(/^loser \((WSF|MSF)(\d+)\)$/i);
+        if (loserSf) {
+            const code = loserBySemiRef(`${loserSf[1].toUpperCase()}${loserSf[2]}`);
             return { code: code || raw, display: resolvedDisplay(code, raw), raw };
         }
 

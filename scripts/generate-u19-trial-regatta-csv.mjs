@@ -86,7 +86,7 @@ for (const m of wBracket.semiFinals) {
 }
 pushRace(t, 3, `G U19 ${BOAT_CJW1X}`, 'final', 'WF', 'WSF1', 'WSF2');
 t = addMinutes(t, 8);
-pushRace(t, 3, `G U19 ${BOAT_CJW1X}`, 'final', 'WB', 'WSF1', 'WSF2');
+pushRace(t, 3, `G U19 ${BOAT_CJW1X}`, 'final', 'WB', 'loser (WSF1)', 'loser (WSF2)');
 
 // Men's knockout
 const mBracket = menKnockoutBracket();
@@ -103,7 +103,7 @@ for (const m of mBracket.semiFinals) {
 }
 pushRace(t, 4, `B U19 ${BOAT_CJM1X}`, 'final', 'MF', 'MSF1', 'MSF2');
 t = addMinutes(t, 8);
-pushRace(t, 4, `B U19 ${BOAT_CJM1X}`, 'final', 'MB', 'MSF1', 'MSF2');
+pushRace(t, 4, `B U19 ${BOAT_CJM1X}`, 'final', 'MB', 'loser (MSF1)', 'loser (MSF2)');
 
 // Session 2 — mix matrix (2 H2H + W1/M1 solo refs noted in division)
 t = '11:25';
