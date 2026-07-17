@@ -1605,6 +1605,7 @@
             prog.bindPanel();
         }
         prog.showPanel(normalizeRegattaCode(state.regattaCode) === 'u19_ct_26');
+        prog.refreshPanelInputs?.();
     }
 
     function renderTreeCrewLine(slot) {

@@ -1900,6 +1900,38 @@ body.bsr-page {
     border: 1px solid rgba(74, 222, 128, 0.35);
 }
 
+.bsr-trial-row--ref {
+    background: rgba(46, 184, 232, 0.06);
+}
+
+.bsr-trial-ref-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #2eb8e8;
+    margin-right: 4px;
+}
+
+.bsr-prog-derived-tag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #4ade80;
+    text-transform: uppercase;
+}
+
+.bsr-prog-derived-list {
+    margin: 0 0 10px;
+    padding-left: 18px;
+    font-size: 0.82rem;
+    color: var(--bsr-muted);
+}
+
+.bsr-mix-refs {
+    margin-bottom: 8px;
+}
+
 .bsr-mix-row--best td {
     background: rgba(22, 163, 74, 0.18);
     font-weight: 600;
