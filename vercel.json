@@ -16,6 +16,9 @@
     },
     "api/cv-position.js": {
       "maxDuration": 10
+    },
+    "api/trial-results.js": {
+      "maxDuration": 10
     }
   }
 }

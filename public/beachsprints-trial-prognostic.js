@@ -85,6 +85,16 @@
     let custom = {};
     /** @type {Record<string, { ms: number, source: string, at: number }>} */
     let derived = {};
+    let suppressPanelInput = false;
+
+    /** Canonical class keys — CJMix2X must stay mixed-case (toUpperCase → CJMIX2X misses CLASSES). */
+    function normalizeClassCode(classCode) {
+        const raw = String(classCode || '').trim();
+        if (!raw) return '';
+        const upper = raw.toUpperCase();
+        if (upper === 'CJMIX2X') return 'CJMix2X';
+        return upper;
+    }
 
     function load() {
         try {
@@ -98,6 +108,16 @@
             derived = raw ? JSON.parse(raw) : {};
         } catch {
             derived = {};
+        }
+        if (custom.CJMIX2X != null && custom.CJMix2X == null) {
+            custom.CJMix2X = custom.CJMIX2X;
+            delete custom.CJMIX2X;
+            save();
+        }
+        if (derived.CJMIX2X != null && derived.CJMix2X == null) {
+            derived.CJMix2X = derived.CJMIX2X;
+            delete derived.CJMIX2X;
+            saveDerived();
         }
     }
 
@@ -144,12 +164,12 @@
     }
 
     function getDerivedMeta(classCode) {
-        const key = String(classCode || '').toUpperCase();
+        const key = normalizeClassCode(classCode);
         return derived[key] || null;
     }
 
     function setDerivedReference(classCode, ms, source) {
-        const key = String(classCode || '').toUpperCase();
+        const key = normalizeClassCode(classCode);
         if (!CLASSES[key] || !Number.isFinite(ms) || ms <= 0) return;
         derived[key] = { ms, source: String(source || ''), at: Date.now() };
         custom[key] = msToInputDisplay(ms);
@@ -159,7 +179,7 @@
     }
 
     function clearDerivedReference(classCode) {
-        const key = String(classCode || '').toUpperCase();
+        const key = normalizeClassCode(classCode);
         delete derived[key];
         saveDerived();
     }
@@ -167,18 +187,20 @@
     function refreshPanelInputs() {
         const panel = document.getElementById('bsrPrognosticPanel');
         if (!panel) return;
+        suppressPanelInput = true;
         panel.querySelectorAll('.bsr-prog-input').forEach((inp) => {
             const code = inp.dataset.progClass;
             inp.value = getReferenceDisplay(code);
             const meta = getDerivedMeta(code);
             inp.title = meta?.source || CLASSES[code]?.source || '';
         });
+        suppressPanelInput = false;
         const note = document.getElementById('bsrProgDerivedNote');
         if (note) note.innerHTML = renderDerivedNoteHtml();
     }
 
     function getReferenceTime(classCode, opts = {}) {
-        const key = String(classCode || '').toUpperCase();
+        const key = normalizeClassCode(classCode);
         const hit = CLASSES[key];
         if (!hit) return null;
         let ms = null;
@@ -194,18 +216,25 @@
     }
 
     function getReferenceDisplay(classCode) {
-        const key = String(classCode || '').toUpperCase();
+        const key = normalizeClassCode(classCode);
         if (derived[key]?.ms) return msToInputDisplay(derived[key].ms);
         return custom[key] || CLASSES[key]?.default || '';
     }
 
-    function setReferenceTime(classCode, timeStr) {
-        const key = String(classCode || '').toUpperCase();
+    function setReferenceTime(classCode, timeStr, opts = {}) {
+        const key = normalizeClassCode(classCode);
         if (!CLASSES[key]) return;
-        custom[key] = String(timeStr || '').trim();
-        delete derived[key];
+        const next = String(timeStr || '').trim();
+        custom[key] = next;
+        if (!opts.keepDerived) {
+            const parsed = parseTimeToMs(next);
+            const meta = derived[key];
+            if (!meta?.ms || !Number.isFinite(parsed) || Math.abs(parsed - meta.ms) > 15) {
+                delete derived[key];
+                saveDerived();
+            }
+        }
         save();
-        saveDerived();
     }
 
     function resetToDefaults() {
@@ -221,6 +250,18 @@
         const mixMs = (w1Ms + m1Ms) / 2;
         setDerivedReference('CJMix2X', mixMs, source || `Avg W1 (${formatMsShort(w1Ms)}) + M1 (${formatMsShort(m1Ms)}) solo refs`);
         return mixMs;
+    }
+
+    function mixPrognosticDebug() {
+        const ref = getReferenceTime('CJMix2X');
+        const meta = getDerivedMeta('CJMix2X');
+        return {
+            refMs: ref,
+            refDisplay: getReferenceDisplay('CJMix2X'),
+            source: meta?.source || 'WR default / manual',
+            derived: !!meta?.ms,
+            twoRaceRefMs: ref != null ? ref * 2 : null,
+        };
     }
 
     /** Session 3 — selected mix pair time as doubles TT target. */
@@ -305,14 +346,14 @@
         panel.dataset.bound = '1';
         panel.addEventListener('change', (e) => {
             const inp = e.target.closest('.bsr-prog-input');
-            if (!inp) return;
+            if (!inp || suppressPanelInput) return;
             setReferenceTime(inp.dataset.progClass, inp.value);
             if (global.BsrTrialLive?.rerender) global.BsrTrialLive.rerender();
         });
         panel.addEventListener('input', (e) => {
             const inp = e.target.closest('.bsr-prog-input');
-            if (!inp) return;
-            setReferenceTime(inp.dataset.progClass, inp.value);
+            if (!inp || suppressPanelInput) return;
+            setReferenceTime(inp.dataset.progClass, inp.value, { keepDerived: true });
         });
         const resetBtn = document.getElementById('bsrProgReset');
         if (resetBtn) {
@@ -335,6 +376,31 @@
         panel.hidden = !show;
     }
 
+    function reload() {
+        load();
+        refreshPanelInputs();
+    }
+
+    function exportForServer() {
+        return {
+            custom: { ...custom },
+            derived: { ...derived },
+        };
+    }
+
+    function importFromServer(payload) {
+        if (!payload || typeof payload !== 'object') return;
+        if (payload.custom && typeof payload.custom === 'object') {
+            custom = { ...custom, ...payload.custom };
+            save();
+        }
+        if (payload.derived && typeof payload.derived === 'object') {
+            derived = { ...payload.derived };
+            saveDerived();
+        }
+        refreshPanelInputs();
+    }
+
     load();
 
     global.BsrTrialPrognostic = {
@@ -353,13 +419,17 @@
         prognosticPct,
         formatPrognosticPct,
         prognosticClassForEvent,
+        normalizeClassCode,
         parseTimeToMs,
         formatMsShort,
+        mixPrognosticDebug,
         renderPanelHtml,
         renderDerivedNoteHtml,
         refreshPanelInputs,
         bindPanel,
         showPanel,
-        reload: load,
+        reload,
+        exportForServer,
+        importFromServer,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

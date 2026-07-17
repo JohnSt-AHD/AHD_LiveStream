@@ -99,6 +99,7 @@
     };
 
     let liveRefreshTimer = null;
+    let lastTrialServerUpdatedAt = 0;
 
     const TRIM_MIN_BOAT_MS = 20000;
     const TRIM_HANDLE_HIT_PX = 12;
@@ -1296,6 +1297,7 @@
     }
 
     function loadSettings() {
+        captureTrialWriteTokenFromUrl();
         try {
             state.regattaCode = normalizeRegattaCode(
                 new URLSearchParams(location.search).get('regatta') ||
@@ -3785,6 +3787,49 @@
         renderEventSchedule();
     }
 
+    function captureTrialWriteTokenFromUrl() {
+        try {
+            const token = new URLSearchParams(location.search).get('trialWriteToken');
+            if (token) sessionStorage.setItem('bsrTrialWriteToken', token.trim());
+        } catch {
+            /* ignore */
+        }
+    }
+
+    function applyTrialResultsBundle(bundle) {
+        if (normalizeRegattaCode(state.regattaCode) !== 'u19_ct_26') return false;
+        if (!bundle?.raceResults || typeof bundle.raceResults !== 'object') return false;
+        const updatedAt = Number(bundle.updatedAt) || 0;
+        if (updatedAt && updatedAt <= lastTrialServerUpdatedAt) return false;
+
+        for (const [raceNumStr, row] of Object.entries(bundle.raceResults)) {
+            const raceNum = parseInt(raceNumStr, 10);
+            if (!Number.isFinite(raceNum) || !row) continue;
+            state.results.set(raceNum, {
+                status: row.status || 'Official',
+                eventNum: row.eventNum || '',
+                round: row.round || '',
+                division: row.division || '',
+                placings: Array.isArray(row.placings) ?
+                    row.placings.map((p) => ({
+                        place: p.place,
+                        competitor: p.competitor,
+                        time: p.time,
+                    }))
+                :   [],
+            });
+        }
+        lastTrialServerUpdatedAt = updatedAt || Date.now();
+        renderTimeTrialPanel();
+        renderEventSchedule();
+        renderKnockoutTree();
+        if (window.BsrTrialProgression?.refreshViews) {
+            window.BsrTrialProgression.refreshViews();
+        }
+        if (state.selectedRaceNum) renderRaceDetail();
+        return true;
+    }
+
     function refreshTrialProgression() {
         renderEventSchedule();
         renderKnockoutTree();
@@ -3916,7 +3961,8 @@
                 ' — daysheet parsed empty; check daysheet.csv format (race numbers and lane columns).';
         } else if (state.results.size === 0) {
             if (normalizeRegattaCode(code) === 'u19_ct_26') {
-                statusMsg += ' — live trial mode: use Live trial panel for manual times + GPS.';
+                statusMsg +=
+                    ' — live trial mode: Save in Live trial panel; results sync every 10s when published.';
             } else {
                 statusMsg += ' — no results loaded (try rowit.nz or bundled data/cnzb2026-results.csv).';
             }
@@ -4127,6 +4173,7 @@
         },
         fetchRoute,
         applyTrialResult,
+        applyTrialResultsBundle,
         refreshTrialLeaderboard,
         refreshTrialProgression,
         getRaceResult,

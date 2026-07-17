@@ -5,6 +5,11 @@
 (function (global) {
     const TRIAL_CODE = 'u19_ct_26';
     const LS_TRIAL = 'bsrTrialLive_v3';
+    const LS_WRITE_TOKEN = 'bsrTrialWriteToken';
+    const TRIAL_SYNC_API = '/api/trial-results';
+    const TRIAL_SYNC_POLL_MS = 10000;
+    /** Must match DEFAULT_WRITE_TOKEN in api/trial-results.js (or TRIAL_RESULTS_TOKEN on Vercel). */
+    const DEFAULT_WRITE_TOKEN = 'r3A2xEjWMDoqeT910VtDsg';
     const GPS_LABELS = ['C1X_A', 'C1X_B'];
     const GPS_TO_ALIAS = { C1X_A: 'boat_1', C1X_B: 'boat_2' };
 
@@ -38,6 +43,11 @@
     /** @type {string[]|null|undefined} null = all traces with GPS; undefined = map not shown */
     let lastMapTraceKeys = undefined;
     let statusFlash = '';
+    let serverUpdatedAt = 0;
+    let pushTimer = null;
+    let pullTimer = null;
+    let applyingFromServer = false;
+    let syncEnabled = false;
 
     function esc(s) {
         return String(s ?? '')
@@ -62,7 +72,9 @@
                     selectedKey: parsed.selectedKey || '',
                     publishedEvents: parsed.publishedEvents || {},
                     mixRecommendation: parsed.mixRecommendation || null,
+                    serverUpdatedAt: parsed.serverUpdatedAt || 0,
                 };
+                serverUpdatedAt = store.serverUpdatedAt || 0;
             }
         } catch {
             /* ignore */
@@ -75,10 +87,252 @@
         } catch {
             /* ignore */
         }
+        if (!applyingFromServer) schedulePushServer();
+    }
+
+    function captureWriteTokenFromUrl() {
+        try {
+            const token = new URLSearchParams(location.search).get('trialWriteToken');
+            if (token) sessionStorage.setItem(LS_WRITE_TOKEN, token.trim());
+        } catch {
+            /* ignore */
+        }
+    }
+
+    function getWriteToken() {
+        try {
+            return sessionStorage.getItem(LS_WRITE_TOKEN) || DEFAULT_WRITE_TOKEN;
+        } catch {
+            return DEFAULT_WRITE_TOKEN;
+        }
+    }
+
+    function rowKindForSlot(raceNum, lane) {
+        const laneStr = String(lane);
+        if (laneStr === 'ref-w' || laneStr === 'ref-m') return 'prog-ref';
+        const race = global.BsrRegatta?.getRace?.(raceNum);
+        if (String(race?.eventNum) === '5') return 'mix-h2h';
+        return '';
+    }
+
+    function buildSavedSlotsPayload() {
+        const rows = [];
+        for (const [key, slot] of Object.entries(store.races || {})) {
+            if (!slot?.saved) continue;
+            const ms = finishMs(slot);
+            if (ms == null) continue;
+            const colon = key.indexOf(':');
+            if (colon < 0) continue;
+            const raceNum = parseInt(key.slice(0, colon), 10);
+            const lane = key.slice(colon + 1);
+            if (!Number.isFinite(raceNum) || !lane) continue;
+            rows.push({
+                raceNum,
+                lane: lane.startsWith('ref-') ? lane : Number(lane) || lane,
+                crew: slot.crew || '',
+                ms,
+                time: formatTimeCsv(ms),
+                splits: { ...(slot.splits || {}) },
+                savedAt: slot.savedAt || Date.now(),
+                rowKind: rowKindForSlot(raceNum, lane),
+            });
+        }
+        return rows;
+    }
+
+    function buildRaceResultsPayload(savedSlots) {
+        const map = {};
+        for (const row of savedSlots || []) {
+            if (row.rowKind === 'prog-ref') continue;
+            const race = global.BsrRegatta?.getRace?.(row.raceNum);
+            if (!race) continue;
+            if (!map[row.raceNum]) {
+                map[row.raceNum] = {
+                    status: 'Official',
+                    eventNum: String(race.eventNum || ''),
+                    round: race.round || '',
+                    division: race.division || '',
+                    placings: [],
+                };
+            }
+            map[row.raceNum].placings.push({
+                place: 0,
+                competitor: row.crew,
+                time: row.time,
+                manualMs: row.ms,
+                lane: row.lane,
+            });
+        }
+        for (const res of Object.values(map)) {
+            res.placings.sort((a, b) => a.manualMs - b.manualMs);
+            res.placings.forEach((p, idx) => {
+                p.place = idx + 1;
+            });
+        }
+        return map;
+    }
+
+    function buildServerPayload() {
+        const savedSlots = buildSavedSlotsPayload();
+        return {
+            version: 1,
+            regatta: TRIAL_CODE,
+            updatedAt: Date.now(),
+            rankings: {
+                women: [...(store.rankings?.women || [])],
+                men: [...(store.rankings?.men || [])],
+            },
+            mixRecommendation: store.mixRecommendation || null,
+            publishedEvents: { ...(store.publishedEvents || {}) },
+            savedSlots,
+            raceResults: buildRaceResultsPayload(savedSlots),
+            prognostic: global.BsrTrialPrognostic?.exportForServer?.() || { custom: {}, derived: {} },
+        };
+    }
+
+    function schedulePushServer() {
+        if (!syncEnabled || applyingFromServer) return;
+        if (pushTimer) clearTimeout(pushTimer);
+        pushTimer = setTimeout(() => {
+            pushTimer = null;
+            void pushToServer();
+        }, 600);
+    }
+
+    async function pushToServer() {
+        if (!syncEnabled) return;
+        const payload = buildServerPayload();
+        const headers = { 'Content-Type': 'application/json' };
+        const token = getWriteToken();
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        try {
+            const res = await fetch(`${TRIAL_SYNC_API}?regatta=${TRIAL_CODE}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 409 && data.updatedAt) {
+                await pullFromServer(true);
+                return;
+            }
+            if (!res.ok) {
+                console.warn('Trial results push failed:', data.error || res.status);
+                return;
+            }
+            serverUpdatedAt = payload.updatedAt;
+            store.serverUpdatedAt = payload.updatedAt;
+            try {
+                localStorage.setItem(LS_TRIAL, JSON.stringify(store));
+            } catch {
+                /* ignore */
+            }
+        } catch (err) {
+            console.warn('Trial results push error:', err);
+        }
+    }
+
+    function applySavedSlot(row) {
+        const lane = row.lane;
+        const slot = getSlot(row.raceNum, lane);
+        slot.crew = row.crew || slot.crew;
+        slot.splits = { ...(row.splits || {}) };
+        slot.saved = true;
+        slot.savedAt = row.savedAt || Date.now();
+        slot.runningAt = null;
+        slot.gpsPoints = slot.gpsPoints || [];
+    }
+
+    function applyServerPayload(payload, opts = {}) {
+        if (!payload || payload.regatta !== TRIAL_CODE) return false;
+        if (payload.updatedAt && payload.updatedAt <= serverUpdatedAt && !opts.force) return false;
+
+        applyingFromServer = true;
+        try {
+            if (payload.rankings) {
+                store.rankings = {
+                    women: Array.isArray(payload.rankings.women) ? payload.rankings.women : [],
+                    men: Array.isArray(payload.rankings.men) ? payload.rankings.men : [],
+                };
+            }
+            if (payload.mixRecommendation) store.mixRecommendation = payload.mixRecommendation;
+            if (payload.publishedEvents) store.publishedEvents = { ...payload.publishedEvents };
+
+            for (const row of payload.savedSlots || []) {
+                applySavedSlot(row);
+            }
+
+            serverUpdatedAt = payload.updatedAt || Date.now();
+            store.serverUpdatedAt = serverUpdatedAt;
+
+            global.BsrTrialPrognostic?.importFromServer?.(payload.prognostic);
+            global.BsrRegatta?.applyTrialResultsBundle?.(payload);
+
+            try {
+                localStorage.setItem(LS_TRIAL, JSON.stringify(store));
+            } catch {
+                /* ignore */
+            }
+
+            global.BsrTrialProgression?.refreshViews?.();
+            renderPanel();
+            return true;
+        } finally {
+            applyingFromServer = false;
+        }
+    }
+
+    async function pullFromServer(force = false) {
+        if (!syncEnabled) return false;
+        try {
+            const res = await fetch(`${TRIAL_SYNC_API}?regatta=${TRIAL_CODE}`, {
+                cache: 'no-store',
+            });
+            if (res.status === 404) return false;
+            if (!res.ok) return false;
+            const payload = await res.json();
+            return applyServerPayload(payload, { force });
+        } catch (err) {
+            console.warn('Trial results pull error:', err);
+            return false;
+        }
+    }
+
+    function startTrialSync() {
+        syncEnabled = true;
+        captureWriteTokenFromUrl();
+        if (pullTimer) clearInterval(pullTimer);
+        void pullFromServer(true);
+        pullTimer = setInterval(() => {
+            void pullFromServer(false);
+        }, TRIAL_SYNC_POLL_MS);
+    }
+
+    function stopTrialSync() {
+        syncEnabled = false;
+        if (pullTimer) {
+            clearInterval(pullTimer);
+            pullTimer = null;
+        }
+        if (pushTimer) {
+            clearTimeout(pushTimer);
+            pushTimer = null;
+        }
     }
 
     function slotKey(raceNum, lane) {
         return `${raceNum}:${lane}`;
+    }
+
+    function lanesEqual(a, b) {
+        if (a === b) return true;
+        if (String(a).startsWith('ref-') || String(b).startsWith('ref-')) return String(a) === String(b);
+        return Number(a) === Number(b);
+    }
+
+    function findEventRow(raceNum, lane) {
+        return buildEventRows().find((r) => r.raceNum === raceNum && lanesEqual(r.lane, lane));
     }
 
     function emptySlot() {
@@ -348,11 +602,13 @@
 
     function saveRow(raceNum, lane) {
         const slot = getSlot(raceNum, lane);
-        const row = buildEventRows().find((r) => r.raceNum === raceNum && r.lane === lane);
+        const row = findEventRow(raceNum, lane);
         if (row && row.rowKind !== 'prog-ref') {
             syncProgressionCrew(row, slot);
             const hit = global.BsrTrialProgression?.resolveLane?.(row.race, row.crewDefault);
-            if (hit?.code && global.BsrTrialProgression?.isAthleteCode?.(hit.code)) {
+            if (row.rowKind === 'mix-h2h') {
+                slot.crew = row.crewDefault;
+            } else if (hit?.code && global.BsrTrialProgression?.isAthleteCode?.(hit.code)) {
                 slot.crew = hit.code;
             }
         } else if (row?.rowKind === 'prog-ref' && !slot.crew) {
@@ -386,7 +642,7 @@
             clearInterval(tickers.get(k));
             tickers.delete(k);
         }
-        const row = buildEventRows().find((r) => r.raceNum === raceNum && r.lane === lane);
+        const row = findEventRow(raceNum, lane);
         store.races[k] = emptySlot();
         const def = row ? (row.rowKind === 'prog-ref' ? row.crewDefault : resolvedCrewForRow(row) || row.crewDefault) : '';
         if (def) getSlot(raceNum, lane).crew = def;
@@ -406,12 +662,12 @@
         const pool = String(activeEventKey) === '5' ? mixH2hEntries(entries) : entries;
         const ttEvents = new Set(['1', '2', '6']);
         if (ttEvents.has(String(activeEventKey))) {
-            return pool.findIndex((e) => e.raceNum === entry.raceNum && e.lane === entry.lane) + 1;
+            return pool.findIndex((e) => e.raceNum === entry.raceNum && lanesEqual(e.lane, entry.lane)) + 1;
         }
         const sameRace = pool
             .filter((e) => e.raceNum === entry.raceNum)
             .sort((a, b) => a.ms - b.ms);
-        const idx = sameRace.findIndex((e) => e.raceNum === entry.raceNum && e.lane === entry.lane);
+        const idx = sameRace.findIndex((e) => e.raceNum === entry.raceNum && lanesEqual(e.lane, entry.lane));
         return idx >= 0 ? idx + 1 : 1;
     }
 
@@ -786,18 +1042,49 @@
             .toUpperCase();
     }
 
-    function getPairTimeMs(raceNum, pairLabel) {
+    function mixMatrixDefForEntry(entry) {
         const prog = global.BsrTrialPrognostic;
+        if (!prog?.MIX_MATRIX || !entry) return null;
+        return (
+            prog.MIX_MATRIX.find(
+                (d) =>
+                    d.raceNum === entry.raceNum &&
+                    Number(d.lane) === Number(entry.lane),
+            ) ||
+            prog.MIX_MATRIX.find(
+                (d) =>
+                    normalizeMixLabel(d.label) ===
+                    normalizeMixLabel(entry.crewDefault || entry.slot?.crew),
+            ) ||
+            null
+        );
+    }
+
+    function mixPairLabelForEntry(entry) {
+        const def = mixMatrixDefForEntry(entry);
+        if (def) return def.label;
+        const raw = String(entry?.crewDefault || entry?.slot?.crew || '').trim();
+        if (/M\d\+W\d/i.test(raw)) return raw;
+        return raw;
+    }
+
+    function getPairTimeMs(raceNum, pairLabel) {
         const entries = mixH2hEntries(savedEventEntries());
+        const prog = global.BsrTrialPrognostic;
         const def = prog?.MIX_MATRIX?.find(
-            (d) => d.raceNum === raceNum && normalizeMixLabel(d.label) === normalizeMixLabel(pairLabel),
+            (d) =>
+                d.raceNum === raceNum &&
+                normalizeMixLabel(d.label) === normalizeMixLabel(pairLabel),
         );
         const hit =
-            (def && entries.find((e) => e.raceNum === def.raceNum && e.lane === def.lane)) ||
+            (def &&
+                entries.find(
+                    (e) => e.raceNum === def.raceNum && Number(e.lane) === Number(def.lane),
+                )) ||
             entries.find(
                 (e) =>
                     e.raceNum === raceNum &&
-                    normalizeMixLabel(e.slot.crew || e.crewDefault) === normalizeMixLabel(pairLabel),
+                    normalizeMixLabel(mixPairLabelForEntry(e)) === normalizeMixLabel(pairLabel),
             );
         return hit?.ms ?? null;
     }
@@ -808,10 +1095,12 @@
         const entries = mixH2hEntries(savedEventEntries());
         return prog.MIX_MATRIX.map((def) => {
             const hit =
-                entries.find((e) => e.raceNum === def.raceNum && e.lane === def.lane) ||
+                entries.find(
+                    (e) => e.raceNum === def.raceNum && Number(e.lane) === Number(def.lane),
+                ) ||
                 entries.find(
                     (e) =>
-                        normalizeMixLabel(e.slot.crew || e.crewDefault) === normalizeMixLabel(def.label),
+                        normalizeMixLabel(mixPairLabelForEntry(e)) === normalizeMixLabel(def.label),
                 );
             return { ...def, entry: hit || null, ms: hit?.ms ?? null };
         });
@@ -845,6 +1134,25 @@
         return withTimes.reduce((best, row) => (row.ms < best.ms ? row : best));
     }
 
+    function renderMixPrognosticStatus() {
+        const prog = global.BsrTrialPrognostic;
+        if (!prog?.mixPrognosticDebug) return '';
+        const info = prog.mixPrognosticDebug();
+        if (!info.refMs) {
+            return '<p class="bsr-note bsr-note--warn">Mix prognostic reference missing — check the Mixed double (CJMix2X) field at the top of the page.</p>';
+        }
+        const sample = 3 * 60 * 1000;
+        const samplePct = prog.formatPrognosticPct(prog.prognosticPct(sample, 'CJMix2X'));
+        return (
+            `<p class="bsr-mix-prog-status">` +
+            `<strong>Mix prognostic active:</strong> ${esc(info.refDisplay)} per race` +
+            `${info.derived ? ' <span class="bsr-prog-derived-tag">derived</span>' : ''}` +
+            ` · ${esc(info.source)}` +
+            `<br><span class="bsr-note">Example: a 3:00.00 mix pair → ${esc(samplePct)}. Athlete totals use ${esc(prog.formatMsShort(info.twoRaceRefMs))} (2× reference).</span>` +
+            `</p>`
+        );
+    }
+
     function renderMixRefSummary() {
         const prog = global.BsrTrialPrognostic;
         if (!prog?.MIX_REF_RUNS) return '';
@@ -866,6 +1174,7 @@
         return (
             `<div class="bsr-mix-refs bsr-trial-leaderboard">` +
             `<h3>Prognostic reference runs (W1 + M1 solo)</h3>` +
+            renderMixPrognosticStatus() +
             derivedNote +
             `<div class="bsr-trial-lb-wrap"><table class="bsr-trial-lb-table">` +
             `<thead><tr><th>Run</th><th>W1 solo</th><th>M1 solo</th><th>Mix target (avg)</th></tr></thead>` +
@@ -1228,18 +1537,24 @@
         if (!isTrialRegatta(detail?.code)) {
             panel.hidden = true;
             activeEventKey = '';
+            stopTrialSync();
             return;
         }
+        startTrialSync();
         syncEventKey();
         renderPanel();
     }
 
     async function init() {
+        captureWriteTokenFromUrl();
         loadStore();
         await loadMeta();
         global.addEventListener('bsr:race-selected', (e) => onRaceSelected(e.detail));
         global.addEventListener('bsr:event-selected', (e) => onEventSelected(e.detail));
         global.addEventListener('bsr:regatta-loaded', (e) => onRegattaLoaded(e.detail));
+        if (isTrialRegatta(global.BsrRegatta?.getRegattaCode?.())) {
+            startTrialSync();
+        }
     }
 
     global.BsrTrialLive = {
@@ -1249,6 +1564,9 @@
         getAthleteMeta: (code) => athleteMeta(code),
         rerender: () => renderPanel(),
         refreshProgression: () => global.BsrTrialProgression?.refreshViews?.(),
+        applyFromServer: (payload, opts) => applyServerPayload(payload, opts),
+        pullFromServer,
+        pushToServer,
         reset: () => {
             store = {
                 races: {},
@@ -1256,7 +1574,9 @@
                 selectedKey: '',
                 publishedEvents: {},
                 mixRecommendation: null,
+                serverUpdatedAt: 0,
             };
+            serverUpdatedAt = 0;
             saveStore();
             renderPanel();
         },
