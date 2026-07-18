@@ -69,5 +69,8 @@
         "code": "HALE"
       }
     ]
+  },
+  "mixMatrixSubstitutions": {
+    "W3": "HARR"
   }
 }

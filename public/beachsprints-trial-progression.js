@@ -89,6 +89,26 @@
         return list[idx] || '';
     }
 
+    function mixMatrixSubstitution(gender, n) {
+        const key = `${String(gender || '').toUpperCase()}${n}`;
+        const sub = global.BsrTrialLive?.getTrialMeta?.()?.mixMatrixSubstitutions?.[key];
+        return sub ? String(sub).toUpperCase() : '';
+    }
+
+    /** Rank code for mix matrix pairs only (Event 5) — allows substitutions without changing TT seeding. */
+    function matrixRankCode(gender, n) {
+        const sub = mixMatrixSubstitution(gender, n);
+        if (sub) return sub;
+        return rankCode(gender, n);
+    }
+
+    function formatMatrixSeedDisplay(seed) {
+        const m = String(seed || '').match(/^([WM])(\d+)$/i);
+        if (!m) return formatAthleteDisplay(seed) || seed;
+        const code = matrixRankCode(m[1].toUpperCase(), m[2]);
+        return code ? formatAthleteDisplay(code) : `${m[1].toUpperCase()}${m[2]}`;
+    }
+
     function raceWinnerCode(raceNum) {
         const api = global.BsrRegatta;
         if (!api?.getRaceResult) return '';
@@ -138,8 +158,8 @@
     function resolveMixPair(label) {
         const m = String(label || '').match(/^M(\d)\+W(\d)$/i);
         if (!m) return null;
-        const mc = rankCode('M', m[1]);
-        const wc = rankCode('W', m[2]);
+        const mc = matrixRankCode('M', m[1]);
+        const wc = matrixRankCode('W', m[2]);
         if (!mc && !wc) return { code: label, display: label, raw: label };
         const wPart = wc ? formatAthleteDisplay(wc) : `W${m[2]}`;
         const mPart = mc ? formatAthleteDisplay(mc) : `M${m[1]}`;
@@ -283,6 +303,8 @@
         isAthleteCode,
         refreshViews,
         rankCode,
+        matrixRankCode,
+        formatMatrixSeedDisplay,
         athleteName,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

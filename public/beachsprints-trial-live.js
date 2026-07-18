@@ -1312,7 +1312,10 @@
         for (const a of ranked) {
             rank += 1;
             const pct = prog.prognosticPct(a.total, 'CJMix2X', { twoRaceTotal: true });
-            const name = global.BsrTrialProgression?.formatAthleteDisplay?.(a.code) || athleteName(a.code);
+            const name =
+                global.BsrTrialProgression?.formatMatrixSeedDisplay?.(a.code) ||
+                global.BsrTrialProgression?.formatAthleteDisplay?.(a.code) ||
+                athleteName(a.code);
             athleteRows +=
                 `<tr class="${rank === 1 ? 'bsr-mix-row--best' : ''}">` +
                 `<td class="bsr-trial-lb-rank">${rank}</td>` +
@@ -1708,6 +1711,7 @@
         isTrialScorerMode,
         getRankings: () => ({ ...store.rankings }),
         getAthleteMeta: (code) => athleteMeta(code),
+        getTrialMeta: () => meta,
         rerender: () => renderPanel(),
         refreshProgression: () => global.BsrTrialProgression?.refreshViews?.(),
         applyFromServer: (payload, opts) => applyServerPayload(payload, opts),
