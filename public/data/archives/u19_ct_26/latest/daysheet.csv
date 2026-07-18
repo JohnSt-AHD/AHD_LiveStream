@@ -25,6 +25,7 @@ Race,Time,Event #,Event Type,Round,Division,lane_1,lane_2
 22,10:07,4,B U19 CJM1X,final,MB,loser (MSF1),loser (MSF2)
 23,11:25,5,Mx U19 CJMix2X,heat,MX1,M2+W2,M3+W3
 24,11:45,5,Mx U19 CJMix2X,heat,MX2,M2+W3,M3+W2
-25,13:05,6,U19 Doubles TT,time trial,D1,CJMix2X,
-26,13:08,6,U19 Doubles TT,time trial,D2,CJW2X W3+W4,
-27,13:11,6,U19 Doubles TT,time trial,D3,CJM2X M3+M4,
+25,13:05,6,U19 Doubles TT,time trial,D1,CJW2X KEDD+KUBA,
+26,13:08,6,U19 Doubles TT,time trial,D2,CJM2X BACC+SMIT,
+27,13:11,6,U19 Doubles TT,time trial,D3,CJMix2X JOHN+HARR,
+28,13:14,6,U19 Doubles TT,time trial,D4,CJW2X KEDD+BROO,

@@ -169,6 +169,30 @@
 
     function resolveDoublesLabel(label) {
         const s = String(label || '').trim();
+        const codePair = s.match(/(?:CJW2X|CJM2X|CJMix2X)\s+([A-Z]{2,5})\+([A-Z]{2,5})/i);
+        if (codePair) {
+            const a = codePair[1].toUpperCase();
+            const b = codePair[2].toUpperCase();
+            if (isAthleteCode(a) && isAthleteCode(b)) {
+                return {
+                    code: `${a}+${b}`,
+                    display: `${formatAthleteDisplay(a)} + ${formatAthleteDisplay(b)}`,
+                    raw: label,
+                };
+            }
+        }
+        const barePair = s.match(/^([A-Z]{2,5})\+([A-Z]{2,5})$/i);
+        if (barePair) {
+            const a = barePair[1].toUpperCase();
+            const b = barePair[2].toUpperCase();
+            if (isAthleteCode(a) && isAthleteCode(b)) {
+                return {
+                    code: `${a}+${b}`,
+                    display: `${formatAthleteDisplay(a)} + ${formatAthleteDisplay(b)}`,
+                    raw: label,
+                };
+            }
+        }
         const pair = s.match(/W(\d)\+W(\d)/i);
         if (pair) {
             const a = rankCode('W', pair[1]);
@@ -196,6 +220,18 @@
             }
         }
         if (/^CJMix2X/i.test(s)) {
+            const mixPair = s.match(/CJMix2X\s+([A-Z]{2,5})\+([A-Z]{2,5})/i);
+            if (mixPair) {
+                const a = mixPair[1].toUpperCase();
+                const b = mixPair[2].toUpperCase();
+                if (isAthleteCode(a) && isAthleteCode(b)) {
+                    return {
+                        code: `${a}+${b}`,
+                        display: `${formatAthleteDisplay(a)} + ${formatAthleteDisplay(b)}`,
+                        raw: label,
+                    };
+                }
+            }
             return { code: s, display: s, raw: label };
         }
         return null;

@@ -634,6 +634,9 @@
             const hit = global.BsrTrialProgression?.resolveLane?.(row.race, row.crewDefault);
             if (row.rowKind === 'mix-h2h') {
                 slot.crew = row.crewDefault;
+            } else if (String(activeEventKey) === '6') {
+                const pairHit = global.BsrTrialProgression?.resolveLane?.(row.race, row.crewDefault);
+                if (pairHit?.code?.includes('+')) slot.crew = pairHit.code;
             } else if (hit?.code && global.BsrTrialProgression?.isAthleteCode?.(hit.code)) {
                 slot.crew = hit.code;
             }
@@ -1503,7 +1506,7 @@
                 '<p class="bsr-note bsr-note--trial">Matrix session: time <strong>W1</strong> and <strong>M1</strong> solo prognostic runs before each heat (sets mix reference), then save each mix H2H pair. Publishing recommends the fastest pair and sets Event 6 doubles targets.</p>';
         } else if (String(activeEventKey) === '6') {
             ttNote =
-                '<p class="bsr-note bsr-note--trial">Doubles speed trial — prognostic targets come from the selected mix pair (Event 5 publish). Time each crew, then <strong>Save</strong>.</p>';
+                '<p class="bsr-note bsr-note--trial">Doubles speed trial — four processional starts @ 3 min. Time each crew, then <strong>Save</strong>.</p>';
         } else if (isTt) {
             ttNote =
                 '<p class="bsr-note bsr-note--trial">Time trial — tap <strong>Start</strong>, mark each split button as the athlete passes, then <strong>Save</strong> to publish to the leaderboard below.</p>';
