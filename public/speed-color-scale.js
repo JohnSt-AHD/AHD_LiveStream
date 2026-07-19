@@ -2,9 +2,9 @@
  * Shared rainbow speed scale for map trails and history dots (localStorage).
  */
 (function (global) {
-    const LS_KEY = 'altitudeHdSpeedColorScale_v1';
+    const LS_KEY = 'altitudeHdSpeedColorScale_v2';
     const DEFAULT_MIN_MPS = 0;
-    const DEFAULT_MAX_MPS = 20;
+    const DEFAULT_MAX_MPS = 6;
 
     function readStored() {
         try {

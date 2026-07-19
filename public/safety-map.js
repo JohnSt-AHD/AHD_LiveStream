@@ -1193,7 +1193,7 @@ function ensureKriDemoSpeedRange() {
         return;
     }
     if (kriDemoSpeedRangeApplied) {
-        color.setRange(0, 20);
+        color.setRange(0, 6);
         kriDemoSpeedRangeApplied = false;
     }
 }
