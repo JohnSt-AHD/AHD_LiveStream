@@ -91,6 +91,7 @@ body.course-view-open {
   border-radius: 0;
   background: var(--ahd-bg-card);
   box-shadow: none;
+  color: var(--ahd-text);
 }
 
 .course-view__header {
@@ -315,6 +316,10 @@ body.course-view-open {
   border-bottom: 1px solid rgba(0, 229, 255, 0.12);
   text-align: left;
   white-space: nowrap;
+}
+
+.course-view-table td {
+  color: var(--ahd-text);
 }
 
 .course-view-table th {
