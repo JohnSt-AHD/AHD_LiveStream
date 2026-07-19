@@ -36,16 +36,22 @@
     }
 
     function formatDayLabel(dateStr) {
-        const parts = String(dateStr).split('-').map(Number);
-        if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return dateStr;
-        const utc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 12));
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr));
+        if (!match) return dateStr;
+        const y = Number(match[1]);
+        const mo = Number(match[2]);
+        const d = Number(match[3]);
+        // dateStr is already an Auckland calendar day from the API — format in UTC
+        // so noon UTC on that date stays on the same civil day (Pacific/Auckland +12/+13
+        // would roll UTC noon forward to the next local day).
+        const anchor = new Date(Date.UTC(y, mo - 1, d, 12));
         return new Intl.DateTimeFormat('en-NZ', {
-            timeZone: TZ,
+            timeZone: 'UTC',
             weekday: 'short',
             day: 'numeric',
             month: 'short',
             year: 'numeric',
-        }).format(utc);
+        }).format(anchor);
     }
 
     function formatTime(iso) {
