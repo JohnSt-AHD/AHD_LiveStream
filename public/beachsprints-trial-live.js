@@ -28,6 +28,8 @@
 
     /** @type {object|null} */
     let meta = null;
+    /** @type {Record<string, string>} slotKey → C1X_A | C1X_B */
+    let gpsAssignments = {};
     /** @type {Map<string, {name:string, club:string}>} */
     let codeLookup = new Map();
     let store = {
@@ -46,6 +48,8 @@
     let lastMapTraceKeys = undefined;
     let statusFlash = '';
     let serverUpdatedAt = 0;
+    /** @type {Record<string, object>} GPS traces last seen from server — preserved across scorer pushes */
+    let serverGpsTraces = {};
     let pushTimer = null;
     let pullTimer = null;
     let applyingFromServer = false;
@@ -198,8 +202,55 @@
         return map;
     }
 
+    function downsampleGpsPoints(points, max = 180) {
+        if (!Array.isArray(points) || points.length <= max) return points || [];
+        const step = points.length / max;
+        const out = [];
+        for (let i = 0; i < max; i++) {
+            out.push(points[Math.min(points.length - 1, Math.floor(i * step))]);
+        }
+        return out;
+    }
+
+    function buildGpsTracesPayload() {
+        const traces = { ...serverGpsTraces };
+        for (const [key, slot] of Object.entries(store.races || {})) {
+            const existing = traces[key];
+            if (slot?.gpsPoints?.length) {
+                traces[key] = {
+                    gps: slot.gps || existing?.gps || '',
+                    startAt: slot.startAt ?? existing?.startAt ?? null,
+                    gpsMs: slot.gpsMs ?? existing?.gpsMs ?? null,
+                    points: downsampleGpsPoints(slot.gpsPoints),
+                };
+            } else if (slot?.gps) {
+                traces[key] = {
+                    gps: slot.gps,
+                    startAt: slot.startAt ?? existing?.startAt ?? null,
+                    gpsMs: slot.gpsMs ?? existing?.gpsMs ?? null,
+                    points: existing?.points || [],
+                };
+            } else {
+                const assigned = gpsLabelForSlot(
+                    parseInt(key.slice(0, key.indexOf(':')), 10),
+                    key.slice(key.indexOf(':') + 1),
+                );
+                if (assigned) {
+                    traces[key] = {
+                        gps: assigned,
+                        startAt: slot?.startAt ?? existing?.startAt ?? null,
+                        gpsMs: slot?.gpsMs ?? existing?.gpsMs ?? null,
+                        points: existing?.points || [],
+                    };
+                }
+            }
+        }
+        return traces;
+    }
+
     function buildServerPayload() {
         const savedSlots = buildSavedSlotsPayload();
+        const gpsTraces = buildGpsTracesPayload();
         return {
             version: 1,
             regatta: TRIAL_CODE,
@@ -213,6 +264,7 @@
             savedSlots,
             raceResults: buildRaceResultsPayload(savedSlots),
             prognostic: global.BsrTrialPrognostic?.exportForServer?.() || { custom: {}, derived: {} },
+            gpsTraces,
         };
     }
 
@@ -259,6 +311,30 @@
         }
     }
 
+    function applyGpsTrace(key, row) {
+        if (!row?.points?.length) return;
+        const slot = getSlotFromKey(key);
+        if (!slot) return;
+        slot.gps = row.gps || slot.gps || '';
+        if (Number.isFinite(row.startAt)) slot.startAt = row.startAt;
+        slot.gpsPoints = row.points.map((p) => ({ ...p }));
+        if (Number.isFinite(row.gpsMs)) slot.gpsMs = row.gpsMs;
+    }
+
+    function getSlotFromKey(key) {
+        const colon = String(key).indexOf(':');
+        if (colon < 0) return null;
+        const raceNum = parseInt(key.slice(0, colon), 10);
+        const laneRaw = key.slice(colon + 1);
+        const lane = laneRaw.startsWith('ref-') ? laneRaw : Number(laneRaw) || laneRaw;
+        if (!Number.isFinite(raceNum)) return null;
+        return getSlot(raceNum, lane);
+    }
+
+    function gpsLabelForLane(lane) {
+        return gpsLabelForSlot(activeRaceNum ?? 0, lane);
+    }
+
     function applySavedSlot(row) {
         const lane = row.lane;
         const slot = getSlot(row.raceNum, lane);
@@ -268,6 +344,8 @@
         slot.savedAt = row.savedAt || Date.now();
         slot.runningAt = null;
         slot.gpsPoints = slot.gpsPoints || [];
+        const assigned = gpsLabelForSlot(row.raceNum, lane);
+        if (assigned) slot.gps = assigned;
     }
 
     function applyServerPayload(payload, opts = {}) {
@@ -287,6 +365,12 @@
 
             for (const row of payload.savedSlots || []) {
                 applySavedSlot(row);
+            }
+            if (payload.gpsTraces && typeof payload.gpsTraces === 'object') {
+                serverGpsTraces = { ...payload.gpsTraces };
+                for (const [key, trace] of Object.entries(payload.gpsTraces)) {
+                    applyGpsTrace(key, trace);
+                }
             }
 
             serverUpdatedAt = payload.updatedAt || Date.now();
@@ -488,7 +572,23 @@
         } catch {
             meta = null;
         }
+        try {
+            const res = await fetch('data/archives/u19_ct_26/latest/trial-gps-assignments.json');
+            if (res.ok) {
+                const raw = await res.json();
+                gpsAssignments = raw.bySlot && typeof raw.bySlot === 'object' ? raw.bySlot : {};
+            }
+        } catch {
+            gpsAssignments = {};
+        }
         buildCodeLookup();
+    }
+
+    function gpsLabelForSlot(raceNum, lane) {
+        const key = slotKey(raceNum, lane);
+        if (gpsAssignments[key]) return gpsAssignments[key];
+        if (String(lane).startsWith('ref-')) return 'C1X_A';
+        return '';
     }
 
     function resolveDeviceId(gpsLabel) {
@@ -1002,6 +1102,41 @@
         return traces;
     }
 
+    function tracesForEventKeys(eventKeys) {
+        const savedEventKey = activeEventKey;
+        const traces = [];
+        let traceIdx = 0;
+        for (const ek of eventKeys || []) {
+            activeEventKey = String(ek);
+            for (const row of buildEventRows()) {
+                if (isProgRefRow(row)) continue;
+                const slot = getSlot(row.raceNum, row.lane);
+                if (!slot.gpsPoints?.length) continue;
+                traces.push(traceForSlot(row, slot, traceIdx++));
+            }
+        }
+        activeEventKey = savedEventKey;
+        return traces;
+    }
+
+    function showMapTracesFromList(traces) {
+        const api = global.BsrRegatta;
+        const el = document.getElementById('bsrTrialMap');
+        if (!api?.renderTraceMap || !el) return false;
+        if (!traces?.length) {
+            el.innerHTML =
+                '<p class="bsr-note">No GPS traces loaded — assign GPS, finish a run, and tap Fetch GPS.</p>';
+            const chartWrap = document.getElementById('bsrTrialSpeedChartWrap');
+            if (chartWrap) chartWrap.hidden = true;
+            return false;
+        }
+        el.innerHTML = '';
+        api.renderTraceMap(el, traces, trialMapHolder);
+        renderTrialSpeedChart(traces);
+        requestAnimationFrame(() => trialMapHolder.map?.invalidateSize());
+        return true;
+    }
+
     function renderTrialSpeedChart(traces) {
         const wrap = document.getElementById('bsrTrialSpeedChartWrap');
         const api = global.BsrRegatta;
@@ -1027,21 +1162,12 @@
 
     function showMapTraces(keys) {
         lastMapTraceKeys = keys;
-        const api = global.BsrRegatta;
-        const el = document.getElementById('bsrTrialMap');
-        if (!api?.renderTraceMap || !el) return;
-        const traces = tracesForKeys(keys);
-        if (!traces.length) {
-            el.innerHTML =
-                '<p class="bsr-note">No GPS traces loaded — assign GPS, finish a run, and tap Fetch GPS.</p>';
-            const chartWrap = document.getElementById('bsrTrialSpeedChartWrap');
-            if (chartWrap) chartWrap.hidden = true;
-            return;
-        }
-        el.innerHTML = '';
-        api.renderTraceMap(el, traces, trialMapHolder);
-        renderTrialSpeedChart(traces);
-        requestAnimationFrame(() => trialMapHolder.map?.invalidateSize());
+        showMapTracesFromList(tracesForKeys(keys));
+    }
+
+    function showOverlayForEventKeys(eventKeys) {
+        lastMapTraceKeys = null;
+        return showMapTracesFromList(tracesForEventKeys(eventKeys));
     }
 
     function nextOpenSplitIndex(slot) {
@@ -1742,6 +1868,8 @@
             renderPanel();
         },
         getMixRecommendation: () => store.mixRecommendation || null,
+        showOverlayForEventKeys,
+        tracesForEventKeys,
     };
 
     if (document.readyState === 'loading') {

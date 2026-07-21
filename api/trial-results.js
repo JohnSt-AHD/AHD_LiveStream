@@ -7,7 +7,43 @@ const TRIAL_REGATTA = 'u19_ct_26';
 /** Default write token for u19_ct_26 — override with TRIAL_RESULTS_TOKEN on Vercel if preferred. */
 const DEFAULT_WRITE_TOKEN = 'r3A2xEjWMDoqeT910VtDsg';
 const KV_KEY = `trial:results:${TRIAL_REGATTA}`;
-const MAX_BODY_BYTES = 512 * 1024;
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const MAX_GPS_TRACES = 120;
+const MAX_GPS_POINTS = 180;
+
+function downsamplePoints(points, max) {
+    if (!Array.isArray(points) || points.length <= max) return points || [];
+    const step = points.length / max;
+    const out = [];
+    for (let i = 0; i < max; i++) {
+        out.push(points[Math.min(points.length - 1, Math.floor(i * step))]);
+    }
+    return out;
+}
+
+function sanitizeGpsTraces(raw) {
+    if (!raw || typeof raw !== 'object') return {};
+    const out = {};
+    for (const [key, trace] of Object.entries(raw).slice(0, MAX_GPS_TRACES)) {
+        if (!trace || typeof trace !== 'object' || !Array.isArray(trace.points) || !trace.points.length) {
+            continue;
+        }
+        out[String(key).slice(0, 24)] = {
+            gps: String(trace.gps || '').slice(0, 16),
+            startAt: Number.isFinite(Number(trace.startAt)) ? Number(trace.startAt) : null,
+            gpsMs: Number.isFinite(Number(trace.gpsMs)) ? Number(trace.gpsMs) : null,
+            points: downsamplePoints(trace.points, MAX_GPS_POINTS).map((p) => ({
+                latitude: Number(p.latitude),
+                longitude: Number(p.longitude),
+                speed: Number(p.speed),
+                fixTime: String(p.fixTime || p.deviceTime || '').slice(0, 32),
+                deviceTime: String(p.deviceTime || p.fixTime || '').slice(0, 32),
+                accuracy: Number.isFinite(Number(p.accuracy)) ? Number(p.accuracy) : undefined,
+            })),
+        };
+    }
+    return out;
+}
 
 const memoryStore = new Map();
 
@@ -114,6 +150,7 @@ function sanitizePayload(body) {
                         :   {},
                 }
             :   { custom: {}, derived: {} },
+        gpsTraces: sanitizeGpsTraces(body.gpsTraces),
     };
 }
 
@@ -184,6 +221,14 @@ export default async function handler(req, res) {
             const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
             const existing = await loadPayload(regatta);
             const next = sanitizePayload(body);
+            const incomingGpsCount = Object.keys(next.gpsTraces || {}).length;
+            if (
+                !incomingGpsCount &&
+                existing?.gpsTraces &&
+                Object.keys(existing.gpsTraces).length
+            ) {
+                next.gpsTraces = existing.gpsTraces;
+            }
             if (existing?.updatedAt && next.updatedAt < existing.updatedAt) {
                 res.status(409).json({
                     error: 'Stale write — refresh and retry.',

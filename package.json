@@ -19,6 +19,10 @@
     "docs:m26-10s-report": "node scripts/generate-m26-h7-10s-test-pdf.mjs",
     "docs:m1-report": "node scripts/generate-m1-field-test-pdf.mjs",
     "trial:u19-csv": "node scripts/generate-u19-trial-regatta-csv.mjs",
+    "trial:u19-summary": "node scripts/generate-u19-trial-summary-pdf.mjs",
+    "trial:u19-emily-report": "node scripts/generate-u19-emily-pengelly-report-pdf.mjs",
+    "trial:u19-gps-upload": "node scripts/export-u19-trial-gps-to-server.mjs",
+    "trial:u19-gps-assign": "node scripts/apply-u19-trial-gps-assignments.mjs",
     "proposals:all": "node scripts/generate-kri-proposal-pdfs.mjs && node scripts/generate-crewsight-technical-pdf.mjs && node scripts/generate-crewsight-roadmap-pdf.mjs && node scripts/generate-crewsight-comparison-pdf.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
