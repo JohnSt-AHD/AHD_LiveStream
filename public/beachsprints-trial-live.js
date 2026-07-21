@@ -346,6 +346,10 @@
         slot.gpsPoints = slot.gpsPoints || [];
         const assigned = gpsLabelForSlot(row.raceNum, lane);
         if (assigned) slot.gps = assigned;
+        const ms = Number.isFinite(row.ms) ? row.ms : finishMs(slot);
+        if (Number.isFinite(ms) && ms > 0 && Number.isFinite(slot.savedAt)) {
+            slot.startAt = slot.savedAt - ms;
+        }
     }
 
     function applyServerPayload(payload, opts = {}) {
@@ -387,6 +391,7 @@
 
             global.BsrTrialProgression?.refreshViews?.();
             renderPanel();
+            scheduleHydrateMissingGps();
             return true;
         } finally {
             applyingFromServer = false;
@@ -613,23 +618,33 @@
         });
     }
 
+    function raceWindowForSlot(raceNum, lane, slot) {
+        const fin = finishMs(slot);
+        if (slot.saved && Number.isFinite(slot.savedAt) && fin != null && fin > 0) {
+            const startMs = Number.isFinite(slot.startAt) ? slot.startAt : slot.savedAt - fin;
+            return { startMs, endMs: slot.savedAt };
+        }
+        const race = global.BsrRegatta?.getRace?.(raceNum);
+        const startMs =
+            slot.startAt ||
+            slot.runningAt ||
+            (race?.startAt ? race.startAt.getTime() : Date.now());
+        const endMs = fin != null && fin > 0 ? startMs + fin : startMs + 240000;
+        return { startMs, endMs };
+    }
+
     async function fetchGpsForSlot(raceNum, lane, slot) {
         const api = global.BsrRegatta;
-        if (!api?.fetchRoute || !slot.gps) return;
-        const race = api.getRace?.(raceNum);
-        if (!race) return;
+        if (!api?.fetchRoute || !slot.gps) return false;
         const deviceId = resolveDeviceId(slot.gps);
         if (!deviceId) {
             slot.notes = 'GPS device not found — map C1X_A / C1X_B in settings';
             saveStore();
             renderPanel();
-            return;
+            return false;
         }
-        const startMs =
-            slot.startAt ||
-            slot.runningAt ||
-            (race.startAt ? race.startAt.getTime() : Date.now());
-        const endMs = finishMs(slot) != null ? startMs + finishMs(slot) : startMs + 240000;
+        const { startMs, endMs } = raceWindowForSlot(raceNum, lane, slot);
+        slot.startAt = startMs;
         const from = new Date(startMs - 45 * 1000);
         const to = new Date(endMs + 45 * 1000);
         try {
@@ -668,6 +683,53 @@
             /* refresh visible overlay */
         }
         renderPanel();
+        return !!(slot.gpsPoints?.length);
+    }
+
+    let hydrateGpsTimer = null;
+    let hydratingGps = false;
+
+    function scheduleHydrateMissingGps() {
+        if (hydrateGpsTimer) clearTimeout(hydrateGpsTimer);
+        hydrateGpsTimer = setTimeout(() => {
+            hydrateGpsTimer = null;
+            void hydrateMissingGpsTraces();
+        }, 800);
+    }
+
+    async function hydrateMissingGpsTraces() {
+        if (hydratingGps || !global.BsrRegatta?.fetchRoute) return;
+        const pending = [];
+        for (const [key, slot] of Object.entries(store.races || {})) {
+            if (!slot?.saved || !slot.gps || slot.gpsPoints?.length) continue;
+            if (finishMs(slot) == null) continue;
+            const colon = key.indexOf(':');
+            if (colon < 0) continue;
+            const raceNum = parseInt(key.slice(0, colon), 10);
+            const laneRaw = key.slice(colon + 1);
+            const lane = laneRaw.startsWith('ref-') ? laneRaw : Number(laneRaw) || laneRaw;
+            if (!Number.isFinite(raceNum)) continue;
+            pending.push({ raceNum, lane, slot });
+        }
+        if (!pending.length) return;
+        hydratingGps = true;
+        statusFlash = `Loading GPS traces (${pending.length})…`;
+        renderPanel();
+        let loaded = 0;
+        try {
+            for (const item of pending) {
+                const ok = await fetchGpsForSlot(item.raceNum, item.lane, item.slot);
+                if (ok) loaded++;
+            }
+            if (loaded) {
+                statusFlash = `Loaded ${loaded} GPS trace(s)`;
+                schedulePushServer();
+                global.BsrTrialProgression?.refreshViews?.();
+            }
+        } finally {
+            hydratingGps = false;
+            renderPanel();
+        }
     }
 
     function pushResultToDashboard(raceNum, lane, slot, rank) {
