@@ -1,0 +1,16 @@
+{
+  "venueId": "big-manly",
+  "name": "Big Manly Beach",
+  "layout": {
+    "originLat": -36.628375,
+    "originLng": 174.758363,
+    "headingDeg": 45,
+    "laneSpacingA": 25,
+    "buoySpacingB": 85,
+    "tideLineC": 50
+  },
+  "gpsDevices": {
+    "C1X_A": { "id": 343069, "name": "C1x_A" },
+    "C1X_B": { "id": 343070, "name": "C1X_B" }
+  }
+}

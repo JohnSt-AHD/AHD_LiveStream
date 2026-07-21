@@ -78,6 +78,15 @@
 
     let courseBuoys = [];
 
+    const REGATTA_COURSE_ARCHIVES = {
+        u19_ct_26: 'data/archives/u19_ct_26/latest/course-layout.json',
+    };
+
+    /** When set, overrides browser localStorage course for this regatta dashboard session. */
+    let regattaCourseGeometry = null;
+    let regattaCourseCode = '';
+    let regattaCourseLoadPromise = null;
+
     const LS_BEACH_BUOYS_MAP = 'altitudeHdBeachSprintsBuoys_v1';
     const LS_COURSE_LAYOUT = 'bspCourseLayoutParams_v1';
     const LS_COURSE_FLAGS = 'bspCourseFlags_v1';
@@ -138,8 +147,90 @@
         return crossLineEndpoints(frame, m.x, m.y, halfSpanM);
     }
 
+    function buildMapCourseGeometryFromApplied(applied, layoutParams, sourceLabel) {
+        const buoys = applied.buoys;
+        const storedFlags = loadCourseFlags();
+        const flags = storedFlags.length ? storedFlags : applied.flags;
+        const span = (layoutParams.laneSpacingA || WR_COURSE_SPEC.defaultLaneHalfWidthM * 2) / 2 + 12;
+        const startFinishGate = startFinishGateAtPoint(
+            applied.startFinish.lat,
+            applied.startFinish.lng,
+            buoys,
+            span,
+        );
+        return {
+            ok: true,
+            buoys,
+            flags,
+            layoutParams,
+            tideLine: applied.tideLine,
+            startFinish: applied.startFinish,
+            startFinishGate,
+            source: sourceLabel || '',
+        };
+    }
+
+    function normalizeRegattaCourseCode(code) {
+        return String(code || '')
+            .trim()
+            .toLowerCase();
+    }
+
+    function clearRegattaCourseArchive() {
+        regattaCourseGeometry = null;
+        regattaCourseCode = '';
+        regattaCourseLoadPromise = null;
+    }
+
+    async function loadRegattaCourseArchive(regattaCode) {
+        const code = normalizeRegattaCourseCode(regattaCode);
+        const path = REGATTA_COURSE_ARCHIVES[code];
+        if (!path) {
+            if (regattaCourseCode && regattaCourseCode !== code) clearRegattaCourseArchive();
+            return null;
+        }
+        if (regattaCourseGeometry?.ok && regattaCourseCode === code) {
+            return regattaCourseGeometry;
+        }
+        if (regattaCourseLoadPromise) return regattaCourseLoadPromise;
+
+        regattaCourseLoadPromise = (async () => {
+            try {
+                const res = await fetch(path, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const raw = await res.json();
+                const layout = raw.layout || raw;
+                const applied = applyCourseLayout(layout);
+                if (!applied.ok) throw new Error(applied.reason || 'Invalid course layout');
+                courseBuoys = applied.buoys.map((b) => ({ ...b }));
+                regattaCourseCode = code;
+                regattaCourseGeometry = buildMapCourseGeometryFromApplied(
+                    applied,
+                    applied.params,
+                    raw.name || raw.venueId || code,
+                );
+                return regattaCourseGeometry;
+            } catch (err) {
+                console.warn('Regatta course archive load failed:', err);
+                clearRegattaCourseArchive();
+                return null;
+            } finally {
+                regattaCourseLoadPromise = null;
+            }
+        })();
+        return regattaCourseLoadPromise;
+    }
+
     /** Buoys, flags, tide line, and start/finish from Beach Sprints map localStorage. */
     function getMapCourseGeometry() {
+        if (regattaCourseGeometry?.ok) {
+            return {
+                ...regattaCourseGeometry,
+                buoys: regattaCourseGeometry.buoys.map((b) => ({ ...b })),
+                flags: (regattaCourseGeometry.flags || []).map((f) => ({ ...f })),
+            };
+        }
+
         loadCourseBuoys();
         const layoutParams = loadCourseLayoutParams();
         const storedFlags = loadCourseFlags();
@@ -175,25 +266,7 @@
             };
         }
 
-        const buoys = applied.buoys;
-        const flags = storedFlags.length ? storedFlags : applied.flags;
-        const span = (layoutParams.laneSpacingA || WR_COURSE_SPEC.defaultLaneHalfWidthM * 2) / 2 + 12;
-        const startFinishGate = startFinishGateAtPoint(
-            applied.startFinish.lat,
-            applied.startFinish.lng,
-            buoys,
-            span,
-        );
-
-        return {
-            ok: true,
-            buoys,
-            flags,
-            layoutParams,
-            tideLine: applied.tideLine,
-            startFinish: applied.startFinish,
-            startFinishGate,
-        };
+        return buildMapCourseGeometryFromApplied(applied, layoutParams, 'Beach Sprints map');
     }
 
     function boatLatLngAtSectionTime(ath, timeMs) {
@@ -1687,6 +1760,8 @@
         loadCourseBuoys,
         getCourseBuoys,
         getMapCourseGeometry,
+        loadRegattaCourseArchive,
+        clearRegattaCourseArchive,
         loadCourseLayoutParams,
         loadCourseFlags,
         withCourseBuoys,

@@ -2709,7 +2709,10 @@
         }
         return {
             ...geom,
-            note: `Course from ${mapLink} (buoys, run flags, start/finish, tide line). Edit there — this dashboard does not auto-fit the course.`,
+            note:
+                geom.source ?
+                    `Course: ${geom.source} (Big Manly layout from trial archive).`
+                :   `Course from ${mapLink} (buoys, run flags, start/finish, tide line). Edit there — this dashboard does not auto-fit the course.`,
         };
     }
 
@@ -3941,6 +3944,17 @@
             const offsetInput = document.getElementById('bsrGpsOffset');
             if (offsetInput) offsetInput.value = String(state.gpsOffsetMin);
         }
+        const coastal = window.BeachSprintsCoastal;
+        const normalizedCode = normalizeRegattaCode(code);
+        let courseSource = '';
+        if (coastal?.loadRegattaCourseArchive) {
+            if (normalizedCode === 'u19_ct_26') {
+                const course = await coastal.loadRegattaCourseArchive(normalizedCode);
+                if (course?.ok) courseSource = course.source || 'Big Manly Beach';
+            } else {
+                coastal.clearRegattaCourseArchive?.();
+            }
+        }
         if (!preserveSelection && !state.selectedRaceNum && state.races.length) {
             const p = new URLSearchParams(location.search).get('race');
             state.selectedRaceNum = p
@@ -3948,6 +3962,7 @@
                 : state.races[Math.floor(state.races.length / 2)]?.raceNum;
         }
         let statusMsg = `Loaded ${state.races.length} races · ${state.results.size} results · ${state.events.length} events · ${code}`;
+        if (courseSource) statusMsg += ` · course: ${courseSource}`;
         const schedule = await window.RegattaCsvArchive?.getRegattaSchedule?.(code);
         if (schedule?.sourceLabel) statusMsg += ` · ${schedule.sourceLabel}`;
         if (options.refreshedAt) {
