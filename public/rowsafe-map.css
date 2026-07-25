@@ -202,8 +202,10 @@ body.rnz-page > *:not(#courseViewOverlay) {
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     line-height: 0;
     width: fit-content;
+    overflow: hidden;
 }
 
 body.rnz-page .rnz-header {
@@ -249,6 +251,8 @@ body.rnz-page .rnz-header-inner {
     height: clamp(55px, 7.8vw, 70px);
     width: auto;
     object-fit: contain;
+    transform: scale(1.1);
+    transform-origin: center center;
 }
 
 .rnz-header-titles {
@@ -356,7 +360,7 @@ body.rnz-page .rnz-header-inner {
     --rnz-side-col-h: min(var(--rnz-map-col-h), 90vh);
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(200px, 280px) var(--rnz-map-w) minmax(260px, 360px);
+    grid-template-columns: minmax(200px, 280px) var(--rnz-map-w) minmax(280px, 400px);
     gap: 16px;
     justify-content: center;
     align-items: stretch;
@@ -1782,6 +1786,11 @@ body.rnz-page .rnz-onwater-card--device-color .rnz-onwater-stats dt {
     margin: 0;
 }
 
+body.rnz-page .rnz-onwater-stats {
+    grid-template-columns: minmax(0, 2.35fr) minmax(0, 0.72fr) minmax(0, 0.82fr);
+    gap: 10px 8px;
+}
+
 .rnz-onwater-stats div {
     display: flex;
     flex-direction: column;
@@ -1806,6 +1815,21 @@ body.rnz-page .rnz-onwater-card--device-color .rnz-onwater-stats dt {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+body.rnz-page .rnz-onwater-stat--pace dd {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+}
+
+body.rnz-page .rnz-onwater-stat--stroke dd,
+body.rnz-page .rnz-onwater-stat--distance dd {
+    font-size: 0.88rem;
 }
 
 .rnz-onwater-geofence {

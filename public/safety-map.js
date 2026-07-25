@@ -2150,9 +2150,9 @@ function renderOnWaterBoats(boundaryParts) {
                     `${followUi.headExtra}` +
                     `</div>` +
                     `<dl class="rnz-onwater-stats">` +
-                    `<div><dt>Pace</dt><dd>${formatDevicePace(pos, device.name, athleteIdForDevice(device))}</dd></div>` +
-                    `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
-                    `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
+                    `<div class="rnz-onwater-stat rnz-onwater-stat--pace"><dt>Pace</dt><dd>${formatDevicePace(pos, device.name, athleteIdForDevice(device))}</dd></div>` +
+                    `<div class="rnz-onwater-stat rnz-onwater-stat--stroke"><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
+                    `<div class="rnz-onwater-stat rnz-onwater-stat--distance"><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
                     `</dl>` +
                     `<p class="rnz-onwater-geofence rnz-onwater-geofence--split">` +
                     `<span class="rnz-onwater-geofence-left">` +
