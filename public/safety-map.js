@@ -615,6 +615,8 @@ function updateRnzLiveSpeedChart() {
         samples.push({
             deviceId: d.id,
             deviceName: d.name,
+            athleteId: athleteIdForDevice(d),
+            position: pos,
             speed: pos.speed,
             fixTime: pos.fixTime,
         });
@@ -1072,8 +1074,17 @@ function athleteMetaHtml(device, { compact = false } = {}) {
     return `<span class="rnz-fleet-athlete" title="Athlete ID">Athlete: <strong>${label}</strong></span>`;
 }
 
-function formatDevicePace(speedMps, deviceLabel, athleteId) {
+function formatDevicePace(positionOrMps, deviceLabel, athleteId) {
+    const CS = window.RowsafeCoachSpeed;
+    if (CS && positionOrMps && typeof positionOrMps === 'object') {
+        const mps = CS.resolveCoachSpeedMps(positionOrMps);
+        return CS.formatSpeedToken(mps, deviceLabel, athleteId);
+    }
     const RS = window.RowingSpeed;
+    const speedMps = typeof positionOrMps === 'number' ? positionOrMps : null;
+    if (CS && speedMps != null) {
+        return CS.formatSpeedToken(speedMps, deviceLabel, athleteId);
+    }
     if (RS && typeof speedMps === 'number' && !Number.isNaN(speedMps)) {
         const labelParts = [deviceLabel];
         if (athleteId) labelParts.push(athleteId);
@@ -1083,8 +1094,8 @@ function formatDevicePace(speedMps, deviceLabel, athleteId) {
     return `${(speedMps * 3.6).toFixed(1)} km/h`;
 }
 
-function formatSpeedKmh(speedMps, deviceLabel) {
-    return formatDevicePace(speedMps, deviceLabel);
+function formatSpeedKmh(positionOrMps, deviceLabel, athleteId) {
+    return formatDevicePace(positionOrMps, deviceLabel, athleteId);
 }
 
 function formatStrokeRate(pos) {
@@ -1498,7 +1509,14 @@ function recordLiveTrailSamples() {
             continue;
         }
 
-        const spd = typeof pos.speed === 'number' && !Number.isNaN(pos.speed) ? pos.speed : 0;
+        const CS = window.RowsafeCoachSpeed;
+        const resolved = CS ? CS.resolveCoachSpeedMps(pos) : null;
+        const spd =
+            resolved != null
+                ? resolved
+                : typeof pos.speed === 'number' && !Number.isNaN(pos.speed)
+                  ? pos.speed
+                  : 0;
         arr.push({ lat: pos.latitude, lng: pos.longitude, speed: spd, addedAt: now });
         deviceLiveTrails.set(d.id, arr);
     }
@@ -1712,7 +1730,7 @@ function updateMapMarkers() {
 
         if (marker) {
             const athleteId = athleteIdForDevice(device);
-            const pace = formatDevicePace(position.speed, device.name, athleteId);
+            const pace = formatDevicePace(position, device.name, athleteId);
             const fix = formatDateTime(position.fixTime);
             const addr = escapeHtml(position.address || 'Unknown');
             const athleteLine = athleteId
@@ -2093,7 +2111,10 @@ function renderOnWaterBoats(boundaryParts) {
             const pos = positionForDevice(d);
             if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
             if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
-            if (!isFixWithinMinutes(pos.fixTime, activeMin)) continue;
+            const recentActive =
+                core?.isRecentlyActiveForOnWater?.(pos, d, activeMin) ||
+                isFixWithinMinutes(pos.fixTime, activeMin);
+            if (!recentActive) continue;
             const distM =
                 core?.distanceFromRnzM?.(pos.latitude, pos.longitude, rnzParts) ?? null;
             const geofenceLabel = formatGeofenceAtPoint(pos.latitude, pos.longitude);
@@ -2105,7 +2126,7 @@ function renderOnWaterBoats(boundaryParts) {
         );
 
         if (boats.length === 0) {
-            el.innerHTML = `<p class="rnz-list-empty">No devices with a GPS fix in the last ${activeMin} minutes.</p>`;
+            el.innerHTML = `<p class="rnz-list-empty">No devices with a recent GPS fix or upload in the last ${activeMin} minutes.</p>`;
             return;
         }
 
@@ -2129,7 +2150,7 @@ function renderOnWaterBoats(boundaryParts) {
                     `${followUi.headExtra}` +
                     `</div>` +
                     `<dl class="rnz-onwater-stats">` +
-                    `<div><dt>Pace</dt><dd>${formatDevicePace(pos.speed, device.name, athleteIdForDevice(device))}</dd></div>` +
+                    `<div><dt>Pace</dt><dd>${formatDevicePace(pos, device.name, athleteIdForDevice(device))}</dd></div>` +
                     `<div><dt>Stroke</dt><dd>${formatStrokeRate(pos)}</dd></div>` +
                     `<div><dt>From RNZ</dt><dd>${formatDistanceFromRnz(distM)}</dd></div>` +
                     `</dl>` +
@@ -2184,7 +2205,7 @@ function renderOnWaterBoats(boundaryParts) {
 
     el.innerHTML = boats
         .map(({ device, pos }) => {
-            const pace = formatDevicePace(pos.speed, device.name, athleteIdForDevice(device));
+            const pace = formatDevicePace(pos, device.name, athleteIdForDevice(device));
             const fix = formatDateTime(pos.fixTime);
             const crew = deviceOnWaterCrew(device);
             const logoHtml = crew.logoUrl

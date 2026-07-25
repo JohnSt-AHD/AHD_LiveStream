@@ -73,6 +73,8 @@
         latitude: lat,
         longitude: lon,
         speed: pos.speed,
+        displaySpeedMps: pos.attributes?.displaySpeedMps ?? pos.displaySpeedMps ?? null,
+        pathSpeedMps: pos.attributes?.pathSpeedMps ?? pos.pathSpeedMps ?? null,
         attributes: attrs,
         strokeRate:
           rowing.strokeRate ?? attrs.strokeRate ?? attrs.stroke_rate ?? null,

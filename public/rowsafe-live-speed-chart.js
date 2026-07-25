@@ -1,5 +1,5 @@
 /**
- * Live speed vs time chart for RNZ RowSafe map (CrewSight Manager style).
+ * Live speed vs time chart for RNZ RowSafe map (Coach app path-pace method).
  */
 (function (global) {
     const DEVICE_COLORS = global.RnzDeviceColors?.PALETTE?.map((c) => c.fill) || [
@@ -16,12 +16,16 @@
     const LIVE_CHART_DENSIFY_SEC = 0.25;
     const LIVE_SPEED_SMOOTH = { tauSec: 4, maxAccelMps2: 2.5, glitchHoldAboveMps: 1.5 };
 
+    const coachSpeed = () => global.RowsafeCoachSpeed;
+
     /** @type {Map<string, { points: { t: number, speedMps: number }[] }>} */
     const buffers = new Map();
     /** @type {Map<string, number>} */
     const deviceOrder = new Map();
     /** @type {Map<string, string>} */
     const deviceLabels = new Map();
+    /** @type {Map<string, string|null>} */
+    const deviceAthleteIds = new Map();
 
     function deviceColor(deviceId) {
         const colors = global.RnzDeviceColors;
@@ -103,6 +107,7 @@
     }
 
     function liveSpeedVsTimeSeries(activeDeviceIds) {
+        const CS = coachSpeed();
         return activeDeviceIds
             .filter((id) => (buffers.get(id)?.points.length ?? 0) >= 2)
             .map((id) => {
@@ -115,9 +120,17 @@
                     ),
                     LIVE_CHART_DENSIFY_SEC,
                 );
+                const label = deviceLabels.get(id) || id;
+                const athleteId = deviceAthleteIds.get(id) ?? null;
+                const latestMps = pts.length ? pts[pts.length - 1].speedMps : null;
                 return {
                     id,
-                    label: deviceLabels.get(id) || id,
+                    label,
+                    athleteId,
+                    latestToken:
+                        CS && latestMps != null
+                            ? CS.formatSpeedToken(latestMps, label, athleteId)
+                            : null,
                     color: deviceColor(id),
                     points: smoothed.map((p) => ({
                         x: (p.tMs - t0) / 1000,
@@ -143,7 +156,7 @@
         const padL = 44;
         const padR = 12;
         const padT = 36;
-        const padB = 32;
+        const padB = series.some((s) => s.latestToken) ? 52 : 32;
         const plotW = w - padL - padR;
         const plotH = h - padT - padB;
 
@@ -206,7 +219,7 @@
             ctx.stroke();
             ctx.fillStyle = '#64748b';
             ctx.textAlign = 'center';
-            ctx.fillText(String(Math.round(tx * 10) / 10), px, h - 10);
+            ctx.fillText(String(Math.round(tx * 10) / 10), px, h - (series.some((s) => s.latestToken) ? 28 : 10));
         }
 
         for (const s of series) {
@@ -233,37 +246,56 @@
 
         let lx = padL;
         const ly = h - 6;
-        ctx.font = '11px system-ui';
         ctx.textAlign = 'left';
         for (const s of series) {
             if (!s.points.length) continue;
             ctx.fillStyle = s.color;
             ctx.fillRect(lx, ly - 9, 10, 10);
             ctx.fillStyle = '#94a3b8';
-            ctx.fillText(s.label, lx + 14, ly);
-            lx += ctx.measureText(s.label).width + 28;
+            ctx.font = '11px system-ui';
+            const name = s.label;
+            ctx.fillText(name, lx + 14, ly);
+            if (s.latestToken && s.latestToken !== '—') {
+                ctx.font = '10px system-ui';
+                ctx.fillStyle = '#64748b';
+                ctx.fillText(s.latestToken, lx + 14, ly - 12);
+            }
+            lx += Math.max(ctx.measureText(name).width, ctx.measureText(s.latestToken || '').width) + 28;
         }
 
         ctx.fillStyle = '#64748b';
+        ctx.font = '10px system-ui';
         ctx.textAlign = 'right';
-        ctx.fillText(opts.xLabel, w - padR, h - 10);
+        ctx.fillText(opts.xLabel, w - padR, h - 6);
+        if (opts.yLabel) {
+            ctx.save();
+            ctx.translate(12, padT + plotH / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillText(opts.yLabel, 0, 0);
+            ctx.restore();
+        }
     }
 
     /**
-     * @param {{ deviceId: string, deviceName?: string, speed?: number, fixTime?: string|number }[]} samples
+     * @param {{ deviceId: string, deviceName?: string, athleteId?: string|null, position?: object, speed?: number, fixTime?: string|number }[]} samples
      */
     function recordSamples(samples) {
         const now = Date.now();
         const seen = new Set();
+        const CS = coachSpeed();
 
         for (const sample of samples || []) {
             const deviceId = sample.deviceId != null ? String(sample.deviceId) : '';
             if (!deviceId) continue;
             seen.add(deviceId);
             if (sample.deviceName) deviceLabels.set(deviceId, String(sample.deviceName));
+            if (sample.athleteId !== undefined) {
+                deviceAthleteIds.set(deviceId, sample.athleteId ? String(sample.athleteId) : null);
+            }
 
-            const speed =
-                typeof sample.speed === 'number' && !Number.isNaN(sample.speed) ? sample.speed : null;
+            const pos = sample.position || sample;
+            const speed = CS ? CS.resolveCoachSpeedMps(pos) : sample.speed;
             if (speed == null) continue;
 
             const fixMs = sample.fixTime ? new Date(sample.fixTime).getTime() : NaN;
@@ -301,17 +333,12 @@
         const canvas = global.document.getElementById('rnzLiveSpeedChart');
         if (!canvas) return;
         const series = liveSpeedVsTimeSeries(activeDeviceIds || []);
-        const RS = global.RowingSpeed;
-        const yFormat =
-            RS != null
-                ? (mps) => RS.formatSplit500m(mps)
-                : (mps) => `${(mps * 3.6).toFixed(0)} km/h`;
         drawMultiSeriesChart(canvas, series, {
-            title: 'Pace vs time (last 5 min)',
+            title: 'Speed vs time (last 5 min)',
             xLabel: 'seconds',
-            yLabel: 'Pace',
-            yFormat,
-            emptyMessage: 'No active device paces yet',
+            yLabel: 'm/s',
+            yFormat: (mps) => mps.toFixed(1),
+            emptyMessage: 'No active device speeds yet',
         });
     }
 
@@ -322,6 +349,7 @@
             buffers.clear();
             deviceOrder.clear();
             deviceLabels.clear();
+            deviceAthleteIds.clear();
         },
     };
 })(typeof window !== 'undefined' ? window : globalThis);
