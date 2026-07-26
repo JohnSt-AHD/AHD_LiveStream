@@ -7,10 +7,11 @@
     function resolveCoachSpeedMps(pos) {
         if (!pos) return null;
         const attrs = pos.attributes || {};
-        const display = attrs.displaySpeedMps ?? pos.displaySpeedMps;
         const path = attrs.pathSpeedMps ?? pos.pathSpeedMps;
-        if (display != null && Number.isFinite(display) && display >= MIN_MPS) return display;
+        const display = attrs.displaySpeedMps ?? pos.displaySpeedMps;
+        // RowSafe tokens use raw 30s path pace — EMA displaySpeedMps lags on serverless snapshots.
         if (path != null && Number.isFinite(path) && path >= MIN_MPS) return path;
+        if (display != null && Number.isFinite(display) && display >= MIN_MPS) return display;
         const spd = pos.speed ?? attrs.speed;
         if (typeof spd === 'number' && Number.isFinite(spd) && spd >= MIN_MPS) return spd;
         return null;
