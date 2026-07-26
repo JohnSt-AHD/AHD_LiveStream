@@ -46,6 +46,8 @@ let groupLookup = new Map();
 
 let map = null;
 const markersByDeviceId = new Map();
+/** @type {(() => void) | null} */
+let mapSmoothUnsub = null;
 let mapInitialFitDone = false;
 let pollTimer = null;
 let lastFullSnapshotAt = 0;
@@ -1155,6 +1157,14 @@ function initMap() {
         });
         syncKriOverlayZoom();
     }
+
+    if (window.RowsafeMapSmooth) {
+        if (mapSmoothUnsub) mapSmoothUnsub();
+        mapSmoothUnsub = window.RowsafeMapSmooth.onDisplayTick((deviceId, lat, lon) => {
+            const marker = markersByDeviceId.get(deviceId);
+            if (marker) marker.setLatLng([lat, lon]);
+        });
+    }
 }
 
 function syncKriOverlayZoom() {
@@ -1337,6 +1347,7 @@ function stopPolling() {
         pollTimer = null;
     }
     deviceLiveTrails.clear();
+    if (window.RowsafeMapSmooth) window.RowsafeMapSmooth.clearTracks();
     redrawLiveTrail();
 }
 
@@ -1606,6 +1617,21 @@ function resolvePositionHeading(position) {
     return 0;
 }
 
+/** Raw GPS for safety; display glide uses RowsafeMapSmooth (client-only). */
+function syncMapDisplayTracks() {
+    if (!window.RowsafeMapSmooth) return;
+    window.RowsafeMapSmooth.syncTracks(devices, positions, {
+        isOnline: (pos) => isPositionRecent(pos.fixTime),
+    });
+}
+
+function markerDisplayLatLng(device, position) {
+    const raw = { lat: position.latitude, lon: position.longitude };
+    if (!window.RowsafeMapSmooth) return raw;
+    const display = window.RowsafeMapSmooth.displayLatLng(device.id);
+    return display || raw;
+}
+
 function updateKriDemoBoatMarker(device, position, latlng, fill, stroke, capsizeAlert) {
     const markersApi = window.KriSafetyMarkers;
     if (!markersApi?.createIcon) return null;
@@ -1651,6 +1677,8 @@ function syncCapsizeMapAlertUi() {
 function updateMapMarkers() {
     if (!map) return;
 
+    syncMapDisplayTracks();
+
     const latlngs = [];
     const seenIds = new Set();
 
@@ -1672,7 +1700,8 @@ function updateMapMarkers() {
         }
 
         seenIds.add(device.id);
-        const latlng = [position.latitude, position.longitude];
+        const { lat, lon } = markerDisplayLatLng(device, position);
+        const latlng = [lat, lon];
         const online = isPositionRecent(position.fixTime);
         const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
         const critical = showBoundaryCriticalAlert(device, position);
