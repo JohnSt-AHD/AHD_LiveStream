@@ -1,4 +1,4 @@
-import { fetchTraccarSnapshot } from './lib/traccar-login.mjs';
+import { fetchLiveSnapshot } from './lib/traccar-login.mjs';
 import {
     evaluateSafetySnapshot,
     mergeDevicesFromPositions,
@@ -47,7 +47,7 @@ async function readJsonBody(req) {
 }
 
 async function buildSnapshotEvaluation() {
-    const snapshot = await fetchTraccarSnapshot();
+    const snapshot = await fetchLiveSnapshot();
     const positions = {};
     for (const pos of snapshot.positions) {
         if (pos && pos.deviceId != null) positions[pos.deviceId] = pos;

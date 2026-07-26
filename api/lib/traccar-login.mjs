@@ -106,3 +106,43 @@ export async function fetchTraccarSnapshot() {
         geofences: Array.isArray(geofencesRaw) ? geofencesRaw : [],
     };
 }
+
+function rowingTrackerBase() {
+    return String(process.env.ROWING_TRACKER_URL || process.env.ROWING_API_URL || '')
+        .trim()
+        .replace(/\/$/, '');
+}
+
+function rowingAuthHeaders() {
+    const token = String(
+        process.env.ROWING_INGEST_TOKEN || process.env.INGEST_TOKEN || 'rnz',
+    ).trim();
+    const headers = { Accept: 'application/json' };
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+}
+
+/** Live fleet snapshot — prefers CrewSight when ROWING_TRACKER_URL is configured. */
+export async function fetchLiveSnapshot() {
+    const base = rowingTrackerBase();
+    if (base) {
+        try {
+            const url = new URL('/api/snapshot', `${base}/`);
+            url.searchParams.set('onlineSec', '120');
+            const upstream = await fetch(url.toString(), { headers: rowingAuthHeaders() });
+            if (upstream.ok) {
+                const data = await upstream.json();
+                return {
+                    devices: Array.isArray(data.devices) ? data.devices : [],
+                    positions: Array.isArray(data.positions) ? data.positions : [],
+                    geofences: Array.isArray(data.geofences) ? data.geofences : [],
+                };
+            }
+        } catch (err) {
+            console.error('[fetchLiveSnapshot] CrewSight snapshot failed:', err);
+        }
+    }
+    return fetchTraccarSnapshot();
+}

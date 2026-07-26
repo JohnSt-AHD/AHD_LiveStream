@@ -199,7 +199,7 @@ const TRACCAR_SESSION_CACHE_TTL_MS = Number(process.env.TRACCAR_SESSION_CACHE_MS
 
 /** @type {{ traccarUrl: string, cookie: string, fetchedAt: number }} */
 let traccarSessionCache = { traccarUrl: '', cookie: '', fetchedAt: 0 };
-/** @type {{ geofences: object[], groups: object[], fetchedAt: number }} */
+/** @type {{ geofences: object[], groups: object[], fetchedAt: number, source?: string }} */
 let geofenceMetaCache = { geofences: [], groups: [], fetchedAt: 0 };
 
 async function getTraccarSession(force = false) {
@@ -219,11 +219,54 @@ async function getTraccarSession(force = false) {
     return session;
 }
 
+async function getRowingGeofenceMeta(force = false) {
+    const now = Date.now();
+    if (
+        !force &&
+        geofenceMetaCache.fetchedAt &&
+        geofenceMetaCache.source === 'rowing' &&
+        now - geofenceMetaCache.fetchedAt < GEOFENCE_CACHE_TTL_MS
+    ) {
+        return { geofences: geofenceMetaCache.geofences, groups: geofenceMetaCache.groups };
+    }
+    if (!canUseRowing()) {
+        return { geofences: [], groups: [] };
+    }
+    try {
+        const data = await rowingGetJson('/api/snapshot', { onlineSec: '120' });
+        const geofences = Array.isArray(data?.geofences) ? data.geofences : [];
+        const groups = Array.isArray(data?.groups) ? data.groups : [];
+        geofenceMetaCache = { geofences, groups, fetchedAt: now, source: 'rowing' };
+        return { geofences, groups };
+    } catch (e) {
+        console.error('CrewSight geofence fetch failed:', e);
+        if (geofenceMetaCache.fetchedAt && geofenceMetaCache.source === 'rowing') {
+            return { geofences: geofenceMetaCache.geofences, groups: geofenceMetaCache.groups };
+        }
+        return { geofences: [], groups: [] };
+    }
+}
+
 async function getTraccarGeofenceMeta(force = false) {
     const now = Date.now();
     if (
         !force &&
         geofenceMetaCache.fetchedAt &&
+        geofenceMetaCache.source !== 'traccar' &&
+        now - geofenceMetaCache.fetchedAt < GEOFENCE_CACHE_TTL_MS
+    ) {
+        return { geofences: geofenceMetaCache.geofences, groups: geofenceMetaCache.groups };
+    }
+    if (canUseRowing()) {
+        const rowing = await getRowingGeofenceMeta(force);
+        if (rowing.geofences.length) {
+            return rowing;
+        }
+    }
+    if (
+        !force &&
+        geofenceMetaCache.fetchedAt &&
+        geofenceMetaCache.source === 'traccar' &&
         now - geofenceMetaCache.fetchedAt < GEOFENCE_CACHE_TTL_MS
     ) {
         return { geofences: geofenceMetaCache.geofences, groups: geofenceMetaCache.groups };
@@ -236,7 +279,7 @@ async function getTraccarGeofenceMeta(force = false) {
         ]);
         const geofences = Array.isArray(geofencesRaw) ? geofencesRaw : [];
         const groups = Array.isArray(groupsRaw) ? groupsRaw : [];
-        geofenceMetaCache = { geofences, groups, fetchedAt: now };
+        geofenceMetaCache = { geofences, groups, fetchedAt: now, source: 'traccar' };
         return { geofences, groups };
     } catch (e) {
         console.error('Traccar geofence metadata fetch failed:', e);
@@ -321,7 +364,13 @@ export default async function handler(req, res) {
             }
             const data = await rowingLiveSnapshot(req.query.onlineSec);
             const refreshMeta = String(req.query.refreshGeofences || '') === '1';
-            const { geofences, groups } = await getTraccarGeofenceMeta(refreshMeta);
+            let geofences = Array.isArray(data.geofences) ? data.geofences : [];
+            let groups = Array.isArray(data.groups) ? data.groups : [];
+            if (!geofences.length) {
+                const meta = await getRowingGeofenceMeta(refreshMeta);
+                geofences = meta.geofences;
+                groups = meta.groups;
+            }
             res.status(200).json({
                 devices: Array.isArray(data.devices) ? data.devices : [],
                 positions: Array.isArray(data.positions) ? data.positions : [],
