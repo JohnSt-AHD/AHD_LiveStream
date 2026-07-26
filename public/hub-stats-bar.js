@@ -7,6 +7,7 @@ function hubStatsRefreshMs() {
 }
 const HUB_STATS_DISTANCE_REFRESH_MS = 5 * 60 * 1000;
 const HUB_STATS_ROUTE_MAX_POINTS = 400;
+const HUB_STATS_TIMEZONE = 'Pacific/Auckland';
 
 let hubStatsPollTimer = null;
 let hubStatsLastDistanceM = null;
@@ -15,13 +16,42 @@ let hubStatsLastDevices = [];
 let hubStatsLastGeofences = [];
 let hubStatsDistanceEverLoaded = false;
 
-function hubStatsTodayRangeIso() {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+function hubStatsRowingSource() {
+    return window.AltitudeHdTrackerSource?.getSource?.() === 'rowing';
+}
+
+function hubStatsTodayDateKey(timeZone = HUB_STATS_TIMEZONE) {
+    return new Date().toLocaleDateString('en-CA', { timeZone });
+}
+
+function hubStatsTodayRangeIso(timeZone = HUB_STATS_TIMEZONE) {
+    const today = hubStatsTodayDateKey(timeZone);
+    const start = new Date(`${today}T00:00:00`);
+    const end = new Date(`${today}T23:59:59.999`);
     return {
         fromIso: start.toISOString(),
-        toIso: new Date().toISOString(),
+        toIso: end.toISOString(),
     };
+}
+
+/** CrewSight logbook day total — one request, NZ calendar day (matches RowSafe logbook). */
+async function hubStatsLoadDistanceTodayFromLogbook() {
+    const params = new URLSearchParams({
+        action: 'logbook',
+        days: '7',
+        tz: HUB_STATS_TIMEZONE,
+    });
+    if (window.AltitudeHdTrackerSource) {
+        window.AltitudeHdTrackerSource.applySource(params);
+    }
+    const res = await fetch(`${HUB_STATS_API}?${params.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    const today = hubStatsTodayDateKey();
+    const day = (data.days || []).find((d) => d.date === today);
+    return day?.distanceM ?? 0;
 }
 
 function hubStatsPositionTimeMs(p) {
@@ -166,6 +196,10 @@ function hubStatsSetItem(id, text, options = {}) {
 }
 
 async function hubStatsLoadDistanceToday(devices) {
+    if (hubStatsRowingSource()) {
+        return hubStatsLoadDistanceTodayFromLogbook();
+    }
+
     const core = window.RnzSafetyCore;
     if (!core || !devices.length) return 0;
 
@@ -206,7 +240,7 @@ async function hubStatsRefreshDistance(force) {
     if (!force && hubStatsLastDistanceAt && now - hubStatsLastDistanceAt < HUB_STATS_DISTANCE_REFRESH_MS) {
         return hubStatsLastDistanceM;
     }
-    if (!hubStatsLastDevices.length) return hubStatsLastDistanceM;
+    if (!hubStatsRowingSource() && !hubStatsLastDevices.length) return hubStatsLastDistanceM;
 
     hubStatsSetItem('hubStatDistance', 'Distance today: …');
     try {
@@ -314,12 +348,10 @@ async function hubStatsApplySnapshot(data) {
 
     hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
 
-    if (!isLite) {
-        const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
-        hubStatsDistanceEverLoaded = true;
-        if (distanceM != null) {
-            hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
-        }
+    const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
+    hubStatsDistanceEverLoaded = true;
+    if (distanceM != null) {
+        hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
     }
 }
 
@@ -359,6 +391,17 @@ window.addEventListener('altitudehd:map-refresh-rate', () => {
 
 if (document.body?.classList.contains('rnz-page')) {
     window.addEventListener('altitudehd:traccar-snapshot', hubStatsOnTraccarSnapshot);
+    if (hubStatsRowingSource()) {
+        void hubStatsRefreshDistance(true).then((distanceM) => {
+            if (distanceM != null) {
+                hubStatsSetItem(
+                    'hubStatDistance',
+                    `Distance today: ${hubStatsFormatDistance(distanceM)}`,
+                );
+                hubStatsDistanceEverLoaded = true;
+            }
+        });
+    }
 }
 
 window.hubStatsRefresh = hubStatsRefresh;
