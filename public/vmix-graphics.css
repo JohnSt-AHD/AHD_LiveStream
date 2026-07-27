@@ -2906,6 +2906,14 @@ body {
     white-space: nowrap;
 }
 
+.kri-course-scroll__lane--empty .kri-course-scroll__lane-body {
+    opacity: 0.45;
+}
+
+.kri-course-scroll__lane--empty .kri-course-scroll__lane-code {
+    color: rgba(0, 96, 191, 0.55);
+}
+
 .kri-course-scroll__hud {
     position: absolute;
     left: 36px;
