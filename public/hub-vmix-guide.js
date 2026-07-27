@@ -15,6 +15,7 @@ const VMIX_TRIGGERS = [
     { key: 'w', graphic: 'Leader', desc: 'KRI — leader box top-right (Milford placement, white panel + blue accents); fade in/out with o · 1–8 switch lane · Milford — leader video + lane text' },
     { key: 'x', graphic: 'CV leader', desc: 'KRI only — single leader box follows live CV position; crew from lane 1–8 (same as w) · o to fade out' },
     { key: 'h', graphic: 'CV draw', desc: 'KRI only — one line + crew card per CV boat slot (daysheet draw); race leader gets gold glow · boat count from CV Analysis · o to fade out' },
+    { key: 'u', graphic: 'Course underlay', desc: 'KRI only — scrolling Karāpiro course strip over drone feed; default sim start→finish at 4 m/s; lane draw from live race · ?deviceId= for CrewSight · ?cvScale=1 to fit CV boats · o to fade out' },
     { key: 's', graphic: 'Schedule', desc: 'KRI only — upcoming 10 races from hub live race (CSS gradient panel); fade in/out with o' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },

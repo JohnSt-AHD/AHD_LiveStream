@@ -2754,6 +2754,9 @@ body {
     justify-self: end;
     font-size: 12px;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #0060bf;
+}
 
 /* CV boat markers — logo + short name at detected positions */
 .cv-boat-markers {
@@ -2801,4 +2804,149 @@ body {
     font: 600 18px/1.1 "Segoe UI", system-ui, sans-serif;
     color: #fff;
     white-space: nowrap;
+}
+
+/* —— KRI drone course underlay (u) —— */
+.kri-course-scroll {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.kri-course-scroll--visible {
+    visibility: visible;
+}
+
+.kri-course-scroll--intro {
+    animation: vg-kri-fade-in 0.9s ease-out forwards;
+}
+
+.kri-course-scroll--hold {
+    opacity: 1;
+}
+
+.kri-course-scroll--outro {
+    animation: vg-kri-fade-out 0.9s ease-out forwards;
+}
+
+.kri-course-scroll__viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.kri-course-scroll__strip {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+}
+
+.kri-course-scroll__lanes {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 118px;
+    height: 0;
+    z-index: 2;
+}
+
+.kri-course-scroll__lane {
+    position: absolute;
+    top: 0;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 72px;
+}
+
+.kri-course-scroll__lane-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font: 800 15px/1 "Barlow Condensed", "Segoe UI", sans-serif;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--kri-brand-blue-dark, #0060bf);
+    box-shadow: 0 4px 14px rgba(0, 96, 191, 0.35);
+}
+
+.kri-course-scroll__lane-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px 7px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 2px solid var(--kri-brand-blue, #0079d1);
+    box-shadow: 0 6px 18px rgba(0, 96, 191, 0.22);
+}
+
+.kri-course-scroll__lane-logo {
+    width: 36px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.kri-course-scroll__lane-code {
+    font: 800 14px/1 "Barlow Condensed", "Segoe UI", sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--kri-brand-blue-dark, #0060bf);
+    white-space: nowrap;
+}
+
+.kri-course-scroll__hud {
+    position: absolute;
+    left: 36px;
+    top: 28px;
+    z-index: 3;
+}
+
+.kri-course-scroll__hud-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px 10px 12px;
+    border-radius: 10px;
+    background: rgba(8, 20, 40, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+}
+
+.kri-course-scroll__logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+.kri-course-scroll__kicker {
+    margin: 0 0 2px;
+    font: 700 12px/1.1 "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.kri-course-scroll__distance {
+    margin: 0;
+    font: 800 28px/1 "Barlow Condensed", "Segoe UI", sans-serif;
+    color: #fff;
+}
+
+.kri-course-scroll__meta {
+    margin: 4px 0 0;
+    font: 600 13px/1.2 "Segoe UI", system-ui, sans-serif;
+    color: rgba(186, 230, 253, 0.95);
 }

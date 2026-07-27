@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = leader · x = CV leader (KRI) · h = CV draw boats (KRI) · s = schedule (KRI) · v = speed chart (KRI) · k = live tracking (KRI) · m = weather (KRI) · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = leader · x = CV leader (KRI) · h = CV draw boats (KRI) · u = course underlay (KRI) · s = schedule (KRI) · v = speed chart (KRI) · k = live tracking (KRI) · m = weather (KRI) · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -18,6 +18,9 @@ const VG_GRAPHIC_ALIASES = {
     cvleader: 'cvleader',
     h: 'cvdraw',
     cvdraw: 'cvdraw',
+    u: 'coursescroll',
+    coursescroll: 'coursescroll',
+    course: 'coursescroll',
     s: 'schedule',
     g: 'speed',
     map: 'speed',
@@ -42,6 +45,7 @@ function vgGraphicFromShortcut(key) {
     if (k === 's' && vgIsKriTheme()) return 'schedule';
     if (k === 'x' && vgIsKriTheme()) return 'cvleader';
     if (k === 'h' && vgIsKriTheme()) return 'cvdraw';
+    if (k === 'u' && vgIsKriTheme()) return 'coursescroll';
     if (k === 'm' && vgIsKriTheme()) return 'weather';
     return VG_GRAPHIC_ALIASES[k] || null;
 }
@@ -637,6 +641,11 @@ function vgRefreshLiveRaceContent() {
     /* Dev layout tuning uses inline styles; CSV refresh would wipe unsaved drags. */
     if (vgIsLayoutDevMode()) return;
 
+    if (vgIsCourseScrollGraphic(graphic)) {
+        window.KriVmixCourseScroll?.updateRaceContext?.(vgBuildSpeedChartRaceContext());
+        return;
+    }
+
     const profile = vgGetVideoProfile(graphic);
     const layer = vgGetLayerEl();
 
@@ -762,6 +771,10 @@ function vgIsLiveTrackingGraphic(graphic) {
     return graphic === 'livetracking';
 }
 
+function vgIsCourseScrollGraphic(graphic) {
+    return graphic === 'coursescroll';
+}
+
 function vgIsScheduleGraphic(graphic) {
     return graphic === 'schedule';
 }
@@ -774,7 +787,15 @@ function vgIsWeatherGraphic(graphic) {
 function vgKriUsesCssBackground(graphic) {
     if (!vgIsKriTheme()) return false;
     const g = graphic ?? vgPlayback.graphic;
-    return !!g && !vgIsSpeedChartGraphic(g) && !vgIsLiveTrackingGraphic(g) && !vgIsWeatherGraphic(g) && !vgIsCvLeaderGraphic(g) && !vgIsCvDrawGraphic(g);
+    return (
+        !!g &&
+        !vgIsSpeedChartGraphic(g) &&
+        !vgIsLiveTrackingGraphic(g) &&
+        !vgIsWeatherGraphic(g) &&
+        !vgIsCvLeaderGraphic(g) &&
+        !vgIsCvDrawGraphic(g) &&
+        !vgIsCourseScrollGraphic(g)
+    );
 }
 
 function vgUsesCssBackground(graphic) {
@@ -805,6 +826,10 @@ function vgCvDrawEnabled() {
 
 function vgLiveTrackingEnabled() {
     return vgIsKriTheme() && !!window.KriVmixLiveTracking && !!window.KriVmixSpeedChart;
+}
+
+function vgCourseScrollEnabled() {
+    return vgIsKriTheme() && !!window.KriVmixCourseScroll;
 }
 
 function vgWeatherEnabled() {
@@ -972,6 +997,53 @@ async function vgStartCvDrawOutro() {
     vgSetStageState('outro');
     try {
         if (window.KriVmixCvDraw) await window.KriVmixCvDraw.hide();
+    } finally {
+        vgResetToIdle();
+    }
+}
+
+async function vgStartCourseScrollIntro() {
+    vgShowBackground(false);
+    vgShowTextLayer(false);
+    vgHideMap();
+    const layer = vgGetLayerEl();
+    if (layer) {
+        layer.replaceChildren();
+        layer.className = 'vg-layer';
+    }
+    try {
+        if (!window.KriVmixCourseScroll) {
+            throw new Error('Course underlay module not loaded');
+        }
+        const holdTimer = setTimeout(() => {
+            if (vgPlayback.state === 'intro' && vgIsCourseScrollGraphic(vgPlayback.graphic)) {
+                vgSetStageState('hold');
+            }
+        }, window.KriVmixCourseScroll.INTRO_MS);
+        vgPlayback.profileTimers.push(holdTimer);
+
+        await window.KriVmixCourseScroll.show({
+            raceContext: vgBuildSpeedChartRaceContext(),
+        });
+        if (!vgIsCourseScrollGraphic(vgPlayback.graphic)) return;
+        vgSetStageState('hold');
+    } catch (e) {
+        const err = document.getElementById('vgError');
+        if (err) {
+            err.hidden = false;
+            err.textContent = e instanceof Error ? e.message : 'Course underlay failed';
+        }
+        vgResetToIdle();
+    }
+}
+
+async function vgStartCourseScrollOutro() {
+    if (!vgIsCourseScrollGraphic(vgPlayback.graphic)) return;
+    if (vgPlayback.state !== 'hold' && vgPlayback.state !== 'intro' && vgPlayback.state !== 'outro') return;
+    vgClearPlaybackTimers();
+    vgSetStageState('outro');
+    try {
+        if (window.KriVmixCourseScroll) await window.KriVmixCourseScroll.hide();
     } finally {
         vgResetToIdle();
     }
@@ -1815,6 +1887,7 @@ function vgResetToIdle() {
     if (window.KriVmixCvDraw) window.KriVmixCvDraw.remove();
     if (window.KriVmixLiveTracking) window.KriVmixLiveTracking.remove();
     if (window.KriVmixWeather) window.KriVmixWeather.remove();
+    if (window.KriVmixCourseScroll) window.KriVmixCourseScroll.remove();
     vgSetStageState('idle');
     vgShowTextLayer(false);
     vgShowBackground(false);
@@ -1831,6 +1904,7 @@ function vgTriggerIn(graphic) {
     if (vgIsLiveTrackingGraphic(graphic) && !vgLiveTrackingEnabled()) return;
     if (vgIsCvLeaderGraphic(graphic) && !vgCvLeaderEnabled()) return;
     if (vgIsCvDrawGraphic(graphic) && !vgCvDrawEnabled()) return;
+    if (vgIsCourseScrollGraphic(graphic) && !vgCourseScrollEnabled()) return;
     if (vgIsWeatherGraphic(graphic) && !vgWeatherEnabled()) return;
     if (vgIsScheduleGraphic(graphic) && !vgIsKriTheme()) return;
 
@@ -1856,6 +1930,11 @@ function vgTriggerIn(graphic) {
 
     if (vgIsCvDrawGraphic(graphic)) {
         vgStartCvDrawIntro();
+        return;
+    }
+
+    if (vgIsCourseScrollGraphic(graphic)) {
+        vgStartCourseScrollIntro();
         return;
     }
 
@@ -1902,6 +1981,10 @@ function vgTriggerOut() {
     }
     if (vgIsCvDrawGraphic(graphic)) {
         vgStartCvDrawOutro();
+        return;
+    }
+    if (vgIsCourseScrollGraphic(graphic)) {
+        vgStartCourseScrollOutro();
         return;
     }
     if (vgIsWeatherGraphic(graphic)) {
@@ -3002,6 +3085,15 @@ function vgDevPreviewHold(graphic) {
         vgShowTextLayer(false);
         const race = vgFindRace(vgGetRaceParam());
         window.KriVmixCvDraw?.show({ race }).catch(() => {});
+        return;
+    }
+    if (vgIsCourseScrollGraphic(graphic)) {
+        vgSetStageState('hold');
+        vgShowBackground(false);
+        vgShowTextLayer(false);
+        window.KriVmixCourseScroll?.show({
+            raceContext: vgBuildSpeedChartRaceContext(),
+        }).catch(() => {});
         return;
     }
     if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
