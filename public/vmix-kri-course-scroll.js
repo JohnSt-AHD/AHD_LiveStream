@@ -68,6 +68,7 @@
     let laneOffsetX = 0;
     let ppmOverride = null;
     let raceContext = null;
+    let leaderLane = null;
     let pollTimer = null;
     let cvTimer = null;
     let running = false;
@@ -473,6 +474,43 @@
             card.appendChild(body);
             laneLayer.appendChild(card);
         }
+        applyLeaderHighlight();
+    }
+
+    function applyLeaderHighlight() {
+        if (!laneLayer) return;
+        laneLayer.querySelectorAll('.kri-course-scroll__lane').forEach((el) => {
+            const lane = parseInt(el.dataset.lane || '0', 10);
+            const isLeader = leaderLane != null && lane === leaderLane;
+            el.classList.toggle('kri-course-scroll__lane--leader', isLeader);
+            let badge = el.querySelector('.kri-course-scroll__leader-badge');
+            if (isLeader) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'kri-course-scroll__leader-badge';
+                    badge.textContent = 'Leader';
+                    el.insertBefore(badge, el.firstChild);
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        });
+    }
+
+    function setLeaderLane(lane) {
+        const n = parseInt(String(lane), 10);
+        if (!Number.isFinite(n) || n < 1 || n > laneCount) return leaderLane;
+        if (leaderLane === n) {
+            applyLeaderHighlight();
+            return leaderLane;
+        }
+        leaderLane = n;
+        applyLeaderHighlight();
+        return leaderLane;
+    }
+
+    function getLeaderLane() {
+        return leaderLane;
     }
 
     function repositionLaneCards() {
@@ -617,6 +655,11 @@
         loopSim = params().get('loop') === '1' || !!opts.loop;
         cvScaleEnabled = params().get('cvScale') === '1' || !!opts.cvScale;
         raceContext = opts.raceContext || null;
+        const fromOpts = parseInt(String(opts.leaderLane ?? ''), 10);
+        leaderLane =
+            Number.isFinite(fromOpts) && fromOpts >= 1 && fromOpts <= laneCount
+                ? fromOpts
+                : null;
         distanceM = Number.isFinite(opts.distanceM) ? opts.distanceM : 0;
         laneScale = 1;
         laneOffsetX = 0;
@@ -671,6 +714,7 @@
     function remove() {
         destroy();
         raceContext = null;
+        leaderLane = null;
         if (root) {
             root.remove();
             root = null;
@@ -699,6 +743,8 @@
         destroy: destroy,
         remove: remove,
         updateRaceContext: updateRaceContext,
+        setLeaderLane: setLeaderLane,
+        getLeaderLane: getLeaderLane,
         getDistanceM: function () {
             return distanceM;
         },

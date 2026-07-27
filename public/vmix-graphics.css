@@ -2914,6 +2914,36 @@ body {
     color: rgba(0, 96, 191, 0.55);
 }
 
+.kri-course-scroll__leader-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font: 800 11px/1 "Barlow Condensed", "Segoe UI", sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #1a1200;
+    background: linear-gradient(135deg, #f5d76e, #c9a227);
+    box-shadow: 0 3px 10px rgba(201, 162, 39, 0.45);
+}
+
+.kri-course-scroll__lane--leader .kri-course-scroll__lane-body {
+    border-color: #c9a227;
+    box-shadow:
+        0 0 0 2px rgba(212, 175, 55, 0.95),
+        0 0 16px rgba(255, 215, 0, 0.55),
+        0 6px 18px rgba(0, 96, 191, 0.22);
+    background: #fffef5;
+}
+
+.kri-course-scroll__lane--leader .kri-course-scroll__lane-num {
+    background: linear-gradient(135deg, #f5d76e, #c9a227);
+    color: #1a1200;
+}
+
 .kri-course-scroll__hud {
     position: absolute;
     left: 36px;

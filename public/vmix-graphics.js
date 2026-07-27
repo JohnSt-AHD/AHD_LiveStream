@@ -1024,6 +1024,7 @@ async function vgStartCourseScrollIntro() {
 
         await window.KriVmixCourseScroll.show({
             raceContext: vgBuildSpeedChartRaceContext(),
+            leaderLane: vgGetLeaderLane(),
         });
         if (!vgIsCourseScrollGraphic(vgPlayback.graphic)) return;
         vgSetStageState('hold');
@@ -2913,6 +2914,16 @@ function vgBindKeyboard() {
                 return;
             }
         }
+        if (vgIsCourseScrollGraphic(vgPlayback.graphic) && vgPlayback.state !== 'idle') {
+            const lane = key === '0' ? 10 : parseInt(key, 10);
+            const maxLane = window.KriVmixCourseScroll?.LANE_COUNT || 10;
+            if (Number.isFinite(lane) && lane >= 1 && lane <= maxLane) {
+                e.preventDefault();
+                if (lane <= 8) vgSetLeaderLane(lane);
+                window.KriVmixCourseScroll?.setLeaderLane?.(lane);
+                return;
+            }
+        }
         const graphic = vgGraphicFromShortcut(key) || VG_GRAPHIC_ALIASES[key];
         if (graphic) {
             e.preventDefault();
@@ -2927,6 +2938,8 @@ function vgBindKeyboard() {
                 vgApplyLeaderLane(lane);
             } else if (vgPlayback.graphic === 'cvleader' && vgPlayback.state !== 'idle') {
                 window.KriVmixCvLeader?.setLane?.(lane);
+            } else if (vgIsCourseScrollGraphic(vgPlayback.graphic) && vgPlayback.state !== 'idle') {
+                window.KriVmixCourseScroll?.setLeaderLane?.(lane);
             } else {
                 vgLeaderLane = lane;
             }
@@ -3012,6 +3025,10 @@ async function vgInit() {
         const lane = vgClampLeaderLane(e.detail?.lane);
         if (vgPlayback.graphic === 'leader' && vgPlayback.state !== 'idle') {
             vgApplyLeaderLane(lane);
+        } else if (vgPlayback.graphic === 'cvleader' && vgPlayback.state !== 'idle') {
+            window.KriVmixCvLeader?.setLane?.(lane);
+        } else if (vgIsCourseScrollGraphic(vgPlayback.graphic) && vgPlayback.state !== 'idle') {
+            window.KriVmixCourseScroll?.setLeaderLane?.(lane);
         } else {
             vgLeaderLane = lane;
         }
@@ -3093,6 +3110,7 @@ function vgDevPreviewHold(graphic) {
         vgShowTextLayer(false);
         window.KriVmixCourseScroll?.show({
             raceContext: vgBuildSpeedChartRaceContext(),
+            leaderLane: vgGetLeaderLane(),
         }).catch(() => {});
         return;
     }

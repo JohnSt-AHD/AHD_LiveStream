@@ -15,7 +15,7 @@ const VMIX_TRIGGERS = [
     { key: 'w', graphic: 'Leader', desc: 'KRI — leader box top-right (Milford placement, white panel + blue accents); fade in/out with o · 1–8 switch lane · Milford — leader video + lane text' },
     { key: 'x', graphic: 'CV leader', desc: 'KRI only — single leader box follows live CV position; crew from lane 1–8 (same as w) · o to fade out' },
     { key: 'h', graphic: 'CV draw', desc: 'KRI only — one line + crew card per CV boat slot (daysheet draw); race leader gets gold glow · boat count from CV Analysis · o to fade out' },
-    { key: 'u', graphic: 'Course underlay', desc: 'KRI only — procedural Karāpiro 2 km course (10 lanes × 10 m, OOB outside 1 & 10, buoys, 250 m marks, Start/Finish); default sim 4 m/s · lane draw from live race · ?deviceId= CrewSight · ?cvScale=1 · o to fade out' },
+    { key: 'u', graphic: 'Course underlay', desc: 'KRI only — procedural Karāpiro 2 km course (10 lanes × 10 m, OOB, buoys, 250 m marks); sim 4 m/s · lane draw from live race · 1–9 / 0 assign Leader highlight on a lane · ?deviceId= CrewSight · o to fade out' },
     { key: 's', graphic: 'Schedule', desc: 'KRI only — upcoming 10 races from hub live race (CSS gradient panel); fade in/out with o' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
