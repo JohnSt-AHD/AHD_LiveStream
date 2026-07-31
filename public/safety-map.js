@@ -1129,6 +1129,10 @@ function initMap() {
     geofenceLayer = L.layerGroup().addTo(map);
     liveTrailLayer = L.layerGroup().addTo(map);
 
+    if (document.body?.classList.contains('rnz-page')) {
+        window.RnzRowsafeMap = { getMap: () => map };
+    }
+
     if (SAFETY_THEME.enableCourseOverlay) {
         if (!map.getPane('kriCoursePane')) {
             map.createPane('kriCoursePane');

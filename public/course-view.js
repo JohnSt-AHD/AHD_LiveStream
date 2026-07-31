@@ -1070,6 +1070,11 @@
     if (rollEl) rollEl.checked = rollingStartEnabled;
     selectedCourse = $('#courseViewSelect')?.value || selectedCourse;
     localStorage.setItem(LS_COURSE, selectedCourse);
+    window.dispatchEvent(
+      new CustomEvent('rowsafe:course-selected', {
+        detail: { courseGroup: selectedCourse },
+      }),
+    );
     const course = getDisplayCourse();
     if (course) {
       setTimeout(() => {
@@ -1147,6 +1152,11 @@
     $('#courseViewSelect')?.addEventListener('change', (ev) => {
       selectedCourse = ev.target.value;
       localStorage.setItem(LS_COURSE, selectedCourse);
+      window.dispatchEvent(
+        new CustomEvent('rowsafe:course-selected', {
+          detail: { courseGroup: selectedCourse },
+        }),
+      );
       resetRotationUi();
       resetSession();
       setTimeout(() => courseMap?.invalidateSize(), 80);
@@ -1170,6 +1180,20 @@
     } catch {
       courseReversed = false;
       rollingStartEnabled = true;
+    }
+  };
+
+  window.dashboardOnTimingLinesLoaded = function () {
+    populateCourseSelect();
+    if (!selectedCourse) {
+      selectedCourse = $('#courseViewSelect')?.value || '';
+    }
+    if (open) {
+      const course = getDisplayCourse();
+      if (course) {
+        refreshCourseView();
+        setStatus(`${course.group} · ${Math.round(course.totalDist)} m course loaded.`);
+      }
     }
   };
 
