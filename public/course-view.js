@@ -1046,7 +1046,7 @@
     setStatus('Course session reset.');
   }
 
-  function openOverlay() {
+  async function openOverlay() {
     open = true;
     const overlay = $('#courseViewOverlay');
     if (overlay) {
@@ -1054,6 +1054,18 @@
       overlay.setAttribute('aria-hidden', 'false');
     }
     document.body.classList.add('course-view-open');
+    setStatus('Loading courses…');
+    if (typeof window.dashboardEnsureTimingLinesLoaded === 'function') {
+      try {
+        await window.dashboardEnsureTimingLinesLoaded();
+      } catch (e) {
+        setStatus(
+          e instanceof Error ? e.message : 'Could not load timing lines from server.',
+          true,
+        );
+        return;
+      }
+    }
     populateCourseSelect();
     populateRecallSelect();
     resetRotationUi();
@@ -1069,6 +1081,13 @@
     if (revEl) revEl.checked = courseReversed;
     if (rollEl) rollEl.checked = rollingStartEnabled;
     selectedCourse = $('#courseViewSelect')?.value || selectedCourse;
+    if (!selectedCourse) {
+      const groups =
+        typeof window.dashboardGetTimingCourseGroups === 'function'
+          ? window.dashboardGetTimingCourseGroups()
+          : [];
+      if (groups.length) selectedCourse = groups[0];
+    }
     localStorage.setItem(LS_COURSE, selectedCourse);
     window.dispatchEvent(
       new CustomEvent('rowsafe:course-selected', {
@@ -1083,10 +1102,7 @@
       }, 80);
       setStatus(`${course.group} · ${Math.round(course.totalDist)} m course loaded.`);
     } else {
-      setStatus('Add timing lines with start and finish in Geofences.');
-    }
-    if (typeof window.dashboardRefreshTimingLines === 'function') {
-      window.dashboardRefreshTimingLines();
+      setStatus('No courses found — check timing lines in CrewSight Manager.', true);
     }
     if (typeof window.dashboardGetLatestPositions === 'function') {
       const pos = window.dashboardGetLatestPositions();
@@ -1185,9 +1201,7 @@
 
   window.dashboardOnTimingLinesLoaded = function () {
     populateCourseSelect();
-    if (!selectedCourse) {
-      selectedCourse = $('#courseViewSelect')?.value || '';
-    }
+    selectedCourse = $('#courseViewSelect')?.value || selectedCourse || '';
     if (open) {
       const course = getDisplayCourse();
       if (course) {
