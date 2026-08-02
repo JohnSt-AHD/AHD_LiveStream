@@ -9,9 +9,9 @@
         const attrs = pos.attributes || {};
         const path = attrs.pathSpeedMps ?? pos.pathSpeedMps;
         const display = attrs.displaySpeedMps ?? pos.displaySpeedMps;
-        // RowSafe tokens use raw 30s path pace — EMA displaySpeedMps lags on serverless snapshots.
-        if (path != null && Number.isFinite(path) && path >= MIN_MPS) return path;
+        // Smoothed display pace for map labels/glide; raw path remains available for timing views.
         if (display != null && Number.isFinite(display) && display >= MIN_MPS) return display;
+        if (path != null && Number.isFinite(path) && path >= MIN_MPS) return path;
         const spd = pos.speed ?? attrs.speed;
         if (typeof spd === 'number' && Number.isFinite(spd) && spd >= MIN_MPS) return spd;
         return null;

@@ -4,11 +4,15 @@
  */
 (function (global) {
     const TICK_MS = 100;
-    const MAX_EXTRAPOLATE_SEC = 1;
+    /** Cover map poll interval (2s) plus brief fix-age lag without freezing between updates. */
+    const MAX_EXTRAPOLATE_SEC = 6;
+    const DISPLAY_BLEND_ALPHA = 0.2;
+    const BIG_JUMP_M = 25;
+    const HUGE_JUMP_M = 60;
     const MIN_SPEED_MPS = 0.25;
     const GPS_LIVE_SEC = 30;
 
-    /** @type {Map<string|number, { lat: number, lon: number, fixMs: number, speedMps: number|null, courseDeg: number|null, online: boolean }>} */
+    /** @type {Map<string|number, { lat: number, lon: number, displayLat?: number, displayLon?: number, fixMs: number, speedMps: number|null, courseDeg: number|null, online: boolean }>} */
     const tracks = new Map();
     /** @type {Set<(deviceId: string|number, lat: number, lon: number) => void>} */
     const listeners = new Set();
@@ -70,6 +74,10 @@
     }
 
     function resolveCourseDeg(position, prevLat, prevLon, lat, lon) {
+        if (prevLat != null && prevLon != null) {
+            const dist = haversineM(prevLat, prevLon, lat, lon);
+            if (dist >= 4) return bearingDeg(prevLat, prevLon, lat, lon);
+        }
         const compass = position?.attributes?.compass;
         if (typeof compass === 'number' && Number.isFinite(compass)) return compass;
         if (typeof position?.courseHeading === 'number' && Number.isFinite(position.courseHeading)) {
@@ -82,6 +90,55 @@
             return bearingDeg(prevLat, prevLon, lat, lon);
         }
         return null;
+    }
+
+    function smoothCourseDeg(nextDeg, prevDeg, distM) {
+        if (nextDeg == null || !Number.isFinite(nextDeg)) return prevDeg ?? null;
+        if (prevDeg == null || !Number.isFinite(prevDeg)) return nextDeg;
+        let delta = ((nextDeg - prevDeg + 540) % 360) - 180;
+        if (Math.abs(delta) > 90 && (distM == null || distM < 15)) return prevDeg;
+        const blend = distM != null && distM >= 12 ? 0.55 : 0.3;
+        return (prevDeg + delta * blend + 360) % 360;
+    }
+
+    function targetLatLng(state, nowMs = Date.now()) {
+        const fixAgeSec = (nowMs - state.fixMs) / 1000;
+        if (!state.online || fixAgeSec > GPS_LIVE_SEC) {
+            return { lat: state.lat, lon: state.lon };
+        }
+        const stepSec = Math.min(Math.max(0, fixAgeSec), MAX_EXTRAPOLATE_SEC);
+        const speed = state.speedMps;
+        if (
+            speed != null &&
+            speed >= MIN_SPEED_MPS &&
+            state.courseDeg != null &&
+            Number.isFinite(state.courseDeg)
+        ) {
+            const [lat, lon] = destinationLatLon(
+                state.lat,
+                state.lon,
+                state.courseDeg,
+                speed * stepSec,
+            );
+            return { lat, lon };
+        }
+        return { lat: state.lat, lon: state.lon };
+    }
+
+    function advanceDisplay(state, nowMs = Date.now()) {
+        const target = targetLatLng(state, nowMs);
+        if (state.displayLat == null || state.displayLon == null) {
+            state.displayLat = target.lat;
+            state.displayLon = target.lon;
+            return target;
+        }
+        const jumpM = haversineM(state.displayLat, state.displayLon, target.lat, target.lon);
+        let alpha = DISPLAY_BLEND_ALPHA;
+        if (jumpM > HUGE_JUMP_M) alpha = 0.06;
+        else if (jumpM > BIG_JUMP_M) alpha = 0.1;
+        state.displayLat += (target.lat - state.displayLat) * alpha;
+        state.displayLon += (target.lon - state.displayLon) * alpha;
+        return { lat: state.displayLat, lon: state.displayLon };
     }
 
     function resolveSpeedMps(position) {
@@ -130,22 +187,27 @@
             const prev = tracks.get(device.id);
             let speedMps = resolveSpeedMps(position);
             let courseDeg = resolveCourseDeg(position, prev?.lat, prev?.lon, lat, lon);
+            let moveDist = prev ? haversineM(prev.lat, prev.lon, lat, lon) : null;
 
             if (prev && prev.fixMs !== fixMs) {
                 const dt = (fixMs - prev.fixMs) / 1000;
                 if (dt > 0.05) {
-                    const dist = haversineM(prev.lat, prev.lon, lat, lon);
-                    if (speedMps == null && dist > 0) speedMps = dist / dt;
-                    if (courseDeg == null) courseDeg = bearingDeg(prev.lat, prev.lon, lat, lon);
+                    if (moveDist != null && moveDist > 0) {
+                        if (speedMps == null) speedMps = moveDist / dt;
+                        if (courseDeg == null) courseDeg = bearingDeg(prev.lat, prev.lon, lat, lon);
+                    }
                 }
             } else if (prev) {
                 speedMps = prev.speedMps;
                 courseDeg = prev.courseDeg;
             }
+            courseDeg = smoothCourseDeg(courseDeg, prev?.courseDeg, moveDist);
 
             tracks.set(device.id, {
                 lat,
                 lon,
+                displayLat: prev?.displayLat ?? lat,
+                displayLon: prev?.displayLon ?? lon,
                 fixMs,
                 speedMps,
                 courseDeg,
@@ -160,27 +222,7 @@
     function displayLatLng(deviceId) {
         const state = tracks.get(deviceId);
         if (!state) return null;
-        const fixAgeSec = (Date.now() - state.fixMs) / 1000;
-        if (!state.online || fixAgeSec > GPS_LIVE_SEC) {
-            return { lat: state.lat, lon: state.lon };
-        }
-        const stepSec = Math.min(Math.max(0, fixAgeSec), MAX_EXTRAPOLATE_SEC);
-        const speed = state.speedMps;
-        if (
-            speed != null &&
-            speed >= MIN_SPEED_MPS &&
-            state.courseDeg != null &&
-            Number.isFinite(state.courseDeg)
-        ) {
-            const [lat, lon] = destinationLatLon(
-                state.lat,
-                state.lon,
-                state.courseDeg,
-                speed * stepSec,
-            );
-            return { lat, lon };
-        }
-        return { lat: state.lat, lon: state.lon };
+        return advanceDisplay(state);
     }
 
     function startTick() {
