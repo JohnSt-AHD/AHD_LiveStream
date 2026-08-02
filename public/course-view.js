@@ -318,17 +318,27 @@
     return 2000 / (refSec / pct);
   }
 
+  function crossingTimeForLine(deviceId, line, course) {
+    const crossed = crossingsByDevice.get(deviceId);
+    if (!crossed || !line) return null;
+    if (crossed.has(line.id)) return crossed.get(line.id);
+    if (line.distanceM == null) return null;
+    for (const marker of course.markers || []) {
+      if (marker.distanceM === line.distanceM && crossed.has(marker.id)) {
+        return crossed.get(marker.id);
+      }
+    }
+    return null;
+  }
+
   function getEffectiveStartMs(deviceId, course) {
     const rolling = raceStartByDevice.get(deviceId);
     if (rolling?.confirmed && Number.isFinite(rolling.tMs)) return rolling.tMs;
-    const crossed = crossingsByDevice.get(deviceId);
     const startLine = timingStartLine(course);
-    if (crossed && startLine) {
-      const t = crossed.get(startLine.id);
-      if (Number.isFinite(t)) {
-        if (rollingStartEnabled && prognosticThresholdMps(deviceId) != null) return null;
-        return t;
-      }
+    const t = crossingTimeForLine(deviceId, startLine, course);
+    if (Number.isFinite(t)) {
+      if (rollingStartEnabled && prognosticThresholdMps(deviceId) != null) return null;
+      return t;
     }
     return null;
   }
@@ -619,6 +629,30 @@
       return RS.formatPaceWithPrognostic(mps, ...parts, { suffix: true });
     }
     return `${formatSplit500(mps)}/500`;
+  }
+
+  function markerAlongM(line, course) {
+    if (line?.distanceM == null || !Number.isFinite(line.distanceM)) return null;
+    return courseReversed
+      ? (course.finishDist ?? 0) - line.distanceM
+      : line.distanceM - (course.startDist ?? 0);
+  }
+
+  function formatPrognosticForDevice(mps, deviceId, athleteId) {
+    const RS = window.RowingSpeed;
+    if (!RS?.formatPrognostic || mps == null || !Number.isFinite(mps) || mps <= 0) return null;
+    const boat = RS.parseBoatClass?.(deviceId, athleteId);
+    if (!boat) return null;
+    return RS.formatPrognostic(mps, boat);
+  }
+
+  function segmentSplitCell(cumulativeMs, segDistM, segElapsedMs, deviceId, athleteId) {
+    if (!Number.isFinite(cumulativeMs)) return '—';
+    const elapsed = formatElapsed(cumulativeMs);
+    if (!segDistM || segDistM <= 0 || !segElapsedMs || segElapsedMs <= 0) return elapsed;
+    const speedMps = segDistM / (segElapsedMs / 1000);
+    const prog = formatPrognosticForDevice(speedMps, deviceId, athleteId);
+    return prog ? `${elapsed} · ${prog}` : elapsed;
   }
 
   function speedFromPosition(p, prev, dtSec) {
@@ -979,6 +1013,15 @@
       (a, b) => (a.distanceM ?? 0) - (b.distanceM ?? 0),
     );
 
+    const splitLines = ordered.filter((l) => l.lineType !== 'start');
+    let prevAlong = 0;
+    const segments = splitLines.map((line) => {
+      const along = markerAlongM(line, course);
+      const seg = { line, from: prevAlong, to: along ?? prevAlong };
+      if (along != null) prevAlong = along;
+      return seg;
+    });
+
     const deviceIds = visibleDeviceIds();
     if (!deviceIds.length) {
       el.innerHTML =
@@ -988,8 +1031,7 @@
 
     let html =
       '<table class="course-view-table"><thead><tr><th>Device</th><th>Start</th>';
-    for (const line of ordered) {
-      if (line.lineType === 'start') continue;
+    for (const line of splitLines) {
       const label =
         line.distanceM != null
           ? `${Math.round(
@@ -1003,7 +1045,6 @@
     html += '<th>Pace</th><th>Rating</th><th></th></tr></thead><tbody>';
 
     for (const deviceId of deviceIds) {
-      const crossed = crossingsByDevice.get(deviceId) || new Map();
       const live = liveByDevice.get(deviceId) || {};
       const tStart = getEffectiveStartMs(deviceId, course);
       const rolling = raceStartByDevice.get(deviceId);
@@ -1011,17 +1052,24 @@
         ? rolling?.confirmed
           ? `${formatClock(tStart)} ↺`
           : formatClock(tStart)
-        : '—';
+        : rollingStartEnabled && prognosticThresholdMps(deviceId, live.athleteId) != null
+          ? '↺ pending'
+          : '—';
       html += `<tr><td><span class="course-view-table__dot" style="background:${colorForDevice(deviceId)}"></span><strong>${esc(deviceId)}</strong></td>`;
       html += `<td>${startLabel}</td>`;
-      for (const line of ordered) {
-        if (line.lineType === 'start') continue;
-        const t = crossed.get(line.id);
+      let prevCrossingMs = tStart;
+      for (const seg of segments) {
+        const t = crossingTimeForLine(deviceId, seg.line, course);
         if (!t || !tStart) {
           html += '<td>—</td>';
           continue;
         }
-        html += `<td>${formatElapsed(t - tStart)}</td>`;
+        const segDistM = seg.to - seg.from;
+        const segElapsedMs = prevCrossingMs != null ? t - prevCrossingMs : null;
+        html += `<td>${esc(
+          segmentSplitCell(t - tStart, segDistM, segElapsedMs, deviceId, live.athleteId),
+        )}</td>`;
+        prevCrossingMs = t;
       }
       const spd = live.speedMps;
       html += `<td>${Number.isFinite(spd) && spd > 0 ? formatSpeedDisplay(spd, deviceId, live.athleteId) : '—'}</td>`;
