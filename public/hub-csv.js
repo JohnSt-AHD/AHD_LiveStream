@@ -30,13 +30,15 @@ function extractCodeFromUrl(url) {
 }
 
 function buildCsvUrl(code, fileId) {
-    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    const c = normalizeRegattaCode(code);
+    if (!c) return '';
     return `${ROWIT_ALTITUDE_BASE}/${c}/${fileId}.csv`;
 }
 
 /** Try l.rowit.nz first, then rowit.nz (some regattas e.g. cnzb2026 publish results there). */
 function buildCsvUrlCandidates(code, fileId) {
-    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    const c = normalizeRegattaCode(code);
+    if (!c) return [];
     return ROWIT_ALTITUDE_BASES.map((base) => `${base}/${c}/${fileId}.csv`);
 }
 
@@ -69,14 +71,19 @@ function loadRegattaCode() {
     } catch {
         /* ignore */
     }
-    return DEFAULT_REGATTA_CODE;
+    return '';
 }
 
 function saveRegattaCode(code) {
-    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
+    const c = normalizeRegattaCode(code);
     try {
-        localStorage.setItem(LS_REGATTA_CODE, c);
-        localStorage.setItem(LS_CSV_URLS, JSON.stringify(urlsFromRegattaCode(c)));
+        if (c) {
+            localStorage.setItem(LS_REGATTA_CODE, c);
+            localStorage.setItem(LS_CSV_URLS, JSON.stringify(urlsFromRegattaCode(c)));
+        } else {
+            localStorage.removeItem(LS_REGATTA_CODE);
+            localStorage.removeItem(LS_CSV_URLS);
+        }
     } catch {
         /* ignore */
     }
@@ -86,8 +93,7 @@ function saveRegattaCode(code) {
 function getRegattaCode() {
     const input = document.getElementById('hubRegattaCode');
     if (input) {
-        const v = normalizeRegattaCode(input.value);
-        if (v) return v;
+        return normalizeRegattaCode(input.value);
     }
     return loadRegattaCode();
 }
@@ -97,14 +103,14 @@ function collectValues() {
 }
 
 function getCsvUrl(id) {
-    return collectValues()[id] || buildCsvUrl(DEFAULT_REGATTA_CODE, id);
+    return collectValues()[id] || '';
 }
 
 function updateCsvTitle(code) {
     const title = document.getElementById('hub-csv-title');
     if (!title) return;
-    const c = normalizeRegattaCode(code) || DEFAULT_REGATTA_CODE;
-    title.textContent = `RowIT CSV data (${c.toUpperCase()})`;
+    const c = normalizeRegattaCode(code);
+    title.textContent = c ? `RowIT CSV data (${c.toUpperCase()})` : 'RowIT CSV data';
 }
 
 function setStatus(row, state, message) {
@@ -175,12 +181,14 @@ async function checkRow(row) {
 
 function refreshCsvRows(code) {
     const c = saveRegattaCode(code);
-    const urls = urlsFromRegattaCode(c);
+    const urls = c ? urlsFromRegattaCode(c) : {};
     updateCsvTitle(c);
 
     const preview = document.getElementById('hubCsvBasePreview');
     if (preview) {
-        preview.textContent = `${ROWIT_ALTITUDE_BASE}/${c}/`;
+        preview.textContent = c
+            ? `${ROWIT_ALTITUDE_BASE}/${c}/`
+            : `${ROWIT_ALTITUDE_BASE}/…/`;
     }
 
     const list = document.getElementById('hubCsvList');
@@ -189,10 +197,21 @@ function refreshCsvRows(code) {
     list.querySelectorAll('.hub-csv-row').forEach((row) => {
         const id = row.dataset.csvId;
         const urlEl = row.querySelector('.hub-csv-url');
-        const url = urls[id];
-        if (url) {
-            row.dataset.csvUrl = url;
-            if (urlEl) urlEl.textContent = url.replace(`${ROWIT_ALTITUDE_BASE}/${c}/`, '');
+        const status = row.querySelector('.hub-csv-status');
+        const url = urls[id] || '';
+        row.dataset.csvUrl = url;
+        if (urlEl) {
+            urlEl.textContent = c ? `${id}.csv` : 'Enter a regatta code';
+            urlEl.title = url || 'Enter a regatta code to build CSV links';
+        }
+        if (!c && status) {
+            status.classList.remove(
+                'hub-csv-status--ok',
+                'hub-csv-status--fail',
+                'hub-csv-status--pending',
+            );
+            status.textContent = '–';
+            status.title = 'Enter a regatta code';
         }
     });
 }
@@ -267,7 +286,9 @@ function initHubCsv() {
         if (codeInput) codeInput.value = c;
         refreshCsvRows(c);
         notifyUrlsChanged();
-        list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+        if (c) {
+            list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+        }
     };
 
     if (codeInput) {
@@ -279,6 +300,7 @@ function initHubCsv() {
     if (checkAll) {
         checkAll.addEventListener('click', async () => {
             applyCode();
+            if (!normalizeRegattaCode(codeInput ? codeInput.value : '')) return;
             checkAll.disabled = true;
             for (const row of list.querySelectorAll('.hub-csv-row')) {
                 await checkRow(row);
@@ -288,7 +310,9 @@ function initHubCsv() {
     }
 
     refreshCsvRows(code);
-    list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+    if (code) {
+        list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+    }
     notifyUrlsChanged();
 }
 
