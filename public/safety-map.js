@@ -1130,7 +1130,10 @@ function initMap() {
     liveTrailLayer = L.layerGroup().addTo(map);
 
     if (document.body?.classList.contains('rnz-page')) {
-        window.RnzRowsafeMap = { getMap: () => map };
+        window.RnzRowsafeMap = {
+            getMap: () => map,
+            getDevices: () => devices.slice(),
+        };
     }
 
     if (SAFETY_THEME.enableCourseOverlay) {

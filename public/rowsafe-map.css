@@ -564,6 +564,40 @@ body.rnz-page .rnz-header-inner {
     color: #fff;
 }
 
+.rnz-map-toolbar .rnz-map-day-traces-btn {
+    pointer-events: auto;
+}
+
+.rnz-map-day-traces-btn:disabled {
+    opacity: 0.72;
+    cursor: wait;
+}
+
+.rnz-day-trace-label {
+    background: transparent !important;
+    border: none !important;
+}
+
+.rnz-day-trace-label__chip {
+    display: inline-block;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1.5px solid var(--rnz-trace-color, #38bdf8);
+    background: rgba(8, 18, 32, 0.82);
+    color: var(--rnz-trace-color, #38bdf8);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+}
+
 .rnz-map-follow-btn:active {
     background: var(--rnz-cream);
 }
