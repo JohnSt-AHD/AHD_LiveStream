@@ -239,8 +239,22 @@
               Course
               <select id="courseViewSelect" class="course-view__select" aria-label="Select timing course"></select>
             </label>
+            <label class="course-view__check" title="Race in the opposite direction — finish becomes start">
+              <input type="checkbox" id="courseViewReverse" /> Reverse
+            </label>
+            <label class="course-view__check" title="Start when boat reaches 50% prognostic for 200 m after rest">
+              <input type="checkbox" id="courseViewRollingStart" checked /> Rolling start
+            </label>
+            <button type="button" class="hub-btn hub-btn--ghost" id="courseViewSaveRaceBtn">Save race</button>
+            <label class="course-view__recall-label">
+              Recall
+              <select id="courseViewRecallSelect" class="course-view__select" aria-label="Recall saved race">
+                <option value="">Live timing</option>
+              </select>
+            </label>
+            <button type="button" class="hub-btn hub-btn--ghost" id="courseViewResetBtn">Reset times</button>
             <details class="course-view__options">
-              <summary class="course-view__options-summary">Options</summary>
+              <summary class="course-view__options-summary">More</summary>
               <div class="course-view__options-inner">
                 <label class="course-view__rotate-label" title="Fine-tune course bearing — start line stays fixed">
                   Rotate
@@ -261,20 +275,6 @@
                 <button type="button" class="hub-btn hub-btn--ghost" id="courseViewSaveRotateBtn" disabled>
                   Save rotation
                 </button>
-                <label class="course-view__check" title="Race in the opposite direction — finish becomes start">
-                  <input type="checkbox" id="courseViewReverse" /> Reverse
-                </label>
-                <label class="course-view__check" title="Start when boat reaches 50% prognostic for 200 m after rest">
-                  <input type="checkbox" id="courseViewRollingStart" checked /> Rolling start
-                </label>
-                <button type="button" class="hub-btn hub-btn--ghost" id="courseViewSaveRaceBtn">Save race</button>
-                <label class="course-view__recall-label">
-                  Recall
-                  <select id="courseViewRecallSelect" class="course-view__select" aria-label="Recall saved race">
-                    <option value="">Live timing</option>
-                  </select>
-                </label>
-                <button type="button" class="hub-btn hub-btn--ghost" id="courseViewResetBtn">Reset times</button>
               </div>
             </details>
           </div>

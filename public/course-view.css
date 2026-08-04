@@ -447,15 +447,42 @@ body.course-view-open {
 }
 
 @media (min-width: 721px) {
-  .course-view__header-primary,
-  .course-view__header-toolbar,
-  .course-view__options,
-  .course-view__options-inner {
-    display: contents;
+  .course-view__header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .course-view__header-primary {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 12rem;
+  }
+
+  .course-view__header-toolbar {
+    width: auto;
+    flex: 2 1 28rem;
+    justify-content: flex-end;
+  }
+
+  /* Keep <details> as a real box — display:contents on <details> hides
+     children in Chromium and made Reverse / Save race look missing. */
+  .course-view__options {
+    display: block;
+    position: relative;
   }
 
   .course-view__options-summary {
-    display: none;
+    display: inline-flex;
+  }
+
+  .course-view__options[open] .course-view__options-inner {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 5;
+    min-width: 16rem;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
   }
 
   .course-view__close-btn {
