@@ -919,6 +919,7 @@ function geofenceDrawStyle(g, isMatch) {
 function drawGeofencesOnMap(allGeofences, matchedList) {
     if (!geofenceLayer || !map) return;
     geofenceLayer.clearLayers();
+    if (SAFETY_THEME.showGeofencesOnMap === false) return;
     const matchedIds = new Set(matchedList.map((g) => g.id));
 
     for (const g of Array.isArray(allGeofences) ? allGeofences : []) {

@@ -67,6 +67,7 @@
             enableDeviceColors: true,
             enableTrailToggle: true,
             lsMapTrail: 'rnzRowsafeMapTrail',
+            showGeofencesOnMap: false,
         },
         kri: {
             id: 'kri',
