@@ -152,6 +152,18 @@
         return { ...info, abbr, c1, c2, id: parsed.id };
     }
 
+    function crewLogo(club, extraClass) {
+        const cls = extraClass ? `kp-crew-logo ${extraClass}` : 'kp-crew-logo';
+        if (club?.logoUrl) {
+            const img = document.createElement('img');
+            img.className = cls;
+            img.src = club.logoUrl;
+            img.alt = club.name || '';
+            return img;
+        }
+        return el('span', `${cls} kp-crew-logo--empty`);
+    }
+
     function logoSvg(size, opacity, hat) {
         const wrap = el('div', 'kp-logo');
         const h = Math.round(size * 1.26);
@@ -287,7 +299,7 @@
                 name: parsed[labels.length] || fakeName(race.raceNum || 0, laneNum, 17),
             });
         }
-        return { club: club.name, seats, lane: lane.lane };
+        return { club: club.name, logoUrl: club.logoUrl, seats, lane: lane.lane };
     }
 
     function resultRows(race) {
@@ -305,6 +317,7 @@
                     rank: p.place || i + 1,
                     lane: lane?.lane || '',
                     club: club.name,
+                    logoUrl: club.logoUrl,
                     abbr: club.abbr,
                     time: p.time || '',
                     margin: i === 0 ? '' : '',
@@ -318,6 +331,7 @@
                 rank: i + 1,
                 lane: l.lane,
                 club: club.name,
+                logoUrl: club.logoUrl,
                 abbr: club.abbr,
                 time: '',
                 margin: '',
@@ -432,6 +446,7 @@
             const row = el('div', 'kp-row');
             row.style.animationDelay = `${0.25 + i * 0.14}s`;
             row.appendChild(el('span', 'kp-lane', String(lane.lane)));
+            row.appendChild(crewLogo(club));
             const name = el('span', 'kp-row-club', club.name);
             name.dataset.vgLayoutTarget = 'draw-crew';
             row.appendChild(name);
@@ -463,6 +478,7 @@
                 row.style.animationDelay = `${0.25 + i * 0.14}s`;
                 row.appendChild(el('span', `kp-lane${p.first ? '' : ' kp-lane--rest'}`, String(p.rank)));
                 row.appendChild(el('span', 'kp-row-llane', p.lane ? `L${p.lane}` : ''));
+                row.appendChild(crewLogo(p));
                 const name = el('span', 'kp-row-club', p.club);
                 name.dataset.vgLayoutTarget = 'results-crew';
                 row.appendChild(name);
@@ -539,6 +555,7 @@
         const body = el('div', 'kp-bug-body');
         body.appendChild(liveBadge());
         body.appendChild(chip('Leader'));
+        body.appendChild(crewLogo(club, 'kp-crew-logo--bug'));
         const name = el('span', 'kp-bug-name vg-leader-crew', club.name);
         name.dataset.vgLayout = 'leader-crew';
         body.appendChild(name);
@@ -602,6 +619,7 @@
         const body = el('div', 'kp-drill-body');
         const head = el('div', 'kp-drill-head');
         head.appendChild(chip('Crew'));
+        head.appendChild(crewLogo(crew, 'kp-crew-logo--bug'));
         head.appendChild(el('span', 'kp-drill-club', crew.club));
         head.appendChild(el('span', 'kp-drill-lane', `Lane ${crew.lane}`));
         body.appendChild(head);
@@ -632,6 +650,7 @@
             card.style.animationDelay = `${0.08 + i * 0.06}s`;
             card.appendChild(makeSuit(club.c1, club.c2, 96, `l${i}`));
             card.appendChild(el('span', 'kp-suit-lane', `Lane ${lane.lane}`));
+            card.appendChild(crewLogo(club, 'kp-crew-logo--suit'));
             card.appendChild(el('span', 'kp-suit-club', club.name));
             grid.appendChild(card);
         });
@@ -647,6 +666,7 @@
             const cell = el('div', 'kp-suit-cell');
             cell.style.animationDelay = `${0.1 + i * 0.05}s`;
             cell.appendChild(makeSuit(club.c1, club.c2, size, `sm${size}-${i}`));
+            cell.appendChild(crewLogo(club, 'kp-crew-logo--strip'));
             cell.appendChild(el('span', 'kp-suit-lane', `Lane ${lane.lane}`));
             cell.appendChild(el('span', 'kp-suit-abbr', club.abbr));
             body.appendChild(cell);
@@ -712,6 +732,7 @@
         const root = el('div', 'kp-cvleader');
         const card = el('div', 'kp-cvleader-card');
         card.appendChild(el('span', 'kp-cvleader-lab', 'Leader'));
+        if (lead) card.appendChild(crewLogo(lead, 'kp-crew-logo--bug'));
         card.appendChild(
             el('span', 'kp-cvleader-val vg-leader-crew', lead ? `L${lead.lane} ${lead.abbr}` : '—'),
         );
@@ -726,6 +747,7 @@
             const club = clubOf(lane.code);
             const row = el('div', 'kp-cvdraw-row');
             row.appendChild(el('span', 'kp-lane', String(lane.lane)));
+            row.appendChild(crewLogo(club, 'kp-crew-logo--cv'));
             row.appendChild(el('span', 'kp-row-abbr', club.abbr));
             root.appendChild(row);
         });
@@ -747,6 +769,7 @@
         boats.forEach((b) => {
             const row = el('div', 'kp-track-row');
             row.appendChild(el('span', 'kp-lane', String(b.lane)));
+            row.appendChild(crewLogo(b, 'kp-crew-logo--cv'));
             row.appendChild(el('span', 'kp-suit-abbr', b.abbr));
             const barWrap = el('div', 'kp-track-bar');
             const fill = el('div', b.m === leadM ? 'kp-track-fill kp-track-fill--lead' : 'kp-track-fill');
