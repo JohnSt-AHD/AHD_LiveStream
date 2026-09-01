@@ -8,6 +8,17 @@ const VMIX_PAGES = {
     'beachsprints-milford': 'vmix-beachsprints-milford.html',
 };
 
+const VMIX_KARAPIRO_EXTRA = [
+    { key: 'drill', graphic: 'Drill-down' },
+    { key: 'suits', graphic: 'Rowsuits' },
+    { key: 'suitstrip', graphic: 'Suit strip' },
+    { key: 'lowersuits', graphic: 'L3 + suits' },
+    { key: 'brand', graphic: 'Brand' },
+    { key: 'next', graphic: 'Next race bug' },
+    { key: 'prev', graphic: 'Previous race bug' },
+    { key: 'tracker', graphic: 'Tracker' },
+];
+
 const VMIX_TRIGGERS = [
     { key: 't', graphic: 'Title', desc: 'KRI — title graphic' },
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 1.5s; o fades text and finishes video' },
@@ -110,6 +121,18 @@ function hubRenderVmixGuide() {
                 a.textContent = `${t.graphic} (preview)`;
                 li.appendChild(a);
                 ul.appendChild(li);
+            }
+            if (theme === 'karapiro') {
+                for (const t of VMIX_KARAPIRO_EXTRA) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = `${hubVmixUrl(page, t.key, race)}&autoplay=1`;
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    a.textContent = `${t.graphic} (preview)`;
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                }
             }
             block.appendChild(ul);
             examples.appendChild(block);

@@ -33,10 +33,28 @@ const VG_GRAPHIC_ALIASES = {
     meteo: 'weather',
     k: 'livetracking',
     livetracking: 'livetracking',
+    livetrack: 'livetracking',
     track: 'livetracking',
     tracking: 'livetracking',
     schedule: 'schedule',
     upcoming: 'schedule',
+    drill: 'drill',
+    drilldown: 'drill',
+    crew: 'drill',
+    suits: 'suits',
+    rowsuits: 'suits',
+    suitstrip: 'suitstrip',
+    rowsuitstrip: 'suitstrip',
+    lowersuits: 'lowersuits',
+    l3suits: 'lowersuits',
+    brand: 'brand',
+    watermark: 'brand',
+    nextrace: 'next',
+    next: 'next',
+    previous: 'prev',
+    previousrace: 'prev',
+    prev: 'prev',
+    tracker: 'tracker',
 };
 
 /** Theme-aware shortcut → graphic (KRI / Karāpiro schedule on s). */
@@ -47,6 +65,13 @@ function vgGraphicFromShortcut(key) {
     if (k === 'h' && vgIsCssOverlayTheme()) return 'cvdraw';
     if (k === 'u' && vgIsCssOverlayTheme()) return 'coursescroll';
     if (k === 'm' && vgIsCssOverlayTheme()) return 'weather';
+    if (vgIsKarapiroTheme()) {
+        if (k === 'a') return 'suitstrip';
+        if (k === 'f') return 'lowersuits';
+        if (k === 'b') return 'brand';
+        if (k === 'q') return 'speedchart';
+        if (k === 'y') return 'drill';
+    }
     return VG_GRAPHIC_ALIASES[k] || null;
 }
 
@@ -784,7 +809,7 @@ function vgEnableBrowserPreview() {
     vgFitPreviewStage();
     window.addEventListener('resize', vgFitPreviewStage);
     document.addEventListener('click', (e) => {
-        if (e.target.closest('.vg-layout-panel, input, textarea, select, a, button')) {
+        if (e.target.closest('.vg-layout-panel, .kp-ops, input, textarea, select, a, button')) {
             return;
         }
         const raw = new URLSearchParams(location.search).get('g') || 'l';
@@ -842,6 +867,7 @@ function vgIsWeatherGraphic(graphic) {
 function vgKriUsesCssBackground(graphic) {
     if (!vgIsCssOverlayTheme()) return false;
     const g = graphic ?? vgPlayback.graphic;
+    if (vgKarapiroOwns(g)) return true;
     return (
         !!g &&
         !vgIsSpeedChartGraphic(g) &&
@@ -1354,7 +1380,7 @@ function vgGetOutroFadeMs(graphic) {
 }
 
 function vgGetVideoProfile(graphic) {
-    if (vgIsKarapiroTheme() && vgKriUsesCssBackground(graphic)) {
+    if (vgKarapiroOwns(graphic) || (vgIsKarapiroTheme() && vgKriUsesCssBackground(graphic))) {
         return vgMergePlaybackProfile(graphic, { textInMs: 0 });
     }
     let base;
@@ -1724,6 +1750,10 @@ function vgIsKarapiroTheme() {
     return document.body?.dataset?.vmixTheme === 'karapiro';
 }
 
+function vgKarapiroOwns(graphic) {
+    return vgIsKarapiroTheme() && !!window.VmixKarapiro?.owns(graphic);
+}
+
 function vgIsCssOverlayTheme() {
     return vgIsKriTheme() || vgIsKarapiroTheme();
 }
@@ -1980,13 +2010,16 @@ function vgResetToIdle() {
 
 function vgTriggerIn(graphic) {
     if (vgPlayback.state !== 'idle') return;
-    if (vgIsSpeedGraphic(graphic) && !vgSpeedEnabled()) return;
-    if (vgIsSpeedChartGraphic(graphic) && !vgSpeedChartEnabled()) return;
-    if (vgIsLiveTrackingGraphic(graphic) && !vgLiveTrackingEnabled()) return;
-    if (vgIsCvLeaderGraphic(graphic) && !vgCvLeaderEnabled()) return;
-    if (vgIsCvDrawGraphic(graphic) && !vgCvDrawEnabled()) return;
-    if (vgIsCourseScrollGraphic(graphic) && !vgCourseScrollEnabled()) return;
-    if (vgIsWeatherGraphic(graphic) && !vgWeatherEnabled()) return;
+    const kpOwns = vgKarapiroOwns(graphic);
+    if (!kpOwns) {
+        if (vgIsSpeedGraphic(graphic) && !vgSpeedEnabled()) return;
+        if (vgIsSpeedChartGraphic(graphic) && !vgSpeedChartEnabled()) return;
+        if (vgIsLiveTrackingGraphic(graphic) && !vgLiveTrackingEnabled()) return;
+        if (vgIsCvLeaderGraphic(graphic) && !vgCvLeaderEnabled()) return;
+        if (vgIsCvDrawGraphic(graphic) && !vgCvDrawEnabled()) return;
+        if (vgIsCourseScrollGraphic(graphic) && !vgCourseScrollEnabled()) return;
+        if (vgIsWeatherGraphic(graphic) && !vgWeatherEnabled()) return;
+    }
     if (vgIsScheduleGraphic(graphic) && !vgIsCssOverlayTheme()) return;
 
     vgPlayback.graphic = graphic;
@@ -1994,32 +2027,32 @@ function vgTriggerIn(graphic) {
     vgHideMap();
     vgUpdateBgGraphicClass();
 
-    if (vgIsSpeedChartGraphic(graphic)) {
+    if (!kpOwns && vgIsSpeedChartGraphic(graphic)) {
         vgStartSpeedChartIntro();
         return;
     }
 
-    if (vgIsLiveTrackingGraphic(graphic)) {
+    if (!kpOwns && vgIsLiveTrackingGraphic(graphic)) {
         vgStartLiveTrackingIntro();
         return;
     }
 
-    if (vgIsCvLeaderGraphic(graphic)) {
+    if (!kpOwns && vgIsCvLeaderGraphic(graphic)) {
         vgStartCvLeaderIntro();
         return;
     }
 
-    if (vgIsCvDrawGraphic(graphic)) {
+    if (!kpOwns && vgIsCvDrawGraphic(graphic)) {
         vgStartCvDrawIntro();
         return;
     }
 
-    if (vgIsCourseScrollGraphic(graphic)) {
+    if (!kpOwns && vgIsCourseScrollGraphic(graphic)) {
         vgStartCourseScrollIntro();
         return;
     }
 
-    if (vgIsWeatherGraphic(graphic)) {
+    if (!kpOwns && vgIsWeatherGraphic(graphic)) {
         vgStartWeatherIntro();
         return;
     }
@@ -2048,29 +2081,31 @@ function vgTriggerIn(graphic) {
 
 function vgTriggerOut() {
     const graphic = vgPlayback.graphic;
-    if (vgIsSpeedChartGraphic(graphic)) {
-        vgStartSpeedChartOutro();
-        return;
-    }
-    if (vgIsLiveTrackingGraphic(graphic)) {
-        vgStartLiveTrackingOutro();
-        return;
-    }
-    if (vgIsCvLeaderGraphic(graphic)) {
-        vgStartCvLeaderOutro();
-        return;
-    }
-    if (vgIsCvDrawGraphic(graphic)) {
-        vgStartCvDrawOutro();
-        return;
-    }
-    if (vgIsCourseScrollGraphic(graphic)) {
-        vgStartCourseScrollOutro();
-        return;
-    }
-    if (vgIsWeatherGraphic(graphic)) {
-        vgStartWeatherOutro();
-        return;
+    if (!vgKarapiroOwns(graphic)) {
+        if (vgIsSpeedChartGraphic(graphic)) {
+            vgStartSpeedChartOutro();
+            return;
+        }
+        if (vgIsLiveTrackingGraphic(graphic)) {
+            vgStartLiveTrackingOutro();
+            return;
+        }
+        if (vgIsCvLeaderGraphic(graphic)) {
+            vgStartCvLeaderOutro();
+            return;
+        }
+        if (vgIsCvDrawGraphic(graphic)) {
+            vgStartCvDrawOutro();
+            return;
+        }
+        if (vgIsCourseScrollGraphic(graphic)) {
+            vgStartCourseScrollOutro();
+            return;
+        }
+        if (vgIsWeatherGraphic(graphic)) {
+            vgStartWeatherOutro();
+            return;
+        }
     }
     const video = vgGetBgVideo();
     const isThemeVideo =
@@ -2136,6 +2171,32 @@ function vgPrepareContent(graphic, raceParam) {
     const err = document.getElementById('vgError');
     if (!layer) return;
     if (graphic !== 'schedule') vgStopScheduleClock();
+    if (vgKarapiroOwns(graphic)) {
+        const race = vgFindRace(raceParam);
+        const g = window.VmixKarapiro.canon(graphic);
+        if (
+            !race &&
+            g !== 'title' &&
+            g !== 'schedule' &&
+            g !== 'weather' &&
+            g !== 'brand' &&
+            g !== 'coursescroll'
+        ) {
+            if (err) {
+                err.hidden = false;
+                err.textContent = 'No race data — check regatta code and daysheet.';
+            }
+            layer.replaceChildren();
+            return;
+        }
+        if (err) err.hidden = true;
+        layer.replaceChildren();
+        window.VmixKarapiro.render(layer, graphic, race);
+        vgSyncLayerVisibility(layer);
+        vgApplySavedLayout(graphic);
+        window.VmixKarapiro.paintOps?.();
+        return;
+    }
     if (vgIsSpeedGraphic(graphic) || vgIsSpeedChartGraphic(graphic) || vgIsLiveTrackingGraphic(graphic) || vgIsCvLeaderGraphic(graphic) || vgIsWeatherGraphic(graphic)) return;
 
     const race = vgFindRace(raceParam);
@@ -3215,6 +3276,7 @@ function vgBindKeyboard() {
     document.addEventListener('keydown', (e) => {
         if (e.repeat) return;
         if (e.target.closest('input, textarea, select')) return;
+        if (vgIsKarapiroTheme() && window.VmixKarapiro?.onKey(e)) return;
         const key = e.key.toLowerCase();
         if (key === 'o') {
             e.preventDefault();
@@ -3342,6 +3404,7 @@ async function vgReload() {
 
 async function vgInit() {
     vgEnableBrowserPreview();
+    window.VmixKarapiro?.init?.();
     vgInitLiveRaceOverride();
     vgLeaderLane = vgGetLeaderLane();
     vgResetToIdle();
@@ -3349,6 +3412,7 @@ async function vgInit() {
 
     try {
         await vgReload();
+        window.VmixKarapiro?.paintOps?.();
     } catch (e) {
         const err = document.getElementById('vgError');
         if (err) {
