@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+    <title>vMix — Karāpiro (Ged)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="vmix-graphics.css?v=21">
+    <link rel="stylesheet" href="vmix-karapiro.css">
+    <link rel="stylesheet" href="vmix-kri-weather.css">
+    <link rel="stylesheet" href="vmix-layout-editor.css">
+</head>
+<body class="vmix-page" data-vmix-theme="karapiro">
+    <div class="vg-stage">
+        <div class="vg-bg" id="vgBg" aria-hidden="true"></div>
+        <div class="vg-layer" id="vgLayer"></div>
+        <p class="vg-error" id="vgError" hidden></p>
+    </div>
+    <script src="hub-csv.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="vmix-layout.js?v=4"></script>
+    <script src="vmix-gt-import.js?v=4"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="kri-rowing-course-overlay.js"></script>
+    <script src="cv-position-client.js?v=4"></script>
+    <script src="cv-boat-map.js"></script>
+    <script src="vmix-kri-speed-chart.js"></script>
+    <script src="vmix-kri-live-tracking.js"></script>
+    <script src="vmix-kri-cv-leader.js"></script>
+    <script src="vmix-kri-cv-draw.js?v=4"></script>
+    <script src="vmix-kri-course-scroll.js?v=3"></script>
+    <script src="vmix-kri-weather.js"></script>
+    <script src="vmix-graphics.js?v=17"></script>
+    <script src="vmix-layout-editor.js?v=4"></script>
+</body>
+</html>

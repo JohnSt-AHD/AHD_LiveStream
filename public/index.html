@@ -47,7 +47,7 @@
             <div class="hub-dashboard-sidebar">
             <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
                 <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
-                <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. A ✓ means the CSV responded. Daily snapshots are kept in <code class="hub-csv-code-inline">data/archives/</code> if RowIT links go offline.</p>
+                <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. On a local overlay server, CSVs are saved under <code class="hub-csv-code-inline">data/rowit-live/</code> and refreshed every 1 min. Use <strong>Update results now</strong> to pull results immediately.</p>
                 <label class="hub-regatta-code-field">
                     <span class="hub-regatta-code-label">Regatta code</span>
                     <input
@@ -65,7 +65,9 @@
                 <ul id="hubCsvList" class="hub-csv-list"></ul>
                 <div class="hub-csv-actions">
                     <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
+                    <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefresh">Update results now</button>
                 </div>
+                <p class="hub-csv-cache" id="hubRowitCacheStatus">Local copies download on first load, then refresh every 1 min.</p>
             </section>
 
             <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
@@ -129,9 +131,10 @@
                         <input type="number" id="hubClockOffset" class="hub-clock-input hub-clock-input--num" value="0" step="1" aria-label="Regatta delay offset in minutes">
                     </label>
                     <label class="hub-clock-refresh">
-                        <input type="checkbox" id="hubAutoRefresh">
+                        <input type="checkbox" id="hubAutoRefresh" checked>
                         Auto-refresh daysheet &amp; results every 1 min
                     </label>
+                    <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefreshBoard">Update results now</button>
                 </div>
 
                 <p class="hub-clock-display" id="hubClockDisplay" aria-live="polite"></p>
@@ -322,6 +325,16 @@
                 </details>
 
                 <ul class="hub-links hub-links--vmix">
+                    <li>
+                        <a class="hub-link-card hub-link-card--vmix hub-link-card--karapiro" data-vmix-page="vmix-karapiro.html" data-vmix-graphic="l" href="vmix-karapiro.html?g=l">
+                            <span class="hub-link-icon" aria-hidden="true">🎄</span>
+                            <span class="hub-link-text">
+                                <h3>Karāpiro (Ged)</h3>
+                                <p>Ged-style boards, fast CSS motion, same RowIT data. KRI look stays on the KRI card.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
                     <li>
                         <a class="hub-link-card hub-link-card--vmix" data-vmix-page="vmix-kri.html" data-vmix-graphic="l" href="vmix-kri.html?g=l">
                             <span class="hub-link-icon" aria-hidden="true">🎬</span>

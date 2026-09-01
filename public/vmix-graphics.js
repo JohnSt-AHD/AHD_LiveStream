@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = leader · x = CV leader (KRI) · h = CV draw boats (KRI) · u = course underlay (KRI) · s = schedule (KRI) · v = speed chart (KRI) · k = live tracking (KRI) · m = weather (KRI) · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = leader · x = CV leader (KRI/Karāpiro) · h = CV draw boats · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -39,14 +39,14 @@ const VG_GRAPHIC_ALIASES = {
     upcoming: 'schedule',
 };
 
-/** Theme-aware shortcut → graphic (KRI schedule on s). */
+/** Theme-aware shortcut → graphic (KRI / Karāpiro schedule on s). */
 function vgGraphicFromShortcut(key) {
     const k = String(key || '').toLowerCase();
-    if (k === 's' && vgIsKriTheme()) return 'schedule';
-    if (k === 'x' && vgIsKriTheme()) return 'cvleader';
-    if (k === 'h' && vgIsKriTheme()) return 'cvdraw';
-    if (k === 'u' && vgIsKriTheme()) return 'coursescroll';
-    if (k === 'm' && vgIsKriTheme()) return 'weather';
+    if (k === 's' && vgIsCssOverlayTheme()) return 'schedule';
+    if (k === 'x' && vgIsCssOverlayTheme()) return 'cvleader';
+    if (k === 'h' && vgIsCssOverlayTheme()) return 'cvdraw';
+    if (k === 'u' && vgIsCssOverlayTheme()) return 'coursescroll';
+    if (k === 'm' && vgIsCssOverlayTheme()) return 'weather';
     return VG_GRAPHIC_ALIASES[k] || null;
 }
 
@@ -59,6 +59,7 @@ const VG_HOLD_MS = 3000;
 const VG_OUTRO_MS = 3000;
 const VG_KRI_FADE_MS = 1500;
 const VG_MILFORD_FADE_MS = 500;
+const VG_KARAPIRO_FADE_MS = 700;
 
 const vgPlayback = {
     state: 'idle',
@@ -73,6 +74,10 @@ const vgPlayback = {
 const VG_THEMES = {
     kri: {
         label: 'KRI',
+        backgrounds: {},
+    },
+    karapiro: {
+        label: 'Karāpiro (Ged)',
         backgrounds: {},
     },
     'rnz-milford': {
@@ -747,6 +752,56 @@ function vgIsLayoutDevMode() {
     );
 }
 
+/** Dark, fit-to-window preview when not in a 1920×1080 vMix Browser. */
+function vgIsBrowserPreview() {
+    const p = new URLSearchParams(location.search);
+    if (p.get('preview') === '0') return false;
+    if (p.get('preview') === '1') return true;
+    return window.innerWidth < 1920 || window.innerHeight < 1080;
+}
+
+function vgFitPreviewStage() {
+    if (!document.documentElement.classList.contains('vg-preview')) return;
+    const stage = document.querySelector('.vg-stage');
+    if (!stage) return;
+    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    const x = (window.innerWidth - 1920 * scale) / 2;
+    const y = (window.innerHeight - 1080 * scale) / 2;
+    stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+}
+
+function vgEnableBrowserPreview() {
+    if (!vgIsBrowserPreview()) return;
+    document.documentElement.classList.add('vg-preview');
+    document.body.classList.add('vg-preview');
+    if (!document.querySelector('.vg-preview-hint')) {
+        const hint = document.createElement('p');
+        hint.className = 'vg-preview-hint';
+        hint.textContent =
+            'Click anywhere to play the graphic · L play · O out · C clear';
+        document.body.appendChild(hint);
+    }
+    vgFitPreviewStage();
+    window.addEventListener('resize', vgFitPreviewStage);
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.vg-layout-panel, input, textarea, select, a, button')) {
+            return;
+        }
+        const raw = new URLSearchParams(location.search).get('g') || 'l';
+        const graphic = vgResolveGraphicAlias(raw);
+        if (!graphic) return;
+        if (vgPlayback.state !== 'idle') vgTriggerClear();
+        vgTriggerIn(graphic);
+        const video = vgGetBgVideo();
+        if (video) {
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {});
+            }
+        }
+    });
+}
+
 function vgThemeConfig() {
     return VG_THEMES[vgResolveTheme()] || VG_THEMES.kri;
 }
@@ -783,9 +838,9 @@ function vgIsWeatherGraphic(graphic) {
     return graphic === 'weather';
 }
 
-/** KRI graphics use CSS panels (no PNG backgrounds), except speed chart and weather overlays. */
+/** KRI / Karāpiro graphics use CSS panels (no PNG/WebM backgrounds). */
 function vgKriUsesCssBackground(graphic) {
-    if (!vgIsKriTheme()) return false;
+    if (!vgIsCssOverlayTheme()) return false;
     const g = graphic ?? vgPlayback.graphic;
     return (
         !!g &&
@@ -808,16 +863,16 @@ function vgKriScheduleCssLayout(graphic) {
 }
 
 function vgSpeedChartEnabled() {
-    return vgIsKriTheme() && !!window.KriVmixSpeedChart;
+    return vgIsCssOverlayTheme() && !!window.KriVmixSpeedChart;
 }
 
 function vgCvLeaderEnabled() {
-    return vgIsKriTheme() && !!window.KriVmixCvLeader && !!window.AltitudeHdCvOverlay;
+    return vgIsCssOverlayTheme() && !!window.KriVmixCvLeader && !!window.AltitudeHdCvOverlay;
 }
 
 function vgCvDrawEnabled() {
     return (
-        vgIsKriTheme() &&
+        vgIsCssOverlayTheme() &&
         !!window.KriVmixCvDraw &&
         !!window.AltitudeHdCvBoatMap &&
         !!window.AltitudeHdCvOverlay
@@ -825,15 +880,15 @@ function vgCvDrawEnabled() {
 }
 
 function vgLiveTrackingEnabled() {
-    return vgIsKriTheme() && !!window.KriVmixLiveTracking && !!window.KriVmixSpeedChart;
+    return vgIsCssOverlayTheme() && !!window.KriVmixLiveTracking && !!window.KriVmixSpeedChart;
 }
 
 function vgCourseScrollEnabled() {
-    return vgIsKriTheme() && !!window.KriVmixCourseScroll;
+    return vgIsCssOverlayTheme() && !!window.KriVmixCourseScroll;
 }
 
 function vgWeatherEnabled() {
-    return vgIsKriTheme() && !!window.KriVmixWeather;
+    return vgIsCssOverlayTheme() && !!window.KriVmixWeather;
 }
 
 function vgMaybeLoopSpeedChart() {
@@ -1294,10 +1349,14 @@ function vgGetOutroFadeMs(graphic) {
     const custom = vgGetLayoutPlayback(graphic);
     const n = custom?.outroMs;
     if (Number.isFinite(n) && n > 0) return n;
+    if (vgIsKarapiroTheme()) return VG_KARAPIRO_FADE_MS;
     return VG_MILFORD_FADE_MS;
 }
 
 function vgGetVideoProfile(graphic) {
+    if (vgIsKarapiroTheme() && vgKriUsesCssBackground(graphic)) {
+        return vgMergePlaybackProfile(graphic, { textInMs: 0 });
+    }
     let base;
     if (graphic === 'leader') {
         base = vgIsKriTheme()
@@ -1592,11 +1651,18 @@ function vgPauseVideoAtHoldPoint(video) {
 function vgHoldVideoAtProfilePoint(video, graphic) {
     if (!video) return;
     const profile = vgGetVideoProfile(graphic);
-    if (Number.isFinite(profile.pauseAtMs) && profile.pauseAtMs > 0) {
-        vgSeekVideoAndPause(video, profile.pauseAtMs);
-    } else {
+    const pauseAt = Number(profile.pauseAtMs);
+    if (!Number.isFinite(pauseAt) || pauseAt <= 0) {
         vgPauseVideoAtHoldPoint(video);
+        return;
     }
+    const targetSec = pauseAt / 1000;
+    /* Some VP9 WebMs cannot seek and would snap back to a blank frame 0. */
+    if (video.currentTime >= targetSec - 0.08) {
+        vgPauseVideoAtHoldPoint(video);
+        return;
+    }
+    vgSeekVideoAndPause(video, pauseAt);
 }
 
 /** Dev / layout editor: ms into the WebM to show as the hold frame. */
@@ -1652,6 +1718,14 @@ function vgDevSeekVideoHold(pauseMsOverride) {
 
 function vgIsKriTheme() {
     return document.body?.dataset?.vmixTheme === 'kri';
+}
+
+function vgIsKarapiroTheme() {
+    return document.body?.dataset?.vmixTheme === 'karapiro';
+}
+
+function vgIsCssOverlayTheme() {
+    return vgIsKriTheme() || vgIsKarapiroTheme();
 }
 
 /** KRI PNG graphics: background and text fade in together on hold. */
@@ -1750,7 +1824,13 @@ function vgStartVideoGraphicIntro(graphic, video) {
 
         const playPromise = video.play();
         if (playPromise && typeof playPromise.catch === 'function') {
-            playPromise.catch(() => {});
+            playPromise.catch(() => {
+                /* Autoplay blocked (normal browser) — still show the hold frame. */
+                if (vgPlayback.state !== 'intro' || vgPlayback.graphic !== graphic) {
+                    return;
+                }
+                vgHoldVideoAtProfilePoint(video, graphic);
+            });
         }
 
         const safetyMs =
@@ -1866,7 +1946,7 @@ function vgStartOutroPlayback(isVideo, video) {
     const bg = vgGetBgEl();
     if (bg) bg.classList.add('vg-bg--outro');
 
-    if (vgIsKriTheme()) {
+    if (vgIsKriTheme() || vgIsKarapiroTheme()) {
         vgStartKriOutroFade();
         const outroMs = vgGetOutroFadeMs(graphic);
         vgPlayback.outroTimer = setTimeout(done, outroMs + 100);
@@ -1907,7 +1987,7 @@ function vgTriggerIn(graphic) {
     if (vgIsCvDrawGraphic(graphic) && !vgCvDrawEnabled()) return;
     if (vgIsCourseScrollGraphic(graphic) && !vgCourseScrollEnabled()) return;
     if (vgIsWeatherGraphic(graphic) && !vgWeatherEnabled()) return;
-    if (vgIsScheduleGraphic(graphic) && !vgIsKriTheme()) return;
+    if (vgIsScheduleGraphic(graphic) && !vgIsCssOverlayTheme()) return;
 
     vgPlayback.graphic = graphic;
     vgSetStageState('intro');
@@ -2181,6 +2261,236 @@ function vgKriCreateLowerSponsorBox() {
     return box;
 }
 
+function vgKpFestive() {
+    const p = new URLSearchParams(location.search);
+    return p.get('festive') !== '0';
+}
+
+function vgKpRaceChip(race) {
+    const n = race?.raceNum ?? race?.race ?? '';
+    return n === '' ? 'R—' : `R${n}`;
+}
+
+function vgKpAbbr(code) {
+    const club = vgParseClubCode(code);
+    const id = (club.id || '').toUpperCase();
+    return id ? id.slice(0, 4) : '—';
+}
+
+function vgKpLogo(size) {
+    const wrap = vgEl('div', 'kp-logo');
+    wrap.innerHTML =
+        `<svg viewBox="0 0 100 126" width="${size}" height="${Math.round(size * 1.26)}" aria-hidden="true">` +
+        ['#4a97ee', '#2e7de0', '#1b5cb4', '#12325e']
+            .map((c, r) => {
+                const y = r * 26;
+                return (
+                    `<path d="M2 ${4 + y} L38 ${40 + y} L74 ${4 + y}" stroke="${c}" stroke-width="9" fill="none"/>` +
+                    `<path d="M26 ${4 + y} L62 ${40 + y} L98 ${4 + y}" stroke="${c}" stroke-width="9" fill="none"/>`
+                );
+            })
+            .join('') +
+        '</svg>';
+    return wrap;
+}
+
+function vgKpSponsorBox() {
+    const box = vgEl('div', 'kp-lower-sponsor');
+    box.appendChild(vgEl('span', 'kp-lower-sponsor-label', 'Race sponsor'));
+    const src = vgKriRandomSponsorUrl();
+    if (src) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '';
+        box.appendChild(img);
+    }
+    return box;
+}
+
+function vgKpRowLogo(info) {
+    if (info.logoUrl) {
+        const img = document.createElement('img');
+        img.className = 'kp-row-logo';
+        img.src = info.logoUrl;
+        img.alt = '';
+        return img;
+    }
+    return vgEl('span', 'kp-row-logo kp-row-logo--empty');
+}
+
+function vgRenderKarapiroTitle(layer, race) {
+    const day = race
+        ? vgFormatDayLabel(race.dayLabel)
+        : vgState.races[0]
+          ? vgFormatDayLabel(vgState.races[0].dayLabel)
+          : '';
+    const root = vgEl('div', 'kp-title');
+    root.appendChild(vgKpLogo(130));
+    root.appendChild(vgEl('h1', 'kp-title-word', 'Karāpiro Rowing'));
+    root.appendChild(
+        vgEl('p', 'kp-title-kicker', vgKpFestive() ? 'Christmas Regatta' : 'Lake Karāpiro'),
+    );
+    const metaBits = ['Lake Karāpiro', day, '2000m'].filter(Boolean);
+    root.appendChild(vgEl('p', 'kp-title-meta', metaBits.join(' · ')));
+    const live = vgEl('p', 'kp-title-live');
+    live.appendChild(vgEl('span', 'kp-live-dot'));
+    live.appendChild(document.createTextNode('Live from Lake Karāpiro'));
+    root.appendChild(live);
+    layer.appendChild(root);
+}
+
+function vgRenderKarapiroLower(layer, race) {
+    const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+    const roundLabel = vgFormatRoundLabel(race.round, race.division);
+    const subParts = [
+        roundLabel,
+        vgFormatScheduleTime(race.startAt),
+        race.progression,
+    ].filter(Boolean);
+    const wrap = vgEl('div', 'kp-lower');
+    wrap.dataset.vgLayout = 'lower';
+    const chip = vgEl('div', 'kp-chip', vgKpRaceChip(race));
+    chip.dataset.vgLayout = 'lower-meta';
+    wrap.appendChild(chip);
+    const main = vgEl('div', 'kp-lower-main');
+    const eventEl = vgEl('h2', 'kp-lower-event', fullName);
+    eventEl.dataset.vgLayout = 'lower-event';
+    main.appendChild(eventEl);
+    if (subParts.length) {
+        const sub = vgEl('p', 'kp-lower-sub', subParts.join(' · '));
+        sub.dataset.vgLayout = 'lower-race';
+        main.appendChild(sub);
+    }
+    wrap.appendChild(main);
+    wrap.appendChild(vgKpSponsorBox());
+    layer.appendChild(wrap);
+}
+
+function vgRenderKarapiroBoard(layer, race, mode) {
+    const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+    const isResults = mode === 'results';
+    const isSchedule = mode === 'schedule';
+    const board = vgEl('div', 'kp-board');
+    const head = vgEl('div', 'kp-board-head');
+    head.dataset.vgLayout = isResults ? 'results-head' : isSchedule ? 'schedule-head' : 'draw-head';
+    head.appendChild(vgEl('div', 'kp-chip', vgKpRaceChip(race)));
+    const copy = vgEl('div', 'kp-board-copy');
+    copy.appendChild(
+        vgEl(
+            'p',
+            'kp-board-kicker',
+            isResults ? 'Results' : isSchedule ? 'Upcoming' : 'Start list',
+        ),
+    );
+    copy.appendChild(vgEl('h2', 'kp-board-title', isSchedule ? 'Schedule' : fullName));
+    const meta = isSchedule
+        ? vgScheduleMetaText()
+        : `Race ${race.race} · ${vgFormatRoundLabel(race.round, race.division) || race.round || ''}`.trim();
+    copy.appendChild(vgEl('p', 'kp-board-meta', meta));
+    head.appendChild(copy);
+    board.appendChild(head);
+
+    const list = vgEl('ul', 'kp-rows');
+    list.dataset.vgLayout = isResults ? 'results-lanes' : isSchedule ? 'schedule-rows' : 'draw-lanes';
+
+    if (isSchedule) {
+        const { current, upcoming } = vgGetUpcomingRaces(vgGetRaceParam(), 10);
+        if (!upcoming.length) {
+            list.appendChild(vgEl('li', 'kp-row kp-empty', 'No races on daysheet'));
+        } else {
+            for (const row of upcoming) {
+                const li = vgEl('li', 'kp-row kp-row--schedule');
+                if (current && row.race === current.race && row.raceNum === current.raceNum) {
+                    li.classList.add('kp-row--current');
+                }
+                li.appendChild(vgEl('span', 'kp-sched-time', vgFormatScheduleTime(row.startAt)));
+                li.appendChild(vgEl('span', 'kp-sched-race', `Race ${row.race}`));
+                li.appendChild(
+                    vgEl('span', 'kp-row-club', vgExpandEventName(row.eventType, vgState.lookup)),
+                );
+                const chip = vgEl(
+                    'span',
+                    'kp-sched-chip',
+                    current && row.race === current.race ? 'On water' : vgFormatRoundLabel(row.round, row.division) || '—',
+                );
+                li.appendChild(chip);
+                list.appendChild(li);
+            }
+        }
+    } else if (isResults) {
+        const result = vgState.results.get(race.raceNum);
+        if (result?.placings?.length) {
+            result.placings.forEach((p, i) => {
+                const club = vgParseClubCode(p.competitor);
+                const info = vgClubInfo(club.id, vgState.lookup);
+                const li = vgEl('li', `kp-row kp-row--results${i === 0 ? ' kp-row--first' : ''}`);
+                li.appendChild(vgEl('span', 'kp-lane', String(p.place)));
+                li.appendChild(vgKpRowLogo(info));
+                const name = vgEl('span', 'kp-row-club', info.name);
+                name.dataset.vgLayoutTarget = 'results-crew';
+                li.appendChild(name);
+                li.appendChild(vgEl('span', 'kp-row-time', p.time || ''));
+                list.appendChild(li);
+            });
+        } else {
+            list.appendChild(vgEl('li', 'kp-row kp-empty', 'Results not available'));
+        }
+    } else {
+        for (const lane of race.lanes) {
+            if (!lane.code) continue;
+            const club = vgParseClubCode(lane.code);
+            const info = vgClubInfo(club.id, vgState.lookup);
+            const li = vgEl('li', 'kp-row');
+            li.appendChild(vgEl('span', 'kp-lane', String(lane.lane)));
+            li.appendChild(vgKpRowLogo(info));
+            const name = vgEl('span', 'kp-row-club', info.name);
+            name.dataset.vgLayoutTarget = 'draw-crew';
+            li.appendChild(name);
+            li.appendChild(vgEl('span', 'kp-row-abbr', vgKpAbbr(lane.code)));
+            list.appendChild(li);
+        }
+    }
+    board.appendChild(list);
+    const foot = vgEl('div', 'kp-board-foot');
+    const laneCount = (race.lanes || []).filter((l) => l.code).length;
+    foot.appendChild(
+        vgEl('span', '', `Lake Karāpiro · 2000m${laneCount ? ` · ${laneCount} lanes` : ''}`),
+    );
+    board.appendChild(foot);
+    layer.appendChild(board);
+}
+
+function vgRenderKarapiroLeader(layer, race, laneNum) {
+    const entry = vgFindDrawLane(race, laneNum);
+    if (!entry) return;
+    const club = vgParseClubCode(entry.code);
+    const info = vgClubInfo(club.id, vgState.lookup);
+    const wrap = vgEl('div', 'vg-leader-wrap');
+    wrap.dataset.vgLayout = 'leader-wrap';
+    const card = vgEl('div', 'kp-leader');
+    if (info.logoUrl) {
+        const img = document.createElement('img');
+        img.className = 'kp-leader-logo';
+        img.src = info.logoUrl;
+        img.alt = '';
+        img.dataset.vgLayout = 'leader-logo';
+        card.appendChild(img);
+    }
+    const copy = vgEl('div', 'kp-leader-copy');
+    const kicker = vgEl('p', 'kp-leader-kicker', 'Leader');
+    kicker.dataset.vgLayout = 'leader-badge';
+    copy.appendChild(kicker);
+    const name = vgEl('p', 'kp-leader-name vg-leader-crew', info.name);
+    name.dataset.vgLayout = 'leader-crew';
+    copy.appendChild(name);
+    const lane = vgEl('p', 'kp-leader-lane', `Lane ${laneNum}`);
+    lane.dataset.vgLayout = 'leader-badge-lane';
+    copy.appendChild(lane);
+    card.appendChild(copy);
+    wrap.appendChild(card);
+    layer.appendChild(wrap);
+}
+
 function vgKriAppendHead(panel, { kicker, title, meta, layoutId = 'kri-head', parts = null }) {
     const head = vgEl('div', 'vg-kri-head');
     head.dataset.vgLayout = layoutId;
@@ -2268,6 +2578,10 @@ function vgBuildKriResultsLaneRow(entry, lookup) {
 function vgRenderTitle(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--title');
     layer.dataset.vgLayout = 'title';
+    if (vgIsKarapiroTheme()) {
+        vgRenderKarapiroTitle(layer, race);
+        return;
+    }
     const code = vgState.regattaCode.toUpperCase();
     const day = race
         ? vgFormatDayLabel(race.dayLabel)
@@ -2306,6 +2620,10 @@ function vgRenderLower(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--lower');
     layer.dataset.vgLayout = 'lower';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
+    if (vgIsKarapiroTheme()) {
+        vgRenderKarapiroLower(layer, race);
+        return;
+    }
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell({ useMarkLogo: true });
         shell.classList.add('vg-kri-shell--lower');
@@ -2555,6 +2873,11 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
         wrap.classList.add('vg-leader-wrap--fade-in');
     }
 
+    if (vgIsKarapiroTheme()) {
+        vgRenderKarapiroLeader(layer, race, laneNum);
+        return;
+    }
+
     if (vgIsKriTheme()) {
         const card = vgBuildKriLeaderCard(race, laneNum);
         if (!card) return;
@@ -2616,6 +2939,11 @@ function vgRenderDraw(layer, race) {
     layer.dataset.vgLayout = 'draw';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const metaText = `Race ${race.race} · ${race.round}${race.division ? ` · Div ${race.division}` : ''}`;
+
+    if (vgIsKarapiroTheme()) {
+        vgRenderKarapiroBoard(layer, race, 'draw');
+        return;
+    }
 
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell({ useMarkLogo: true });
@@ -2691,6 +3019,12 @@ function vgRenderSchedule(layer, raceParam) {
 
     const { current, upcoming } = vgGetUpcomingRaces(raceParam, 10);
 
+    if (vgIsKarapiroTheme()) {
+        vgRenderKarapiroBoard(layer, current || { race: '', raceNum: '', lanes: [], eventType: '', round: '', division: '' }, 'schedule');
+        vgStartScheduleClock();
+        return;
+    }
+
     const shell = vgKriCreateShell({ useMarkLogo: true });
     const panel = vgKriCreatePanel('schedule');
 
@@ -2760,6 +3094,11 @@ function vgRenderResults(layer, race) {
     layer.dataset.vgLayout = 'results';
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     const metaText = `Race ${race.race} · ${race.round} · Results`;
+
+    if (vgIsKarapiroTheme()) {
+        vgRenderKarapiroBoard(layer, race, 'results');
+        return;
+    }
 
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell({ useMarkLogo: true });
@@ -3002,6 +3341,7 @@ async function vgReload() {
 }
 
 async function vgInit() {
+    vgEnableBrowserPreview();
     vgInitLiveRaceOverride();
     vgLeaderLane = vgGetLeaderLane();
     vgResetToIdle();
@@ -3019,6 +3359,30 @@ async function vgInit() {
     }
 
     vgBindRemoteTriggers();
+
+    try {
+        const ch = new BroadcastChannel('altitudehd-rowit');
+        ch.addEventListener('message', async (e) => {
+            if (e.data?.action !== 'reload') return;
+            try {
+                await vgReload();
+                if (!vgIsLayoutDevMode()) vgRefreshHoldContent();
+            } catch {
+                /* ignore */
+            }
+        });
+    } catch {
+        /* BroadcastChannel unavailable */
+    }
+
+    document.addEventListener('altitudehd:rowit', async () => {
+        try {
+            await vgReload();
+            if (!vgIsLayoutDevMode()) vgRefreshHoldContent();
+        } catch {
+            /* ignore */
+        }
+    });
 
     document.addEventListener('altitudehd:liverace', () => vgRefreshHoldContent());
     document.addEventListener('altitudehd:leaderlane', (e) => {

@@ -3,6 +3,7 @@
  */
 const VMIX_PAGES = {
     kri: 'vmix-kri.html',
+    karapiro: 'vmix-karapiro.html',
     'rnz-milford': 'vmix-rnz-milford.html',
     'beachsprints-milford': 'vmix-beachsprints-milford.html',
 };

@@ -1,0 +1,483 @@
+/* Karāpiro / Ged overlay theme — CSS boards, fast motion, RowIT data.
+   vMix: vmix-karapiro.html?g=l  (KRI and Milford pages are unchanged.) */
+
+[data-vmix-theme='karapiro'] {
+    --alt-sky: #2e7de0;
+    --alt-sky-deep: #1b5cb4;
+    --alt-navy: #12325e;
+    --alt-ice: #d9e7f8;
+    --alt-carbon: #0d1117;
+    --alt-ink: #16202e;
+    --alt-grey-700: #4e5a68;
+    --alt-grey-500: #8a96a5;
+    --alt-cream: #f5f0e4;
+    --alt-festive: #e5484d;
+    --kp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --kp-in: 0.7s;
+    --kp-pop: 0.85s;
+    font-family: Archivo, 'Segoe UI', system-ui, sans-serif;
+    color: var(--alt-cream);
+}
+
+[data-vmix-theme='karapiro'] .vg-stage {
+    font-family: Archivo, 'Segoe UI', system-ui, sans-serif;
+}
+
+@keyframes kp-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes kp-up {
+    from { opacity: 0; transform: translateY(48px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes kp-pop {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes kp-out {
+    from { opacity: 1; transform: none; }
+    to { opacity: 0; transform: translateY(16px); }
+}
+
+@keyframes kp-out-pop {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.96); }
+}
+
+[data-vmix-theme='karapiro'] .vg-layer--visible.vg-layer--fade-in {
+    animation: kp-pop var(--kp-pop) var(--kp-ease) both;
+}
+
+[data-vmix-theme='karapiro'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in,
+[data-vmix-theme='karapiro'] .vg-layer--leader.vg-layer--visible.vg-layer--fade-in {
+    animation: kp-up var(--kp-in) var(--kp-ease) both;
+}
+
+[data-vmix-theme='karapiro'] .vg-layer.vg-layer--fade-out {
+    animation: kp-out var(--kp-in) var(--kp-ease) both;
+    pointer-events: none;
+}
+
+[data-vmix-theme='karapiro'] .vg-layer--title.vg-layer--fade-out,
+[data-vmix-theme='karapiro'] .vg-layer--draw.vg-layer--fade-out,
+[data-vmix-theme='karapiro'] .vg-layer--results.vg-layer--fade-out,
+[data-vmix-theme='karapiro'] .vg-layer--schedule.vg-layer--fade-out {
+    animation: kp-out-pop var(--kp-in) var(--kp-ease) both;
+}
+
+[data-vmix-theme='karapiro'] .vg-layer--title,
+[data-vmix-theme='karapiro'] .vg-layer--draw,
+[data-vmix-theme='karapiro'] .vg-layer--results,
+[data-vmix-theme='karapiro'] .vg-layer--schedule {
+    inset: 0;
+    width: auto;
+    height: auto;
+    left: 0;
+    top: 0;
+    padding: 0;
+}
+
+[data-vmix-theme='karapiro'] .vg-layer--lower {
+    inset: 0;
+    width: auto;
+    height: auto;
+    padding: 0;
+}
+
+/* —— Logo —— */
+.kp-logo {
+    display: block;
+    flex: none;
+}
+
+.kp-logo svg {
+    display: block;
+}
+
+/* —— Title —— */
+.kp-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 18px;
+}
+
+.kp-title-word {
+    margin: 0;
+    font-family: 'Space Grotesk', Archivo, sans-serif;
+    font-size: 92px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    color: #fff;
+}
+
+.kp-title-kicker {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--alt-sky);
+}
+
+.kp-title-meta {
+    margin: 8px 0 0;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--alt-ice);
+}
+
+.kp-title-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.kp-live-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--alt-festive);
+}
+
+/* —— Lower third —— */
+.kp-lower {
+    position: absolute;
+    left: 72px;
+    bottom: 64px;
+    display: flex;
+    align-items: stretch;
+    min-height: 108px;
+    filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
+}
+
+.kp-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 108px;
+    padding: 0 18px;
+    background: var(--alt-sky);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+.kp-lower-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-width: 720px;
+    max-width: 980px;
+    padding: 18px 28px 16px;
+    background: var(--alt-carbon);
+}
+
+.kp-lower-event {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: none;
+}
+
+.kp-lower-sub {
+    margin: 0;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--alt-grey-500);
+}
+
+.kp-lower-sponsor {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    width: 160px;
+    padding: 14px 16px;
+    background: #161c24;
+    border-left: 1px solid rgba(245, 240, 228, 0.08);
+}
+
+.kp-lower-sponsor-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--alt-grey-500);
+}
+
+.kp-lower-sponsor img {
+    max-width: 128px;
+    max-height: 52px;
+    object-fit: contain;
+}
+
+/* —— Boards (draw / results / schedule) —— */
+.kp-board {
+    position: absolute;
+    left: 210px;
+    top: 118px;
+    width: 1500px;
+    padding: 36px 40px 28px;
+    background: rgba(13, 17, 23, 0.92);
+    border: 1px solid rgba(217, 231, 248, 0.08);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.kp-board-head {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.kp-board-head .kp-chip {
+    min-width: 96px;
+    min-height: 64px;
+    font-size: 28px;
+}
+
+.kp-board-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.kp-board-kicker {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--alt-sky);
+}
+
+.kp-board-title {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+}
+
+.kp-board-meta {
+    margin: 0;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 15px;
+    color: var(--alt-grey-500);
+}
+
+.kp-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.kp-row {
+    display: grid;
+    grid-template-columns: 72px 56px 1fr 120px;
+    align-items: center;
+    gap: 16px;
+    min-height: 64px;
+    padding: 6px 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kp-row--results {
+    grid-template-columns: 72px 56px 1fr 160px;
+}
+
+.kp-row--schedule {
+    grid-template-columns: 140px 140px 1fr 180px;
+}
+
+.kp-row--current {
+    background: rgba(46, 125, 224, 0.12);
+}
+
+.kp-row--first {
+    background: rgba(46, 125, 224, 0.16);
+}
+
+.kp-lane {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 40px;
+    background: var(--alt-sky);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.kp-row--first .kp-lane {
+    background: var(--alt-sky);
+}
+
+.kp-row-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+}
+
+.kp-row-logo--empty {
+    display: block;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.kp-row-club {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kp-row-abbr,
+.kp-row-time {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: right;
+    color: var(--alt-ice);
+}
+
+.kp-board-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--alt-grey-500);
+}
+
+.kp-sched-time {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--alt-ice);
+}
+
+.kp-sched-race {
+    font-weight: 700;
+    color: #fff;
+}
+
+.kp-sched-chip {
+    justify-self: end;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--alt-sky);
+}
+
+.kp-row--current .kp-sched-chip {
+    background: var(--alt-festive);
+}
+
+/* —— Leader —— */
+[data-vmix-theme='karapiro'] .vg-leader-wrap {
+    position: absolute;
+    top: 48px;
+    right: 48px;
+    left: auto;
+    width: auto;
+}
+
+.kp-leader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 360px;
+    padding: 14px 18px 14px 14px;
+    background: var(--alt-carbon);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.kp-leader-logo {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+}
+
+.kp-leader-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.kp-leader-kicker {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--alt-sky);
+}
+
+.kp-leader-name {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.kp-leader-lane {
+    margin: 0;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 14px;
+    color: var(--alt-grey-500);
+}
+
+.kp-empty {
+    padding: 24px;
+    color: var(--alt-grey-500);
+}
