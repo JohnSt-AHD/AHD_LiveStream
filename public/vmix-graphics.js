@@ -1212,6 +1212,7 @@ async function vgStartWeatherIntro() {
         await window.KriVmixWeather.show();
         if (!vgIsWeatherGraphic(vgPlayback.graphic)) return;
         vgSetStageState('hold');
+        window.VmixKarapiro?.paintOps?.();
     } catch (e) {
         const err = document.getElementById('vgError');
         if (err) {
@@ -1231,6 +1232,7 @@ async function vgStartWeatherOutro() {
         if (window.KriVmixWeather) await window.KriVmixWeather.hide();
     } finally {
         vgResetToIdle();
+        window.VmixKarapiro?.paintOps?.();
     }
 }
 

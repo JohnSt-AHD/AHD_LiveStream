@@ -34,17 +34,30 @@
     const CHART_SCALE = 1.2;
     const CHART_SIZE = { w: Math.round(328 * CHART_SCALE), h: Math.round(76 * CHART_SCALE) };
     const CHART_PAD = { l: 46, r: 10, t: 22, b: 26 };
-    const CHART_THEME = {
-        line: '#0079d1',
-        lineSoft: 'rgba(0, 121, 209, 0.45)',
-        fill: 'rgba(0, 121, 209, 0.2)',
-        grid: 'rgba(0, 96, 191, 0.22)',
-        bar: '#0079d1',
-        barDeep: '#004a99',
-        text: '#0060bf',
-        textDark: '#0c1f3d',
-        white: '#ffffff',
-    };
+    function isGedTheme() {
+        return document.body?.dataset?.vmixTheme === 'karapiro';
+    }
+
+    function chartTheme() {
+        if (isGedTheme()) {
+            return {
+                line: '#2e7de0',
+                fill: 'rgba(46, 125, 224, 0.28)',
+                grid: 'rgba(245, 240, 228, 0.14)',
+                bar: '#2e7de0',
+                barDeep: '#1b5cb4',
+                white: '#f5f0e4',
+            };
+        }
+        return {
+            line: '#0079d1',
+            fill: 'rgba(0, 121, 209, 0.2)',
+            grid: 'rgba(0, 96, 191, 0.22)',
+            bar: '#0079d1',
+            barDeep: '#004a99',
+            white: '#ffffff',
+        };
+    }
     const ZOOM_IN_FACTOR = 1.386 * 1.1;
     const COURSE_BOUNDS_MARGIN = 0.0026;
 
@@ -321,6 +334,7 @@
     }
 
     function chartGridSvg(rect, yMin, yMax, yUnit) {
+        const theme = chartTheme();
         const lines = [];
         const labels = [];
         for (let i = 0; i <= 2; i++) {
@@ -328,7 +342,7 @@
             const yVal = yMin + (yMax - yMin) * (1 - t);
             const y = rect.t + t * rect.plotH;
             lines.push(
-                `<line x1="${rect.l}" y1="${y.toFixed(1)}" x2="${(rect.l + rect.plotW).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${CHART_THEME.grid}" stroke-width="1"/>`,
+                `<line x1="${rect.l}" y1="${y.toFixed(1)}" x2="${(rect.l + rect.plotW).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${theme.grid}" stroke-width="1"/>`,
             );
             if (i === 0 || i === 2) {
                 const label =
@@ -354,6 +368,7 @@
     }
 
     function buildLineChartSvg({ title, values, labels, yMin, yMax, yUnit }) {
+        const theme = chartTheme();
         const rect = chartPlotRect();
         const n = values.length;
         if (n < 1) {
@@ -375,12 +390,12 @@
             `<svg viewBox="0 0 ${rect.w} ${rect.h}" class="kri-weather-chart__svg" role="img" aria-label="${escapeXml(title)}">` +
             `<text x="${rect.l}" y="12" class="kri-weather-chart__title">${escapeXml(title)}</text>` +
             chartGridSvg(rect, yMin, yMax, yUnit) +
-            `<path d="${areaPath}" fill="${CHART_THEME.fill}"/>` +
-            `<path d="${linePath}" fill="none" stroke="${CHART_THEME.line}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+            `<path d="${areaPath}" fill="${theme.fill}"/>` +
+            `<path d="${linePath}" fill="none" stroke="${theme.line}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
             pts
                 .map(
                     (p) =>
-                        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${CHART_THEME.white}" stroke="${CHART_THEME.line}" stroke-width="2"/>`,
+                        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${theme.white}" stroke="${theme.line}" stroke-width="2"/>`,
                 )
                 .join('') +
             chartXLabelsSvg(labels, n, rect) +
@@ -389,6 +404,7 @@
     }
 
     function buildBarChartSvg({ title, values, labels, yMax, yUnit }) {
+        const theme = chartTheme();
         const rect = chartPlotRect();
         const n = values.length;
         if (n < 1) {
@@ -404,7 +420,7 @@
             const yTop = chartY(v, yMin, yMax, rect);
             const yBase = chartY(0, yMin, yMax, rect);
             const h = Math.max(0, yBase - yTop);
-            const fill = v >= yMax * 0.85 ? CHART_THEME.barDeep : CHART_THEME.bar;
+            const fill = v >= yMax * 0.85 ? theme.barDeep : theme.bar;
             bars += `<rect x="${x.toFixed(1)}" y="${yTop.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}"/>`;
         }
 
@@ -1033,12 +1049,14 @@
             `<span>${WIND_SPEED_MAX_KMH}</span>` +
             '</div></div>' +
             '<div class="kri-weather-stack" id="kriWeatherStack" aria-hidden="true">' +
-            '<div class="kri-weather-rowing" id="kriWeatherRowing">' +
-            '<h3 class="kri-weather-rowing__title">Rowing conditions</h3>' +
-            '<div class="kri-weather-rowing__scene" id="kriWeatherRowingScene"></div>' +
-            '<p class="kri-weather-rowing__pace" id="kriWeatherRowingPace">—</p>' +
-            '<p class="kri-weather-rowing__wind" id="kriWeatherRowingWind">—</p>' +
-            '</div>' +
+            (isGedTheme()
+                ? ''
+                : '<div class="kri-weather-rowing" id="kriWeatherRowing">' +
+                  '<h3 class="kri-weather-rowing__title">Rowing conditions</h3>' +
+                  '<div class="kri-weather-rowing__scene" id="kriWeatherRowingScene"></div>' +
+                  '<p class="kri-weather-rowing__pace" id="kriWeatherRowingPace">—</p>' +
+                  '<p class="kri-weather-rowing__wind" id="kriWeatherRowingWind">—</p>' +
+                  '</div>') +
             '<div class="kri-weather-charts" id="kriWeatherCharts">' +
             '<div class="kri-weather-chart" id="kriWeatherChartTemp"></div>' +
             '<div class="kri-weather-chart" id="kriWeatherChartWind"></div>' +
@@ -1050,18 +1068,28 @@
         );
     }
 
+    function applyThemeClass(stage) {
+        if (!stage) return;
+        stage.classList.toggle('kp-weather-stage', isGedTheme());
+    }
+
     function ensurePanel(root) {
         const existing = document.getElementById('kriWeatherStage');
         if (existing) {
             panel = existing;
+            applyThemeClass(panel);
             return panel;
         }
-        if (panel) return panel;
+        if (panel) {
+            applyThemeClass(panel);
+            return panel;
+        }
         const host = root || document.querySelector('.vg-stage');
         if (!host) return null;
         panel = document.createElement('div');
         panel.id = 'kriWeatherStage';
         panel.className = 'kri-weather-stage vg-kri-weather';
+        applyThemeClass(panel);
         panel.setAttribute('role', 'img');
         panel.setAttribute('aria-label', 'Lake Karāpiro live weather');
         panel.innerHTML = buildPanelMarkup();

@@ -21,7 +21,7 @@
         title: 1, lower: 1, draw: 1, results: 1, schedule: 1, leader: 1,
         drill: 1, suits: 1, suitstrip: 1, lowersuits: 1, brand: 1,
         next: 1, prev: 1, tracker: 1, speed: 1, speedchart: 1,
-        livetracking: 1, livetrack: 1, weather: 1,
+        livetracking: 1, livetrack: 1,
         cvleader: 1, cvdraw: 1, coursescroll: 1, course: 1,
     };
     const CANON = {
@@ -1254,68 +1254,6 @@
         layer.appendChild(root);
     }
 
-    function renderWeather(layer) {
-        const wrap = el('div', 'kp-weather-wrap');
-        const card = el('div', 'kp-weather');
-        card.appendChild(bar());
-        const head = el('div', 'kp-board-head');
-        head.appendChild(el('span', 'kp-board-title', 'Lake Karāpiro conditions'));
-        if (festive()) {
-            const flake = document.createElement('span');
-            flake.style.marginLeft = 'auto';
-            flake.innerHTML =
-                '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 2 V22 M2 12 H22 M5 5 L19 19 M19 5 L5 19" stroke="#d9e7f8" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
-            head.appendChild(flake);
-        }
-        card.appendChild(head);
-        const grid = el('div', 'kp-wx-grid');
-        const map = el('div', 'kp-wx-map');
-        map.innerHTML =
-            `<svg viewBox="0 0 320 280" width="320" height="280">` +
-            `<path d="M24 44 C86 18, 128 78, 158 112 C190 148, 244 152, 292 208" stroke="#1b5cb4" stroke-width="30" fill="none" stroke-linecap="round"/>` +
-            `<path d="M24 44 C86 18, 128 78, 158 112 C190 148, 244 152, 292 208" stroke="#2e7de0" stroke-width="16" fill="none" stroke-linecap="round" opacity="0.55"/>` +
-            `<line x1="196" y1="146" x2="282" y2="200" stroke="#f5f0e4" stroke-width="2.5" stroke-dasharray="7 6"/>` +
-            `<circle cx="196" cy="146" r="4" fill="#f5f0e4"/>` +
-            `<circle cx="282" cy="200" r="4" fill="#2e7de0"/>` +
-            `<text x="150" y="248" font-family="JetBrains Mono,monospace" font-size="13" letter-spacing="1.5" fill="#8a96a5">2000M COURSE</text>` +
-            `<text x="288" y="34" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#c9d1da">N</text>` +
-            `<path d="M292 44 L292 58" stroke="#c9d1da" stroke-width="2"/>` +
-            `<path d="M292 40 L287 50 L297 50 Z" fill="#c9d1da"/>` +
-            `</svg>`;
-        [60, 120, 66].forEach((top, i) => {
-            const w = el('div', 'kp-wx-wind');
-            w.style.top = `${top}px`;
-            w.style.left = `${40 + i * 70}px`;
-            w.style.animationDelay = `${i * 0.7}s`;
-            w.innerHTML =
-                '<svg width="34" height="12" viewBox="0 0 34 12"><line x1="0" y1="6" x2="24" y2="6" stroke="#d9e7f8" stroke-width="2.5"/><path d="M22 0 L34 6 L22 12 Z" fill="#d9e7f8"/></svg>';
-            map.appendChild(w);
-        });
-        grid.appendChild(map);
-        const stats = el('div', 'kp-wx-stats');
-        const pair = el('div', 'kp-wx-pair');
-        const wind = Math.round(12 + 3 * Math.sin(state.t / 6));
-        const gust = Math.round(17 + 3 * Math.sin(state.t / 6 + 1));
-        [
-            ['Air', '22°C'],
-            ['Water', '19°C'],
-            ['Wind', `NE ${wind}`],
-            ['Gust', `${gust}`],
-        ].forEach(([lab, val]) => {
-            const st = el('div', 'kp-wx-stat');
-            st.appendChild(el('span', 'kp-wx-lab', lab));
-            st.appendChild(el('span', 'kp-wx-val', val));
-            pair.appendChild(st);
-        });
-        stats.appendChild(pair);
-        stats.appendChild(el('div', 'kp-wx-note', 'Fine · light NE chop'));
-        stats.appendChild(el('div', 'kp-wx-note', 'Forecast 14:00 — NE freshening 15 km/h'));
-        grid.appendChild(stats);
-        card.appendChild(grid);
-        wrap.appendChild(card);
-        layer.appendChild(wrap);
-    }
-
     const RENDER = {
         title: renderTitle,
         lower: renderLower,
@@ -1333,7 +1271,6 @@
         tracker: renderTracker,
         speedchart: renderSpeed,
         livetracking: renderLiveTrack,
-        weather: (layer) => renderWeather(layer),
         cvleader: renderCvLeader,
         cvdraw: renderCvDraw,
         coursescroll: (layer) => renderCourse(layer),
@@ -1676,11 +1613,6 @@
             const { lead } = leadOf(race);
             const val = document.querySelector('.kp-cvleader-val');
             if (val && lead) val.textContent = `L${lead.lane} ${lead.abbr}`;
-        }
-        if (g === 'weather') {
-            const vals = document.querySelectorAll('.kp-wx-val');
-            if (vals[2]) vals[2].textContent = `NE ${Math.round(12 + 3 * Math.sin(state.t / 6))}`;
-            if (vals[3]) vals[3].textContent = `${Math.round(17 + 3 * Math.sin(state.t / 6 + 1))}`;
         }
     }
 

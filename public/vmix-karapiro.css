@@ -1392,3 +1392,194 @@ html:not(.vg-preview) .kp-ops,
     color: var(--alt-grey-500);
     font-family: var(--font-body);
 }
+
+/* —— Live weather (KRI course map + Open-Meteo, Ged chrome) —— */
+[data-vmix-theme='karapiro'] .kri-weather-stage {
+    background: rgba(13, 17, 23, 0.22);
+    font-family: var(--font-body);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-logo {
+    display: none;
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-vignette {
+    background: linear-gradient(
+        135deg,
+        rgba(18, 50, 94, 0.32) 0%,
+        rgba(13, 17, 23, 0.18) 45%,
+        rgba(13, 17, 23, 0.42) 100%
+    );
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-map .leaflet-tile-pane {
+    opacity: 0.5;
+    filter: saturate(0.65) brightness(0.68);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-rain-streak {
+    background: linear-gradient(180deg, transparent 0%, #2e7de0 30%, #1b5cb4 100%);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel,
+[data-vmix-theme='karapiro'] .kri-weather-stack,
+[data-vmix-theme='karapiro'] .kri-weather-wind-legend,
+[data-vmix-theme='karapiro'] .kri-weather-chart {
+    font-family: var(--font-body);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel {
+    border: none;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(13, 17, 23, 0.93);
+    color: var(--alt-cream);
+    box-shadow: 0 22px 60px rgba(13, 17, 23, 0.55);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel::before {
+    display: none;
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 7px;
+    background: var(--alt-sky);
+    z-index: 3;
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel__kicker {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.12em;
+    color: var(--alt-grey-500);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel__title {
+    font-family: var(--font-display);
+    color: var(--alt-cream);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-panel__updated,
+[data-vmix-theme='karapiro'] .kri-weather-current-condition,
+[data-vmix-theme='karapiro'] .kri-weather-status {
+    font-family: var(--font-mono);
+    color: var(--alt-sky);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-status {
+    color: var(--alt-grey-500);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-section-head,
+[data-vmix-theme='karapiro'] .kri-weather-section-title {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    color: var(--alt-grey-500);
+    font-family: var(--font-mono);
+    letter-spacing: 0.12em;
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-condition-icon {
+    background: rgba(46, 125, 224, 0.16);
+    border: 1px solid rgba(46, 125, 224, 0.35);
+    border-radius: 12px;
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-stat,
+[data-vmix-theme='karapiro'] .kri-weather-forecast-item {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+    color: var(--alt-cream);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-stat__label,
+[data-vmix-theme='karapiro'] .kri-weather-forecast-item__time,
+[data-vmix-theme='karapiro'] .kri-weather-forecast-item__rain {
+    font-family: var(--font-mono);
+    color: var(--alt-sky);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-stat__value {
+    font-family: var(--font-display);
+    color: var(--alt-cream);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-stat__sub {
+    color: var(--alt-grey-500);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-wind-legend {
+    background: rgba(13, 17, 23, 0.93);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(13, 17, 23, 0.45);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-wind-legend__title,
+[data-vmix-theme='karapiro'] .kri-weather-wind-legend__labels {
+    font-family: var(--font-mono);
+    color: var(--alt-grey-500);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-wind-legend__bar {
+    background: linear-gradient(90deg, #2e7de0 0%, #e5484d 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-rowing {
+    display: none;
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-chart {
+    background: rgba(13, 17, 23, 0.93);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(13, 17, 23, 0.45);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-chart__title {
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    fill: var(--alt-sky);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-chart__axis {
+    font-family: var(--font-mono);
+    fill: var(--alt-grey-500);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-legend {
+    font-family: var(--font-mono);
+    color: var(--alt-grey-500);
+    text-shadow: 0 1px 8px rgba(13, 17, 23, 0.85);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-map .kri-course-label--distance .kri-course-label__text,
+[data-vmix-theme='karapiro'] .kri-weather-map .kri-course-label--distance span {
+    background: rgba(13, 17, 23, 0.88);
+    color: var(--alt-cream);
+    border-color: rgba(46, 125, 224, 0.55);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-map .kri-course-label--lane .kri-course-label__text,
+[data-vmix-theme='karapiro'] .kri-weather-map .kri-course-label--lane span {
+    background: rgba(46, 125, 224, 0.92);
+    border-color: rgba(217, 231, 248, 0.35);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-map .kri-course-label--start .kri-course-label__text,
+[data-vmix-theme='karapiro'] .kri-weather-map .kri-course-label--start span {
+    background: var(--alt-sky);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-wind-speed-value {
+    color: var(--alt-cream);
+}
+
+[data-vmix-theme='karapiro'] .kri-weather-wind-speed-unit {
+    color: var(--alt-sky);
+}
