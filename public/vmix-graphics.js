@@ -142,6 +142,7 @@ const vgState = {
     competitors: new Map(),
     results: new Map(),
     regattaCode: 'mads2026',
+    csvFingerprint: '',
 };
 
 function vgParseCsvLine(line) {
@@ -1549,9 +1550,11 @@ function vgUpdateBgGraphicClass() {
 function vgSetLayerGraphicClass(layer, modifier) {
     const keepVisible = layer.classList.contains('vg-layer--visible');
     const keepFadeOut = layer.classList.contains('vg-layer--fade-out');
+    const keepRefresh = layer.classList.contains('kp-refresh');
     layer.className = `vg-layer ${modifier}`;
     if (keepVisible) layer.classList.add('vg-layer--visible');
     if (keepFadeOut) layer.classList.add('vg-layer--fade-out');
+    if (keepRefresh) layer.classList.add('kp-refresh');
     /* Drop fade-in on re-render so live CSV refresh doesn't replay the cascade. */
     vgSyncLayerVisibility(layer);
 }
@@ -2204,6 +2207,7 @@ function vgPrepareContent(graphic, raceParam) {
         layer.classList.toggle('kp-refresh', vgHoldRefreshing);
         layer.replaceChildren();
         window.VmixKarapiro.render(layer, graphic, race);
+        layer.classList.toggle('kp-refresh', vgHoldRefreshing);
         vgSyncLayerVisibility(layer);
         vgApplySavedLayout(graphic);
         window.VmixKarapiro.paintOps?.();
@@ -3398,6 +3402,10 @@ function vgBindRemoteTriggers() {
     }
 }
 
+function vgCsvFingerprint(daysheetText, competitorsText, resultsText) {
+    return `${daysheetText}\n\x1e${competitorsText}\n\x1e${resultsText}`;
+}
+
 async function vgReload() {
     vgState.regattaCode = vgGetRegattaCode();
     const [lookup, daysheetText, competitorsText, resultsText] =
@@ -3408,10 +3416,14 @@ async function vgReload() {
             vgFetchCsv(vgGetCsvUrl('results')).catch(() => ''),
             vgLoadKriSponsorImages(),
         ]);
+    const fingerprint = vgCsvFingerprint(daysheetText, competitorsText, resultsText);
+    const changed = fingerprint !== vgState.csvFingerprint;
+    vgState.csvFingerprint = fingerprint;
     vgState.lookup = lookup;
     vgState.races = vgParseDaysheet(daysheetText);
     vgState.competitors = vgParseCompetitors(competitorsText);
     vgState.results = vgParseResults(resultsText);
+    return changed;
 }
 
 async function vgInit() {
@@ -3441,8 +3453,8 @@ async function vgInit() {
         ch.addEventListener('message', async (e) => {
             if (e.data?.action !== 'reload') return;
             try {
-                await vgReload();
-                if (!vgIsLayoutDevMode()) vgRefreshHoldContent();
+                const changed = await vgReload();
+                if (changed && !vgIsLayoutDevMode()) vgRefreshHoldContent();
             } catch {
                 /* ignore */
             }
@@ -3453,8 +3465,8 @@ async function vgInit() {
 
     document.addEventListener('altitudehd:rowit', async () => {
         try {
-            await vgReload();
-            if (!vgIsLayoutDevMode()) vgRefreshHoldContent();
+            const changed = await vgReload();
+            if (changed && !vgIsLayoutDevMode()) vgRefreshHoldContent();
         } catch {
             /* ignore */
         }
@@ -3493,8 +3505,8 @@ async function vgInit() {
 
     setInterval(async () => {
         try {
-            await vgReload();
-            if (!vgIsLayoutDevMode()) {
+            const changed = await vgReload();
+            if (changed && !vgIsLayoutDevMode()) {
                 vgRefreshHoldContent();
             }
         } catch {

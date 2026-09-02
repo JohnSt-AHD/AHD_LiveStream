@@ -82,8 +82,10 @@
     pointer-events: none;
 }
 
+[data-vmix-theme='karapiro'] .vg-layer.kp-refresh,
 [data-vmix-theme='karapiro'] .vg-layer.kp-refresh * {
     animation: none !important;
+    animation-delay: 0s !important;
 }
 
 .kp-bar {
