@@ -1379,6 +1379,10 @@ html:not(.vg-preview) .kp-ops,
     max-width: 1360px;
 }
 
+.kp-ops-row[hidden] {
+    display: none;
+}
+
 .kp-ops-min {
     padding: 5px 12px;
 }
