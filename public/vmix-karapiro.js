@@ -80,6 +80,11 @@
         ['B', 'Brand', 'brand'],
     ];
 
+    const RECORD_FILES = [
+        'data/karapiro-premier-fastest.csv',
+        'data/karapiro-u18-fastest.csv',
+    ];
+
     const state = {
         t: 0,
         drillLane: null,
@@ -91,6 +96,8 @@
         dHeld: false,
         dCombo: false,
         flakes: [],
+        records: new Map(),
+        recordsPromise: null,
     };
 
     function el(tag, className, text) {
@@ -445,6 +452,144 @@
         return vgExpandEventName(race?.eventType, vgState.lookup) || race?.eventType || '';
     }
 
+    function normEventKey(raw) {
+        return String(raw || '')
+            .replace(/\sO1[456]\b/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toUpperCase();
+    }
+
+    function swapSchoolGender(key) {
+        if (/^B\s/.test(key)) return `M${key.slice(1)}`;
+        if (/^G\s/.test(key)) return `W${key.slice(1)}`;
+        if (/^M\s/.test(key)) return `B${key.slice(1)}`;
+        if (/^W\s/.test(key)) return `G${key.slice(1)}`;
+        return key;
+    }
+
+    function mixedAlias(key) {
+        if (/^M\/W\s/.test(key)) return `MX${key.slice(3)}`;
+        if (/^MX\s/.test(key)) return `M/W${key.slice(2)}`;
+        return key;
+    }
+
+    function candidateKeys(eventType) {
+        const base = normEventKey(eventType);
+        const keys = new Set();
+        const add = (k) => {
+            if (!k) return;
+            keys.add(k);
+            keys.add(swapSchoolGender(k));
+            keys.add(mixedAlias(k));
+            keys.add(swapSchoolGender(mixedAlias(k)));
+        };
+        add(base);
+        if (/4X-$/.test(base)) add(base.replace(/4X-$/, '4X'));
+        else if (/4X$/.test(base)) add(base.replace(/4X$/, '4X-'));
+        return [...keys];
+    }
+
+    function rememberRecord(event, rec) {
+        for (const k of candidateKeys(event)) {
+            if (k && !state.records.has(k)) state.records.set(k, rec);
+        }
+    }
+
+    function ingestRecords(text) {
+        const lines = String(text || '').split(/\r?\n/);
+        if (!lines.length) return;
+        const header = vgParseCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
+        const idx = (name) => header.indexOf(name);
+        const iEvent = idx('event');
+        const iTime = idx('time');
+        if (iEvent < 0 || iTime < 0) return;
+        const iCrew = idx('crew');
+        const iAthletes = idx('athlete_names');
+        const iYear = idx('year');
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const cols = vgParseCsvLine(line);
+            const event = (cols[iEvent] || '').trim();
+            const time = (cols[iTime] || '').trim();
+            if (!event || !time) continue;
+            rememberRecord(event, {
+                event,
+                time,
+                crew: iCrew >= 0 ? (cols[iCrew] || '').trim() : '',
+                athletes: iAthletes >= 0 ? (cols[iAthletes] || '').trim() : '',
+                year: iYear >= 0 ? (cols[iYear] || '').trim() : '',
+            });
+        }
+    }
+
+    function loadRecords() {
+        if (state.recordsPromise) return state.recordsPromise;
+        state.recordsPromise = (async () => {
+            try {
+                const texts = await Promise.all(
+                    RECORD_FILES.map((url) =>
+                        fetch(url)
+                            .then((r) => (r.ok ? r.text() : ''))
+                            .catch(() => ''),
+                    ),
+                );
+                state.records = new Map();
+                for (const t of texts) ingestRecords(t);
+            } catch {
+                state.records = new Map();
+            }
+            const g = canon(vgPlayback.graphic);
+            if ((g === 'draw' || g === 'results') && vgPlayback.state !== 'idle') {
+                vgRefreshHoldContent();
+            }
+        })();
+        return state.recordsPromise;
+    }
+
+    function findRecord(eventType) {
+        if (!eventType || !state.records.size) return null;
+        for (const k of candidateKeys(eventType)) {
+            const rec = state.records.get(k);
+            if (rec) return rec;
+        }
+        return null;
+    }
+
+    function formatRecordTime(raw) {
+        const s = String(raw || '').trim();
+        const m = s.match(/^0?(\d+):(\d{2}(?:\.\d+)?)$/);
+        return m ? `${Number(m[1])}:${m[2]}` : s;
+    }
+
+    function recordWho(rec) {
+        const is1x = /\b1X\b/.test(normEventKey(rec.event));
+        let who = '';
+        if (is1x && rec.athletes) who = rec.athletes.split(',')[0].trim();
+        if (!who) who = String(rec.crew || '').replace(/\s+\d+$/, '').trim();
+        return who;
+    }
+
+    function appendBoardFoot(board, race) {
+        const foot = el('div', 'kp-board-foot');
+        const n = laneEntries(race).length;
+        foot.appendChild(
+            el('span', 'kp-board-foot-copy', `Lake Karāpiro · 2000m${n ? ` · ${n} lanes` : ''}`),
+        );
+        const rec = findRecord(race?.eventType);
+        if (rec) {
+            const pill = el('span', 'kp-board-record');
+            pill.appendChild(el('span', 'kp-board-record-lab', 'Course record'));
+            pill.appendChild(el('span', 'kp-board-record-time', formatRecordTime(rec.time)));
+            const who = [recordWho(rec), rec.year].filter(Boolean).join(' · ');
+            if (who) pill.appendChild(el('span', 'kp-board-record-who', who));
+            foot.appendChild(pill);
+        }
+        appendSponsor(foot, 'kp-board-sponsor');
+        board.appendChild(foot);
+    }
+
     function dayLabel(race) {
         const r = race || vgState.races[0];
         return r ? vgFormatDayLabel(r.dayLabel) : '';
@@ -662,11 +807,7 @@
             rows.appendChild(row);
         });
         board.appendChild(rows);
-        const foot = el('div', 'kp-board-foot');
-        const n = laneEntries(race).length;
-        foot.appendChild(el('span', '', `Lake Karāpiro · 2000m${n ? ` · ${n} lanes` : ''}`));
-        appendSponsor(foot, 'kp-board-sponsor');
-        board.appendChild(foot);
+        appendBoardFoot(board, race);
         wrap.appendChild(board);
         layer.appendChild(wrap);
     }
@@ -696,6 +837,7 @@
             });
         }
         board.appendChild(rows);
+        appendBoardFoot(board, race);
         wrap.appendChild(board);
         layer.appendChild(wrap);
     }
@@ -1544,6 +1686,7 @@
 
     function init() {
         ensureSnow();
+        loadRecords();
         const q = new URLSearchParams(location.search);
         const g = (q.get('g') || '').toLowerCase();
         if (!g && q.get('live') !== '1') {

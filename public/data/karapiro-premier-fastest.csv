@@ -1,0 +1,27 @@
+event,Gender,regatta,location,time,crew,athlete_names,round,year,club_code,source_url
+M Prm 1X,Male,Cambridge Town Cup,Lake Karāpiro,06:35.6,Rowing New Zealand 3,John Storey,A Final,2016,RNZX,https://rowit.nz/kric2016r2/results?en=32
+M Prm 1X (L),Male,Bankstream NZ Rowing Championships,Lake Karāpiro,06:47.2,Auckland RPC 1,Peter Taylor,A Final,2014,RPCA,https://rowit.nz/nzcc2014/results?en=20
+M Prm 2-,Male,Bankstream NZ Rowing Championships,Lake Karāpiro,06:12.4,Southern RPC 1,"Hamish Bond, James Lassche",A Final,2014,RPCS,https://rowit.nz/nzcc2014/results?en=22
+M Prm 2- (L),Male,Rocket Foods NZ Rowing Championships,Lake Karāpiro,07:08.0,Waikato Rowing Club 1,"Samuel Zimbel, Logan Docherty",A Final,2020,WKOC,https://rowit.nz/nzcc2020/results?en=8
+M Prm 2X,Male,Cambridge Town Cup (inc NI Champs) - KRI # 2,Lake Karāpiro,06:05.4,Rowing New Zealand 3,"Peter Taylor, Storm Uru",Heat 1,2010,RNZX,https://rowit.nz/kric2010r2/results?en=45
+M Prm 2X (L),Male,Rocket Foods NZ Rowing Championships,Lake Karāpiro,06:30.8,Auckland RPC 1,"Chris Stockley, Zak Everitt",A Final,2018,RPCA,https://rowit.nz/nzcc2018/results?en=49
+M Prm 4-,Male,BankLink NZ Rowing Championships,Lake Karāpiro,05:48.1,Central RPC 1,"Sean O'Neill, Chris Harris, Ian Seymour, Ben Hammond",A Final,2012,RPCC,https://rowit.nz/nzcc2012/results?en=28
+M Prm 4+,Male,Bankstream NZ Rowing Championships,Lake Karāpiro,06:11.2,North Shore Rowing Club 1,"Michael Brake, Bobby Kells, Finn Howard, Cameron Webster, Timothy Zouch",A Final,2016,NSHC,https://rowit.nz/nzcc2016/results?en=47
+M Prm 4X-,Male,North Island Club Championships,Lake Karāpiro,05:43.8,Rowing New Zealand 1,"Karl Manson, Jeff Francis, Giacomo Thomas, Nathan Flannery",A Final,2014,RNZX,https://rowit.nz/nicc2014/results?en=53
+M Prm 8+,Male,BankLink NZ Rowing Championships,Lake Karāpiro,05:31.6,Central RPC 1,"Dane Boswell, Chris Harris, Sean O'Neill, Hamish Burson, Ben Hammond, Warrick Wright, Steven Cottle, Ian Seymour, Hannah Sloan",Heat 1,2010,RPCC,https://rowit.nz/nzcc2010/results?en=66
+M U20 Prm 1X,Male,North Island Club Championships,Lake Karāpiro,07:52.9,Hawkes Bay Rowing Club 1,Fergus Ritchie,A Final,2019,HWBC,https://rowit.nz/nicc2019/results?en=64
+M U22 Prm 1X,Male,Karapiro Christmas Regatta,Lake Karāpiro,07:46.5,Wairau Rowing Club 1,Rhys Krappe,A Final,2019,WRAC,https://rowit.nz/kric2019r1/results?en=97
+,,,,,,,,,,
+M/W Prm 4-,,Karapiro Club Regatta,Lake Karāpiro,06:25.0,Auckland RPC 2,"Jack Ready, Blake Bradshaw, Luca Kirwan, Hunter Pethers-Boak",Heat 1,2019,RPCA,https://rowit.nz/wktc2019r2/results?en=75P
+M/W Prm 4X-,,Karapiro Club Regatta,Lake Karāpiro,06:14.3,Waikato RPC 2,"Tracie McLaren-Taplin, Seth Hope, Elliot Jenkins, Jonte Wright",Heat 1,2020,RPCW,https://rowit.nz/wktc2020r2/results?en=63
+,,,,,,,,,,
+W Prm 1X,Female,Cambridge Town Cup,Lake Karāpiro,07:19.5,Rowing New Zealand 1,Emma Twigg,A Final,2016,RNZX,https://rowit.nz/kric2016r2/results?en=31
+W Prm 1X (L),Female,Rocket Foods NZ Rowing Championships,Lake Karāpiro,07:29.0,Central RPC 1,Zoe McBride,A Final,2018,RPCC,https://rowit.nz/nzcc2018/results?en=48
+W Prm 2-,Female,North Island Rowing Championships,Lake Karāpiro,06:48.9,Rowing New Zealand 1,"Kerri Gowler, Grace Prendergast",Heat 1,2021,RNZX,https://rowit.nz/nicc2021/results?en=27
+W Prm 2X,Female,North Island Rowing Championships,Lake Karāpiro,06:41.8,Rowing New Zealand 1,"Hannah Osborne, Brooke Donoghue",Heat 1,2021,RNZX,https://rowit.nz/nicc2021/results?en=46
+W Prm 2X (L),Female,Bankstream NZ Rowing Championships,Lake Karāpiro,06:56.0,Swiss High Performance Squad 1,"Patricia Merz, Frederique Rol",A Final,2016,HSUI,https://rowit.nz/nzcc2016/results?en=45
+W Prm 4-,Female,Cambridge Town Cup,Lake Karāpiro,06:12.5,Auckland RPC 1,"Abby Green, Kelsi Walters, Anna DeLong, Rose Crooks",A Final,2013,RPCA,https://rowit.nz/kric2013r2/results?en=45
+W Prm 4X-,Female,Bankstream NZ Rowing Championships,Lake Karāpiro,06:18.7,Waikato RPC 1,"Georgia Perry, Brooke Donoghue, Claudia Hyde, Sarah Gray",A Final,2016,RPCW,https://rowit.nz/nzcc2016/results?en=6
+W Prm 8+,Female,Bankstream NZ Rowing Championships,Lake Karāpiro,06:13.9,Southern RPC 1,"Lucy Strack, Grace Prendergast, Olivia Loe, Johannah Kearney, Fiona Bourke, Lucy Spoors, Genevieve Behrent, Kristen Froude, Lydia Milner",Heat 1,2014,RPCS,https://rowit.nz/nzcc2014/results?en=69
+W U20 Prm 1X,Female,North Island Club Championships,Lake Karāpiro,08:31.8,Auckland RPC 1,Sophie Egnot-Johnson,A Final,2019,RPCA,https://rowit.nz/nicc2019/results?en=63
+W U22 Prm 1X,Female,Karapiro Christmas Regatta,Lake Karāpiro,08:03.5,North Shore Rowing Club 1,Holly Gray,A Final,2019,NSHC,https://rowit.nz/kric2019r1/results?en=98

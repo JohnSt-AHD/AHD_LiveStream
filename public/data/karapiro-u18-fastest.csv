@@ -1,0 +1,21 @@
+event,regatta,location,time,crew,athlete_names,round,year,club_code,source_url
+B N18 2X,Aon Maadi Cup,Lake Karāpiro,6:55.78,St Peters School 2,"Joseph Hylton, Taylor Grey",A Final,2015,STPC,https://rowit.nz/mads2015/results?en=9
+B N18 4+,Aon Maadi Cup,Lake Karāpiro,6:40.25,Wakatipu High School 1,"George Dennison, Latham Jones, Reid Long, Logan Boyd, Henry Matthews",Semi-final 2,2013,WAKA,https://rowit.nz/mads2013/results?en=44
+B N18 4X+,Aon Maadi Cup,Lake Karāpiro,6:39.54,St Peters College 1,"Jack Whitcombe, Shay Reid, Daniel Hyde, Kees Bryant, Benjamin Howard",Semi-final 2,2021,STPA,https://rowit.nz/mads2021/results?en=46
+B N18 8+,Aon N.I.S.S. Championships,Lake Karāpiro,6:11.26,Sacred Heart College (Auckland) 1,"Theo Wright, Tim Farrell, Luca Kirwan, Liam Zinzley, Lawerence Foliaki, Cairo Taupo, Connor Doyle, Tanner Butler, Ryan Olsen",A Final,2016,SHAK,https://rowit.nz/niss2016/results?en=19
+B U18 1X,Aon Maadi Cup,Lake Karāpiro,7:09.33,Dilworth School 1,Ben Watkinson,A Final,2015,DILW,https://rowit.nz/mads2015/results?en=30
+B U18 2-,Aon Maadi Cup,Lake Karāpiro,6:46.15,Kings College 1,"James Hall, Daniel Williamson",Heat 2,2017,KGCA,https://rowit.nz/mads2017/results?en=5
+B U18 2X,Aon Maadi Cup,Lake Karāpiro,6:37.58,Rangiora High School 1,"Julian Svoboda, Evan Kennedy",A Final,2009,RAHS,https://rowit.nz/mads2009/results?en=30
+B U18 4+,Karapiro Christmas Regatta,Lake Karāpiro,6:22.66,North Shore Rowing Club 11,"Donovan Pivac, Samuel Bird, Quinn Oliver-Porter, Noah Geelen De Kabath, Harry Frankham",Heat 2,2025,NSHC,https://rowit.nz/kric2025r1/results?en=76
+B U18 4X+,Aon N.I.S.S. Championships,Lake Karāpiro,6:15.16,Kings College 1,"Thomas Hall, Sam Cummins, Matthew Caro, Luke Shannon, Angus Brady",A Final,2018,KGCA,https://rowit.nz/niss2018/results?en=15
+B U18 8+,Aon Maadi Regatta,Lake Karāpiro,5:42.17,St Bedes College 1,"Sam Woodgate, Thomas Woodgate, Sam Earl, Luke Hickling, Bede Giera, Luke McBrydie, Josh Hamer, Matthew Glen, Max Walsh",A Final,2023,STBD,https://rowit.nz/mads2023/results?en=52
+G N18 2X,Aon Maadi Cup,Lake Karāpiro,7:35.58,Chilton St James School 1,"Mackenzie Tuffin, Helena Rivers-Milliken",A Final,2019,CHIL,https://rowit.nz/mads2019/results?en=20
+G N18 4+,Aon Maadi Cup,Lake Karāpiro,7:15.67,Waikato Diocesan School 1,"Anahera Nin, Anna Wilkins, Jordyn Crouch, Kate Martin, Molly Densem",Semi-final 2,2013,WKDS,https://rowit.nz/mads2013/results?en=43
+G N18 4X+,Aon N.I.S.S. Championships,Lake Karāpiro,7:26.65,Diocesan School For Girls 1,"Imogen Foley, Katie Ryan, Isobel Fletcher, Sara MacGillivray, Sophie Ryan",Semi-final 2,2020,DIOC,https://rowit.nz/niss2020/results?en=35
+G N18 8+,Aon Maadi Cup,Lake Karāpiro,6:46.37,Rangi Ruru Girls School 1,"Sophie Cusiel, Sophie Schneideman, Milly Gallagher, Jessica Tavendale, Alice Ferguson, Sophie Payne, Arabelle McGuckin, Lucy Vance, Sienna O'Shannessey",A Final,2021,RRGS,https://rowit.nz/mads2021/results?en=10
+G U18 1X,Karapiro Club Regatta,Lake Karāpiro,7:11.51,Cambridge Rowing Club 1,Lucy Hill,Race 1,2014,CAMC,https://rowit.nz/wktc2014r2/results?en=42
+G U18 2-,Cambridge Town Cup,Lake Karāpiro,7:27.72,Cambridge Rowing Club 21,"Briana Perry, Brooke Kilmister",Heat 2,2018,CAMC,https://rowit.nz/kric2018r2/results?en=31
+G U18 2X,Aon Maadi Cup,Lake Karāpiro,7:18.31,Kavanagh College [now Trinity] 1,"Zoe McBride, Hannah Duggan",A Final,2013,KAVA,https://rowit.nz/mads2013/results?en=6
+G U18 4+,Aon N.I.S.S. Championships,Lake Karāpiro,7:08.21,Waikato Diocesan School 1,"Harriet Allen, Laura Jeffries, Lucy Clapcott, Becky Tushingham, Sophie Wilson",Heat 1,2012,WKDS,https://rowit.nz/niss2012/results?en=24
+G U18 4X+,Aon Maadi Cup,Lake Karāpiro,7:04.43,St Peters School 1,"Jessica Ria, Georgia Perry, Kayla Jans, Briar Murphy, Khoti Clements",A Final,2011,STPC,https://rowit.nz/mads2011/results?en=37
+G U18 8+,Aon Maadi Cup,Lake Karāpiro,6:37.19,Rangi Ruru Girls School 1,"Jenny Storey, Catherine Shields, Eve Macfarlane, Rebecca Newman, Gemma Watherston, Madison Wright, Rebeca Pilcher, Annie Montgomery, Francie Turner",Heat 2,2009,RRGS,https://rowit.nz/mads2009/results?en=41
