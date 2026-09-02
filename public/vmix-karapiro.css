@@ -82,6 +82,10 @@
     pointer-events: none;
 }
 
+[data-vmix-theme='karapiro'] .vg-layer.kp-refresh * {
+    animation: none !important;
+}
+
 .kp-bar {
     height: 7px;
     background: var(--alt-sky);
@@ -484,8 +488,8 @@
 }
 
 .kp-crew-logo {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 50px;
     object-fit: contain;
     display: block;
     flex: none;
@@ -497,23 +501,23 @@
 }
 
 .kp-crew-logo--bug {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 60px;
 }
 
 .kp-crew-logo--suit {
-    width: 40px;
-    height: 40px;
+    width: 88px;
+    height: 110px;
 }
 
 .kp-crew-logo--strip {
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 50px;
 }
 
 .kp-crew-logo--cv {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 30px;
 }
 
 .kp-row-abbr,

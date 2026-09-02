@@ -3,22 +3,10 @@
  * Loaded after vmix-graphics.js on vmix-karapiro.html only.
  */
 (function () {
-    const SUIT_PATH =
-        'M16 6 L30 6 C30 20 50 20 50 6 L64 6 C64 28 68 36 68 52 L68 90 Q40 100 12 90 L12 52 C12 36 16 28 16 6 Z';
-    const COLOR_POOL = [
-        ['#8a1f2d', '#f2c94c'],
-        ['#12325e', '#7fb6f0'],
-        ['#1d6b45', '#f5f0e4'],
-        ['#1b1f26', '#e5484d'],
-        ['#5b2d86', '#f5f0e4'],
-        ['#b8452c', '#f5e8c8'],
-        ['#0f5d6b', '#f2c94c'],
-        ['#c9a227', '#12325e'],
-        ['#20365c', '#c9a227'],
-        ['#7a1f4d', '#8fd0ff'],
-        ['#2b2b2b', '#f2c94c'],
-        ['#245c8f', '#e5484d'],
-    ];
+    const cutoutCache = new Map();
+    const cutoutInflight = new Map();
+    const TRANSPARENT_PX =
+        'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     const FIRST_NAMES = [
         'Tom', 'Sam', 'Jack', 'Liam', 'Ollie', 'Finn', 'George', 'Harry', 'Ben', 'Max',
         'Kahu', 'Nikau', 'Josh', 'Luke', 'Ella', 'Sophie', 'Grace', 'Ruby', 'Amelia', 'Zoe',
@@ -133,35 +121,273 @@
         return el('span', extra ? `kp-chip ${extra}` : 'kp-chip', text);
     }
 
-    function hashHue(id) {
-        let h = 0;
-        const s = String(id || '');
-        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-        return COLOR_POOL[h % COLOR_POOL.length];
-    }
-
     function laneEntries(race) {
         return (race?.lanes || []).filter((l) => l.code);
+    }
+
+    function isPaper(r, g, b, a) {
+        if (a < 40) return true;
+        return r > 250 && g > 250 && b > 250;
+    }
+
+    function sourceSize(src) {
+        return {
+            width: src.naturalWidth || src.width,
+            height: src.naturalHeight || src.height,
+        };
+    }
+
+    function cropSinglet(src) {
+        const { width, height } = sourceSize(src);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(src, 0, 0);
+        const { data } = ctx.getImageData(0, 0, width, height);
+        const occ = new Array(height).fill(0);
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+                if (!isPaper(data[i], data[i + 1], data[i + 2], data[i + 3])) occ[y]++;
+            }
+        }
+        const minRow = Math.max(1, Math.round(width * 0.002));
+        const runs = [];
+        let y = 0;
+        while (y < height) {
+            while (y < height && occ[y] < minRow) y++;
+            const start = y;
+            while (y < height && occ[y] >= minRow) y++;
+            if (y > start) runs.push({ start, end: y });
+        }
+        let yLimit = height;
+        const last = runs[runs.length - 1];
+        if (runs.length >= 2 && last.start > height * 0.5) yLimit = last.start;
+        let minX = width;
+        let minY = height;
+        let maxX = 0;
+        let maxY = 0;
+        for (let row = 0; row < yLimit; row++) {
+            for (let x = 0; x < width; x++) {
+                const i = (row * width + x) * 4;
+                if (isPaper(data[i], data[i + 1], data[i + 2], data[i + 3])) continue;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (row < minY) minY = row;
+                if (row > maxY) maxY = row;
+            }
+        }
+        if (maxX < minX || maxY < minY) throw new Error('No garment');
+        const pad = 2;
+        minX = Math.max(0, minX - pad);
+        minY = Math.max(0, minY - pad);
+        maxX = Math.min(width - 1, maxX + pad);
+        maxY = Math.min(height - 1, maxY + pad);
+        const cw = maxX - minX + 1;
+        const ch = maxY - minY + 1;
+        const out = document.createElement('canvas');
+        out.width = cw;
+        out.height = ch;
+        out.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+        return out;
+    }
+
+    function dilateMask(src, w, h, r) {
+        const out = new Uint8Array(src);
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                if (!src[y * w + x]) continue;
+                for (let dy = -r; dy <= r; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                        out[ny * w + nx] = 1;
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    function erodeMask(src, w, h, r) {
+        const out = new Uint8Array(src);
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                if (!src[y * w + x]) continue;
+                let keep = 1;
+                for (let dy = -r; dy <= r && keep; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= w || ny >= h || !src[ny * w + nx]) {
+                            keep = 0;
+                            break;
+                        }
+                    }
+                }
+                if (!keep) out[y * w + x] = 0;
+            }
+        }
+        return out;
+    }
+
+    function punchPaper(src) {
+        const w = src.width;
+        const h = src.height;
+        const n = w * h;
+        const ctx = src.getContext('2d', { willReadFrequently: true });
+        const img = ctx.getImageData(0, 0, w, h);
+        const data = img.data;
+        const wall = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+            const p = i * 4;
+            if (!isPaper(data[p], data[p + 1], data[p + 2], data[p + 3])) wall[i] = 1;
+        }
+        const sealed = erodeMask(dilateMask(wall, w, h, 1), w, h, 1);
+        const outside = new Uint8Array(n);
+        const stack = [];
+        const tryPush = (x, y) => {
+            if (x < 0 || y < 0 || x >= w || y >= h) return;
+            const i = y * w + x;
+            if (outside[i] || sealed[i]) return;
+            const p = i * 4;
+            if (!isPaper(data[p], data[p + 1], data[p + 2], data[p + 3])) return;
+            outside[i] = 1;
+            stack.push(i);
+        };
+        for (let x = 0; x < w; x++) {
+            tryPush(x, 0);
+            tryPush(x, h - 1);
+        }
+        for (let y = 0; y < h; y++) {
+            tryPush(0, y);
+            tryPush(w - 1, y);
+        }
+        while (stack.length) {
+            const i = stack.pop();
+            const x = i % w;
+            const yy = (i / w) | 0;
+            tryPush(x - 1, yy);
+            tryPush(x + 1, yy);
+            tryPush(x, yy - 1);
+            tryPush(x, yy + 1);
+        }
+        for (let i = 0; i < n; i++) {
+            if (outside[i]) data[i * 4 + 3] = 0;
+        }
+        const neighbor = (x, y) => {
+            if (x < 0 || y < 0 || x >= w || y >= h) return true;
+            return data[(y * w + x) * 4 + 3] < 16;
+        };
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const p = (y * w + x) * 4;
+                if (data[p + 3] < 16) continue;
+                if (!isPaper(data[p], data[p + 1], data[p + 2], data[p + 3])) continue;
+                if (neighbor(x - 1, y) || neighbor(x + 1, y) || neighbor(x, y - 1) || neighbor(x, y + 1)) {
+                    data[p + 3] = 0;
+                }
+            }
+        }
+        ctx.putImageData(img, 0, 0);
+        return src;
+    }
+
+    function trimAlpha(src) {
+        const w = src.width;
+        const h = src.height;
+        const ctx = src.getContext('2d', { willReadFrequently: true });
+        const { data } = ctx.getImageData(0, 0, w, h);
+        let minX = w;
+        let minY = h;
+        let maxX = 0;
+        let maxY = 0;
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                if (data[(y * w + x) * 4 + 3] < 16) continue;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+        }
+        if (maxX < minX) return src;
+        const out = document.createElement('canvas');
+        out.width = maxX - minX + 1;
+        out.height = maxY - minY + 1;
+        out.getContext('2d').drawImage(src, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+        return out;
+    }
+
+    function cutOriginal(src) {
+        const copy = document.createElement('canvas');
+        copy.width = src.width;
+        copy.height = src.height;
+        copy.getContext('2d').drawImage(src, 0, 0);
+        return trimAlpha(punchPaper(copy));
+    }
+
+    function loadLogoImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('missing'));
+            img.src = url;
+        });
+    }
+
+    function paintCutout(url, dataUrl) {
+        document.querySelectorAll('img.kp-crew-logo').forEach((img) => {
+            if (img.dataset.rowitLogo === url) img.src = dataUrl;
+        });
+    }
+
+    function requestCutout(url) {
+        if (cutoutCache.has(url)) return Promise.resolve(cutoutCache.get(url));
+        if (cutoutInflight.has(url)) return cutoutInflight.get(url);
+        const job = loadLogoImage(url)
+            .then((img) => cutOriginal(cropSinglet(img)).toDataURL('image/png'))
+            .then((dataUrl) => {
+                cutoutCache.set(url, dataUrl);
+                paintCutout(url, dataUrl);
+                return dataUrl;
+            })
+            .catch(() => {
+                cutoutCache.set(url, url);
+                paintCutout(url, url);
+                return url;
+            })
+            .finally(() => {
+                cutoutInflight.delete(url);
+            });
+        cutoutInflight.set(url, job);
+        return job;
     }
 
     function clubOf(code) {
         const parsed = vgParseClubCode(code);
         const info = vgClubInfo(parsed.id, vgState.lookup);
         const abbr = vgKpAbbr(code);
-        const [c1, c2] = hashHue(parsed.id || abbr);
-        return { ...info, abbr, c1, c2, id: parsed.id };
+        return { ...info, abbr, id: parsed.id };
     }
 
     function crewLogo(club, extraClass) {
         const cls = extraClass ? `kp-crew-logo ${extraClass}` : 'kp-crew-logo';
-        if (club?.logoUrl) {
-            const img = document.createElement('img');
-            img.className = cls;
-            img.src = club.logoUrl;
-            img.alt = club.name || '';
-            return img;
+        if (!club?.logoUrl) return el('span', `${cls} kp-crew-logo--empty`);
+        const img = document.createElement('img');
+        img.className = cls;
+        img.alt = club.name || '';
+        img.dataset.rowitLogo = club.logoUrl;
+        const cached = cutoutCache.get(club.logoUrl);
+        if (cached) {
+            img.src = cached;
+        } else {
+            img.src = TRANSPARENT_PX;
+            requestCutout(club.logoUrl);
         }
-        return el('span', `${cls} kp-crew-logo--empty`);
+        return img;
     }
 
     function logoSvg(size, opacity, hat) {
@@ -191,24 +417,6 @@
             wrap.appendChild(hatEl.firstChild);
         }
         return wrap;
-    }
-
-    function makeSuit(c1, c2, size, key) {
-        const id = `suitclip-${key}`;
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 80 100');
-        svg.setAttribute('width', String(size));
-        svg.setAttribute('height', String(Math.round(size * 1.25)));
-        svg.style.display = 'block';
-        svg.innerHTML =
-            `<defs><clipPath id="${id}"><path d="${SUIT_PATH}"/></clipPath></defs>` +
-            `<path d="${SUIT_PATH}" fill="${c1}"/>` +
-            `<g clip-path="url(#${id})">` +
-            `<path d="M12 30 L68 62 L68 76 L12 44 Z" fill="${c2}"/>` +
-            `<path d="M12 84 L68 84 L68 100 L12 100 Z" fill="${c2}" opacity="0.35"/>` +
-            `</g>` +
-            `<path d="${SUIT_PATH}" fill="none" stroke="rgba(13,17,23,0.55)" stroke-width="2"/>`;
-        return svg;
     }
 
     function sponsorBits(size) {
@@ -648,9 +856,8 @@
             const club = clubOf(lane.code);
             const card = el('div', 'kp-suit-card');
             card.style.animationDelay = `${0.08 + i * 0.06}s`;
-            card.appendChild(makeSuit(club.c1, club.c2, 96, `l${i}`));
-            card.appendChild(el('span', 'kp-suit-lane', `Lane ${lane.lane}`));
             card.appendChild(crewLogo(club, 'kp-crew-logo--suit'));
+            card.appendChild(el('span', 'kp-suit-lane', `Lane ${lane.lane}`));
             card.appendChild(el('span', 'kp-suit-club', club.name));
             grid.appendChild(card);
         });
@@ -659,13 +866,12 @@
         layer.appendChild(wrap);
     }
 
-    function suitStripBody(race, size) {
+    function suitStripBody(race) {
         const body = el('div', 'kp-suitstrip-body');
         laneEntries(race).forEach((lane, i) => {
             const club = clubOf(lane.code);
             const cell = el('div', 'kp-suit-cell');
             cell.style.animationDelay = `${0.1 + i * 0.05}s`;
-            cell.appendChild(makeSuit(club.c1, club.c2, size, `sm${size}-${i}`));
             cell.appendChild(crewLogo(club, 'kp-crew-logo--strip'));
             cell.appendChild(el('span', 'kp-suit-lane', `Lane ${lane.lane}`));
             cell.appendChild(el('span', 'kp-suit-abbr', club.abbr));
@@ -678,7 +884,7 @@
         const root = el('div', 'kp-suitstrip');
         const card = el('div', 'kp-suitstrip-card');
         card.appendChild(bar('kp-bar--sm'));
-        card.appendChild(suitStripBody(race, 44));
+        card.appendChild(suitStripBody(race));
         root.appendChild(card);
         layer.appendChild(root);
     }
@@ -694,7 +900,7 @@
         copy.appendChild(el('p', 'kp-lower-sub', lowerSub(race)));
         body.appendChild(copy);
         card.appendChild(body);
-        card.appendChild(suitStripBody(race, 34));
+        card.appendChild(suitStripBody(race));
         root.appendChild(card);
         layer.appendChild(root);
     }

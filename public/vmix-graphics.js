@@ -96,6 +96,9 @@ const vgPlayback = {
     videoHoldTime: null,
 };
 
+/** True while CSV refresh rebuilds a graphic already on hold (skip intro motion). */
+let vgHoldRefreshing = false;
+
 const VG_THEMES = {
     kri: {
         label: 'KRI',
@@ -679,7 +682,13 @@ function vgRefreshLiveRaceContent() {
     const profile = vgGetVideoProfile(graphic);
     const layer = vgGetLayerEl();
 
-    vgPrepareContent(graphic, vgGetRaceParam());
+    const prevRefresh = vgHoldRefreshing;
+    vgHoldRefreshing = true;
+    try {
+        vgPrepareContent(graphic, vgGetRaceParam());
+    } finally {
+        vgHoldRefreshing = prevRefresh;
+    }
     if (graphic === 'leader' && vgLeaderLane != null) {
         vgShowLeaderForConfiguredLane();
     }
@@ -2190,6 +2199,7 @@ function vgPrepareContent(graphic, raceParam) {
             return;
         }
         if (err) err.hidden = true;
+        layer.classList.toggle('kp-refresh', vgHoldRefreshing);
         layer.replaceChildren();
         window.VmixKarapiro.render(layer, graphic, race);
         vgSyncLayerVisibility(layer);
