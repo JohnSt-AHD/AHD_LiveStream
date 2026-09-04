@@ -3,13 +3,23 @@
  */
 (function (global) {
     const LAYOUT_IDS = {
-        title: [{ id: 'title', label: 'Title block' }],
+        title: [
+            { id: 'title', label: 'Title block' },
+            { id: 'title-code', label: 'Title — regatta code' },
+            { id: 'title-date', label: 'Title — date' },
+        ],
         lower: [
             { id: 'lower', label: 'Lower third (whole layer)' },
             { id: 'lower-meta', label: 'Lower — round / heat' },
             { id: 'lower-race', label: 'Lower — race number + time' },
+            { id: 'lower-race-time', label: 'Lower — start time' },
+            { id: 'lower-race-number', label: 'Lower — race number' },
             { id: 'lower-progression', label: 'Lower — progression' },
             { id: 'lower-event', label: 'Lower — event title' },
+            { id: 'mf-lower-logo-dock', label: 'Milford — logo dock' },
+            { id: 'mf-lower-logo-art', label: 'Milford — logo art' },
+            { id: 'mf-lower-mountains', label: 'Milford — mountains' },
+            { id: 'mf-lower-bars', label: 'Milford — orange/white bars' },
         ],
         draw: [
             { id: 'draw-head', label: 'Draw — header block (all)', posMode: 'absolute' },

@@ -4,7 +4,7 @@
  */
 (function (global) {
     const LS_KEY = 'altitudeHdVmixLayout_v2';
-    const LAYOUT_BUILD = 26;
+    const LAYOUT_BUILD = 27;
 
     /** Baked-in layout defaults (localStorage overrides per region). */
     const DEFAULT_LAYOUTS = {
@@ -197,8 +197,7 @@
         'rnz-milford': {
             draw: {
                 _playback: {
-                    textInMs: 4500,
-                    textOutMs: 27000,
+                    textInMs: 0,
                     outroMs: 500,
                 },
                 'draw-head': { left: '140px', top: '154px', width: '812px' },
@@ -208,8 +207,7 @@
             },
             results: {
                 _playback: {
-                    textInMs: 6000,
-                    textOutMs: 16000,
+                    textInMs: 0,
                     outroMs: 500,
                 },
                 'results-head': { left: '140px', top: '154px', width: '812px' },
@@ -219,48 +217,82 @@
             },
             lower: {
                 _playback: {
-                    textInMs: 1500,
-                    pauseAtMs: 1500,
+                    textInMs: 0,
                     outroMs: 500,
                 },
+                'mf-lower-logo-dock': {
+                    left: '0px',
+                    top: '925px',
+                    width: '284px',
+                    height: '155px',
+                },
+                'mf-lower-logo-art': {
+                    left: '44px',
+                    top: '943px',
+                    width: '240px',
+                    height: '105px',
+                },
+                'mf-lower-mountains': {
+                    left: '280px',
+                    top: '943px',
+                    width: '724px',
+                    height: '137px',
+                },
+                'mf-lower-bars': {
+                    left: '288px',
+                    top: '943px',
+                    width: '352px',
+                    height: '44px',
+                },
                 'lower-meta': {
-                    left: '294px',
-                    top: '952px',
-                    width: '200px',
-                    height: '22px',
+                    left: '270px',
+                    top: '946px',
+                    width: '131px',
+                    height: '36px',
                     fontSize: '20px',
                 },
-                'lower-race': {
-                    left: '420px',
-                    top: '954px',
-                    width: '280px',
-                    height: '22px',
-                    fontSize: '18px',
+                'lower-race-time': {
+                    left: '416px',
+                    top: '946px',
+                    width: '77px',
+                    height: '36px',
+                    fontSize: '20px',
+                    color: '#111111',
+                },
+                'lower-race-number': {
+                    left: '493px',
+                    top: '946px',
+                    width: '122px',
+                    height: '36px',
+                    fontSize: '20px',
+                    color: '#111111',
                 },
                 'lower-progression': {
-                    left: '677px',
-                    top: '960px',
-                    fontSize: '18px',
+                    left: '657px',
+                    top: '958px',
+                    width: '179px',
+                    height: '38px',
+                    fontSize: '20px',
                     color: '#ffffff',
                 },
                 'lower-event': {
                     left: '287px',
                     top: '996px',
                     width: '615px',
+                    height: '64px',
                     fontSize: '36px',
                     color: 'rgb(255, 255, 255)',
                 },
             },
             speed: {
                 _playback: {
-                    textInMs: 1000,
-                    pauseAtMs: 3000,
+                    textInMs: 0,
                     outroMs: 500,
                 },
             },
             leader: {
                 _playback: {
-                    pauseAtMs: 6000,
+                    textInMs: 0,
                     outroMs: 500,
                 },
                 'leader-wrap': {},
@@ -291,6 +323,22 @@
                     width: '113.85px',
                     height: '35.1px',
                     fontSize: '14.4px',
+                },
+            },
+            title: {
+                _playback: {
+                    textInMs: 0,
+                    outroMs: 500,
+                },
+                'title-code': {
+                    left: '380px',
+                    top: '390px',
+                    color: '#ffffff',
+                },
+                'title-date': {
+                    left: '380px',
+                    top: '480px',
+                    color: '#ffffff',
                 },
             },
         },

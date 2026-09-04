@@ -1,0 +1,99 @@
+{
+  "draw": {
+    "id": "draw",
+    "fps": 12,
+    "introMs": 4500,
+    "steps": 53,
+    "plate": "draw-plate.png",
+    "plateBytes": 158146,
+    "sprite": {
+      "kind": "anim",
+      "file": "draw-intro.webp",
+      "left": 0,
+      "top": 0,
+      "width": 1920,
+      "height": 1080,
+      "frames": 54,
+      "durationMs": 4482,
+      "bytes": 3005172
+    }
+  },
+  "results": {
+    "id": "results",
+    "fps": 12,
+    "introMs": 6000,
+    "steps": 71,
+    "plate": "results-plate.png",
+    "plateBytes": 114299,
+    "sprite": {
+      "kind": "anim",
+      "file": "results-intro.webp",
+      "left": 0,
+      "top": 0,
+      "width": 1920,
+      "height": 1080,
+      "frames": 72,
+      "durationMs": 5976,
+      "bytes": 3050388
+    }
+  },
+  "leader": {
+    "id": "leader",
+    "fps": 30,
+    "introMs": 3000,
+    "steps": 89,
+    "plate": "leader-plate.png",
+    "plateBytes": 17243,
+    "sprite": {
+      "kind": "sprite",
+      "file": "leader-intro.webp",
+      "left": 1015,
+      "top": 108,
+      "width": 905,
+      "height": 178,
+      "frames": 90,
+      "lastY": 15842,
+      "spriteHeight": 16020,
+      "bytes": 289558
+    }
+  },
+  "title": {
+    "id": "title",
+    "fps": 12,
+    "introMs": 5000,
+    "steps": 59,
+    "plate": "title-plate.png",
+    "plateBytes": 66975,
+    "sprite": {
+      "kind": "anim",
+      "file": "title-intro.webp",
+      "left": 0,
+      "top": 0,
+      "width": 1920,
+      "height": 1080,
+      "frames": 60,
+      "durationMs": 4980,
+      "bytes": 831114
+    }
+  },
+  "tracker": {
+    "id": "tracker",
+    "fps": 30,
+    "introMs": 3000,
+    "steps": 89,
+    "plate": "tracker-plate.png",
+    "plateBytes": 17933,
+    "sprite": {
+      "kind": "sprite",
+      "file": "tracker-intro.webp",
+      "left": 1145,
+      "top": 899,
+      "width": 775,
+      "height": 181,
+      "frames": 90,
+      "lastY": 16109,
+      "spriteHeight": 16290,
+      "bytes": 391042
+    }
+  }
+}
