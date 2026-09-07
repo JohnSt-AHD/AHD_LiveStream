@@ -1,0 +1,29 @@
+Event #,Event Type,Gender,Class,Boat,Seats,Oars,Coxed,Other,Sponsor
+1,B U18 C1X,M,U18 ,1X,1,Scull,N,,Hornabrook MacDonald
+2,G U18 C1X,W,U18 ,1X,1,Scull,N,,Hornabrook MacDonald
+3,M Clb C2X,M,Clb,2X,2,Scull,N,,Burts Bees
+4,W Clb C2X,W,Clb,2X,2,Scull,N,,Burts Bees
+5,Mx Clb C2X,Mx,Clb,2X,2,Scull,N,,Burts Bees
+6,M Snr C1X,M,Snr,1X,1,Scull,N,,Swift Racing
+7,W Snr C1X,W,Snr,1X,1,Scull,N,,Swift Racing
+8,B U17 C2X,M,U17 ,2X,2,Scull,N,,The Cav
+9,G U17 C2X,W,U17 ,2X,2,Scull,N,,The Cav
+11,W C-D C2X,W,Mst C-D ,2X,2,Scull,N,,Aotearoa Boat Company
+12,B U18 C2X,M,U18 ,2X,2,Scull,N,,Hornabrook MacDonald
+13,G U18 C2X,W,U18 ,2X,2,Scull,N,,Oceanbridge Shipping Ltd
+14,Mx U18 C2X,Mx,U18 ,2X,2,Scull,N,,Hornabrook MacDonald
+15,Mx Snr C2X,Mx,Snr,2X,2,Scull,N,,Penberthy Insurance Limited
+16,M E-F C2X,M,Mst E-F ,2X,2,Scull,N,,EET. Elevators, Escalation, Travelators
+18I,Mx I 2X (P),Mx,Opn,2X,2,Scull,N,Para,Tangle Teezer
+19,M Opn C1X,M,Opn,1X,1,Scull,N,,Burts Bees
+20,W Opn C1X,W,Opn,1X,1,Scull,N,,Tailor Skin Care
+21,Mx Clb C4X+,Mx,Clb,4X+,4,Scull,Y,,Claymore Partners Ltd
+22,B U18 C4X+,M,U18 ,4X+,4,Scull,Y,,Hornabrook MacDonald
+23,G U18 C4X+,W,U18 ,4X+,4,Scull,Y,,Claymore Partners Ltd
+24,Mx U18 C4X+,Mx,U18 ,4X+,4,Scull,Y,,Claymore Partners Ltd
+25,Mx Opn C2X,Mx,Opn,2X,2,Scull,N,,Aotearoa Boat Company
+26,B U17 C4X+,M,U17 ,4X+,4,Scull,Y,,The Cav
+27,G U17 C4X+,W,U17 ,4X+,4,Scull,Y,,Tangle Teezer
+28,Mx C-D C4X+,Mx,Mst C-D ,4X+,4,Scull,Y,,Tailor Skin Care
+29,Mx E-F C4X+,Mx,Mst E-F ,4X+,4,Scull,Y,,Tailor Skin Care
+30,Mx Opn C4X+,Mx,Opn,4X+,4,Scull,Y,,Tailor Skin Care
