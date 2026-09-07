@@ -5,8 +5,18 @@
 (function (global) {
     const LS_ACK = 'altitudeHdCapsizeAck_v1';
 
-    let audioCtx = null;
-    let lastSoundAt = 0;
+    /** Same pattern as CrewSight Manager: beep → “Capsize alert” → beep, every 5s until cleared. */
+    const ALARM_EVERY_MS = 5000;
+    const ALARM_BEEP_MS = 400;
+    const ALARM_GAIN = 0.9;
+    const ALARM_PHRASE = 'Capsize alert';
+
+    let alarmTimer = null;
+    let alarmCtx = null;
+    let alarmOscillators = [];
+    let alarmSeq = 0;
+    let alarmTimeouts = [];
+    let audioUnlocked = false;
 
     function loadJson(key, fallback) {
         try {
@@ -69,34 +79,150 @@
         return dirty;
     }
 
-    function playAlarmTone() {
-        const now = Date.now();
-        if (now - lastSoundAt < 8000) return;
-        lastSoundAt = now;
+    function unlockAlarmAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
         try {
             const Ctx = global.AudioContext || global.webkitAudioContext;
-            if (!Ctx) return;
-            if (!audioCtx) audioCtx = new Ctx();
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume().catch(() => {});
+            if (Ctx) {
+                const ctx = new Ctx();
+                if (ctx.state === 'suspended') void ctx.resume();
+                void ctx.close();
             }
-            const t0 = audioCtx.currentTime;
-            for (let i = 0; i < 3; i++) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = i % 2 === 0 ? 880 : 660;
-                gain.gain.setValueAtTime(0.0001, t0 + i * 0.35);
-                gain.gain.exponentialRampToValueAtTime(0.22, t0 + i * 0.35 + 0.04);
-                gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.35 + 0.28);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(t0 + i * 0.35);
-                osc.stop(t0 + i * 0.35 + 0.3);
+            if (typeof global.speechSynthesis !== 'undefined') {
+                global.speechSynthesis.getVoices();
             }
         } catch {
             /* ignore */
         }
+    }
+
+    function bindAlarmAudioUnlock() {
+        const once = { once: true, capture: true };
+        global.addEventListener('pointerdown', unlockAlarmAudio, once);
+        global.addEventListener('keydown', unlockAlarmAudio, once);
+    }
+
+    function clearAlarmTimeouts() {
+        for (const id of alarmTimeouts) clearTimeout(id);
+        alarmTimeouts = [];
+    }
+
+    function stopAlarmSound() {
+        clearAlarmTimeouts();
+        alarmSeq += 1;
+        try {
+            if (typeof global.speechSynthesis !== 'undefined') global.speechSynthesis.cancel();
+        } catch {
+            /* optional */
+        }
+        try {
+            for (const osc of alarmOscillators) {
+                try {
+                    osc.stop();
+                } catch {
+                    /* already stopped */
+                }
+            }
+            alarmOscillators = [];
+            if (alarmCtx) {
+                void alarmCtx.close();
+                alarmCtx = null;
+            }
+        } catch {
+            /* optional */
+        }
+    }
+
+    function playAlarmTone(ctx, seq) {
+        if (seq !== alarmSeq) return;
+        try {
+            if (ctx.state === 'closed') return;
+            if (ctx.state === 'suspended') void ctx.resume();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const start = ctx.currentTime;
+            const durSec = ALARM_BEEP_MS / 1000;
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(880, start);
+            gain.gain.setValueAtTime(ALARM_GAIN, start);
+            gain.gain.setValueAtTime(ALARM_GAIN, start + durSec - 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + durSec);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(start);
+            osc.stop(start + durSec);
+            alarmOscillators.push(osc);
+            osc.onended = () => {
+                alarmOscillators = alarmOscillators.filter((o) => o !== osc);
+            };
+        } catch {
+            /* optional */
+        }
+    }
+
+    function speakAlarm(seq, onDone) {
+        if (seq !== alarmSeq) return;
+        if (
+            typeof global.speechSynthesis === 'undefined' ||
+            typeof global.SpeechSynthesisUtterance === 'undefined'
+        ) {
+            onDone?.();
+            return;
+        }
+        try {
+            const u = new global.SpeechSynthesisUtterance(ALARM_PHRASE);
+            u.volume = 1;
+            u.rate = 1.05;
+            u.pitch = 1.05;
+            u.onend = () => {
+                if (seq === alarmSeq) onDone?.();
+            };
+            u.onerror = () => {
+                if (seq === alarmSeq) onDone?.();
+            };
+            global.speechSynthesis.cancel();
+            global.speechSynthesis.speak(u);
+        } catch {
+            onDone?.();
+        }
+    }
+
+    function playAlarmCycle() {
+        stopAlarmSound();
+        const seq = alarmSeq;
+        try {
+            const Ctx = global.AudioContext || global.webkitAudioContext;
+            if (!Ctx) return;
+            const ctx = new Ctx();
+            if (ctx.state === 'suspended') void ctx.resume();
+            alarmCtx = ctx;
+            playAlarmTone(ctx, seq);
+            const afterBeep = setTimeout(() => {
+                if (seq !== alarmSeq) return;
+                speakAlarm(seq, () => {
+                    if (seq !== alarmSeq) return;
+                    playAlarmTone(ctx, seq);
+                });
+            }, ALARM_BEEP_MS + 100);
+            alarmTimeouts.push(afterBeep);
+        } catch {
+            /* Browsers may block audio until the user has interacted with the page. */
+        }
+    }
+
+    function startAlarmLoop() {
+        if (alarmTimer != null) return;
+        playAlarmCycle();
+        alarmTimer = setInterval(playAlarmCycle, ALARM_EVERY_MS);
+    }
+
+    function stopAlarmLoop() {
+        if (alarmTimer != null) {
+            clearInterval(alarmTimer);
+            alarmTimer = null;
+        }
+        stopAlarmSound();
     }
 
     function updateCapsizeAlerts(devices, positions) {
@@ -125,7 +251,8 @@
             });
         }
 
-        if (active.length) playAlarmTone();
+        if (active.length) startAlarmLoop();
+        else stopAlarmLoop();
         return active;
     }
 
@@ -213,6 +340,8 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
+
+    bindAlarmAudioUnlock();
 
     global.AltitudeHdCapsizeAlarm = {
         updateCapsizeAlerts,
