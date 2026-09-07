@@ -3,6 +3,7 @@
     const RECENT_DAYS = 7;
     const statusEl = document.getElementById('logbookStatus');
     const listEl = document.getElementById('logbookList');
+    const pdfBtn = document.getElementById('logbookPdfBtn');
 
     function setStatus(message, isError) {
         if (!statusEl) return;
@@ -72,6 +73,32 @@
             month: '2-digit',
             day: '2-digit',
         }).format(new Date(Date.now() - daysAgo * 86400000));
+    }
+
+    function previousCalendarMonthRange() {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).formatToParts(new Date());
+        const y = Number(parts.find((p) => p.type === 'year')?.value);
+        const m = Number(parts.find((p) => p.type === 'month')?.value);
+        let py = y;
+        let pm = m - 1;
+        if (pm < 1) {
+            pm = 12;
+            py = y - 1;
+        }
+        const lastDay = new Date(Date.UTC(py, pm, 0)).getUTCDate();
+        const start = `${py}-${String(pm).padStart(2, '0')}-01`;
+        const end = `${py}-${String(pm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        const monthLabel = new Intl.DateTimeFormat('en-NZ', {
+            timeZone: 'UTC',
+            month: 'long',
+            year: 'numeric',
+        }).format(new Date(Date.UTC(py, pm - 1, 15)));
+        return { start, end, year: py, month: pm, monthLabel, lastDay };
     }
 
     function renderSessions(sessions) {
@@ -193,24 +220,170 @@
         listEl.innerHTML = html;
     }
 
+    async function fetchLogbookDays(days) {
+        const res = await fetch(
+            '/api/traccar?action=logbook&source=rowing&days=' +
+                encodeURIComponent(String(days)) +
+                '&tz=' +
+                encodeURIComponent(TZ),
+            { headers: { Accept: 'application/json' } },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) {
+            throw new Error(data.error || `Failed to load logbook (${res.status})`);
+        }
+        return Array.isArray(data.days) ? data.days : [];
+    }
+
+    function buildPdfDocumentHtml(range, days) {
+        const agg = aggregateDays(days);
+        const fileTitle = `RowSafe-Logbook-${range.year}-${String(range.month).padStart(2, '0')}`;
+        const dayBlocks = days.length
+            ? days
+                  .map((day) => {
+                      const sessionRows = (day.sessions || [])
+                          .map(
+                              (s) =>
+                                  `<tr>` +
+                                  `<td>${escapeHtml(s.crew || s.uniqueId || '—')}</td>` +
+                                  `<td>${escapeHtml(formatTime(s.startedAt))}</td>` +
+                                  `<td>${escapeHtml(formatTime(s.endedAt))}</td>` +
+                                  `<td>${s.capsize ? 'Yes' : 'No'}</td>` +
+                                  `<td>${escapeHtml(formatDistance(s.distanceM))}</td>` +
+                                  `</tr>`,
+                          )
+                          .join('');
+                      return (
+                          `<section class="day">` +
+                          `<h2>${escapeHtml(formatDayLabel(day.date))}</h2>` +
+                          `<p class="day-meta">` +
+                          `${escapeHtml(String(day.sessionCount))} crews · ` +
+                          `${escapeHtml(String(day.capsizeCount))} capsizes · ` +
+                          `${escapeHtml(formatDistance(day.distanceM))} · ` +
+                          `${escapeHtml(formatDuration(day.onWaterMs))} on water` +
+                          `</p>` +
+                          (sessionRows
+                              ? `<table><thead><tr>` +
+                                `<th>Crew</th><th>Start</th><th>Finish</th><th>Capsize</th><th>Distance</th>` +
+                                `</tr></thead><tbody>${sessionRows}</tbody></table>`
+                              : `<p class="empty">No crew sessions.</p>`) +
+                          `</section>`
+                      );
+                  })
+                  .join('')
+            : `<p class="empty">No sessions recorded for ${escapeHtml(range.monthLabel)}.</p>`;
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(fileTitle)}</title>
+<style>
+  @page { margin: 16mm 14mm; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #0f172a;
+    font-size: 11pt;
+    line-height: 1.35;
+    margin: 0;
+  }
+  h1 { font-size: 18pt; margin: 0 0 4px; }
+  .sub { color: #475569; margin: 0 0 14px; font-size: 10pt; }
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+  .summary div strong { display: block; font-size: 12pt; }
+  .summary div span { color: #64748b; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; }
+  .day { break-inside: avoid; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
+  .day h2 { font-size: 12pt; margin: 0 0 4px; }
+  .day-meta { margin: 0 0 8px; color: #475569; font-size: 9.5pt; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #e2e8f0; }
+  th { color: #64748b; font-weight: 650; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.03em; }
+  .empty { color: #64748b; }
+  .hint { margin-top: 18px; color: #94a3b8; font-size: 9pt; }
+  @media print {
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <h1>RowSafe logbook</h1>
+  <p class="sub">${escapeHtml(range.monthLabel)} · Pacific/Auckland · CrewSight sessions</p>
+  <div class="summary">
+    <div><span>Crew outings</span><strong>${escapeHtml(String(agg.sessionCount))}</strong></div>
+    <div><span>Capsizes</span><strong>${escapeHtml(String(agg.capsizeCount))}</strong></div>
+    <div><span>Distance</span><strong>${escapeHtml(formatDistance(agg.distanceM))}</strong></div>
+    <div><span>On water</span><strong>${escapeHtml(formatDuration(agg.onWaterMs))}</strong></div>
+  </div>
+  ${dayBlocks}
+  <p class="hint">In the print dialog, choose <strong>Save as PDF</strong> / <strong>Microsoft Print to PDF</strong>.</p>
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () { window.focus(); window.print(); }, 200);
+    });
+  <\/script>
+</body>
+</html>`;
+    }
+
+    function openPdfPrintWindow(html) {
+        const win = window.open('', '_blank');
+        if (!win) {
+            throw new Error('Pop-up blocked — allow pop-ups for this site to download the PDF.');
+        }
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+    }
+
+    async function downloadLastMonthPdf() {
+        if (!pdfBtn) return;
+        pdfBtn.disabled = true;
+        const prevLabel = pdfBtn.textContent;
+        pdfBtn.textContent = 'Preparing PDF…';
+        try {
+            const range = previousCalendarMonthRange();
+            // Cover previous calendar month even late in the following month.
+            const daysNeeded = Math.min(120, range.lastDay + 40);
+            const allDays = await fetchLogbookDays(daysNeeded);
+            const monthDays = allDays
+                .filter((d) => d?.date && d.date >= range.start && d.date <= range.end)
+                .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+            openPdfPrintWindow(buildPdfDocumentHtml(range, monthDays));
+            setStatus(
+                `Opened ${range.monthLabel} logbook for PDF — choose Save as PDF in the print dialog.`,
+                false,
+            );
+        } catch (err) {
+            setStatus(err instanceof Error ? err.message : String(err), true);
+        } finally {
+            pdfBtn.disabled = false;
+            pdfBtn.textContent = prevLabel || 'Download last month (PDF)';
+        }
+    }
+
     async function loadLogbook() {
         setStatus('Loading logbook…', false);
         try {
-            const res = await fetch(
-                '/api/traccar?action=logbook&source=rowing&days=45&tz=' + encodeURIComponent(TZ),
-                { headers: { Accept: 'application/json' } },
-            );
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok || data.ok === false) {
-                throw new Error(data.error || `Failed to load logbook (${res.status})`);
-            }
-            renderDays(Array.isArray(data.days) ? data.days : []);
+            renderDays(await fetchLogbookDays(45));
         } catch (err) {
             listEl.hidden = true;
             listEl.innerHTML = '';
             setStatus(err instanceof Error ? err.message : String(err), true);
         }
     }
+
+    pdfBtn?.addEventListener('click', () => {
+        void downloadLastMonthPdf();
+    });
 
     void loadLogbook();
 })();

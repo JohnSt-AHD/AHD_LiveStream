@@ -19,11 +19,42 @@
 }
 
 .rnz-logbook-page .rnz-logbook-intro p {
-    margin: 0 0 18px;
+    margin: 0 0 12px;
     color: #cbd5e1;
     font-size: 0.98rem;
     line-height: 1.45;
     max-width: 42rem;
+}
+
+.rnz-logbook-actions {
+    margin: 0 0 18px;
+}
+
+.rnz-logbook-pdf-btn {
+    appearance: none;
+    border: 1px solid #5eead4;
+    border-radius: 999px;
+    padding: 0.55rem 1rem;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 650;
+    cursor: pointer;
+    color: #ecfeff;
+    background: rgba(13, 148, 136, 0.45);
+}
+
+.rnz-logbook-pdf-btn:hover:not(:disabled) {
+    background: rgba(13, 148, 136, 0.65);
+}
+
+.rnz-logbook-pdf-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.rnz-logbook-pdf-btn:focus-visible {
+    outline: 2px solid #5eead4;
+    outline-offset: 2px;
 }
 
 .rnz-logbook-page .rnz-logbook-status {
