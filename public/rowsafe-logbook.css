@@ -27,7 +27,40 @@
 }
 
 .rnz-logbook-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px 12px;
     margin: 0 0 18px;
+}
+
+.rnz-logbook-month-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.rnz-logbook-month-input {
+    appearance: none;
+    border: 1px solid #5eead4;
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ecfeff;
+    background: rgba(15, 23, 42, 0.55);
+    min-width: 10.5rem;
+}
+
+.rnz-logbook-month-input:focus-visible {
+    outline: 2px solid #5eead4;
+    outline-offset: 2px;
 }
 
 .rnz-logbook-pdf-btn {

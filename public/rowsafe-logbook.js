@@ -1,9 +1,12 @@
 (function () {
     const TZ = 'Pacific/Auckland';
     const RECENT_DAYS = 7;
+    /** Matches CrewSight history logbook API clamp (max days lookback). */
+    const LOGBOOK_MAX_DAYS = 120;
     const statusEl = document.getElementById('logbookStatus');
     const listEl = document.getElementById('logbookList');
     const pdfBtn = document.getElementById('logbookPdfBtn');
+    const pdfMonthInput = document.getElementById('logbookPdfMonth');
 
     function setStatus(message, isError) {
         if (!statusEl) return;
@@ -19,6 +22,112 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function pad2(n) {
+        return String(n).padStart(2, '0');
+    }
+
+    function aucklandYmdParts(date = new Date()) {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).formatToParts(date);
+        return {
+            y: Number(parts.find((p) => p.type === 'year')?.value),
+            m: Number(parts.find((p) => p.type === 'month')?.value),
+            d: Number(parts.find((p) => p.type === 'day')?.value),
+        };
+    }
+
+    function ymValue(year, month) {
+        return `${year}-${pad2(month)}`;
+    }
+
+    function shiftMonth(year, month, delta) {
+        const idx = year * 12 + (month - 1) + delta;
+        return {
+            y: Math.floor(idx / 12),
+            m: (idx % 12) + 1,
+        };
+    }
+
+    function calendarMonthRange(year, month) {
+        const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        const start = `${year}-${pad2(month)}-01`;
+        const end = `${year}-${pad2(month)}-${pad2(lastDay)}`;
+        const monthLabel = new Intl.DateTimeFormat('en-NZ', {
+            timeZone: 'UTC',
+            month: 'long',
+            year: 'numeric',
+        }).format(new Date(Date.UTC(year, month - 1, 15)));
+        return { start, end, year, month, monthLabel, lastDay };
+    }
+
+    function daysBetweenAuckland(startYmd, endYmd) {
+        const [sy, sm, sd] = String(startYmd).split('-').map(Number);
+        const [ey, em, ed] = String(endYmd).split('-').map(Number);
+        const a = Date.UTC(sy, sm - 1, sd);
+        const b = Date.UTC(ey, em - 1, ed);
+        return Math.round((b - a) / 86400000);
+    }
+
+    function previousCalendarMonthRange() {
+        const today = aucklandYmdParts();
+        const prev = shiftMonth(today.y, today.m, -1);
+        return calendarMonthRange(prev.y, prev.m);
+    }
+
+    function initPdfMonthPicker() {
+        if (!pdfMonthInput) return;
+        const today = aucklandYmdParts();
+        const todayKey = `${today.y}-${pad2(today.m)}-${pad2(today.d)}`;
+        const maxYm = ymValue(today.y, today.m);
+
+        // Earliest month whose 1st still fits inside the API lookback window.
+        let minY = today.y;
+        let minM = today.m;
+        for (let i = 0; i < 24; i += 1) {
+            const cand = shiftMonth(today.y, today.m, -i);
+            const start = `${cand.y}-${pad2(cand.m)}-01`;
+            const age = daysBetweenAuckland(start, todayKey);
+            if (age > LOGBOOK_MAX_DAYS - 1) break;
+            minY = cand.y;
+            minM = cand.m;
+        }
+        const minYm = ymValue(minY, minM);
+        pdfMonthInput.min = minYm;
+        pdfMonthInput.max = maxYm;
+
+        const prev = previousCalendarMonthRange();
+        const defaultYm = ymValue(prev.year, prev.month);
+        pdfMonthInput.value =
+            defaultYm >= minYm && defaultYm <= maxYm ? defaultYm : maxYm;
+    }
+
+    function selectedMonthRange() {
+        const raw = String(pdfMonthInput?.value || '').trim();
+        const match = /^(\d{4})-(\d{2})$/.exec(raw);
+        if (!match) {
+            throw new Error('Choose a month to download.');
+        }
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        if (!Number.isFinite(year) || month < 1 || month > 12) {
+            throw new Error('Choose a valid month to download.');
+        }
+        const range = calendarMonthRange(year, month);
+        const today = aucklandYmdParts();
+        const todayKey = `${today.y}-${pad2(today.m)}-${pad2(today.d)}`;
+        const age = daysBetweenAuckland(range.start, todayKey);
+        if (age > LOGBOOK_MAX_DAYS - 1) {
+            throw new Error(
+                `That month is too far back — logbook PDF covers about the last ${LOGBOOK_MAX_DAYS} days.`,
+            );
+        }
+        return range;
     }
 
     function formatDistance(meters) {
@@ -73,32 +182,6 @@
             month: '2-digit',
             day: '2-digit',
         }).format(new Date(Date.now() - daysAgo * 86400000));
-    }
-
-    function previousCalendarMonthRange() {
-        const parts = new Intl.DateTimeFormat('en-CA', {
-            timeZone: TZ,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        }).formatToParts(new Date());
-        const y = Number(parts.find((p) => p.type === 'year')?.value);
-        const m = Number(parts.find((p) => p.type === 'month')?.value);
-        let py = y;
-        let pm = m - 1;
-        if (pm < 1) {
-            pm = 12;
-            py = y - 1;
-        }
-        const lastDay = new Date(Date.UTC(py, pm, 0)).getUTCDate();
-        const start = `${py}-${String(pm).padStart(2, '0')}-01`;
-        const end = `${py}-${String(pm).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-        const monthLabel = new Intl.DateTimeFormat('en-NZ', {
-            timeZone: 'UTC',
-            month: 'long',
-            year: 'numeric',
-        }).format(new Date(Date.UTC(py, pm - 1, 15)));
-        return { start, end, year: py, month: pm, monthLabel, lastDay };
     }
 
     function renderSessions(sessions) {
@@ -344,15 +427,20 @@
         win.document.close();
     }
 
-    async function downloadLastMonthPdf() {
+    async function downloadSelectedMonthPdf() {
         if (!pdfBtn) return;
         pdfBtn.disabled = true;
+        if (pdfMonthInput) pdfMonthInput.disabled = true;
         const prevLabel = pdfBtn.textContent;
         pdfBtn.textContent = 'Preparing PDF…';
         try {
-            const range = previousCalendarMonthRange();
-            // Cover previous calendar month even late in the following month.
-            const daysNeeded = Math.min(120, range.lastDay + 40);
+            const range = selectedMonthRange();
+            const today = aucklandYmdParts();
+            const todayKey = `${today.y}-${pad2(today.m)}-${pad2(today.d)}`;
+            const daysNeeded = Math.min(
+                LOGBOOK_MAX_DAYS,
+                Math.max(1, daysBetweenAuckland(range.start, todayKey) + 1),
+            );
             const allDays = await fetchLogbookDays(daysNeeded);
             const monthDays = allDays
                 .filter((d) => d?.date && d.date >= range.start && d.date <= range.end)
@@ -366,7 +454,8 @@
             setStatus(err instanceof Error ? err.message : String(err), true);
         } finally {
             pdfBtn.disabled = false;
-            pdfBtn.textContent = prevLabel || 'Download last month (PDF)';
+            if (pdfMonthInput) pdfMonthInput.disabled = false;
+            pdfBtn.textContent = prevLabel || 'Download PDF';
         }
     }
 
@@ -381,8 +470,9 @@
         }
     }
 
+    initPdfMonthPicker();
     pdfBtn?.addEventListener('click', () => {
-        void downloadLastMonthPdf();
+        void downloadSelectedMonthPdf();
     });
 
     void loadLogbook();
