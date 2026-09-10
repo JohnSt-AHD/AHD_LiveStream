@@ -42,149 +42,138 @@
         <span class="hub-stats-item hub-stats-item--event" id="hubStatEvent">—</span>
     </div>
 
-    <div class="hub-wrap">
-        <div class="hub-dashboard">
-            <div class="hub-dashboard-sidebar">
-            <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
-                <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
-                <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. On a local overlay server, CSVs are saved under <code class="hub-csv-code-inline">data/rowit-live/</code> and refreshed every 1 min. Use <strong>Update results now</strong> to pull results immediately.</p>
-                <label class="hub-regatta-code-field">
-                    <span class="hub-regatta-code-label">Regatta code</span>
-                    <input
-                        type="text"
-                        id="hubRegattaCode"
-                        class="hub-regatta-code-input"
-                        value=""
-                        placeholder="e.g. mads2026"
-                        spellcheck="false"
-                        autocomplete="off"
-                        autocapitalize="off"
-                    >
-                </label>
-                <p class="hub-csv-base-preview" id="hubCsvBasePreview">https://l.rowit.nz/altitude/…/</p>
-                <ul id="hubCsvList" class="hub-csv-list"></ul>
-                <div class="hub-csv-actions">
-                    <label class="hub-csv-poll-toggle">
-                        <input type="checkbox" id="hubCsvPollToggle">
-                        <span>Auto-poll every 60s</span>
-                    </label>
-                    <span class="hub-csv-poll-label" id="hubCsvPollLabel">Auto-poll OFF</span>
-                    <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
-                    <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefresh">Update results now</button>
-                </div>
-                <p class="hub-csv-cache" id="hubRowitCacheStatus">Local copies download on first load, then refresh every 1 min.</p>
-            </section>
-
-            <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
-                <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
-                <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
-                <ol class="hub-calendar-list" id="hubCalendarList">
-                    <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20">
-                        <span class="hub-calendar-dates">19–20 Sep 2026</span>
-                        <span class="hub-calendar-name">New Zealand Master Rowing</span>
-                    </li>
-                    <li class="hub-calendar-item" data-start="2026-11-14" data-end="2026-11-15">
-                        <span class="hub-calendar-dates">14–15 Nov 2026</span>
-                        <span class="hub-calendar-name">KRI Memorial Rowing Regatta</span>
-                    </li>
-                    <li class="hub-calendar-item" data-start="2026-11-28" data-end="2026-11-29">
-                        <span class="hub-calendar-dates">28–29 Nov 2026</span>
-                        <span class="hub-calendar-name">KRI Club Regatta</span>
-                    </li>
-                    <li class="hub-calendar-item" data-start="2026-12-11" data-end="2026-12-13">
-                        <span class="hub-calendar-dates">11–13 Dec 2026</span>
-                        <span class="hub-calendar-name">KRI Christmas Regatta</span>
-                    </li>
-                    <li class="hub-calendar-item" data-start="2027-01-29" data-end="2027-01-31">
-                        <span class="hub-calendar-dates">29–31 Jan 2027</span>
-                        <span class="hub-calendar-name">North Island Rowing Champs</span>
-                    </li>
-                    <li class="hub-calendar-item" data-start="2027-02-26" data-end="2027-02-28">
-                        <span class="hub-calendar-dates">26–28 Feb 2027</span>
-                        <span class="hub-calendar-name">North Island Secondary School Rowing Regatta</span>
-                    </li>
-                    <li class="hub-calendar-item" data-start="2027-03-15" data-end="2027-03-20">
-                        <span class="hub-calendar-dates">15–20 Mar 2027</span>
-                        <span class="hub-calendar-name">Maadi Cup</span>
-                    </li>
-                </ol>
-            </section>
-            </div>
-
-            <section class="hub-panel hub-panel--schedule" id="hubScheduleSection" aria-labelledby="hub-schedule-title">
-                <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
-                <p class="hub-schedule-lead">Current race plus two before and two after — lane draw and top results when available.</p>
-
-                <div class="hub-clock-panel">
-                    <fieldset class="hub-clock-fieldset">
-                        <legend class="hub-clock-legend">Clock</legend>
-                        <label class="hub-clock-radio">
-                            <input type="radio" name="hubClockMode" id="hubClockModeLive" value="live">
-                            Live date &amp; time
-                        </label>
-                        <label class="hub-clock-radio">
-                            <input type="radio" name="hubClockMode" id="hubClockModeFixed" value="fixed" checked>
-                            Fixed date &amp; time
-                        </label>
-                        <div class="hub-clock-fixed">
-                            <input type="date" id="hubClockFixedDate" class="hub-clock-input" aria-label="Fixed date">
-                            <input type="time" id="hubClockFixedTime" class="hub-clock-input" aria-label="Fixed time" step="60">
-                        </div>
-                    </fieldset>
-                    <label class="hub-clock-offset">
-                        Delay offset (minutes)
-                        <input type="number" id="hubClockOffset" class="hub-clock-input hub-clock-input--num" value="0" step="1" aria-label="Regatta delay offset in minutes">
-                    </label>
-                    <label class="hub-clock-refresh">
-                        <input type="checkbox" id="hubAutoRefresh" checked>
-                        Auto-refresh daysheet &amp; results every 1 min
-                    </label>
-                    <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefreshBoard">Update results now</button>
-                </div>
-
-                <p class="hub-clock-display" id="hubClockDisplay" aria-live="polite"></p>
-
-                <ul class="hub-race-board" id="hubRaceBoard" aria-label="Race schedule window"></ul>
-
-                <p class="hub-schedule-status" id="hubScheduleStatus"></p>
-                <button type="button" class="hub-btn" id="hubScheduleReload">Reload schedule</button>
-            </section>
-
-            <section class="hub-panel hub-panel--fleet-map" aria-labelledby="hub-fleet-map-title">
-                <h2 id="hub-fleet-map-title" class="hub-section-title">Fleet overview</h2>
-                <p class="hub-fleet-map-lead">
-                    Live devices from <strong>Traccar</strong> or <strong>CrewSight</strong> · default view Karāpiro (Rowing NZ).
-                    <a href="live-map.html">Open full fleet map</a>
-                </p>
-                <div class="hub-fleet-map-toolbar">
-                    <div class="tracker-source-inline hub-fleet-source">
-                        <div class="tracker-source-label">Position data source</div>
-                        <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
-                            <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
-                            <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">CrewSight</button>
-                        </div>
-                        <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
-                    </div>
-                    <label class="hub-fleet-map-toggle">
-                        <input type="checkbox" id="hubFleetTracesToggle" aria-describedby="hubFleetMapStatus">
-                        <span>Show today&apos;s GPS traces (all devices)</span>
-                    </label>
-                </div>
-                <div id="hubFleetMap" class="hub-fleet-map" role="application" aria-label="Fleet map at Karāpiro"></div>
-                <p class="hub-fleet-map-status" id="hubFleetMapStatus" aria-live="polite">Loading devices…</p>
-            </section>
+    <nav class="hub-role-nav" aria-label="Hub role">
+        <div class="hub-role-nav-inner" role="group">
+            <button type="button" class="hub-role-btn is-active" data-hub-role="broadcast" aria-pressed="true">Broadcast</button>
+            <button type="button" class="hub-role-btn" data-hub-role="safety" aria-pressed="false">Safety</button>
+            <button type="button" class="hub-role-btn" data-hub-role="cv" aria-pressed="false">CV and Drone</button>
+            <button type="button" class="hub-role-btn" data-hub-role="setup" aria-pressed="false">Setup</button>
         </div>
+    </nav>
 
-        <div class="hub-nav-grid">
-            <section class="hub-panel hub-panel--documents" aria-labelledby="hub-documents-title">
-                <h2 id="hub-documents-title" class="hub-section-title">Documents</h2>
-                <ul class="hub-links">
+    <div class="hub-wrap">
+        <div class="hub-view is-active" data-hub-view="broadcast" id="hubViewBroadcast">
+            <section class="hub-panel hub-panel--vmix" aria-labelledby="hub-vmix-title">
+                <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
+                <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code in <strong>Setup</strong> — overlays read the same code via <code>?regatta=</code> or this page’s saved value.</p>
+
+                <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
+                    <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
+                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Leader lane applies when the leader graphic (<code>w</code>) or CV leader (<code>x</code>) is on air. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
+                    <div class="hub-live-race-controls">
+                        <button type="button" class="hub-live-race-step" id="hubLiveRaceMinus" aria-label="Previous race">−</button>
+                        <label class="hub-live-race-field">
+                            <span class="hub-live-race-label">Race</span>
+                            <input
+                                type="text"
+                                id="hubLiveRaceInput"
+                                class="hub-live-race-input"
+                                inputmode="text"
+                                autocomplete="off"
+                                spellcheck="false"
+                                placeholder="12"
+                            >
+                        </label>
+                        <button type="button" class="hub-live-race-step" id="hubLiveRacePlus" aria-label="Next race">+</button>
+                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceSync" disabled>Use current race</button>
+                    </div>
+                    <div class="hub-live-race-controls hub-live-race-controls--leader">
+                        <label class="hub-live-race-field">
+                            <span class="hub-live-race-label">Leader lane</span>
+                            <input
+                                type="number"
+                                id="hubLeaderLaneInput"
+                                class="hub-live-race-input hub-live-race-input--lane"
+                                min="1"
+                                max="8"
+                                step="1"
+                                value="4"
+                                inputmode="numeric"
+                                aria-label="Leader lane number 1 to 8"
+                            >
+                        </label>
+                    </div>
+                    <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
+                </div>
+
+                <div class="hub-vmix-guide">
+                    <p class="hub-vmix-guide-lead">In vMix, focus the Milford browser input: <code>d</code>/<code>l</code>/<code>r</code>/<code>t</code> play in (3s then text), <code>g</code> speed dot + TimeTracker video, <code>o</code> out (reverse), <code>c</code> clear. Configure speed device on the fleet map first.</p>
+                    <div class="hub-vmix-trigger-row" id="hubVmixTriggerButtons" role="group" aria-label="Send trigger to open vMix overlays">
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="t" title="Title in">T</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="l" title="Lower third in">L</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="d" title="Draw in">D</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="r" title="Results in">R</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="w" title="Leader in (KRI box / Milford video)">W</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="x" title="KRI CV leader in">X</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="h" title="KRI CV draw boats in">H</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="u" title="KRI course underlay in">U</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="s" title="KRI schedule in">S</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="g" title="Speed overlay in">G</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="v" title="KRI speed chart in">V</button>
+                        <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--out" data-vmix-trigger="out" title="Out">O</button>
+                        <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--clear" data-vmix-trigger="clear" title="Clear all">C</button>
+                    </div>
+                    <p class="hub-vmix-trigger-hint">Buttons send triggers to open Milford overlay tabs on this site. Use <strong>vmix-rnz-milford.html</strong> for regatta graphics and speed overlay.</p>
+                </div>
+
+                <details class="hub-vmix-explainer">
+                    <summary class="hub-vmix-explainer-summary">Live stream graphics guide</summary>
+                    <div class="hub-vmix-explainer-body">
+                    <table class="hub-vmix-table" id="hubVmixTriggerTable">
+                        <thead>
+                            <tr>
+                                <th scope="col">Trigger</th>
+                                <th scope="col">Graphic</th>
+                                <th scope="col">Shows</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="hub-vmix-examples" id="hubVmixExamples"></div>
+                    </div>
+                </details>
+
+                <ul class="hub-links hub-links--vmix">
                     <li>
-                        <a class="hub-link-card hub-link-card--documents" href="documents.html">
-                            <span class="hub-link-icon" aria-hidden="true">📋</span>
+                        <a class="hub-link-card hub-link-card--vmix hub-link-card--karapiro" data-vmix-page="vmix-karapiro.html" data-vmix-graphic="l" href="vmix-karapiro.html?g=l">
+                            <span class="hub-link-icon" aria-hidden="true">🎄</span>
                             <span class="hub-link-text">
-                                <h3>Reports &amp; field tests</h3>
-                                <p>Battery and GPS tests, data usage notes, storage charts, and archived results (A1, A6, H6).</p>
+                                <h3>Karāpiro (Ged)</h3>
+                                <p>Ged-style boards, fast CSS motion, same RowIT data. KRI look stays on the KRI card.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--vmix" data-vmix-page="vmix-kri.html" data-vmix-graphic="l" href="vmix-kri.html?g=l">
+                            <span class="hub-link-icon" aria-hidden="true">🎬</span>
+                            <span class="hub-link-text">
+                                <h3>KRI</h3>
+                                <p>Title, lower third, draw, and results with KRI artwork.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--kri" href="vmix-kri-weather.html">
+                            <span class="hub-link-icon hub-link-icon--kri" aria-hidden="true">
+                                <img src="assets/kri/kri-logo.png" alt="" width="28" height="28">
+                            </span>
+                            <span class="hub-link-text">
+                                <h3>KRI — Lake Karāpiro weather</h3>
+                                <p>Live weather map — shortcut <strong>M</strong> on vmix-kri.html, or standalone page.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--rnz hub-link-card--vmix" data-vmix-page="vmix-rnz-milford.html" data-vmix-graphic="l" href="vmix-rnz-milford.html?g=l">
+                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
+                                <img src="assets/rnz/rnz-logomark-white.png" alt="" width="28" height="28">
+                            </span>
+                            <span class="hub-link-text">
+                                <h3>RNZ — Milford</h3>
+                                <p>Title, lower third, draw, results, leader, and tracker as HTML overlays with Milford artwork.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -249,7 +238,69 @@
                     </li>
                 </ul>
             </section>
+        </div>
 
+        <div class="hub-view" data-hub-view="safety" id="hubViewSafety" hidden>
+            <section class="hub-panel hub-panel--fleet-map" aria-labelledby="hub-fleet-map-title">
+                <h2 id="hub-fleet-map-title" class="hub-section-title">Fleet overview</h2>
+                <p class="hub-fleet-map-lead">
+                    Live devices from <strong>Traccar</strong> or <strong>CrewSight</strong> · default view Karāpiro (Rowing NZ).
+                    <a href="live-map.html">Open full fleet map</a>
+                </p>
+                <div class="hub-fleet-map-toolbar">
+                    <div class="tracker-source-inline hub-fleet-source">
+                        <div class="tracker-source-label">Position data source</div>
+                        <div class="tracker-source-toggle hub-tracker-toggle" role="group" aria-label="Position data source">
+                            <button type="button" class="hub-tracker-btn hub-tracker-btn--active" data-tracker-source="traccar" aria-pressed="true">Traccar</button>
+                            <button type="button" class="hub-tracker-btn" data-tracker-source="rowing" aria-pressed="false">CrewSight</button>
+                        </div>
+                        <p class="tracker-source-status" data-ok="1">Using Traccar for live map and history.</p>
+                    </div>
+                    <label class="hub-fleet-map-toggle">
+                        <input type="checkbox" id="hubFleetTracesToggle" aria-describedby="hubFleetMapStatus">
+                        <span>Show today&apos;s GPS traces (all devices)</span>
+                    </label>
+                </div>
+                <div id="hubFleetMap" class="hub-fleet-map" role="application" aria-label="Fleet map at Karāpiro"></div>
+                <p class="hub-fleet-map-status" id="hubFleetMapStatus" aria-live="polite">Loading devices…</p>
+            </section>
+
+            <section class="hub-panel hub-panel--safety" aria-labelledby="hub-safety-title">
+                <div class="hub-rnz-strip">
+                    <img src="assets/rnz/rnz-logomark-white.png" alt="" class="hub-rnz-strip-mark" width="48" height="48" aria-hidden="true">
+                    <span class="hub-rnz-strip-text">Rowing New Zealand</span>
+                </div>
+                <h2 id="hub-safety-title" class="hub-section-title">Safety system</h2>
+                <ul class="hub-links">
+                    <li>
+                        <a class="hub-link-card hub-link-card--rnz" href="rowsafe-map.html">
+                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
+                                <img src="assets/rnz/rnz-logomark-dual.png" alt="" width="28" height="28">
+                            </span>
+                            <span class="hub-link-text">
+                                <h3>RowSafe map (RNZ)</h3>
+                                <p>Rowing New Zealand safety overlay — RowSafe / RowingHub style fleet view.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--kri" href="kri-safety-map.html">
+                            <span class="hub-link-icon hub-link-icon--kri" aria-hidden="true">
+                                <img src="assets/kri/kri-logo.png" alt="" width="28" height="28">
+                            </span>
+                            <span class="hub-link-text">
+                                <h3>Lake Karāpiro safety map (KRI)</h3>
+                                <p>Karāpiro Rowing Inc fleet view — boundary warnings and capsize alarm.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
+
+        <div class="hub-view" data-hub-view="cv" id="hubViewCv" hidden>
             <section class="hub-panel hub-panel--cv" aria-labelledby="hub-cv-title">
                 <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone telemetry</h2>
                 <p class="hub-cv-lead">Local services for boat tracking (YOLO CV) and DJI Matrice drone telemetry. These run on this machine — check the status indicators below.</p>
@@ -329,133 +380,6 @@
                             <span class="hub-link-arrow" aria-hidden="true">↗</span>
                         </a>
                     </li>
-                </ul>
-            </section>
-
-            <section class="hub-panel hub-panel--vmix" aria-labelledby="hub-vmix-title">
-                <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
-                <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code above — overlays read the same code via <code>?regatta=</code> or this page’s saved value.</p>
-
-                <details class="hub-vmix-explainer">
-                    <summary class="hub-vmix-explainer-summary">Live stream graphics guide</summary>
-                    <div class="hub-vmix-explainer-body">
-                <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
-                    <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
-                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Leader lane applies when the leader graphic (<code>w</code>) or CV leader (<code>x</code>) is on air. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
-                    <div class="hub-live-race-controls">
-                        <button type="button" class="hub-live-race-step" id="hubLiveRaceMinus" aria-label="Previous race">−</button>
-                        <label class="hub-live-race-field">
-                            <span class="hub-live-race-label">Race</span>
-                            <input
-                                type="text"
-                                id="hubLiveRaceInput"
-                                class="hub-live-race-input"
-                                inputmode="text"
-                                autocomplete="off"
-                                spellcheck="false"
-                                placeholder="12"
-                            >
-                        </label>
-                        <button type="button" class="hub-live-race-step" id="hubLiveRacePlus" aria-label="Next race">+</button>
-                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceSync" disabled>Use current race</button>
-                    </div>
-                    <div class="hub-live-race-controls hub-live-race-controls--leader">
-                        <label class="hub-live-race-field">
-                            <span class="hub-live-race-label">Leader lane</span>
-                            <input
-                                type="number"
-                                id="hubLeaderLaneInput"
-                                class="hub-live-race-input hub-live-race-input--lane"
-                                min="1"
-                                max="8"
-                                step="1"
-                                value="4"
-                                inputmode="numeric"
-                                aria-label="Leader lane number 1 to 8"
-                            >
-                        </label>
-                    </div>
-                    <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
-                </div>
-
-                <div class="hub-vmix-guide">
-                    <p class="hub-vmix-guide-lead">In vMix, focus the Milford browser input: <code>d</code>/<code>l</code>/<code>r</code>/<code>t</code> play in (3s then text), <code>g</code> speed dot + TimeTracker video, <code>o</code> out (reverse), <code>c</code> clear. Configure speed device on the fleet map first.</p>
-                    <div class="hub-vmix-trigger-row" id="hubVmixTriggerButtons" role="group" aria-label="Send trigger to open vMix overlays">
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="t" title="Title in">T</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="l" title="Lower third in">L</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="d" title="Draw in">D</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="r" title="Results in">R</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="w" title="Leader in (KRI box / Milford video)">W</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="x" title="KRI CV leader in">X</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="h" title="KRI CV draw boats in">H</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="u" title="KRI course underlay in">U</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="s" title="KRI schedule in">S</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="g" title="Speed overlay in">G</button>
-                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="v" title="KRI speed chart in">V</button>
-                        <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--out" data-vmix-trigger="out" title="Out">O</button>
-                        <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--clear" data-vmix-trigger="clear" title="Clear all">C</button>
-                    </div>
-                    <p class="hub-vmix-trigger-hint">Buttons send triggers to open Milford overlay tabs on this site. Use <strong>vmix-rnz-milford.html</strong> for regatta graphics and speed overlay.</p>
-                    <table class="hub-vmix-table" id="hubVmixTriggerTable">
-                        <thead>
-                            <tr>
-                                <th scope="col">Trigger</th>
-                                <th scope="col">Graphic</th>
-                                <th scope="col">Shows</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                    <div class="hub-vmix-examples" id="hubVmixExamples"></div>
-                        </div>
-                    </div>
-                </details>
-
-                <ul class="hub-links hub-links--vmix">
-                    <li>
-                        <a class="hub-link-card hub-link-card--vmix hub-link-card--karapiro" data-vmix-page="vmix-karapiro.html" data-vmix-graphic="l" href="vmix-karapiro.html?g=l">
-                            <span class="hub-link-icon" aria-hidden="true">🎄</span>
-                            <span class="hub-link-text">
-                                <h3>Karāpiro (Ged)</h3>
-                                <p>Ged-style boards, fast CSS motion, same RowIT data. KRI look stays on the KRI card.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--vmix" data-vmix-page="vmix-kri.html" data-vmix-graphic="l" href="vmix-kri.html?g=l">
-                            <span class="hub-link-icon" aria-hidden="true">🎬</span>
-                            <span class="hub-link-text">
-                                <h3>KRI</h3>
-                                <p>Title, lower third, draw, and results with KRI artwork.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--kri" href="vmix-kri-weather.html">
-                            <span class="hub-link-icon hub-link-icon--kri" aria-hidden="true">
-                                <img src="assets/kri/kri-logo.png" alt="" width="28" height="28">
-                            </span>
-                            <span class="hub-link-text">
-                                <h3>KRI — Lake Karāpiro weather</h3>
-                                <p>Live weather map — shortcut <strong>M</strong> on vmix-kri.html, or standalone page.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--rnz hub-link-card--vmix" data-vmix-page="vmix-rnz-milford.html" data-vmix-graphic="l" href="vmix-rnz-milford.html?g=l">
-                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
-                                <img src="assets/rnz/rnz-logomark-white.png" alt="" width="28" height="28">
-                            </span>
-                            <span class="hub-link-text">
-                                <h3>RNZ — Milford</h3>
-                                <p>Title, lower third, draw, results, leader, and tracker as HTML overlays with Milford artwork.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
                     <li>
                         <a class="hub-link-card hub-link-card--vmix" href="vmix-cv-leader.html">
                             <span class="hub-link-icon" aria-hidden="true">📍</span>
@@ -478,35 +402,127 @@
                     </li>
                 </ul>
             </section>
+        </div>
+
+        <div class="hub-view" data-hub-view="setup" id="hubViewSetup" hidden>
+            <div class="hub-dashboard">
+                <div class="hub-dashboard-sidebar">
+                <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
+                    <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
+                    <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. On a local overlay server, CSVs are saved under <code class="hub-csv-code-inline">data/rowit-live/</code> and refreshed every 1 min. Use <strong>Update results now</strong> to pull results immediately.</p>
+                    <label class="hub-regatta-code-field">
+                        <span class="hub-regatta-code-label">Regatta code</span>
+                        <input
+                            type="text"
+                            id="hubRegattaCode"
+                            class="hub-regatta-code-input"
+                            value=""
+                            placeholder="e.g. mads2026"
+                            spellcheck="false"
+                            autocomplete="off"
+                            autocapitalize="off"
+                        >
+                    </label>
+                    <p class="hub-csv-base-preview" id="hubCsvBasePreview">https://l.rowit.nz/altitude/…/</p>
+                    <ul id="hubCsvList" class="hub-csv-list"></ul>
+                    <div class="hub-csv-actions">
+                        <label class="hub-csv-poll-toggle">
+                            <input type="checkbox" id="hubCsvPollToggle">
+                            <span>Auto-poll every 60s</span>
+                        </label>
+                        <span class="hub-csv-poll-label" id="hubCsvPollLabel">Auto-poll OFF</span>
+                        <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
+                        <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefresh">Update results now</button>
+                    </div>
+                    <p class="hub-csv-cache" id="hubRowitCacheStatus">Local copies download on first load, then refresh every 1 min.</p>
+                </section>
+
+                <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
+                    <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
+                    <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
+                    <ol class="hub-calendar-list" id="hubCalendarList">
+                        <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20">
+                            <span class="hub-calendar-dates">19–20 Sep 2026</span>
+                            <span class="hub-calendar-name">New Zealand Master Rowing</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2026-11-14" data-end="2026-11-15">
+                            <span class="hub-calendar-dates">14–15 Nov 2026</span>
+                            <span class="hub-calendar-name">KRI Memorial Rowing Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2026-11-28" data-end="2026-11-29">
+                            <span class="hub-calendar-dates">28–29 Nov 2026</span>
+                            <span class="hub-calendar-name">KRI Club Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2026-12-11" data-end="2026-12-13">
+                            <span class="hub-calendar-dates">11–13 Dec 2026</span>
+                            <span class="hub-calendar-name">KRI Christmas Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2027-01-29" data-end="2027-01-31">
+                            <span class="hub-calendar-dates">29–31 Jan 2027</span>
+                            <span class="hub-calendar-name">North Island Rowing Champs</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2027-02-26" data-end="2027-02-28">
+                            <span class="hub-calendar-dates">26–28 Feb 2027</span>
+                            <span class="hub-calendar-name">North Island Secondary School Rowing Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2027-03-15" data-end="2027-03-20">
+                            <span class="hub-calendar-dates">15–20 Mar 2027</span>
+                            <span class="hub-calendar-name">Maadi Cup</span>
+                        </li>
+                    </ol>
+                </section>
+                </div>
+
+                <section class="hub-panel hub-panel--schedule" id="hubScheduleSection" aria-labelledby="hub-schedule-title">
+                    <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
+                    <p class="hub-schedule-lead">Current race plus two before and two after — lane draw and top results when available.</p>
+
+                    <div class="hub-clock-panel">
+                        <fieldset class="hub-clock-fieldset">
+                            <legend class="hub-clock-legend">Clock</legend>
+                            <label class="hub-clock-radio">
+                                <input type="radio" name="hubClockMode" id="hubClockModeLive" value="live">
+                                Live date &amp; time
+                            </label>
+                            <label class="hub-clock-radio">
+                                <input type="radio" name="hubClockMode" id="hubClockModeFixed" value="fixed" checked>
+                                Fixed date &amp; time
+                            </label>
+                            <div class="hub-clock-fixed">
+                                <input type="date" id="hubClockFixedDate" class="hub-clock-input" aria-label="Fixed date">
+                                <input type="time" id="hubClockFixedTime" class="hub-clock-input" aria-label="Fixed time" step="60">
+                            </div>
+                        </fieldset>
+                        <label class="hub-clock-offset">
+                            Delay offset (minutes)
+                            <input type="number" id="hubClockOffset" class="hub-clock-input hub-clock-input--num" value="0" step="1" aria-label="Regatta delay offset in minutes">
+                        </label>
+                        <label class="hub-clock-refresh">
+                            <input type="checkbox" id="hubAutoRefresh" checked>
+                            Auto-refresh daysheet &amp; results every 1 min
+                        </label>
+                        <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefreshBoard">Update results now</button>
+                    </div>
+
+                    <p class="hub-clock-display" id="hubClockDisplay" aria-live="polite"></p>
+
+                    <ul class="hub-race-board" id="hubRaceBoard" aria-label="Race schedule window"></ul>
+
+                    <p class="hub-schedule-status" id="hubScheduleStatus"></p>
+                    <button type="button" class="hub-btn" id="hubScheduleReload">Reload schedule</button>
+                </section>
+            </div>
 
             <div class="hub-nav-pair">
-            <section class="hub-panel hub-panel--safety" aria-labelledby="hub-safety-title">
-                <div class="hub-rnz-strip">
-                    <img src="assets/rnz/rnz-logomark-white.png" alt="" class="hub-rnz-strip-mark" width="48" height="48" aria-hidden="true">
-                    <span class="hub-rnz-strip-text">Rowing New Zealand</span>
-                </div>
-                <h2 id="hub-safety-title" class="hub-section-title">Safety system</h2>
+            <section class="hub-panel hub-panel--documents" aria-labelledby="hub-documents-title">
+                <h2 id="hub-documents-title" class="hub-section-title">Documents</h2>
                 <ul class="hub-links">
                     <li>
-                        <a class="hub-link-card hub-link-card--rnz" href="rowsafe-map.html">
-                            <span class="hub-link-icon hub-link-icon--rnz" aria-hidden="true">
-                                <img src="assets/rnz/rnz-logomark-dual.png" alt="" width="28" height="28">
-                            </span>
+                        <a class="hub-link-card hub-link-card--documents" href="documents.html">
+                            <span class="hub-link-icon" aria-hidden="true">📋</span>
                             <span class="hub-link-text">
-                                <h3>RowSafe map (RNZ)</h3>
-                                <p>Rowing New Zealand safety overlay — RowSafe / RowingHub style fleet view.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--kri" href="kri-safety-map.html">
-                            <span class="hub-link-icon hub-link-icon--kri" aria-hidden="true">
-                                <img src="assets/kri/kri-logo.png" alt="" width="28" height="28">
-                            </span>
-                            <span class="hub-link-text">
-                                <h3>Lake Karāpiro safety map (KRI)</h3>
-                                <p>Karāpiro Rowing Inc fleet view — boundary warnings and capsize alarm.</p>
+                                <h3>Reports &amp; field tests</h3>
+                                <p>Battery and GPS tests, data usage notes, storage charts, and archived results (A1, A6, H6).</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -522,7 +538,7 @@
                 <h2 id="hub-apps-title" class="hub-section-title">Apps</h2>
                 <p class="hub-apps-lead">
                     Download the Android apps or open the web dashboard to monitor devices live.
-                    Switch the fleet map above or in Settings to <strong>CrewSight</strong> to use this data on AHD maps.
+                    Switch the fleet map on the <strong>Safety</strong> view to <strong>CrewSight</strong> to use this data on AHD maps.
                 </p>
                 <ul class="hub-links">
                     <li>
@@ -562,48 +578,22 @@
                 </ul>
             </section>
             </div>
-        </div>
 
-        <section class="hub-settings-bar" aria-labelledby="hub-settings-title">
-            <h2 id="hub-settings-title" class="hub-settings-title">Settings</h2>
-            <div class="hub-settings-row">
-                <span class="hub-settings-label" id="hubTrackerSourceLabel">Position data source</span>
-                <div
-                    class="hub-tracker-toggle"
-                    id="hubTrackerSourceToggle"
-                    role="group"
-                    aria-labelledby="hubTrackerSourceLabel"
-                >
-                    <button
-                        type="button"
-                        class="hub-tracker-btn"
-                        data-tracker-source="traccar"
-                        aria-pressed="true"
-                    >
-                        Traccar
-                    </button>
-                    <button
-                        type="button"
-                        class="hub-tracker-btn"
-                        data-tracker-source="rowing"
-                        aria-pressed="false"
-                    >
-                        CrewSight
-                    </button>
+            <section class="hub-settings-bar" aria-labelledby="hub-settings-title">
+                <h2 id="hub-settings-title" class="hub-settings-title">Settings</h2>
+                <div class="hub-settings-row">
+                    <label class="hub-settings-label" for="hubMapRefreshSelect">Map refresh rate</label>
+                    <select id="hubMapRefreshSelect" class="hub-settings-select" aria-describedby="hubMapRefreshNote"></select>
                 </div>
-            </div>
-            <p id="hubTrackerSourceStatus" class="hub-settings-note" data-ok="1">Using Traccar for live map and history.</p>
-            <div class="hub-settings-row">
-                <label class="hub-settings-label" for="hubMapRefreshSelect">Map refresh rate</label>
-                <select id="hubMapRefreshSelect" class="hub-settings-select" aria-describedby="hubMapRefreshNote"></select>
-            </div>
-            <p id="hubMapRefreshNote" class="hub-settings-note"></p>
-        </section>
+                <p id="hubMapRefreshNote" class="hub-settings-note"></p>
+            </section>
+        </div>
 
         <footer class="hub-footer">
             AHD - LiveStream
         </footer>
     </div>
+    <script src="hub-roles.js"></script>
     <script src="map-refresh-rate.js"></script>
     <script src="tracker-source.js"></script>
     <script src="traccar-snapshot-bus.js"></script>

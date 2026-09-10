@@ -47,6 +47,7 @@
 
 .hub-topbar,
 .hub-stats-bar,
+.hub-role-nav,
 .hub-wrap {
     position: relative;
     z-index: 1;
@@ -177,6 +178,66 @@
     margin: 0;
     max-width: 36rem;
     line-height: 1.45;
+}
+
+.hub-role-nav {
+    background: rgba(6, 20, 38, 0.94);
+    border-bottom: 1px solid var(--ahd-border);
+}
+
+.hub-role-nav-inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 10px clamp(16px, 4vw, 48px);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.hub-role-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--ahd-border);
+    background: rgba(15, 23, 42, 0.8);
+    color: var(--ahd-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.hub-role-btn:hover {
+    color: var(--ahd-text);
+    border-color: rgba(0, 229, 255, 0.55);
+}
+
+.hub-role-btn.is-active {
+    background: rgba(0, 229, 255, 0.16);
+    color: var(--ahd-accent);
+    border-color: var(--ahd-accent);
+}
+
+.hub-role-btn:focus-visible {
+    outline: 2px solid var(--ahd-accent);
+    outline-offset: 2px;
+}
+
+.hub-view {
+    display: none;
+}
+
+.hub-view.is-active {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 2.5vw, 28px);
+    margin-bottom: clamp(24px, 4vw, 36px);
+}
+
+.hub-view .hub-dashboard {
+    margin-bottom: 0;
 }
 
 .hub-wrap {
@@ -881,6 +942,16 @@
 @media (max-width: 720px) {
     .hub-nav-grid {
         grid-template-columns: 1fr;
+    }
+
+    .hub-role-nav-inner {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hub-role-btn {
+        flex-shrink: 0;
     }
 }
 

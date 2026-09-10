@@ -170,6 +170,12 @@ function hubFleetInitMap() {
     window.addEventListener('resize', () => {
         if (hubFleetMap) hubFleetMap.invalidateSize();
     });
+    if (typeof ResizeObserver === 'function') {
+        const ro = new ResizeObserver(() => {
+            if (hubFleetMap) hubFleetMap.invalidateSize();
+        });
+        ro.observe(el);
+    }
 }
 
 function hubFleetClearTraces() {
@@ -486,12 +492,28 @@ window.addEventListener('altitudehd:tracker-source', () => {
     }
 });
 
+function hubFleetEnsureMap() {
+    if (!document.getElementById('hubFleetMap') || typeof L === 'undefined') return;
+    if (!hubFleetMap) {
+        hubFleetInitMap();
+        hubFleetWireTracesToggle();
+        if (!hubFleetIsSnapshotConsumerOnly()) {
+            hubFleetRefresh();
+            hubFleetStartPolling();
+        }
+        return;
+    }
+    requestAnimationFrame(() => hubFleetMap.invalidateSize());
+    setTimeout(() => {
+        if (hubFleetMap) hubFleetMap.invalidateSize();
+    }, 80);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubFleetMap')) return;
-    hubFleetInitMap();
-    hubFleetWireTracesToggle();
-    if (!hubFleetIsSnapshotConsumerOnly()) {
-        hubFleetRefresh();
-        hubFleetStartPolling();
-    }
+    if (document.body.dataset.hubCurrentView === 'safety') hubFleetEnsureMap();
+});
+
+window.addEventListener('ahd-hub-view', (ev) => {
+    if (ev.detail?.view === 'safety') hubFleetEnsureMap();
 });

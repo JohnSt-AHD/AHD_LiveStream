@@ -569,7 +569,7 @@ function renderBoard() {
         if (!boardState.races.length) {
             status.textContent = boardState.loading
                 ? 'Loading daysheet…'
-                : 'Load a daysheet URL above, then refresh.';
+                : 'Load a daysheet URL in Setup, then refresh.';
         } else if (!dayRaces.length) {
             const days = [
                 ...new Set(boardState.races.map((r) => r.dayLabel)),

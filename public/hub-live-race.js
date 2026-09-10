@@ -148,7 +148,7 @@ function syncLiveRaceUi() {
             meta.textContent = 'Race not found on daysheet — check number or reload schedule.';
         } else {
             meta.textContent =
-                'Load daysheet above to step through races with + / −.';
+                'Load daysheet in Setup to step through races with + / −.';
         }
     }
 }
