@@ -292,105 +292,66 @@
 
         <div class="hub-view" data-hub-view="cv" id="hubViewCv" hidden>
             <section class="hub-panel hub-panel--cv" aria-labelledby="hub-cv-title">
-                <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone telemetry</h2>
-                <p class="hub-cv-lead">Boat tracking (YOLO) on port 8790 and DJI telemetry on port 5050. Start them with <code>start-race-day.bat</code>, or launch CV and the DJI bridge separately. Status dots below show whether those processes are up on this PC.</p>
+                <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone</h2>
+                <p class="hub-cv-lead">Race day is one CV page: start tracking, set lanes, then the <strong>Drone</strong> tab to watch. vMix uses the overlay links below — set those browser inputs once.</p>
 
                 <div class="hub-cv-status-row" id="hubCvStatusRow">
                     <div class="hub-cv-status-item">
                         <span class="hub-cv-dot" id="hubCvServerDot"></span>
-                        <span>CV Server</span>
+                        <span>CV</span>
                         <span class="hub-cv-status-detail" id="hubCvServerStatus">checking…</span>
                     </div>
                     <div class="hub-cv-status-item">
                         <span class="hub-cv-dot" id="hubDroneServerDot"></span>
-                        <span>Drone telemetry</span>
+                        <span>DJI bridge</span>
                         <span class="hub-cv-status-detail" id="hubDroneServerStatus">checking…</span>
                     </div>
                 </div>
 
-                <div class="hub-cv-config">
-                    <label class="hub-cv-config-field">
-                        <span class="hub-cv-config-label">CV server</span>
-                        <input type="text" id="hubCvServerUrl" class="hub-cv-config-input" value="http://127.0.0.1:8790" spellcheck="false" autocomplete="off">
-                    </label>
-                    <label class="hub-cv-config-field">
-                        <span class="hub-cv-config-label">Drone bridge</span>
-                        <input type="text" id="hubDroneServerUrl" class="hub-cv-config-input" value="http://127.0.0.1:5050" spellcheck="false" autocomplete="off">
-                    </label>
-                </div>
-
-                <ul class="hub-links">
-                    <li>
-                        <a class="hub-link-card hub-link-card--cv" id="hubCvHubLink" href="http://127.0.0.1:8790/cv-hub.html" target="_blank" rel="noopener">
-                            <span class="hub-link-icon" aria-hidden="true">⛵</span>
-                            <span class="hub-link-text">
-                                <h3>CV Hub</h3>
-                                <p>Rowing CV home — overlay URLs, process control, and quick-start paths.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
+                <ul class="hub-links hub-links--cv-primary">
                     <li>
                         <a class="hub-link-card hub-link-card--cv" id="hubCvAnalysisLink" href="http://127.0.0.1:8790/cv-analysis.html" target="_blank" rel="noopener">
-                            <span class="hub-link-icon" aria-hidden="true">🎯</span>
+                            <span class="hub-link-icon" aria-hidden="true">⛵</span>
                             <span class="hub-link-text">
-                                <h3>CV Control room</h3>
-                                <p>YOLO boat detection, NDI preview, clip testing, and TouchDesigner runner.</p>
+                                <h3>Open Rowing CV</h3>
+                                <p>Tracking and Drone on one page. Start preview, assign lanes, watch the race.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--cv" id="hubDroneMonitorLink" href="http://127.0.0.1:8790/cv-drone-monitor.html" target="_blank" rel="noopener">
-                            <span class="hub-link-icon" aria-hidden="true">✈️</span>
-                            <span class="hub-link-text">
-                                <h3>Drone race monitor</h3>
-                                <p>Live Matrice position on course, OSD telemetry, race clock, speed graph, and daysheet pickup.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--cv" id="hubDroneCourseOverlayLink" href="http://127.0.0.1:8790/cv-drone-course-overlay.html" target="_blank" rel="noopener">
-                            <span class="hub-link-icon" aria-hidden="true">🎬</span>
-                            <span class="hub-link-text">
-                                <h3>Drone course overlay (vMix)</h3>
-                                <p>1920×1080 camera-view course graphic from the CV laptop — open in a vMix Web Browser input.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--cv" id="hubDroneTelemetryLink" href="http://127.0.0.1:5050/monitor" target="_blank" rel="noopener">
-                            <span class="hub-link-icon" aria-hidden="true">📡</span>
-                            <span class="hub-link-text">
-                                <h3>DJI telemetry monitor</h3>
-                                <p>Pilot 2 MQTT OSD bridge — live GPS, gimbal, camera data from the Matrice.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--vmix" href="vmix-cv-leader.html">
-                            <span class="hub-link-icon" aria-hidden="true">📍</span>
-                            <span class="hub-link-text">
-                                <h3>CV leader line (vMix)</h3>
-                                <p>Transparent 1920×1080 overlay — leader line from laptop computer vision.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--vmix" href="cv-position-monitor.html">
-                            <span class="hub-link-icon" aria-hidden="true">🎯</span>
-                            <span class="hub-link-text">
-                                <h3>CV position monitor</h3>
-                                <p>Live x/y from the CV laptop — check the API link before going on air.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
                     </li>
                 </ul>
+
+                <p class="hub-cv-air-label">vMix browser (same race data)</p>
+                <ul class="hub-cv-air">
+                    <li>
+                        <a id="hubDroneCourseOverlayLink" href="http://127.0.0.1:8790/cv-drone-course-overlay.html" target="_blank" rel="noopener">Course overlay</a>
+                        <span>1920×1080 on the CV laptop — NDI or browser input</span>
+                    </li>
+                    <li>
+                        <a href="vmix-kri.html?g=x">KRI CV leader</a>
+                        <span>Leader box on this hub — trigger <strong>X</strong> in Broadcast</span>
+                    </li>
+                </ul>
+
+                <details class="hub-cv-advanced">
+                    <summary>Advanced — debug URLs and raw OSD</summary>
+                    <div class="hub-cv-config">
+                        <label class="hub-cv-config-field">
+                            <span class="hub-cv-config-label">CV server</span>
+                            <input type="text" id="hubCvServerUrl" class="hub-cv-config-input" value="http://127.0.0.1:8790" spellcheck="false" autocomplete="off">
+                        </label>
+                        <label class="hub-cv-config-field">
+                            <span class="hub-cv-config-label">DJI bridge</span>
+                            <input type="text" id="hubDroneServerUrl" class="hub-cv-config-input" value="http://127.0.0.1:5050" spellcheck="false" autocomplete="off">
+                        </label>
+                    </div>
+                    <ul class="hub-cv-advanced-links">
+                        <li><a class="hub-cv-advanced-link" id="hubDroneMonitorLink" href="http://127.0.0.1:8790/cv-analysis.html#drone" target="_blank" rel="noopener">Drone tab (same Rowing CV page)</a></li>
+                        <li><a class="hub-cv-advanced-link" id="hubDroneTelemetryLink" href="http://127.0.0.1:5050/monitor" target="_blank" rel="noopener">Raw DJI OSD (bridge debug)</a></li>
+                        <li><a class="hub-cv-advanced-link" href="cv-position-monitor.html">CV position debug (x/y API)</a></li>
+                        <li><a class="hub-cv-advanced-link" href="vmix-cv-leader.html">Standalone leader line overlay</a></li>
+                    </ul>
+                </details>
             </section>
         </div>
 
