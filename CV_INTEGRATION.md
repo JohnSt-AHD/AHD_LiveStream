@@ -1,33 +1,48 @@
-# CV leader line → Vercel overlay
+# CV leader line → overlay API
 
-Link the laptop computer-vision system (`CV Improvements DEV`) to the transparent vMix browser overlay in this repo.
+Link the laptop computer-vision system (`cv-improvements`) to the transparent vMix browser overlay in this repo.
 
-## Architecture
+## Race day (local)
+
+On the broadcast PC:
+
+1. Double-click `start-race-day.bat` (or `setup-local.bat` the first time).
+2. Open **http://localhost:3000** if the browser does not appear.
+3. Point vMix Web Browser inputs at the overlay cards on that hub.
 
 ```
-NDI / webcam → Python (YOLO) ──POST──► /api/cv-position (Vercel KV)
+NDI / webcam → Python (YOLO) ──POST──► http://127.0.0.1:3000/api/cv-position
                                               │
 vMix Browser ◄── poll GET ────────────────────┘
-  vmix-cv-leader.html?streamId=...
+  http://localhost:3000/vmix-cv-leader.html?streamId=kri-live
 ```
 
-Local TouchDesigner still receives OSC on port `10022` as before. Cloud POST is additive.
+In-memory store is used when Vercel KV env vars are unset. Positions go `stale` after 2.5s, so Python must POST continuously.
 
-## Vercel setup
+Laptop config (`cv_config.json` → `cloud.api_url`) defaults to that local API. Copy-overlay buttons on the CV hub use `http://127.0.0.1:3000`.
 
-1. Deploy this repo to Vercel (project: **AHD - LiveStream**, `ahd-livestream.vercel.app`).
-2. Add **Vercel KV** to the project (Storage → KV) if not already linked.
-3. Optional env vars:
-   - `CV_INGEST_TOKEN` — shared secret; Python sends `Authorization: Bearer …` on POST.
+TouchDesigner still receives OSC on port `10022` as before.
 
-Redeploy after adding env vars.
+Daysheet, weather, and Traccar still need internet. Overlays and CV position do not.
+
+## Cloud fallback (Vercel)
+
+If the local Node process is down, vMix can load `https://ahd-livestream.vercel.app/…` instead. Python then needs:
+
+```powershell
+$env:CV_API_URL = "https://ahd-livestream.vercel.app/api/cv-position"
+```
+
+1. Project: **AHD - LiveStream**, `ahd-livestream.vercel.app`.
+2. Optional **Vercel KV** for multi-instance persistence.
+3. Optional `CV_INGEST_TOKEN` — Python sends `Authorization: Bearer …` on POST.
 
 ## Pages
 
 ### vMix overlay (transparent leader line)
 
 ```
-https://ahd-livestream.vercel.app/vmix-cv-leader.html?streamId=f83ef29e-ae42-4c16-a4b3-dcf23a998936
+http://localhost:3000/vmix-cv-leader.html?streamId=kri-live
 ```
 
 Layer as a transparent browser input over the drone feed (1920×1080).
@@ -35,12 +50,12 @@ Layer as a transparent browser input over the drone feed (1920×1080).
 ### Position monitor (debug / ops)
 
 ```
-https://ahd-livestream.vercel.app/cv-position-monitor.html?streamId=f83ef29e-ae42-4c16-a4b3-dcf23a998936
+http://localhost:3000/cv-position-monitor.html?streamId=kri-live
 ```
 
-Shows live x/y, overlay mapping, age, and stale status. Useful for checking the laptop → API link without vMix.
+Shows live x/y, overlay mapping, age, and stale status.
 
-Use the same `streamId` as TouchDesigner **GPS ID** / livestream ID.
+Use the same `streamId` as TouchDesigner **GPS ID** / livestream ID (`kri-live` by default).
 
 Query params:
 
@@ -48,46 +63,23 @@ Query params:
 |-------|---------|
 | `streamId` | Required — ties POST and GET together |
 | `poll` | Poll interval ms (default `200` on overlay, `500` on monitor) |
-| `api` | Override API origin for testing |
+| `api` | Override CV position API base (default same origin) |
+| `cvLaptop` | CV setup server (default `http://127.0.0.1:8790`) |
 
-### Vercel usage (defaults tuned for Hobby limits)
-
-| Source | Default rate | ~6 h race day |
-|--------|----------------|---------------|
-| Python POST (`CV_POST_HZ`) | 5/sec | ~108k |
-| vMix overlay poll | 5/sec (200 ms) | ~108k |
-| Monitor poll | 2/sec (500 ms) | ~43k |
-
-Close the monitor tab when not debugging. For smoother overlay motion at a regatta, raise rates temporarily:
-
-```powershell
-$env:CV_POST_HZ = "10"
-```
-
-```
-.../vmix-cv-leader.html?streamId=...&poll=100
-```
-
-Layer as a transparent browser input over the drone feed (1920×1080).
+Close the monitor tab when not debugging.
 
 ## Laptop Python setup
 
-In `CV Improvements DEV`:
+`launch_cv.ps1` / Analysis preview posts using `cv_config.json`. To override:
 
 ```powershell
-$env:CV_STREAM_ID = "f83ef29e-ae42-4c16-a4b3-dcf23a998936"
-$env:CV_API_URL = "https://ahd-livestream.vercel.app/api/cv-position"
-# optional:
-$env:CV_INGEST_TOKEN = "your-secret"
+$env:CV_STREAM_ID = "kri-live"
+$env:CV_API_URL = "http://127.0.0.1:3000/api/cv-position"
 $env:CV_CLOUD_ENABLED = "1"
-$env:CV_POST_HZ = "5"   # optional; 5 is the default
-
-python karapiro.py   # or twizel.py
+$env:CV_POST_HZ = "5"
 ```
 
-Or launch via TouchDesigner **Open PYTHON** from `LIVE_2.0_DEV.toe` (set env vars in the PowerShell profile or a wrapper script).
-
-### Disable cloud POST
+### Disable overlay POST
 
 ```powershell
 $env:CV_CLOUD_ENABLED = "0"
@@ -99,7 +91,7 @@ $env:CV_CLOUD_ENABLED = "0"
 
 ```json
 {
-  "streamId": "f83ef29e-ae42-4c16-a4b3-dcf23a998936",
+  "streamId": "kri-live",
   "x": 824,
   "y": 356,
   "frame": 42,
@@ -116,19 +108,17 @@ Returns latest position plus `stale: true` if older than 2.5s.
 
 Venue offsets (match TouchDesigner):
 
-- **karapiro** — x +140, y −50  
-- **twizel** — x −140, y −50  
+- **karapiro** — x +140, y −50
+- **twizel** — x −140, y −50
 
-## Files added
+## Files
 
 | File | Role |
 |------|------|
+| `start-race-day.bat` | Local graphics + optional CV/DJI launch |
 | `api/cv-position.js` | POST/GET handler |
-| `api/lib/cv-position.mjs` | KV storage + validation |
 | `public/vmix-cv-leader.html` | vMix transparent overlay |
 | `public/cv-position-monitor.html` | Live position monitor page |
 | `public/cv-position-client.js` | Poll + position line |
-| `public/vmix-cv-leader.css` | Overlay styles |
-| `public/cv-position-monitor.css` | Monitor page styles |
 
-Laptop side: `cv_cloud.py` + changes to `karapiro.py` / `twizel.py` in `CV Improvements DEV`.
+Laptop side: `cv_cloud.py` in `cv-improvements`.

@@ -5,6 +5,8 @@
     const LS_CV_URL = 'altitudeHdCvServerUrl_v1';
     const LS_DRONE_URL = 'altitudeHdDroneServerUrl_v1';
     const POLL_MS = 10_000;
+    const CV_PROBE_PATHS = ['/health', '/api/version', '/api/status'];
+    const DRONE_PROBE_PATHS = ['/health', '/api/drone-telemetry', '/monitor'];
 
     function load(key, fallback) {
         try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
@@ -20,27 +22,47 @@
         el.classList.toggle('hub-cv-dot--pending', ok === null);
     }
 
-    async function checkServer(baseUrl, statusEl, dotEl) {
+    async function probePath(baseUrl, path) {
+        const url = baseUrl.replace(/\/+$/, '') + path;
+        await fetch(url, {
+            signal: AbortSignal.timeout(4000),
+            mode: 'cors',
+            cache: 'no-store',
+        });
+        return true;
+    }
+
+    async function checkServer(baseUrl, statusEl, dotEl, paths) {
         if (!statusEl) return;
         setDot(dotEl, null);
         statusEl.textContent = 'checking…';
-        try {
-            const url = baseUrl.replace(/\/+$/, '');
-            const res = await fetch(url + '/health', {
-                signal: AbortSignal.timeout(4000),
-                mode: 'cors',
-            });
-            if (res.ok) {
-                setDot(dotEl, true);
-                statusEl.textContent = 'online';
-            } else {
-                setDot(dotEl, false);
-                statusEl.textContent = `HTTP ${res.status}`;
-            }
-        } catch {
+        const base = (baseUrl || '').replace(/\/+$/, '');
+        if (!base) {
             setDot(dotEl, false);
             statusEl.textContent = 'offline';
+            return;
         }
+        for (const path of paths) {
+            try {
+                const ok = await probePath(base, path);
+                if (ok) {
+                    setDot(dotEl, true);
+                    statusEl.textContent = 'online';
+                    return;
+                }
+            } catch {
+                /* try next path */
+            }
+        }
+        setDot(dotEl, false);
+        statusEl.textContent = 'offline';
+    }
+
+    function courseOverlayHref(droneUrl) {
+        const page = new URL('vmix-kri-drone-course.html', location.href);
+        const telemetry = `${droneUrl.replace(/\/+$/, '')}/api/drone-telemetry`;
+        page.searchParams.set('telemetry', telemetry);
+        return page.href;
     }
 
     function updateLinks(cvUrl, droneUrl) {
@@ -49,9 +71,8 @@
         const map = {
             hubCvHubLink: cv + '/cv-hub.html',
             hubCvAnalysisLink: cv + '/cv-analysis.html',
-            hubDroneMonitorLink: cv + '/cv-drone-monitor.html',
-            hubDroneCourseOverlayLink: cv + '/cv-drone-course-overlay.html',
             hubDroneTelemetryLink: drone + '/monitor',
+            hubDroneCourseOverlayLink: courseOverlayHref(drone),
         };
         for (const [id, href] of Object.entries(map)) {
             const el = document.getElementById(id);
@@ -78,8 +99,8 @@
             save(LS_CV_URL, cv);
             save(LS_DRONE_URL, drone);
             updateLinks(cv, drone);
-            checkServer(cv, cvStatus, cvDot);
-            checkServer(drone, droneStatus, droneDot);
+            checkServer(cv, cvStatus, cvDot, CV_PROBE_PATHS);
+            checkServer(drone, droneStatus, droneDot, DRONE_PROBE_PATHS);
         }
 
         cvInput.addEventListener('change', refresh);

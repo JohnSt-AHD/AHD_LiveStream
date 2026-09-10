@@ -16,6 +16,17 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -37,6 +48,14 @@ function wrapHandler(handlerModule) {
   };
 }
 
+app.get('/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'ahd-livestream',
+    hub: `http://localhost:${PORT}`,
+  });
+});
+
 // ── API routes ──────────────────────────────────────────────────────
 app.all('/api/traccar',        wrapHandler(() => import('./api/traccar.js')));
 app.all('/api/cv-position',    wrapHandler(() => import('./api/cv-position.js')));
@@ -54,9 +73,12 @@ app.get('/{*splat}', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n  traccar-overlay running locally`);
-  console.log(`  http://localhost:${PORT}\n`);
+  console.log(`\n  AHD LiveStream running locally`);
+  console.log(`  Hub:      http://localhost:${PORT}`);
+  console.log(`  Overlays: http://localhost:${PORT}/vmix-kri.html`);
+  console.log(`  CV API:   http://localhost:${PORT}/api/cv-position\n`);
   console.log(`  API endpoints:`);
+  console.log(`    /health`);
   console.log(`    /api/traccar`);
   console.log(`    /api/cv-position`);
   console.log(`    /api/warning-alerts`);

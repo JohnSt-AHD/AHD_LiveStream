@@ -180,6 +180,27 @@
     line-height: 1.45;
 }
 
+.hub-local-banner {
+    margin: 0;
+    padding: 8px clamp(16px, 4vw, 48px);
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ahd-muted);
+    background: rgba(6, 20, 38, 0.94);
+    border-bottom: 1px solid var(--ahd-border);
+}
+
+.hub-local-banner--local {
+    color: #bbf7d0;
+    background: rgba(6, 40, 24, 0.94);
+}
+
+.hub-local-banner--cloud {
+    color: #fde68a;
+    background: rgba(40, 28, 6, 0.94);
+}
+
 .hub-role-nav {
     background: rgba(6, 20, 38, 0.94);
     border-bottom: 1px solid var(--ahd-border);

@@ -10,9 +10,9 @@
     const laptop = (params.get("cvLaptop") || params.get("laptop") || "").replace(/\/$/, "");
     const telemetryUrl =
         params.get("telemetry") ||
-        (laptop ? `${laptop}/api/drone-telemetry` : "/api/drone-telemetry");
-    const raceUrl = params.get("race") || (laptop ? `${laptop}/api/race` : "/api/race");
-    const configUrl = laptop ? `${laptop}/api/config` : "/api/config";
+        (laptop ? `${laptop}/api/drone-telemetry` : "http://127.0.0.1:5050/api/drone-telemetry");
+    const raceUrl = params.get("race") || (laptop ? `${laptop}/api/race` : "");
+    const configUrl = laptop ? `${laptop}/api/config` : "";
     const forcePlan = params.get("view") === "plan";
 
     let hfovDeg = 73;
@@ -346,6 +346,7 @@
     }
 
     async function loadConfig() {
+        if (!configUrl) return;
         try {
             const res = await fetch(configUrl);
             if (!res.ok) return;
@@ -362,10 +363,12 @@
             const res = await fetch(telemetryUrl);
             if (res.ok) tel = pickAircraft(await res.json());
         } catch (_) {}
-        try {
-            const res = await fetch(raceUrl);
-            if (res.ok) latestRace = await res.json();
-        } catch (_) {}
+        if (raceUrl) {
+            try {
+                const res = await fetch(raceUrl);
+                if (res.ok) latestRace = await res.json();
+            } catch (_) {}
+        }
         mergePose(tel);
     }
 

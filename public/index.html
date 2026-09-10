@@ -50,12 +50,13 @@
             <button type="button" class="hub-role-btn" data-hub-role="setup" aria-pressed="false">Setup</button>
         </div>
     </nav>
+    <p class="hub-local-banner" id="hubLocalBanner" hidden></p>
 
     <div class="hub-wrap">
         <div class="hub-view is-active" data-hub-view="broadcast" id="hubViewBroadcast">
             <section class="hub-panel hub-panel--vmix" aria-labelledby="hub-vmix-title">
                 <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
-                <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code in <strong>Setup</strong> — overlays read the same code via <code>?regatta=</code> or this page’s saved value.</p>
+                <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code in <strong>Setup</strong> — overlays read the same code via <code>?regatta=</code> or this page’s saved value. On race day, open this hub from <code>http://localhost:3000</code> and paste these card URLs into vMix.</p>
 
                 <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
                     <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
@@ -110,6 +111,7 @@
                         <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="s" title="KRI schedule in">S</button>
                         <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="g" title="Speed overlay in">G</button>
                         <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="v" title="KRI speed chart in">V</button>
+                        <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="m" title="Weather map in (KRI / Karāpiro)">M</button>
                         <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--out" data-vmix-trigger="out" title="Out">O</button>
                         <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--clear" data-vmix-trigger="clear" title="Clear all">C</button>
                     </div>
@@ -139,7 +141,7 @@
                             <span class="hub-link-icon" aria-hidden="true">🎄</span>
                             <span class="hub-link-text">
                                 <h3>Karāpiro (Ged)</h3>
-                                <p>Ged-style boards, fast CSS motion, same RowIT data. KRI look stays on the KRI card.</p>
+                                <p>Ged-style boards, fast CSS motion, same RowIT data. Weather map with <strong>M</strong>.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -149,19 +151,7 @@
                             <span class="hub-link-icon" aria-hidden="true">🎬</span>
                             <span class="hub-link-text">
                                 <h3>KRI</h3>
-                                <p>Title, lower third, draw, and results with KRI artwork.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--kri" href="vmix-kri-weather.html">
-                            <span class="hub-link-icon hub-link-icon--kri" aria-hidden="true">
-                                <img src="assets/kri/kri-logo.png" alt="" width="28" height="28">
-                            </span>
-                            <span class="hub-link-text">
-                                <h3>KRI — Lake Karāpiro weather</h3>
-                                <p>Live weather map — shortcut <strong>M</strong> on vmix-kri.html, or standalone page.</p>
+                                <p>Title, lower third, draw, results, and weather map with <strong>M</strong>.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -303,7 +293,7 @@
         <div class="hub-view" data-hub-view="cv" id="hubViewCv" hidden>
             <section class="hub-panel hub-panel--cv" aria-labelledby="hub-cv-title">
                 <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone telemetry</h2>
-                <p class="hub-cv-lead">Local services for boat tracking (YOLO CV) and DJI Matrice drone telemetry. These run on this machine — check the status indicators below.</p>
+                <p class="hub-cv-lead">Boat tracking (YOLO) on port 8790 and DJI telemetry on port 5050. Start them with <code>start-race-day.bat</code>, or launch CV and the DJI bridge separately. Status dots below show whether those processes are up on this PC.</p>
 
                 <div class="hub-cv-status-row" id="hubCvStatusRow">
                     <div class="hub-cv-status-item">
@@ -351,23 +341,13 @@
                         </a>
                     </li>
                     <li>
-                        <a class="hub-link-card hub-link-card--cv" id="hubDroneMonitorLink" href="http://127.0.0.1:8790/cv-drone-monitor.html" target="_blank" rel="noopener">
-                            <span class="hub-link-icon" aria-hidden="true">✈️</span>
-                            <span class="hub-link-text">
-                                <h3>Drone race monitor</h3>
-                                <p>Live Matrice position on course, OSD telemetry, race clock, speed graph, and daysheet pickup.</p>
-                            </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hub-link-card hub-link-card--cv" id="hubDroneCourseOverlayLink" href="http://127.0.0.1:8790/cv-drone-course-overlay.html" target="_blank" rel="noopener">
+                        <a class="hub-link-card hub-link-card--vmix" id="hubDroneCourseOverlayLink" href="vmix-kri-drone-course.html?telemetry=http://127.0.0.1:5050/api/drone-telemetry">
                             <span class="hub-link-icon" aria-hidden="true">🎬</span>
                             <span class="hub-link-text">
                                 <h3>Drone course overlay (vMix)</h3>
-                                <p>1920×1080 camera-view course graphic — open in vMix Browser, NDI-output to stream PC.</p>
+                                <p>1920×1080 camera-view course graphic from the DJI bridge — open in a vMix Web Browser input.</p>
                             </span>
-                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
                     </li>
                     <li>
@@ -409,7 +389,7 @@
                 <div class="hub-dashboard-sidebar">
                 <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
                     <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
-                    <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. On a local overlay server, CSVs are saved under <code class="hub-csv-code-inline">data/rowit-live/</code> and refreshed every 1 min. Use <strong>Update results now</strong> to pull results immediately.</p>
+                    <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code> through this hub’s <code>/api/fetch-csv</code> proxy (needs internet). Tick auto-refresh to poll every 1 min, or use <strong>Update results now</strong> to pull immediately.</p>
                     <label class="hub-regatta-code-field">
                         <span class="hub-regatta-code-label">Regatta code</span>
                         <input

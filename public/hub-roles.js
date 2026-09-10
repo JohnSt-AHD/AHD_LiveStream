@@ -72,7 +72,27 @@
         window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { view: next } }));
     }
 
+    function isLocalHub() {
+        return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    }
+
+    function updateOriginBanner() {
+        const el = document.getElementById('hubLocalBanner');
+        if (!el) return;
+        el.hidden = false;
+        if (isLocalHub()) {
+            el.className = 'hub-local-banner hub-local-banner--local';
+            el.textContent =
+                'Local graphics — point vMix Web Browser inputs at these URLs (this page’s origin). Daysheet and weather still need internet.';
+        } else {
+            el.className = 'hub-local-banner hub-local-banner--cloud';
+            el.textContent =
+                'Cloud hub — for race day on this PC, run start-race-day.bat and open http://localhost:3000 so overlays keep working if the venue link drops.';
+        }
+    }
+
     function init() {
+        updateOriginBanner();
         const queryView = readQuery();
         const initial = queryView || readStored() || 'broadcast';
         setView(initial, { persist: true, updateUrl: false });

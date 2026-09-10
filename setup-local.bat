@@ -45,8 +45,11 @@ if %errorlevel% neq 0 (
 :: Start the server
 echo.
 echo  Starting local server...
+echo  Hub: http://localhost:3000
 echo  Press Ctrl+C to stop.
 echo.
+
+start "" cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:3000"
 node server.js
 
 pause

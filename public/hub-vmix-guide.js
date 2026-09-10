@@ -33,7 +33,7 @@ const VMIX_TRIGGERS = [
     { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
     { key: 'v', graphic: 'Speed chart', desc: 'KRI only — lower-third speed vs distance replay in real time (~7 min demo); ease in/out; add &loop=1 to repeat' },
     { key: 'k', graphic: 'Live tracking', desc: 'KRI only — bottom-right crew positions from demo data (rank, logo, club code, gap); leader distance to go; o to fade out' },
-    { key: 'm', graphic: 'Weather map', desc: 'KRI only — full-screen Lake Karāpiro live weather (wind, temp, rain, 3 hr forecast); o to fade out' },
+    { key: 'm', graphic: 'Weather map', desc: 'KRI and Karāpiro packs — full-screen Lake Karāpiro live weather (wind, temp, rain, 3 hr forecast); o to fade out' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
     { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },
     { key: 'p', graphic: 'Previous race', desc: 'Live race number −1 on daysheet (updates draw/LT/results on air)' },
@@ -141,11 +141,11 @@ function hubRenderVmixGuide() {
         const weatherNote = document.createElement('p');
         weatherNote.className = 'hub-vmix-map-note';
         weatherNote.innerHTML =
-            '<strong>KRI weather map (<code>m</code>):</strong> on <a href="' +
+            '<strong>Weather map (<code>m</code>):</strong> shortcut on the <a href="' +
             hubVmixBaseUrl('vmix-kri.html') +
-            '" target="_blank" rel="noopener">vmix-kri.html</a> or standalone <a href="' +
-            hubVmixBaseUrl('vmix-kri-weather.html') +
-            '" target="_blank" rel="noopener">vmix-kri-weather.html</a> · Open-Meteo live data, wind arrows, temperature, rainfall, 3 hr forecast (10 min refresh). ~90% transparent for overlay on vision.';
+            '" target="_blank" rel="noopener">KRI</a> and <a href="' +
+            hubVmixBaseUrl('vmix-karapiro.html') +
+            '" target="_blank" rel="noopener">Karāpiro</a> graphic packs · Open-Meteo live data, wind arrows, temperature, rainfall, 3 hr forecast (10 min refresh). ~90% transparent for overlay on vision.';
         examples.appendChild(weatherNote);
 
         const mapNote = document.createElement('p');
@@ -178,11 +178,11 @@ function hubRenderVmixGuide() {
         const cvMonitorUrl = new URL(hubVmixBaseUrl('cv-position-monitor.html'));
         cvMonitorUrl.searchParams.set('streamId', 'YOUR_GPS_STREAM_ID');
         cvNote.innerHTML =
-            '<strong>CV leader line:</strong> laptop YOLO → <code>/api/cv-position</code> → transparent overlay. vMix browser: <a href="' +
+            '<strong>CV leader line:</strong> laptop YOLO → local <code>/api/cv-position</code> → transparent overlay. vMix browser: <a href="' +
             cvUrl.href +
             '" target="_blank" rel="noopener">vmix-cv-leader.html</a> · monitor: <a href="' +
             cvMonitorUrl.href +
-            '" target="_blank" rel="noopener">cv-position-monitor.html</a> · same <code>streamId</code> as GPS. Run <code>karapiro.py</code> / <code>twizel.py</code> with <code>CV_STREAM_ID</code> set.';
+            '" target="_blank" rel="noopener">cv-position-monitor.html</a> · same <code>streamId</code> as GPS. Start the hub with <code>start-race-day.bat</code> so Python posts to this origin.';
         examples.appendChild(cvNote);
 
         const devNote = document.createElement('p');
