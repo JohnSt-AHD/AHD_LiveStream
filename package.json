@@ -24,6 +24,7 @@
     "trial:u19-gps-upload": "node scripts/export-u19-trial-gps-to-server.mjs",
     "trial:u19-gps-assign": "node scripts/apply-u19-trial-gps-assignments.mjs",
     "proposals:all": "node scripts/generate-kri-proposal-pdfs.mjs && node scripts/generate-crewsight-technical-pdf.mjs && node scripts/generate-crewsight-roadmap-pdf.mjs && node scripts/generate-crewsight-comparison-pdf.mjs",
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -34,8 +35,11 @@
   ],
   "author": "",
   "license": "MIT",
+  "type": "module",
   "dependencies": {
     "@vercel/kv": "^3.0.0",
+    "dotenv": "^16.4.0",
+    "express": "^5.1.0",
     "googleapis": "^148.0.0"
   },
   "devDependencies": {

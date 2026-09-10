@@ -3,12 +3,14 @@
  */
 const LS_REGATTA_CODE = 'altitudeHdRegattaCode_v1';
 const LS_CSV_URLS = 'altitudeHdCsvUrls_v1';
+const LS_CSV_POLL = 'altitudeHdCsvPoll_v1';
 const ROWIT_ALTITUDE_BASE = 'https://l.rowit.nz/altitude';
 const ROWIT_ALTITUDE_BASES = [
     'https://l.rowit.nz/altitude',
     'https://rowit.nz/altitude',
 ];
 const DEFAULT_REGATTA_CODE = 'mads2026';
+const CSV_POLL_INTERVAL_MS = 60_000;
 
 const CSV_FIELDS = [
     { id: 'events', label: 'Events' },
@@ -237,6 +239,86 @@ window.AltitudeHdHub = {
     loadRegattaCode,
 };
 
+/* ── Auto-poll state ──────────────────────────────────────────────── */
+let csvPollTimer = null;
+const csvLastSuccess = {};
+
+function formatTimestamp(date) {
+    if (!date) return '—';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function updateTimestampEl(row, csvId) {
+    let el = row.querySelector('.hub-csv-timestamp');
+    if (!el) return;
+    const ts = csvLastSuccess[csvId];
+    el.textContent = ts ? formatTimestamp(ts) : '—';
+    el.title = ts ? `Last successful check: ${ts.toISOString()}` : 'Not yet checked';
+}
+
+async function checkRowWithTimestamp(row) {
+    const result = await checkRow(row);
+    const csvId = row.dataset.csvId;
+    if (result && result.ok) {
+        csvLastSuccess[csvId] = new Date();
+    }
+    updateTimestampEl(row, csvId);
+    return result;
+}
+
+async function pollAllCsvs() {
+    const list = document.getElementById('hubCsvList');
+    if (!list) return;
+    for (const row of list.querySelectorAll('.hub-csv-row')) {
+        await checkRowWithTimestamp(row);
+    }
+}
+
+function loadPollSetting() {
+    try {
+        return localStorage.getItem(LS_CSV_POLL) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function savePollSetting(on) {
+    try {
+        localStorage.setItem(LS_CSV_POLL, on ? '1' : '0');
+    } catch { /* ignore */ }
+}
+
+function startCsvPoll() {
+    stopCsvPoll();
+    pollAllCsvs();
+    csvPollTimer = setInterval(pollAllCsvs, CSV_POLL_INTERVAL_MS);
+}
+
+function stopCsvPoll() {
+    if (csvPollTimer) {
+        clearInterval(csvPollTimer);
+        csvPollTimer = null;
+    }
+}
+
+function syncPollToggle(toggle) {
+    if (!toggle) return;
+    const on = toggle.checked;
+    savePollSetting(on);
+    const label = document.getElementById('hubCsvPollLabel');
+    if (label) {
+        label.textContent = on
+            ? `Auto-poll ON — checking every ${CSV_POLL_INTERVAL_MS / 1000}s`
+            : 'Auto-poll OFF';
+    }
+    if (on) {
+        startCsvPoll();
+    } else {
+        stopCsvPoll();
+    }
+}
+
 function initHubCsv() {
     const list = document.getElementById('hubCsvList');
     const codeInput = document.getElementById('hubRegattaCode');
@@ -274,8 +356,13 @@ function initHubCsv() {
         urlText.title = urls[f.id];
         urlText.textContent = `${f.id}.csv`;
 
+        const timestamp = document.createElement('span');
+        timestamp.className = 'hub-csv-timestamp';
+        timestamp.textContent = '—';
+
         wrap.appendChild(status);
         wrap.appendChild(urlText);
+        wrap.appendChild(timestamp);
         li.appendChild(label);
         li.appendChild(wrap);
         list.appendChild(li);
@@ -287,7 +374,7 @@ function initHubCsv() {
         refreshCsvRows(c);
         notifyUrlsChanged();
         if (c) {
-            list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+            list.querySelectorAll('.hub-csv-row').forEach((row) => checkRowWithTimestamp(row));
         }
     };
 
@@ -303,17 +390,29 @@ function initHubCsv() {
             if (!normalizeRegattaCode(codeInput ? codeInput.value : '')) return;
             checkAll.disabled = true;
             for (const row of list.querySelectorAll('.hub-csv-row')) {
-                await checkRow(row);
+                await checkRowWithTimestamp(row);
             }
             checkAll.disabled = false;
         });
     }
 
+    /* Auto-poll toggle */
+    const pollToggle = document.getElementById('hubCsvPollToggle');
+    if (pollToggle) {
+        pollToggle.checked = loadPollSetting();
+        pollToggle.addEventListener('change', () => syncPollToggle(pollToggle));
+    }
+
     refreshCsvRows(code);
     if (code) {
-        list.querySelectorAll('.hub-csv-row').forEach((row) => checkRow(row));
+        list.querySelectorAll('.hub-csv-row').forEach((row) => checkRowWithTimestamp(row));
     }
     notifyUrlsChanged();
+
+    /* Start poll if saved as on */
+    if (pollToggle && pollToggle.checked) {
+        syncPollToggle(pollToggle);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initHubCsv);

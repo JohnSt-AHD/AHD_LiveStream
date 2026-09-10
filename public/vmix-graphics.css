@@ -708,7 +708,7 @@ html.vg-preview .vg-stage {
     flex: 0 1 auto;
     min-width: 0;
     width: fit-content;
-    max-width: min(1104px, 100%);
+    max-width: min(1500px, 100%);
     min-height: 126px;
     padding: 21px 48px 16px 28px;
     border-radius: 0 22px 0 0;
@@ -763,7 +763,8 @@ html.vg-preview .vg-stage {
     bottom: 44px;
     height: auto;
     min-height: 126px;
-    width: min(1104px, 74%);
+    width: fit-content;
+    max-width: min(1500px, 88%);
 }
 
 [data-vmix-theme='kri'] .vg-kri-lower-progression-box {
@@ -1319,6 +1320,7 @@ html.vg-preview .vg-stage {
     font-weight: 700;
     line-height: 1.1;
     color: var(--kri-brand-white);
+    white-space: nowrap;
 }
 
 /* Schedule */

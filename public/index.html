@@ -64,6 +64,11 @@
                 <p class="hub-csv-base-preview" id="hubCsvBasePreview">https://l.rowit.nz/altitude/…/</p>
                 <ul id="hubCsvList" class="hub-csv-list"></ul>
                 <div class="hub-csv-actions">
+                    <label class="hub-csv-poll-toggle">
+                        <input type="checkbox" id="hubCsvPollToggle">
+                        <span>Auto-poll every 60s</span>
+                    </label>
+                    <span class="hub-csv-poll-label" id="hubCsvPollLabel">Auto-poll OFF</span>
                     <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
                     <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefresh">Update results now</button>
                 </div>
@@ -240,6 +245,88 @@
                                 <p>Birds-eye 2 km course with live boat positions, zoomed crew tracking, and upcoming races.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="hub-panel hub-panel--cv" aria-labelledby="hub-cv-title">
+                <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone telemetry</h2>
+                <p class="hub-cv-lead">Local services for boat tracking (YOLO CV) and DJI Matrice drone telemetry. These run on this machine — check the status indicators below.</p>
+
+                <div class="hub-cv-status-row" id="hubCvStatusRow">
+                    <div class="hub-cv-status-item">
+                        <span class="hub-cv-dot" id="hubCvServerDot"></span>
+                        <span>CV Server</span>
+                        <span class="hub-cv-status-detail" id="hubCvServerStatus">checking…</span>
+                    </div>
+                    <div class="hub-cv-status-item">
+                        <span class="hub-cv-dot" id="hubDroneServerDot"></span>
+                        <span>Drone telemetry</span>
+                        <span class="hub-cv-status-detail" id="hubDroneServerStatus">checking…</span>
+                    </div>
+                </div>
+
+                <div class="hub-cv-config">
+                    <label class="hub-cv-config-field">
+                        <span class="hub-cv-config-label">CV server</span>
+                        <input type="text" id="hubCvServerUrl" class="hub-cv-config-input" value="http://127.0.0.1:8790" spellcheck="false" autocomplete="off">
+                    </label>
+                    <label class="hub-cv-config-field">
+                        <span class="hub-cv-config-label">Drone bridge</span>
+                        <input type="text" id="hubDroneServerUrl" class="hub-cv-config-input" value="http://127.0.0.1:5050" spellcheck="false" autocomplete="off">
+                    </label>
+                </div>
+
+                <ul class="hub-links">
+                    <li>
+                        <a class="hub-link-card hub-link-card--cv" id="hubCvHubLink" href="http://127.0.0.1:8790/cv-hub.html" target="_blank" rel="noopener">
+                            <span class="hub-link-icon" aria-hidden="true">⛵</span>
+                            <span class="hub-link-text">
+                                <h3>CV Hub</h3>
+                                <p>Rowing CV home — overlay URLs, process control, and quick-start paths.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--cv" id="hubCvAnalysisLink" href="http://127.0.0.1:8790/cv-analysis.html" target="_blank" rel="noopener">
+                            <span class="hub-link-icon" aria-hidden="true">🎯</span>
+                            <span class="hub-link-text">
+                                <h3>CV Control room</h3>
+                                <p>YOLO boat detection, NDI preview, clip testing, and TouchDesigner runner.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--cv" id="hubDroneMonitorLink" href="http://127.0.0.1:8790/cv-drone-monitor.html" target="_blank" rel="noopener">
+                            <span class="hub-link-icon" aria-hidden="true">✈️</span>
+                            <span class="hub-link-text">
+                                <h3>Drone race monitor</h3>
+                                <p>Live Matrice position on course, OSD telemetry, race clock, speed graph, and daysheet pickup.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--cv" id="hubDroneCourseOverlayLink" href="http://127.0.0.1:8790/cv-drone-course-overlay.html" target="_blank" rel="noopener">
+                            <span class="hub-link-icon" aria-hidden="true">🎬</span>
+                            <span class="hub-link-text">
+                                <h3>Drone course overlay (vMix)</h3>
+                                <p>1920×1080 camera-view course graphic — open in vMix Browser, NDI-output to stream PC.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hub-link-card hub-link-card--cv" id="hubDroneTelemetryLink" href="http://127.0.0.1:5050/monitor" target="_blank" rel="noopener">
+                            <span class="hub-link-icon" aria-hidden="true">📡</span>
+                            <span class="hub-link-text">
+                                <h3>DJI telemetry monitor</h3>
+                                <p>Pilot 2 MQTT OSD bridge — live GPS, gimbal, camera data from the Matrice.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">↗</span>
                         </a>
                     </li>
                 </ul>
@@ -530,6 +617,7 @@
     <script src="hub-regatta.js"></script>
     <script src="hub-vmix-guide.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="hub-cv-status.js"></script>
     <script src="hub-fleet-map.js"></script>
     <script src="hub-map-refresh.js"></script>
     <script src="tracker-source-ui.js"></script>

@@ -1,0 +1,26 @@
+html, body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: transparent;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+canvas {
+  display: block;
+  width: 1920px;
+  height: 1080px;
+}
+
+.hud {
+  position: absolute;
+  left: 48px;
+  bottom: 40px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 650;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
