@@ -58,21 +58,15 @@
         statusEl.textContent = 'offline';
     }
 
-    function courseOverlayHref(droneUrl) {
-        const page = new URL('vmix-kri-drone-course.html', location.href);
-        const telemetry = `${droneUrl.replace(/\/+$/, '')}/api/drone-telemetry`;
-        page.searchParams.set('telemetry', telemetry);
-        return page.href;
-    }
-
     function updateLinks(cvUrl, droneUrl) {
         const cv = cvUrl.replace(/\/+$/, '');
         const drone = droneUrl.replace(/\/+$/, '');
         const map = {
             hubCvHubLink: cv + '/cv-hub.html',
             hubCvAnalysisLink: cv + '/cv-analysis.html',
+            hubDroneMonitorLink: cv + '/cv-drone-monitor.html',
+            hubDroneCourseOverlayLink: cv + '/cv-drone-course-overlay.html',
             hubDroneTelemetryLink: drone + '/monitor',
-            hubDroneCourseOverlayLink: courseOverlayHref(drone),
         };
         for (const [id, href] of Object.entries(map)) {
             const el = document.getElementById(id);
