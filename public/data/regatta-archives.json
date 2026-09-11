@@ -1,6 +1,6 @@
 {
-  "updated": "2026-09-10T17:39:19.190Z",
-  "snapshotDate": "2026-09-10",
+  "updated": "2026-09-11T17:43:13.708Z",
+  "snapshotDate": "2026-09-11",
   "configSource": "scripts/regatta-archive-codes.json",
   "regattas": {
     "mads2026": {
@@ -102,7 +102,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/mads2026/latest/events.csv",
@@ -114,21 +115,21 @@
           "sha256": "d1bf74693caf3504c78ae566f9f801379e4851309e4f92dc4823cdd48206fb47",
           "bytes": 2848,
           "sourceUrl": "https://l.rowit.nz/altitude/mads2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:15.934Z",
+          "archivedAt": "2026-09-11T17:43:10.375Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "476d6adf0f88507ebf9b27ce25c7eb16929f687e427b05f7e1059033bb42ac4c",
-          "bytes": 52728,
+          "sha256": "ac9b82b776aecae5bd8104ed13544ef256e4b34b7378184e269b0e760143ef6b",
+          "bytes": 52730,
           "sourceUrl": "https://l.rowit.nz/altitude/mads2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:16.285Z",
+          "archivedAt": "2026-09-11T17:43:10.759Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "55a9f915c16b14a0677ae767b9c0dd3c0405a7a6596dd5acde34dc5dabd321bd",
-          "bytes": 222229,
+          "sha256": "166c2da06c61b5147088cdf770dd9a72c95acc3b17d27197bcf63157c2ddb9ad",
+          "bytes": 222231,
           "sourceUrl": "https://l.rowit.nz/altitude/mads2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:17.012Z",
+          "archivedAt": "2026-09-11T17:43:11.601Z",
           "changed": true
         }
       }
@@ -300,7 +301,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/nicc2026/latest/events.csv",
@@ -312,21 +314,21 @@
           "sha256": "9711cd5bfa28bc658d7e2ee21c8c6fefe7c6c9b9e93ffa6a021ac43916736294",
           "bytes": 3932,
           "sourceUrl": "https://l.rowit.nz/altitude/nicc2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:10.419Z",
+          "archivedAt": "2026-09-11T17:43:05.196Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "1602021454007f58658e0e17a22dd2a6a888d9890142c60ba23ddc79838e3970",
-          "bytes": 31550,
+          "sha256": "6c9b3b294aa9fd629c82fb5f4a349e76f1b728107ae5a8eb7b7a26dd0bd3264c",
+          "bytes": 31552,
           "sourceUrl": "https://l.rowit.nz/altitude/nicc2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:10.806Z",
+          "archivedAt": "2026-09-11T17:43:05.502Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "30a5857285865c1050673e230a3c43fdfe55f73ad765042bcf77248bd33f2ac1",
-          "bytes": 114393,
+          "sha256": "2aa136a2b76b834b2483ca5a29a9124a7e7cf0c8c126cbaaa8db004d329ba452",
+          "bytes": 114395,
           "sourceUrl": "https://l.rowit.nz/altitude/nicc2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:11.797Z",
+          "archivedAt": "2026-09-11T17:43:06.286Z",
           "changed": true
         }
       }
@@ -498,7 +500,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/cnzb2026/latest/events.csv",
@@ -511,14 +514,14 @@
           "sha256": "1252c6cf0b4bb07b74a3195c7304b60febfbb88deb305798c2b5e8045c6b50f9",
           "bytes": 1586,
           "sourceUrl": "https://l.rowit.nz/altitude/cnzb2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:18.290Z",
+          "archivedAt": "2026-09-11T17:43:12.841Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "5835a4ea9fbedeb7f3bfa50e9f0bceeee627ed07185979d03a1d1662df7b7714",
-          "bytes": 15072,
+          "sha256": "5ca5595bfe4efbe89fc7da1983c1ee2c6514841bc8ccc38ddaaf52551fbc0ca8",
+          "bytes": 15074,
           "sourceUrl": "https://l.rowit.nz/altitude/cnzb2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:18.543Z",
+          "archivedAt": "2026-09-11T17:43:13.084Z",
           "changed": true
         },
         "results": {
@@ -529,10 +532,10 @@
           "changed": false
         },
         "competitors": {
-          "sha256": "629a34e5f6752e5926d2eca2207398eb8330e7c39bb8269716aaae5eb455406f",
-          "bytes": 27909,
+          "sha256": "4da80f774d82426bab12de7214d3bbc8b1d1377c8ef7aaad8db203daf21f2156",
+          "bytes": 27911,
           "sourceUrl": "https://l.rowit.nz/altitude/cnzb2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:19.189Z",
+          "archivedAt": "2026-09-11T17:43:13.708Z",
           "changed": true
         }
       }
@@ -938,7 +941,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/nzmm2025/latest/events.csv",
@@ -951,28 +955,28 @@
           "sha256": "829bc0527a04f0d3427626d87f75d353be15fda32e1b51742f8847de195d2a33",
           "bytes": 3887,
           "sourceUrl": "https://l.rowit.nz/altitude/nzmm2025/events.csv",
-          "archivedAt": "2026-09-10T17:39:09.476Z",
+          "archivedAt": "2026-09-11T17:43:04.276Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "052957e78db57fff687848667a09b60e5669741df5e60a2b7889612f6c51fac3",
-          "bytes": 9449,
+          "sha256": "c8b07f76eaf75153fe043030ace261522d51fa7c350a194ef5f560975a549e3f",
+          "bytes": 9451,
           "sourceUrl": "https://l.rowit.nz/altitude/nzmm2025/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:09.727Z",
+          "archivedAt": "2026-09-11T17:43:04.506Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "30abe911c4ceeb9f019cfa62eb37016ee575983296d81b65aad8a25a066d0822",
-          "bytes": 13853,
+          "sha256": "1a211a523740c70b7e4cc8275e0f7bc567c3b41c63efb7c06adc065a3b81c8c2",
+          "bytes": 13855,
           "sourceUrl": "https://l.rowit.nz/altitude/nzmm2025/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:10.214Z",
+          "archivedAt": "2026-09-11T17:43:04.986Z",
           "changed": true
         },
         "results": {
           "sha256": "fa47a075232af3737950e5c97eeb84b6588b5eb03aa23bfb5c385db64c44385f",
           "bytes": 3342,
           "sourceUrl": "https://l.rowit.nz/altitude/nzmm2025/results.csv",
-          "archivedAt": "2026-09-10T17:39:09.914Z",
+          "archivedAt": "2026-09-11T17:43:04.689Z",
           "changed": false
         }
       }
@@ -1076,7 +1080,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/nzcc2026/latest/events.csv",
@@ -1088,21 +1093,21 @@
           "sha256": "6ad1d97d9087c243f5f10845eaf099b941c060c602d72c0ce6b7b5402671860b",
           "bytes": 3343,
           "sourceUrl": "https://l.rowit.nz/altitude/nzcc2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:11.997Z",
+          "archivedAt": "2026-09-11T17:43:06.487Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "b9d6f02361c5ee9b82e3028ddfb5d220d73fbccf9a23f104c85a752fe16fec7c",
-          "bytes": 26141,
+          "sha256": "023df8b8176ac510570b792d0f5dbc5fe4224cebbd738bd48e849e3d4566ab37",
+          "bytes": 26143,
           "sourceUrl": "https://l.rowit.nz/altitude/nzcc2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:12.337Z",
+          "archivedAt": "2026-09-11T17:43:06.826Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "abe0bec32edf558616c4300d2d30f2dff995f7dc1572bab838401a3ed5e9572e",
-          "bytes": 89687,
+          "sha256": "3f5b9789224fd04ff4f3468c1163d68222234feadba126422a40cb353c746997",
+          "bytes": 89689,
           "sourceUrl": "https://l.rowit.nz/altitude/nzcc2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:13.091Z",
+          "archivedAt": "2026-09-11T17:43:07.552Z",
           "changed": true
         }
       }
@@ -1206,7 +1211,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/niss2026/latest/events.csv",
@@ -1218,21 +1224,21 @@
           "sha256": "6ad6a4eb54078f4c5d51b0f1a6d50e7089ddd5f0762ad87a56b852c4ef290794",
           "bytes": 2812,
           "sourceUrl": "https://l.rowit.nz/altitude/niss2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:13.285Z",
+          "archivedAt": "2026-09-11T17:43:07.754Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "65c882ad5cba4c64890b6d4082f22d50097745e984a43e21ed444224824e41cf",
-          "bytes": 38696,
+          "sha256": "fdbe3c3f43e4be6cbf4c5cb192617b21334bd52d4f5abb5d4352bd8b12856d6c",
+          "bytes": 38698,
           "sourceUrl": "https://l.rowit.nz/altitude/niss2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:13.684Z",
+          "archivedAt": "2026-09-11T17:43:08.077Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "eb74150856fb8b27c0d6945a77e285bad95459ad34d6f343162a0d3608ce1a0d",
-          "bytes": 150035,
+          "sha256": "b429db6c87cfc31a6846424371838ff78c2ff06e3d6764f4d85368143c80e90f",
+          "bytes": 150037,
           "sourceUrl": "https://l.rowit.nz/altitude/niss2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:14.527Z",
+          "archivedAt": "2026-09-11T17:43:08.903Z",
           "changed": true
         }
       }
@@ -1336,7 +1342,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/siss2026/latest/events.csv",
@@ -1348,21 +1355,21 @@
           "sha256": "346df855ecc0b36d79ed9a34d473a5db93b3ed0c557b1c7b452a726cefb7bf21",
           "bytes": 1928,
           "sourceUrl": "https://l.rowit.nz/altitude/siss2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:14.728Z",
+          "archivedAt": "2026-09-11T17:43:09.095Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "244d5de456782aa7df64c32ae82e87b6a35d50b6a017b9646e47699ea0e87dac",
-          "bytes": 21399,
+          "sha256": "6617a963a488e4fcea129f45bc7df21d7f4bfc4f7e3a53bff85ec2159952447d",
+          "bytes": 21401,
           "sourceUrl": "https://l.rowit.nz/altitude/siss2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:15.038Z",
+          "archivedAt": "2026-09-11T17:43:09.390Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "783bacd34ca35024533ab9c3eaa0429b62401689a12a415e0779944230471d79",
-          "bytes": 91079,
+          "sha256": "9244be2edb71c8bf0b697ee33b9ec0532bb4a7d5d8e8b000513a23680819f651",
+          "bytes": 91081,
           "sourceUrl": "https://l.rowit.nz/altitude/siss2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:15.731Z",
+          "archivedAt": "2026-09-11T17:43:10.167Z",
           "changed": true
         }
       }
@@ -1466,7 +1473,8 @@
         "2026-09-07",
         "2026-09-08",
         "2026-09-09",
-        "2026-09-10"
+        "2026-09-10",
+        "2026-09-11"
       ],
       "latest": {
         "events": "data/archives/nzuu2026/latest/events.csv",
@@ -1478,21 +1486,21 @@
           "sha256": "94ff240bf2315bf9e594313d136fb99f8a221469a23b6035da0202834abd711d",
           "bytes": 1344,
           "sourceUrl": "https://l.rowit.nz/altitude/nzuu2026/events.csv",
-          "archivedAt": "2026-09-10T17:39:17.213Z",
+          "archivedAt": "2026-09-11T17:43:11.798Z",
           "changed": false
         },
         "daysheet": {
-          "sha256": "d9a25fded4223b0284b80205f4ce7afcfdb2be4dc59787aed32fc1df7118b85c",
-          "bytes": 4936,
+          "sha256": "98696d7be8f157d3dec2d08382ea6cb486e49f0edfca5450c18ef586fce48d60",
+          "bytes": 4938,
           "sourceUrl": "https://l.rowit.nz/altitude/nzuu2026/daysheet.csv",
-          "archivedAt": "2026-09-10T17:39:17.447Z",
+          "archivedAt": "2026-09-11T17:43:12.023Z",
           "changed": true
         },
         "competitors": {
-          "sha256": "aa9d61b486f8b96357a9b2dcbd658a6c93b862a08ae9ecc6a2fe61e55cb87107",
-          "bytes": 22776,
+          "sha256": "444557d5dc90cb8877dc7f65360827b226032e1a6a8f0a363de995f8fbe82b2b",
+          "bytes": 22778,
           "sourceUrl": "https://l.rowit.nz/altitude/nzuu2026/competitors.csv",
-          "archivedAt": "2026-09-10T17:39:18.096Z",
+          "archivedAt": "2026-09-11T17:43:12.652Z",
           "changed": true
         }
       }
