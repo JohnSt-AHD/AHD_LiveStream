@@ -75,6 +75,17 @@ function hubVmixUrl(page, graphic, race) {
     u.searchParams.set('g', graphic);
     u.searchParams.set('race', race || hubGetLiveRace());
     u.searchParams.set('regatta', code);
+    if (page === 'vmix-karapiro.html') {
+        let cv = 'http://127.0.0.1:8790';
+        try {
+            cv = (localStorage.getItem('altitudeHdCvServerUrl_v1') || cv).replace(/\/+$/, '');
+        } catch {
+            /* default */
+        }
+        const typed = document.getElementById('hubCvServerUrl')?.value?.trim();
+        if (typed) cv = typed.replace(/\/+$/, '');
+        u.searchParams.set('cvLaptop', cv);
+    }
     return u.href;
 }
 

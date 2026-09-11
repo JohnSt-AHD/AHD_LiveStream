@@ -943,7 +943,7 @@
     top: 44px;
     right: 56px;
     z-index: 14;
-    width: 250px;
+    width: 280px;
     background: rgba(13, 17, 23, 0.88);
     border-radius: 6px;
     overflow: hidden;
@@ -961,9 +961,14 @@
     color: var(--alt-grey-500);
 }
 
+.kp-cvdraw-list {
+    display: flex;
+    flex-direction: column;
+}
+
 .kp-cvdraw-row {
     display: grid;
-    grid-template-columns: 36px 32px 1fr;
+    grid-template-columns: 36px 32px 1fr auto;
     gap: 8px;
     padding: 7px 16px;
     font-family: var(--font-mono);
@@ -974,6 +979,14 @@
 
 .kp-cvdraw-row .kp-lane { font-size: 18px; }
 .kp-cvdraw-row .kp-row-abbr { text-align: left; font-size: 18px; color: var(--alt-cream); letter-spacing: 0.06em; }
+
+.kp-cvdraw-m {
+    font-size: 13px;
+    color: var(--alt-grey-500);
+    font-variant-numeric: tabular-nums;
+    min-width: 3.2em;
+    text-align: right;
+}
 
 /* —— Tracker —— */
 .kp-tracker {

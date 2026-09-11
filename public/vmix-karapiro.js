@@ -85,6 +85,10 @@
         'data/karapiro-u18-fastest.csv',
     ];
 
+    const LS_CV_URL = 'altitudeHdCvServerUrl_v1';
+    const DEFAULT_CV = 'http://127.0.0.1:8790';
+    const COURSE_M = 2000;
+
     const state = {
         t: 0,
         drillLane: null,
@@ -98,6 +102,10 @@
         flakes: [],
         records: new Map(),
         recordsPromise: null,
+        cvRace: null,
+        cvPoll: 0,
+        chHold: new Map(),
+        speedHist: new Map(),
     };
 
     function el(tag, className, text) {
@@ -707,15 +715,112 @@
         return `${m}:${(s % 60).toFixed(1).padStart(4, '0')}`;
     }
 
-    function boatsNow(race) {
+    function cvOrigin() {
+        const q = new URLSearchParams(location.search);
+        if (q.get('cv') === '0') return '';
+        const fromUrl = (q.get('cvLaptop') || q.get('laptop') || '').replace(/\/+$/, '');
+        if (fromUrl) return fromUrl;
+        try {
+            const stored = localStorage.getItem(LS_CV_URL);
+            if (stored) return stored.replace(/\/+$/, '');
+        } catch {
+            /* ignore */
+        }
+        return DEFAULT_CV;
+    }
+
+    function cvLive() {
+        return Boolean(
+            state.cvRace &&
+                (state.cvRace.boats || []).some((b) => Number.isFinite(Number(b.chainage_m))),
+        );
+    }
+
+    function raceClockText() {
+        const ms = Number(state.cvRace?.clock?.elapsed_ms);
+        if (cvLive() && Number.isFinite(ms) && ms >= 0) return fmtClock(ms / 1000);
+        return fmtClock(Math.min(state.t % 450, 385));
+    }
+
+    async function pollCv() {
+        const origin = cvOrigin();
+        if (!origin) {
+            state.cvRace = null;
+            return;
+        }
+        const n = ++state.cvPoll;
+        const ac = new AbortController();
+        const timeout = setTimeout(() => ac.abort(), 1500);
+        try {
+            const res = await fetch(`${origin}/api/race`, {
+                cache: 'no-store',
+                signal: ac.signal,
+            });
+            if (n !== state.cvPoll) return;
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            state.cvRace = data && typeof data === 'object' ? data : null;
+            recordSpeedSamples(state.cvRace);
+        } catch {
+            if (n !== state.cvPoll) return;
+            state.cvRace = null;
+        } finally {
+            clearTimeout(timeout);
+        }
+    }
+
+    function recordSpeedSamples(snap) {
+        for (const b of snap?.boats || []) {
+            const lane = Number(b.lane);
+            const m = Number(b.chainage_m);
+            const sp = Number(b.speed_mps);
+            if (!Number.isFinite(lane) || !Number.isFinite(m) || !Number.isFinite(sp)) continue;
+            const prev = state.speedHist.get(lane) || [];
+            const last = prev[prev.length - 1];
+            if (last && Math.abs(last.m - m) < 0.4 && Math.abs(last.sp - sp) < 0.05) continue;
+            prev.push({ m, sp });
+            if (prev.length > 48) prev.shift();
+            state.speedHist.set(lane, prev);
+        }
+    }
+
+    function simBoats(race) {
         const lanes = laneEntries(race);
         const tt = state.t % 450;
         return lanes.map((l, i) => {
             const off = (((i * 7) % 13) - 6) * 1.1;
             const dur = 372 + off;
-            const m = Math.max(0, Math.min(2000, 2000 * Math.min(1, tt / dur) + 6 * Math.sin(tt / 9 + i * 2.1)));
+            const m = Math.max(
+                0,
+                Math.min(COURSE_M, COURSE_M * Math.min(1, tt / dur) + 6 * Math.sin(tt / 9 + i * 2.1)),
+            );
             const club = clubOf(l.code);
-            return { ...club, lane: l.lane, m, dur };
+            return { ...club, lane: l.lane, m, dur, live: false };
+        });
+    }
+
+    function boatsNow(race) {
+        const lanes = laneEntries(race);
+        if (!cvLive()) return simBoats(race);
+        const byLane = new Map((state.cvRace.boats || []).map((b) => [Number(b.lane), b]));
+        return lanes.map((l) => {
+            const club = clubOf(l.code);
+            const cv = byLane.get(l.lane);
+            const ch = Number(cv?.chainage_m);
+            if (Number.isFinite(ch)) state.chHold.set(l.lane, ch);
+            const held = state.chHold.get(l.lane);
+            const m = Number.isFinite(held)
+                ? Math.max(0, Math.min(COURSE_M, held))
+                : 0;
+            return {
+                ...club,
+                lane: l.lane,
+                m,
+                dur: 372,
+                live: Number.isFinite(ch),
+                speed: Number(cv?.speed_mps),
+                cvStatus: cv?.cv_status || '',
+            };
         });
     }
 
@@ -914,8 +1019,13 @@
         const dist = Math.round((club.m || 0) / 10) * 10;
         body.appendChild(el('span', 'kp-bug-dist', `${dist}m`));
         if (second && lead) {
-            const gap = ((lead.m - second.m) / 5.35).toFixed(1);
-            body.appendChild(el('span', 'kp-bug-gap', `+${gap}s`));
+            const d = lead.m - second.m;
+            const gap = cvLive()
+                ? d < 0.4
+                    ? 'LDR'
+                    : `+${d.toFixed(0)}m`
+                : `+${(d / 5.35).toFixed(1)}s`;
+            body.appendChild(el('span', 'kp-bug-gap', gap));
         }
         card.appendChild(body);
         root.appendChild(card);
@@ -1089,16 +1199,26 @@
     }
 
     function renderCvDraw(layer, race) {
+        const boats = boatsNow(race);
+        const ranked = [...boats].sort((a, b) => b.m - a.m);
         const root = el('div', 'kp-cvdraw');
-        root.appendChild(el('div', 'kp-cvdraw-head', `Draw · ${vgKpRaceChip(race)}`));
-        laneEntries(race).forEach((lane) => {
-            const club = clubOf(lane.code);
-            const row = el('div', 'kp-cvdraw-row');
-            row.appendChild(el('span', 'kp-lane', String(lane.lane)));
+        root.appendChild(
+            el('div', 'kp-cvdraw-head', `${cvLive() ? 'Order' : 'Draw'} · ${vgKpRaceChip(race)}`),
+        );
+        const list = el('div', 'kp-cvdraw-list');
+        boats.forEach((club) => {
+            const rank = ranked.findIndex((b) => b.lane === club.lane);
+            const row = el('div', `kp-cvdraw-row${rank === 0 && cvLive() ? ' kp-row--first' : ''}`);
+            row.dataset.lane = String(club.lane);
+            row.style.order = String(rank < 0 ? 99 : rank);
+            row.appendChild(el('span', 'kp-lane', String(club.lane)));
             row.appendChild(crewLogo(club, 'kp-crew-logo--cv'));
             row.appendChild(el('span', 'kp-row-abbr', club.abbr));
-            root.appendChild(row);
+            const metres = el('span', 'kp-cvdraw-m', cvLive() ? `${Math.round(club.m)}m` : '');
+            row.appendChild(metres);
+            list.appendChild(row);
         });
+        root.appendChild(list);
         layer.appendChild(root);
     }
 
@@ -1108,7 +1228,7 @@
         root.dataset.kpLive = 'tracker';
         const head = el('div', 'kp-tracker-head');
         head.appendChild(document.createTextNode(`Race tracker · ${vgKpRaceChip(race)} · ${eventName(race)}`));
-        head.appendChild(el('span', 'kp-tracker-clock', fmtClock(Math.min(state.t % 450, 385))));
+        head.appendChild(el('span', 'kp-tracker-clock', raceClockText()));
         root.appendChild(head);
         const marks = el('div', 'kp-track-marks');
         ['500M', '1000M', '1500M'].forEach((m) => marks.appendChild(el('span', '', m)));
@@ -1130,26 +1250,40 @@
         layer.appendChild(root);
     }
 
-    function renderSpeed(layer, race) {
-        const { boats } = leadOf(race);
+    function speedCols() {
+        return ['#2e7de0', '#d9e7f8', '#8a96a5', festive() ? '#e5484d' : '#4e5a68'];
+    }
+
+    function speedLines(boats) {
         const top = [...boats].sort((a, b) => b.m - a.m).slice(0, 4);
-        const cols = ['#2e7de0', '#d9e7f8', '#8a96a5', festive() ? '#e5484d' : '#4e5a68'];
-        const lines = top.map((b, k) => {
+        const cols = speedCols();
+        const live = cvLive();
+        return top.map((b, k) => {
+            const hist = live ? state.speedHist.get(b.lane) || [] : [];
             const pts = [];
-            for (let i = 0; i <= 36; i++) {
-                const sp = 4.6 + 0.45 * Math.sin(i / 4.2 + k * 1.9) + 0.12 * Math.sin(i / 1.7 + k) - k * 0.09 + 0.35;
-                const x = 52 + i * 14.1;
-                const y = Math.max(30, Math.min(228, 228 - (sp - 4) * 90));
-                pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+            if (hist.length >= 2) {
+                hist.forEach((p) => {
+                    const x = 52 + (Math.max(0, Math.min(COURSE_M, p.m)) / COURSE_M) * 508;
+                    const y = Math.max(30, Math.min(228, 228 - (p.sp - 4) * 90));
+                    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+                });
+            } else {
+                for (let i = 0; i <= 36; i++) {
+                    const sp =
+                        4.6 + 0.45 * Math.sin(i / 4.2 + k * 1.9) + 0.12 * Math.sin(i / 1.7 + k) - k * 0.09 + 0.35;
+                    const x = 52 + i * 14.1;
+                    const y = Math.max(30, Math.min(228, 228 - (sp - 4) * 90));
+                    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+                }
             }
             return { pts: pts.join(' '), col: cols[k], abbr: b.abbr };
         });
-        const root = el('div', 'kp-speed');
-        const head = el('div', 'kp-speed-head');
-        head.appendChild(document.createTextNode('Boat speed · m/s'));
-        root.appendChild(head);
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 700 260');
+    }
+
+    function paintSpeedSvg(svg, boats) {
+        if (!svg) return;
+        const cols = speedCols();
+        const lines = speedLines(boats);
         let grid = '';
         [
             [48, '6.0'],
@@ -1172,6 +1306,27 @@
             .map((l) => `<polyline fill="none" stroke="${l.col}" stroke-width="2.4" points="${l.pts}"/>`)
             .join('');
         svg.innerHTML = grid + polylines;
+        const legend = svg.parentElement?.querySelector('.kp-speed-legend');
+        if (legend) {
+            legend.replaceChildren();
+            lines.forEach((l, i) => {
+                const s = el('span', '', l.abbr);
+                s.style.color = cols[i];
+                legend.appendChild(s);
+            });
+        }
+    }
+
+    function renderSpeed(layer, race) {
+        const { boats } = leadOf(race);
+        const cols = speedCols();
+        const lines = speedLines(boats);
+        const root = el('div', 'kp-speed');
+        const head = el('div', 'kp-speed-head');
+        head.appendChild(document.createTextNode('Boat speed · m/s'));
+        root.appendChild(head);
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 700 260');
         root.appendChild(svg);
         const legend = el('div', 'kp-speed-legend');
         lines.forEach((l, i) => {
@@ -1180,6 +1335,7 @@
             legend.appendChild(s);
         });
         root.appendChild(legend);
+        paintSpeedSvg(svg, boats);
         layer.appendChild(root);
     }
 
@@ -1189,7 +1345,7 @@
         const head = el('div', 'kp-live-head');
         head.appendChild(liveBadge());
         head.appendChild(el('span', '', `${vgKpRaceChip(race)} · ${eventName(race)} — live tracking`));
-        head.appendChild(el('span', 'kp-tracker-clock', fmtClock(Math.min(state.t % 450, 385))));
+        head.appendChild(el('span', 'kp-tracker-clock', raceClockText()));
         root.appendChild(head);
         const course = el('div', 'kp-live-course');
         const grid = el('div', 'kp-live-grid');
@@ -1577,7 +1733,7 @@
         if (!race) return;
         const boats = boatsNow(race);
         const leadM = Math.max(...boats.map((b) => b.m), 1);
-        const clock = fmtClock(Math.min(state.t % 450, 385));
+        const clock = raceClockText();
         document.querySelectorAll('.kp-tracker-clock').forEach((n) => {
             n.textContent = clock;
         });
@@ -1601,18 +1757,47 @@
                 dot.style.left = `${(b.m / 20).toFixed(2)}%`;
                 dot.classList.toggle('kp-live-dot-boat--lead', b.m === leadM);
             });
+            document.querySelectorAll('.kp-live-lab').forEach((lab, i) => {
+                const b = boats[i];
+                if (!b) return;
+                lab.style.color = b.m === leadM ? 'var(--alt-sky)' : 'var(--alt-grey-500)';
+            });
         }
         if (g === 'leader') {
             const { lead, second } = leadOf(race);
             const dist = document.querySelector('.kp-bug-dist');
             const gap = document.querySelector('.kp-bug-gap');
             if (dist && lead) dist.textContent = `${Math.round(lead.m / 10) * 10}m`;
-            if (gap && lead && second) gap.textContent = `+${((lead.m - second.m) / 5.35).toFixed(1)}s`;
+            if (gap && lead && second) {
+                const d = lead.m - second.m;
+                gap.textContent = cvLive()
+                    ? d < 0.4
+                        ? 'LDR'
+                        : `+${d.toFixed(0)}m`
+                    : `+${(d / 5.35).toFixed(1)}s`;
+            }
         }
         if (g === 'cvleader') {
             const { lead } = leadOf(race);
             const val = document.querySelector('.kp-cvleader-val');
             if (val && lead) val.textContent = `L${lead.lane} ${lead.abbr}`;
+        }
+        if (g === 'cvdraw') {
+            const ranked = [...boats].sort((a, b) => b.m - a.m);
+            const head = document.querySelector('.kp-cvdraw-head');
+            if (head) head.textContent = `${cvLive() ? 'Order' : 'Draw'} · ${vgKpRaceChip(race)}`;
+            document.querySelectorAll('.kp-cvdraw-row').forEach((row) => {
+                const lane = Number(row.dataset.lane);
+                const b = boats.find((x) => x.lane === lane);
+                const rank = ranked.findIndex((x) => x.lane === lane);
+                row.style.order = String(rank < 0 ? 99 : rank);
+                row.classList.toggle('kp-row--first', cvLive() && rank === 0);
+                const mEl = row.querySelector('.kp-cvdraw-m');
+                if (mEl) mEl.textContent = cvLive() && b ? `${Math.round(b.m)}m` : '';
+            });
+        }
+        if (g === 'speedchart') {
+            paintSpeedSvg(document.querySelector('.kp-speed svg'), boats);
         }
     }
 
@@ -1628,7 +1813,13 @@
         buildOps();
         window.addEventListener('keyup', onKeyUp);
         if (!state.motionTimer) state.motionTimer = setInterval(tick, 100);
-        document.addEventListener('altitudehd:liverace', paintOps);
+        pollCv();
+        setInterval(pollCv, 200);
+        document.addEventListener('altitudehd:liverace', () => {
+            state.chHold.clear();
+            state.speedHist.clear();
+            paintOps();
+        });
     }
 
     window.VmixKarapiro = {
