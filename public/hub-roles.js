@@ -49,10 +49,12 @@
             el.setAttribute('aria-hidden', on ? 'false' : 'true');
         });
 
-        document.querySelectorAll('.hub-role-btn[data-hub-role]').forEach((btn) => {
+        document.querySelectorAll('.hub-role-btn[data-hub-role], .hub-dest-card[data-hub-role]').forEach((btn) => {
             const on = btn.getAttribute('data-hub-role') === next;
             btn.classList.toggle('is-active', on);
-            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            if (btn.hasAttribute('aria-pressed')) {
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            }
         });
 
         document.body.dataset.hubCurrentView = next;
@@ -70,6 +72,16 @@
         }
 
         window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { view: next } }));
+
+        const scrollTo = options?.scrollTo;
+        if (scrollTo) {
+            const target = document.getElementById(scrollTo);
+            if (target) {
+                requestAnimationFrame(() => {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            }
+        }
     }
 
     function isLocalHub() {
@@ -97,10 +109,16 @@
         const initial = queryView || readStored() || 'broadcast';
         setView(initial, { persist: true, updateUrl: false });
 
-        document.querySelectorAll('.hub-role-btn[data-hub-role]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-hub-role]').forEach((btn) => {
+            btn.addEventListener('click', (event) => {
                 const view = btn.getAttribute('data-hub-role');
-                setView(view, { persist: true, updateUrl: Boolean(queryView || readQuery()) });
+                const scrollTo = btn.getAttribute('data-hub-scroll');
+                if (btn.tagName === 'A' && scrollTo) event.preventDefault();
+                setView(view, {
+                    persist: true,
+                    updateUrl: Boolean(queryView || readQuery()),
+                    scrollTo: scrollTo || undefined,
+                });
             });
         });
     }

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
+    <link rel="stylesheet" href="hub-landing.css?v=6">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -21,7 +22,7 @@
                     height="120"
                 >
                 <img
-                    src="assets/rnz/rnz-logo-white.png"
+                    src="assets/rnz/rnz-logomark-dual.png"
                     alt="Rowing New Zealand"
                     class="hub-rnz-logo"
                     width="200"
@@ -29,30 +30,69 @@
                 >
             </div>
             <p class="hub-tagline">Live fleet maps &amp; safety tools for broadcast and operations</p>
+            <nav class="hub-role-nav" aria-label="Hub role">
+                <div class="hub-role-nav-inner" role="group">
+                    <button type="button" class="hub-role-btn is-active" data-hub-role="broadcast" aria-pressed="true">Broadcast</button>
+                    <button type="button" class="hub-role-btn" data-hub-role="safety" aria-pressed="false">Safety</button>
+                    <button type="button" class="hub-role-btn" data-hub-role="cv" aria-pressed="false">CV and Drone</button>
+                    <button type="button" class="hub-role-btn" data-hub-role="setup" aria-pressed="false">Setup</button>
+                </div>
+            </nav>
         </div>
     </header>
-
-    <div class="hub-stats-bar" id="hubStatsBar" aria-live="polite">
-        <a class="hub-stats-item hub-stats-item--warn" id="hubStatWarnings" href="rowsafe-map.html">Warnings: —</a>
-        <span class="hub-stats-sep" aria-hidden="true">·</span>
-        <span class="hub-stats-item" id="hubStatOnWater">On water: —</span>
-        <span class="hub-stats-sep" aria-hidden="true">·</span>
-        <span class="hub-stats-item" id="hubStatDistance">Distance today: —</span>
-        <span class="hub-stats-sep" aria-hidden="true">·</span>
-        <span class="hub-stats-item hub-stats-item--event" id="hubStatEvent">—</span>
-    </div>
-
-    <nav class="hub-role-nav" aria-label="Hub role">
-        <div class="hub-role-nav-inner" role="group">
-            <button type="button" class="hub-role-btn is-active" data-hub-role="broadcast" aria-pressed="true">Broadcast</button>
-            <button type="button" class="hub-role-btn" data-hub-role="safety" aria-pressed="false">Safety</button>
-            <button type="button" class="hub-role-btn" data-hub-role="cv" aria-pressed="false">CV and Drone</button>
-            <button type="button" class="hub-role-btn" data-hub-role="setup" aria-pressed="false">Setup</button>
-        </div>
-    </nav>
     <p class="hub-local-banner" id="hubLocalBanner" hidden></p>
 
-    <div class="hub-wrap">
+    <section class="hub-hero" aria-label="Altitude HD">
+        <div class="hub-hero-copy">
+            <h1>Live graphics and safety for New Zealand rowing</h1>
+            <div class="hub-hero-actions">
+                <button type="button" class="hub-pill hub-pill--solid" data-hub-role="broadcast" data-hub-scroll="hubLiveRacePanel">Open live race</button>
+                <button type="button" class="hub-pill hub-pill--ghost" data-hub-role="broadcast" data-hub-scroll="hub-vmix-title">vMix overlays</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="hub-stats-bar" id="hubStatsBar" aria-live="polite">
+        <a class="hub-stat hub-stat--warn" id="hubStatWarnings" href="rowsafe-map.html" data-hub-role="safety" data-hub-scroll="hubTools">
+            <span class="hub-stat-value">0</span>
+            <span class="hub-stat-label">Warnings</span>
+        </a>
+        <span class="hub-stat" id="hubStatOnWater">
+            <span class="hub-stat-value">0</span>
+            <span class="hub-stat-label">On water</span>
+        </span>
+        <span class="hub-stat" id="hubStatDistance">
+            <span class="hub-stat-value">0 m</span>
+            <span class="hub-stat-label">Distance today</span>
+        </span>
+        <button type="button" class="hub-stat hub-stat--event" id="hubStatEvent" data-hub-role="setup" data-hub-scroll="hub-calendar-title">
+            <span class="hub-stat-value">—</span>
+            <span class="hub-stat-label">Regatta</span>
+        </button>
+    </div>
+
+    <section class="hub-destinations" aria-label="Choose a workspace">
+        <button type="button" class="hub-dest-card is-active" data-hub-role="broadcast" data-hub-scroll="hubTools">
+            <img class="hub-dest-media" src="assets/hub/hub-card-broadcast.png" alt="" width="640" height="480">
+            <h2>Broadcast</h2>
+            <p>Daysheet graphics and vMix overlays for the live stream.</p>
+            <span class="hub-pill hub-pill--solid">Open Broadcast</span>
+        </button>
+        <button type="button" class="hub-dest-card" data-hub-role="safety" data-hub-scroll="hubTools">
+            <img class="hub-dest-media" src="assets/hub/hub-card-safety.png" alt="" width="640" height="480">
+            <h2>Safety</h2>
+            <p>Fleet map, RowSafe, and Karāpiro boundary warnings.</p>
+            <span class="hub-pill hub-pill--solid">Open Safety</span>
+        </button>
+        <button type="button" class="hub-dest-card" data-hub-role="cv" data-hub-scroll="hubTools">
+            <img class="hub-dest-media" src="assets/hub/hub-card-cv.png" alt="" width="640" height="480">
+            <h2>Computer vision</h2>
+            <p>Boat tracking, drone, and hull cards from the CV laptop.</p>
+            <span class="hub-pill hub-pill--solid">Open CV</span>
+        </button>
+    </section>
+
+    <div class="hub-wrap" id="hubTools">
         <div class="hub-view is-active" data-hub-view="broadcast" id="hubViewBroadcast">
             <section class="hub-panel hub-panel--vmix" aria-labelledby="hub-vmix-title">
                 <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
@@ -135,7 +175,7 @@
                     </div>
                 </details>
 
-                <ul class="hub-links hub-links--vmix">
+                <ul class="hub-links hub-links--vmix hub-links--product">
                     <li>
                         <a class="hub-link-card hub-link-card--vmix hub-link-card--karapiro" data-vmix-page="vmix-karapiro.html" data-vmix-graphic="l" href="vmix-karapiro.html?g=l">
                             <span class="hub-link-icon" aria-hidden="true">🎄</span>

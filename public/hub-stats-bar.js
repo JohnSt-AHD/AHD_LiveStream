@@ -186,10 +186,29 @@ function hubStatsWireBarLinks() {
     }
 }
 
+function hubStatsCalendarParts() {
+    const label = hubStatsCalendarLabel();
+    const many = label.match(/^(\d+) days to (.+)$/);
+    if (many) return { value: many[1], label: `Days to ${many[2]}` };
+    if (label.startsWith('1 day to ')) return { value: '1', label: `Day to ${label.slice(9)}` };
+    if (label.startsWith('Now: ')) return { value: 'Now', label: label.slice(5) };
+    if (label.startsWith('Next: ')) {
+        return { value: 'Next', label: label.replace(/^Next:\s*/, '').replace(/\s*\(today\)$/, '') };
+    }
+    return { value: '—', label: label === '—' ? 'Regatta' : label };
+}
+
 function hubStatsSetItem(id, text, options = {}) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.textContent = text;
+    const valueEl = el.querySelector('.hub-stat-value');
+    const labelEl = el.querySelector('.hub-stat-label');
+    if (valueEl) {
+        valueEl.textContent = options.value != null ? options.value : text;
+        if (labelEl && options.label) labelEl.textContent = options.label;
+    } else {
+        el.textContent = text;
+    }
     if (options.alert != null) {
         el.dataset.level = options.alert ? 'alert' : 'ok';
     }
@@ -242,13 +261,13 @@ async function hubStatsRefreshDistance(force) {
     }
     if (!hubStatsRowingSource() && !hubStatsLastDevices.length) return hubStatsLastDistanceM;
 
-    hubStatsSetItem('hubStatDistance', 'Distance today: …');
+    hubStatsSetItem('hubStatDistance', 'Distance today: …', { value: '…', label: 'Distance today' });
     try {
         hubStatsLastDistanceM = await hubStatsLoadDistanceToday(hubStatsLastDevices);
         hubStatsLastDistanceAt = now;
     } catch (err) {
         console.error('Hub stats distance:', err);
-        hubStatsSetItem('hubStatDistance', 'Distance today: —');
+        hubStatsSetItem('hubStatDistance', 'Distance today: —', { value: '0 m', label: 'Distance today' });
         return null;
     }
     return hubStatsLastDistanceM;
@@ -285,10 +304,17 @@ function hubStatsSnapshotFetch() {
 function hubStatsOnSnapshotError(err) {
     console.error('Hub stats bar:', err);
     const isRnzPage = document.body?.classList.contains('rnz-page');
-    hubStatsSetItem('hubStatWarnings', isRnzPage ? 'Capsize: —' : 'Warnings: —');
-    hubStatsSetItem('hubStatOnWater', 'On water: —');
-    hubStatsSetItem('hubStatDistance', 'Distance today: —');
-    hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
+    const eventParts = hubStatsCalendarParts();
+    hubStatsSetItem('hubStatWarnings', isRnzPage ? 'Capsize: —' : 'Warnings: —', {
+        value: '0',
+        label: isRnzPage ? 'Capsize' : 'Warnings',
+    });
+    hubStatsSetItem('hubStatOnWater', 'On water: —', { value: '0', label: 'On water' });
+    hubStatsSetItem('hubStatDistance', 'Distance today: —', { value: '0 m', label: 'Distance today' });
+    hubStatsSetItem('hubStatEvent', eventParts.label, {
+        value: eventParts.value,
+        label: eventParts.label,
+    });
 }
 
 async function hubStatsApplySnapshot(data) {
@@ -319,9 +345,16 @@ async function hubStatsApplySnapshot(data) {
         hubStatsSetItem(
             'hubStatWarnings',
             `Capsize: ${capsizeAlerts.length}`,
-            { alert: capsizeAlerts.length > 0 },
+            {
+                alert: capsizeAlerts.length > 0,
+                value: String(capsizeAlerts.length),
+                label: 'Capsize',
+            },
         );
-        hubStatsSetItem('hubStatOnWater', `${onWaterCount} on water`);
+        hubStatsSetItem('hubStatOnWater', `${onWaterCount} on water`, {
+            value: String(onWaterCount),
+            label: 'On water',
+        });
     } else {
         const geofencesForMetrics = isLite
             ? hubStatsLastGeofences
@@ -338,20 +371,33 @@ async function hubStatsApplySnapshot(data) {
             : 'Warnings: —';
         hubStatsSetItem('hubStatWarnings', warnText, {
             alert: metrics.boundaryReady && metrics.warnings > 0,
+            value: metrics.boundaryReady ? String(metrics.warnings) : '0',
+            label: 'Warnings',
         });
 
         const onWaterText = metrics.boundaryReady
             ? `${metrics.onWater} on water`
             : 'On water: —';
-        hubStatsSetItem('hubStatOnWater', onWaterText);
+        hubStatsSetItem('hubStatOnWater', onWaterText, {
+            value: metrics.boundaryReady ? String(metrics.onWater) : '0',
+            label: 'On water',
+        });
     }
 
-    hubStatsSetItem('hubStatEvent', hubStatsCalendarLabel());
+    const eventParts = hubStatsCalendarParts();
+    hubStatsSetItem('hubStatEvent', eventParts.label, {
+        value: eventParts.value,
+        label: eventParts.label,
+    });
 
     const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
     hubStatsDistanceEverLoaded = true;
     if (distanceM != null) {
-        hubStatsSetItem('hubStatDistance', `Distance today: ${hubStatsFormatDistance(distanceM)}`);
+        const dist = hubStatsFormatDistance(distanceM);
+        hubStatsSetItem('hubStatDistance', `Distance today: ${dist}`, {
+            value: dist,
+            label: 'Distance today',
+        });
     }
 }
 
@@ -397,6 +443,10 @@ if (document.body?.classList.contains('rnz-page')) {
                 hubStatsSetItem(
                     'hubStatDistance',
                     `Distance today: ${hubStatsFormatDistance(distanceM)}`,
+                    {
+                        value: hubStatsFormatDistance(distanceM),
+                        label: 'Distance today',
+                    },
                 );
                 hubStatsDistanceEverLoaded = true;
             }
