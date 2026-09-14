@@ -19,6 +19,9 @@
     },
     "api/trial-results.js": {
       "maxDuration": 10
+    },
+    "api/drive-archive.js": {
+      "maxDuration": 20
     }
   }
 }

@@ -335,6 +335,7 @@
         loadRegattaConfig,
         getRegattaSchedule,
         fetchRegattaCsv,
+        fetchArchiveCsv,
         fetchCsvUrl,
         fetchText,
         isCsvLike,

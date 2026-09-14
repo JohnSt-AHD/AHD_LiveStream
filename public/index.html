@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=6">
+    <link rel="stylesheet" href="hub-landing.css?v=11">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -33,6 +33,7 @@
             <nav class="hub-role-nav" aria-label="Hub role">
                 <div class="hub-role-nav-inner" role="group">
                     <button type="button" class="hub-role-btn is-active" data-hub-role="broadcast" aria-pressed="true">Broadcast</button>
+                    <button type="button" class="hub-role-btn" data-hub-role="archive" aria-pressed="false">Archive</button>
                     <button type="button" class="hub-role-btn" data-hub-role="safety" aria-pressed="false">Safety</button>
                     <button type="button" class="hub-role-btn" data-hub-role="cv" aria-pressed="false">CV and Drone</button>
                     <button type="button" class="hub-role-btn" data-hub-role="setup" aria-pressed="false">Setup</button>
@@ -267,6 +268,207 @@
                         </a>
                     </li>
                 </ul>
+            </section>
+        </div>
+
+        <div class="hub-view" data-hub-view="archive" id="hubViewArchive" hidden>
+            <section class="hub-panel hub-panel--archive" id="hubDriveArchive" aria-labelledby="hub-archive-title">
+                <h2 id="hub-archive-title" class="hub-section-title">Race archive</h2>
+                <p class="hub-archive-lead">
+                    Find old race videos and photos on the Altitude HD Google Drive.
+                    Search by athlete, race number, event, or year — daysheets and competitor sheets fill in the race details.
+                </p>
+
+                <details class="hub-vmix-explainer hub-archive-explainer">
+                    <summary class="hub-vmix-explainer-summary">Race-day recording and ingest</summary>
+                    <div class="hub-vmix-explainer-body hub-archive-explainer-body">
+                        <p>
+                            Treat <strong>Draw (D)</strong> as the race-start cue, not the daysheet clock.
+                            The daysheet time is the plan; the draw press is when that race actually went to air.
+                            Results (R) is the end cue. Those two times index every camera — vMix ISOs and SD cards alike.
+                        </p>
+
+                        <h3>What to log</h3>
+                        <p>
+                            One line per cue, written live to the recorder PC as <code>cues.jsonl</code>
+                            (and copied to Drive when you can). Do not wait until overnight.
+                        </p>
+                        <ul>
+                            <li>Wall-clock ISO, e.g. <code>2026-03-23T08:55:12+13:00</code></li>
+                            <li>Race number and label, e.g. <code>12 (L)</code></li>
+                            <li>Event, round, and scheduled start from the daysheet</li>
+                            <li>Graphic: <code>draw</code> or <code>results</code></li>
+                            <li>Which cameras were rolling (a fixed session list is enough)</li>
+                        </ul>
+                        <p>
+                            The hub already has the live race number, event/round, and the timestamp when D is pressed.
+                            Daysheet <code>08:55</code> is a useful label. It is not the time to search video with.
+                        </p>
+
+                        <h3>Clocks</h3>
+                        <p>This makes or breaks matching. A minute of drift puts a clip on the wrong race.</p>
+                        <ul>
+                            <li>Recorder / vMix PC: NTP, always.</li>
+                            <li>Cameras: set from that PC (or a GPS camera) at briefing, then leave them.</li>
+                            <li>Check drift once at lunch.</li>
+                        </ul>
+
+                        <h3>During the day</h3>
+                        <p>
+                            Keep racing simple: continuous (or long-take) ISOs in vMix, cameras onto SD cards.
+                            Do not start/stop every race unless you have a spare operator — a missed record-start
+                            costs more than extra file size. Leave camera filenames as they are
+                            (<code>C0001.MP4</code> is fine). Indexing is a sidecar job, not a rename-in-the-field job.
+                        </p>
+
+                        <h3>End of day</h3>
+                        <ol>
+                            <li>
+                                Copy SD cards and vMix files onto the recorder disk first, not straight to Drive:
+                                <code>D:\AHD\{regatta}\{date}\incoming\vmix\</code> and
+                                <code>…\incoming\cam-a\</code> etc.
+                            </li>
+                            <li>
+                                Match each file’s start time + duration against the cue log.
+                                Overlap with draw → results (plus about 30s preroll and a minute of tail)
+                                tags that file to that race.
+                            </li>
+                            <li>
+                                Write a sidecar next to the file, or one <code>index.json</code> for the day, then upload.
+                            </li>
+                        </ol>
+                        <p>
+                            vMix files usually match easily (PC clock). SD cards are the ones that need the cue log
+                            and the clock check. Same index for both.
+                        </p>
+
+                        <h3>Drive folders</h3>
+                        <p>Use race-aware folders so this archive page can find them later:</p>
+<pre class="hub-archive-explainer-tree">AHD Drive / Maadi 2026 / 2026-03-23 / Race 012 B U15 2X heat /
+  vmix-pgm.mp4
+  vmix-iso2.mp4
+  cam-a.mp4
+  cues.json</pre>
+                        <p>
+                            Keep original camera names in the sidecar. The folder and race label are what people
+                            (and athlete/race search from the daysheets) will find.
+                        </p>
+
+                        <h3>Storage</h3>
+                        <ul>
+                            <li>
+                                <strong>Race day working set:</strong> fast local disk on the recorder PC.
+                                Do not upload while you are still racing unless you have a spare NIC and a quiet window.
+                            </li>
+                            <li>
+                                <strong>Archive:</strong> this Shared Drive, overnight, after files are tagged.
+                            </li>
+                            <li>
+                                Keep <code>cues.jsonl</code> on the PC until the day is safely in Drive.
+                                Drive must not be the only copy of the cue log.
+                            </li>
+                        </ul>
+                    </div>
+                </details>
+
+                <div class="hub-archive-auth">
+                    <button type="button" class="hub-btn hub-btn--primary" id="hubArchiveSignIn">Sign in with Google</button>
+                    <span class="hub-archive-signed" id="hubArchiveSignedIn" hidden>Connected to Drive</span>
+                    <button type="button" class="hub-btn" id="hubArchiveSignOut" hidden>Sign out</button>
+                </div>
+
+                <div class="hub-archive-oauth" id="hubArchiveOauthSetup" hidden>
+                    <p>
+                        One-time: create a Google Cloud <strong>Web</strong> OAuth client, enable the Drive API,
+                        and add this origin: <code id="hubArchiveOauthOrigin">http://localhost:3000</code>
+                        (and <code>https://ahd-livestream.vercel.app</code> for the live hub).
+                    </p>
+                    <label class="hub-archive-field">
+                        <span class="hub-archive-label">OAuth Client ID</span>
+                        <input
+                            type="text"
+                            id="hubArchiveClientId"
+                            class="hub-archive-input"
+                            placeholder="123-abc.apps.googleusercontent.com"
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                    </label>
+                    <button type="button" class="hub-btn hub-btn--primary" id="hubArchiveSaveClient">Save &amp; sign in</button>
+                    <a
+                        class="hub-archive-oauth-link"
+                        href="https://console.cloud.google.com/apis/credentials"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >Google Cloud credentials ↗</a>
+                </div>
+
+                <form class="hub-archive-form" id="hubArchiveForm">
+                    <label class="hub-archive-field">
+                        <span class="hub-archive-label">Search</span>
+                        <input
+                            type="search"
+                            id="hubArchiveQuery"
+                            class="hub-archive-input"
+                            placeholder="Athlete, race 12, U17 1X, or 2025"
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                    </label>
+                    <button type="submit" class="hub-btn hub-btn--primary">Search</button>
+                    <button type="button" class="hub-btn" id="hubArchiveClear">Clear</button>
+                    <a
+                        class="hub-btn hub-archive-open"
+                        id="hubArchiveOpenDrive"
+                        href="https://drive.google.com/drive/folders/0ALQpKTQVtiMBUk9PVA"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >Open Drive ↗</a>
+                </form>
+
+                <div class="hub-archive-filters" role="group" aria-label="File type">
+                    <button type="button" class="hub-archive-filter is-active" data-archive-type="all" aria-pressed="true">All</button>
+                    <button type="button" class="hub-archive-filter" data-archive-type="video" aria-pressed="false">Videos</button>
+                    <button type="button" class="hub-archive-filter" data-archive-type="image" aria-pressed="false">Photos</button>
+                    <button type="button" class="hub-archive-filter" data-archive-type="folder" aria-pressed="false">Folders</button>
+                </div>
+
+                <div class="hub-archive-suggestions" id="hubArchiveSuggestions" aria-label="Quick searches"></div>
+                <div class="hub-archive-years" id="hubArchiveYears" aria-label="Search by year"></div>
+
+                <nav class="hub-archive-crumbs" id="hubArchiveCrumbs" hidden aria-label="Folder"></nav>
+
+                <p class="hub-archive-status" id="hubArchiveStatus" aria-live="polite"></p>
+
+                <div class="hub-archive-sheets" id="hubArchiveSheets" hidden></div>
+
+                <div class="hub-archive-fallback" id="hubArchiveFallback" hidden>
+                    <p>Until sign-in is connected, you can still search the AHD Drive in a new tab.</p>
+                    <button type="button" class="hub-btn hub-btn--primary" id="hubArchiveOpenDriveFallback">Search on Google Drive</button>
+                </div>
+
+                <div class="hub-archive-results" id="hubArchiveResults" hidden></div>
+                <button type="button" class="hub-btn" id="hubArchiveMore" hidden>Load more</button>
+
+                <dialog class="hub-archive-preview" id="hubArchivePreview">
+                    <div class="hub-archive-preview-bar">
+                        <strong id="hubArchivePreviewTitle">Preview</strong>
+                        <a
+                            class="hub-btn"
+                            id="hubArchivePreviewOpen"
+                            href="https://drive.google.com/drive/folders/0ALQpKTQVtiMBUk9PVA"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >Open in Drive ↗</a>
+                        <button type="button" class="hub-btn" id="hubArchivePreviewClose">Close</button>
+                    </div>
+                    <iframe
+                        class="hub-archive-preview-frame"
+                        id="hubArchivePreviewFrame"
+                        title="Drive preview"
+                        allow="autoplay"
+                    ></iframe>
+                </dialog>
             </section>
         </div>
 
@@ -518,6 +720,21 @@
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
                     </li>
+                    <li>
+                        <a
+                            class="hub-link-card hub-link-card--documents"
+                            href="#hubDriveArchive"
+                            data-hub-role="archive"
+                            data-hub-scroll="hubDriveArchive"
+                        >
+                            <span class="hub-link-icon" aria-hidden="true">🎞</span>
+                            <span class="hub-link-text">
+                                <h3>Race videos &amp; photos</h3>
+                                <p>Search the AHD Google Drive archive for past race footage and stills.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
                 </ul>
             </section>
 
@@ -597,6 +814,9 @@
     <script src="hub-calendar.js"></script>
     <script src="hub-regatta.js"></script>
     <script src="hub-vmix-guide.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <script src="hub-archive-sheet-search.js?v=1"></script>
+    <script src="hub-drive-archive.js?v=2"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="hub-cv-status.js"></script>
     <script src="hub-fleet-map.js"></script>

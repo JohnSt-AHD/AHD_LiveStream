@@ -1,15 +1,16 @@
 /**
- * Hub role views — Broadcast / Safety / CV and Drone / Setup.
- * Persists last role and honours ?view=broadcast|safety|cv|setup.
+ * Hub role views — Broadcast / Archive / Safety / CV and Drone / Setup.
+ * Persists last role and honours ?view=broadcast|archive|safety|cv|setup.
  */
 (function () {
-    const VIEWS = ['broadcast', 'safety', 'cv', 'setup'];
+    const VIEWS = ['broadcast', 'archive', 'safety', 'cv', 'setup'];
     const LS_KEY = 'altitudeHdHubView_v1';
     const EVENT_NAME = 'ahd-hub-view';
 
     function normalize(value) {
         const raw = String(value || '').toLowerCase().trim();
         if (raw === 'drone' || raw === 'cv-drone' || raw === 'cvdrone') return 'cv';
+        if (raw === 'drive' || raw === 'videos' || raw === 'photos') return 'archive';
         return VIEWS.includes(raw) ? raw : null;
     }
 
