@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=13">
+    <link rel="stylesheet" href="hub-landing.css?v=14">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -41,18 +41,6 @@
             </nav>
         </div>
     </header>
-    <p class="hub-local-banner" id="hubLocalBanner" hidden></p>
-
-    <section class="hub-hero" aria-label="Altitude HD">
-        <div class="hub-hero-copy">
-            <h1>Live graphics and safety for New Zealand rowing</h1>
-            <div class="hub-hero-actions">
-                <button type="button" class="hub-pill hub-pill--solid" data-hub-role="broadcast" data-hub-scroll="hubLiveRacePanel">Open live race</button>
-                <button type="button" class="hub-pill hub-pill--ghost" data-hub-role="broadcast" data-hub-scroll="hub-vmix-title">vMix overlays</button>
-                <a class="hub-pill hub-pill--ghost" href="race-day-record.html">Race-day recorder</a>
-            </div>
-        </div>
-    </section>
 
     <div class="hub-stats-bar" id="hubStatsBar" aria-live="polite">
         <a class="hub-stat hub-stat--warn" id="hubStatWarnings" href="rowsafe-map.html" data-hub-role="safety" data-hub-scroll="hubTools">
@@ -72,6 +60,17 @@
             <span class="hub-stat-label">Regatta</span>
         </button>
     </div>
+
+    <section class="hub-hero" aria-label="Altitude HD">
+        <div class="hub-hero-copy">
+            <h1>Live graphics and safety for New Zealand rowing</h1>
+            <div class="hub-hero-actions">
+                <button type="button" class="hub-pill hub-pill--solid" data-hub-role="broadcast" data-hub-scroll="hubLiveRacePanel">Open live race</button>
+                <button type="button" class="hub-pill hub-pill--ghost" data-hub-role="broadcast" data-hub-scroll="hub-vmix-title">vMix overlays</button>
+                <a class="hub-pill hub-pill--ghost" href="race-day-record.html">Race-day recorder</a>
+            </div>
+        </div>
+    </section>
 
     <section class="hub-destinations" aria-label="Choose a workspace">
         <button type="button" class="hub-dest-card is-active" data-hub-role="broadcast" data-hub-scroll="hubTools">
