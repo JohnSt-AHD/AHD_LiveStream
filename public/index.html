@@ -291,8 +291,13 @@
             <section class="hub-panel hub-panel--archive" id="hubDriveArchive" aria-labelledby="hub-archive-title">
                 <h2 id="hub-archive-title" class="hub-section-title">Race archive</h2>
                 <p class="hub-archive-lead">
-                    Find old race videos and photos on the Altitude HD Google Drive.
-                    Search by athlete, race number, event, or year — daysheets and competitor sheets fill in the race details.
+                    Record on race day, cut Hub-named clips at the end of the day, then search this Drive.
+                    Press <strong>Record</strong> on Broadcast before the first race. After racing, copy camera
+                    files into <code>incoming\vmix</code>, <code>start-cam</code>, <code>barge</code>, and
+                    <code>drone</code>, then on the graphics PC run
+                    <code>npm run archive:ingest -- --incoming "D:\AHD\{regatta}\{date}\incoming"</code>
+                    (add <code>--apply</code> to write the cuts). Copy the <code>hub</code> folder to Drive overnight.
+                    Sign in below to find those files by athlete, race, event, or year.
                 </p>
 
                 <details class="hub-vmix-explainer hub-archive-explainer">
@@ -326,8 +331,7 @@
 
                         <h3>Rowing Hub names</h3>
                         <p>
-                            When you cut a race, name the files for the Rowing Hub like this
-                            (no extension needed in the workflow):
+                            The ingest script names each cut like this (no extension needed in the workflow):
                         </p>
                         <p>
                             <code>(Regatta) (Event_with_underscores) (day-month-year)</code><br>
@@ -370,29 +374,36 @@
                             Keep racing simple: continuous (or long-take) ISOs in vMix, cameras onto SD cards.
                             Do not start/stop every race unless you have a spare operator — a missed record-start
                             costs more than extra file size. Leave camera filenames as they are
-                            (<code>C0001.MP4</code> is fine). Indexing is a sidecar job, not a rename-in-the-field job.
+                            (<code>C0001.MP4</code> is fine). The ingest script matches times and names the Hub cuts.
                         </p>
 
                         <h3>End of day</h3>
                         <ol>
                             <li>
                                 Copy SD cards and vMix files onto the recorder disk first, not straight to Drive:
-                                <code>D:\AHD\{regatta}\{date}\incoming\vmix\</code> and
-                                <code>…\incoming\cam-a\</code> etc. Copy the day’s
-                                <code>race-cues</code> JSON next to them.
+                                <code>D:\AHD\{regatta}\{date}\incoming\vmix\</code>,
+                                <code>…\incoming\start-cam\</code>,
+                                <code>…\incoming\barge\</code>,
+                                <code>…\incoming\drone\</code>.
+                                Copy the day’s <code>race-cues</code> JSON next to them.
                             </li>
                             <li>
-                                Match each file’s start time + duration against the log.
-                                Overlap with draw → end (Results, or the next Draw), plus about 30s preroll and a minute of tail,
-                                tags that file to that race.
+                                On the graphics PC (ffmpeg on PATH), dry-run then cut Hub-named clips:
+                                <pre class="hub-archive-explainer-tree">npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming"
+npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</pre>
+                                The script matches each file’s start + duration to Draw → end (plus 30s preroll and 60s tail)
+                                and writes named files into <code>…\{date}\hub\</code>. Add
+                                <code>--offset-start-cam 12</code> if an SD card clock is 12 seconds slow.
                             </li>
                             <li>
-                                Write a sidecar next to the file, or one <code>index.json</code> for the day, then upload.
+                                Overnight, copy that <code>hub</code> folder (and the cue JSON) into the AHD Drive date folder.
+                                Archive search is read-only — it does not upload.
                             </li>
                         </ol>
                         <p>
                             vMix files usually match easily (PC clock). SD cards are the ones that need the cue log
-                            and the clock check. Same index for both.
+                            and a clock check. Same ingest for both. Cuts use ffmpeg stream-copy, so they land on
+                            keyframes (typically a second or two off). Use <code>--accurate</code> if you need it tighter.
                         </p>
 
                         <h3>Drive folders</h3>
@@ -781,7 +792,7 @@
                             <span class="hub-link-icon" aria-hidden="true">🎞</span>
                             <span class="hub-link-text">
                                 <h3>Race videos &amp; photos</h3>
-                                <p>Search the AHD Google Drive archive for past race footage and stills.</p>
+                                <p>Record, ingest Hub-named cuts, then search the AHD Drive archive.</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -868,7 +879,7 @@
     <script src="hub-race-record.js"></script>
     <script src="https://accounts.google.com/gsi/client" async></script>
     <script src="hub-archive-sheet-search.js?v=1"></script>
-    <script src="hub-drive-archive.js?v=2"></script>
+    <script src="hub-drive-archive.js?v=4"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="hub-cv-status.js"></script>
     <script src="hub-fleet-map.js"></script>

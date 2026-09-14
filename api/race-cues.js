@@ -44,7 +44,7 @@ function emptyDay(regatta, date) {
         recording: false,
         openId: null,
         updatedAt: nowIso(),
-        persisted: false,
+        persisted: null,
         cameras: DEFAULT_CAMERAS.slice(),
         races: [],
     };

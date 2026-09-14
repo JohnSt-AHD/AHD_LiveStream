@@ -177,7 +177,7 @@ function renderRaceRecord(day) {
         }
     }
     if (persist) {
-        persist.hidden = !day || day.persisted !== false;
+        persist.hidden = day?.persisted !== false;
     }
     if (fileHint && day?.regatta && day?.date) {
         fileHint.textContent = `/data/race-cues/${day.regatta}/${day.date}.json`;

@@ -13,6 +13,7 @@ const FILE_FIELDS =
     'id,name,mimeType,modifiedTime,size,thumbnailLink,iconLink,webViewLink,webContentLink,parents,driveId,hasThumbnail';
 const MAX_PAGE = 100;
 const DEFAULT_PAGE = 40;
+const SEARCH_REVISION = 'name-only-3';
 
 function setCors(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -44,19 +45,15 @@ function parseSearch(q) {
     return { years, rest };
 }
 
-function yearRangeClause(year) {
-    const y = Number(year);
-    const start = `${y}-01-01T00:00:00`;
-    const end = `${y + 1}-01-01T00:00:00`;
-    return (
-        `(modifiedTime >= '${start}' and modifiedTime < '${end}'` +
-        ` or createdTime >= '${start}' and createdTime < '${end}')`
-    );
+function nameClause(word) {
+    const e = escapeDriveQuery(word);
+    return `name contains '${e}'`;
 }
 
 function tokenClause(word) {
-    const e = escapeDriveQuery(word);
-    return `(name contains '${e}' or fullText contains '${e}')`;
+    // Drive 400s if orderBy is sent with fullText. Archive files are videos/photos,
+    // so filename match is enough; daysheets already map athletes to race labels.
+    return nameClause(word);
 }
 
 function searchClause(q) {
@@ -66,9 +63,13 @@ function searchClause(q) {
         parts.push(tokenClause(word));
     }
     for (const year of years) {
-        parts.push(`(${tokenClause(year)} or ${yearRangeClause(year)})`);
+        parts.push(nameClause(year));
     }
     return parts.length ? `(${parts.join(' and ')})` : '';
+}
+
+function queryUsesFullText(clause) {
+    return /\bfullText\b/.test(String(clause || ''));
 }
 
 function sanitizeFileId(raw) {
@@ -123,6 +124,68 @@ function parsePageSize(raw) {
     const n = Number(raw);
     if (!Number.isFinite(n)) return DEFAULT_PAGE;
     return Math.min(MAX_PAGE, Math.max(1, Math.round(n)));
+}
+
+function driveErrorMessage(e) {
+    const api = e?.response?.data?.error;
+    const fromApi = api?.message || api?.errors?.[0]?.message;
+    const raw = fromApi || (e instanceof Error ? e.message : 'Drive request failed');
+    return String(raw).replace(/^Request failed with status code \d+\s*/i, '').slice(0, 240);
+}
+
+function listCallOptions({ driveId, q, pageSize, pageToken, orderBy, fields }) {
+    const opts = {
+        driveId,
+        pageSize,
+        q,
+        fields: fields || `nextPageToken,files(${FILE_FIELDS})`,
+    };
+    if (pageToken) opts.pageToken = pageToken;
+    // Drive 400s if orderBy is present with fullText. Never send it on search.
+    if (orderBy && !queryUsesFullText(q)) opts.orderBy = orderBy;
+    return opts;
+}
+
+async function listDriveFiles(client, params) {
+    const url = new URL('https://www.googleapis.com/drive/v3/files');
+    const qs = {
+        corpora: 'drive',
+        driveId: params.driveId,
+        includeItemsFromAllDrives: 'true',
+        supportsAllDrives: 'true',
+        pageSize: String(params.pageSize || DEFAULT_PAGE),
+        q: params.q,
+        fields: params.fields || `nextPageToken,files(${FILE_FIELDS})`,
+    };
+    if (params.pageToken) qs.pageToken = params.pageToken;
+    if (params.orderBy) qs.orderBy = params.orderBy;
+    for (const [key, value] of Object.entries(qs)) {
+        if (value == null || value === '') continue;
+        url.searchParams.set(key, String(value));
+    }
+
+    const headers = { Accept: 'application/json' };
+    if (client.mode === 'api_key') {
+        const key = String(process.env.GOOGLE_DRIVE_API_KEY || '').trim();
+        if (key) url.searchParams.set('key', key);
+    } else {
+        const token = await accessTokenFromAuth(client.auth);
+        if (token) headers.Authorization = `Bearer ${token}`;
+    }
+
+    const res = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(20000),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(data?.error?.message || `Drive HTTP ${res.status}`);
+        err.statusCode = res.status;
+        err.response = { status: res.status, data };
+        err.driveQ = params.q;
+        throw err;
+    }
+    return { data };
 }
 
 function extraSearchQueries(raw) {
@@ -195,6 +258,7 @@ function unconfiguredPayload(driveId, driveUrl, extra = {}) {
         parentId: null,
         files: [],
         nextPageToken: null,
+        searchRevision: SEARCH_REVISION,
         ...extra,
     };
 }
@@ -271,6 +335,7 @@ export default async function handler(req, res) {
             serviceAccount: await serviceAccountAvailable(),
             driveId,
             driveUrl,
+            searchRevision: SEARCH_REVISION,
         });
         return;
     }
@@ -292,6 +357,26 @@ export default async function handler(req, res) {
 
     const q = sanitizeSearch(req.query.q);
     const also = extraSearchQueries(req.query.also);
+    if (String(req.query.plan || '') === '1') {
+        const type = String(req.query.type || 'all').toLowerCase();
+        const kind = new Set(['all', 'video', 'image', 'folder']).has(type) ? type : 'all';
+        const typeQ = typeClause(kind);
+        const clauses = ['trashed = false'];
+        const textQ = q ? searchClause(q) : '';
+        if (textQ) clauses.push(textQ);
+        if (typeQ) clauses.push(typeQ);
+        res.setHeader('Cache-Control', 'no-store');
+        res.status(200).json({
+            ok: true,
+            searchRevision: SEARCH_REVISION,
+            q,
+            also,
+            driveQ: clauses.join(' and '),
+            orderBy: q || also.length ? null : 'folder,name_natural',
+            usesFullText: queryUsesFullText(clauses.join(' and ')),
+        });
+        return;
+    }
     const type = String(req.query.type || 'all').toLowerCase();
     const allowedTypes = new Set(['all', 'video', 'image', 'folder']);
     const kind = allowedTypes.has(type) ? type : 'all';
@@ -324,43 +409,34 @@ export default async function handler(req, res) {
         const typeQ = typeClause(kind);
         if (typeQ) clauses.push(typeQ);
 
-        const listParams = {
-            corpora: 'drive',
+        const driveQuery = clauses.join(' and ');
+        const browsingFolder = !q && !also.length;
+        const list = await listDriveFiles(client, listCallOptions({
             driveId,
-            includeItemsFromAllDrives: true,
-            supportsAllDrives: true,
+            q: driveQuery,
             pageSize,
             pageToken,
-            orderBy: q ? 'folder,modifiedTime desc' : 'folder,name_natural',
-            fields: `nextPageToken,files(${FILE_FIELDS})`,
-        };
-
-        const list = await drive.files.list({
-            ...listParams,
-            q: clauses.join(' and '),
-        });
+            orderBy: browsingFolder ? 'folder,name_natural' : undefined,
+        }));
 
         const byId = new Map((list.data.files || []).map((file) => [file.id, file]));
 
         // Year search should also find videos/photos inside a folder named 2025.
         if (q && years.length && kind !== 'folder' && !pageToken) {
             const folderParts = ['trashed = false', `mimeType = '${FOLDER_MIME}'`];
-            folderParts.push(`(${years.map((year) => tokenClause(year)).join(' or ')})`);
+            folderParts.push(`(${years.map((year) => nameClause(year)).join(' or ')})`);
             const { rest } = parseSearch(q);
             if (rest) {
                 for (const word of rest.split(/\s+/).filter((w) => w.length >= 2)) {
                     folderParts.push(tokenClause(word));
                 }
             }
-            const folders = await drive.files.list({
-                corpora: 'drive',
+            const folders = await listDriveFiles(client, listCallOptions({
                 driveId,
-                includeItemsFromAllDrives: true,
-                supportsAllDrives: true,
-                pageSize: 40,
                 q: folderParts.join(' and '),
+                pageSize: 40,
                 fields: 'files(id,name)',
-            });
+            }));
             const folderIds = (folders.data.files || []).map((f) => f.id).filter(Boolean).slice(0, 20);
             if (folderIds.length) {
                 const childClauses = [
@@ -368,11 +444,11 @@ export default async function handler(req, res) {
                     `(${folderIds.map((id) => `'${escapeDriveQuery(id)}' in parents`).join(' or ')})`,
                 ];
                 if (typeQ) childClauses.push(typeQ);
-                const children = await drive.files.list({
-                    ...listParams,
-                    pageToken: undefined,
+                const children = await listDriveFiles(client, listCallOptions({
+                    driveId,
                     q: childClauses.join(' and '),
-                });
+                    pageSize,
+                }));
                 for (const file of children.data.files || []) {
                     if (file.id) byId.set(file.id, file);
                 }
@@ -386,11 +462,12 @@ export default async function handler(req, res) {
                 if (!extraClause) continue;
                 const extraParts = ['trashed = false', extraClause];
                 if (typeQ) extraParts.push(typeQ);
-                const extraList = await drive.files.list({
-                    ...listParams,
-                    pageToken: undefined,
-                    q: extraParts.join(' and '),
-                });
+                const extraQ = extraParts.join(' and ');
+                const extraList = await listDriveFiles(client, listCallOptions({
+                    driveId,
+                    q: extraQ,
+                    pageSize,
+                }));
                 for (const file of extraList.data.files || []) {
                     if (file.id) byId.set(file.id, file);
                 }
@@ -422,13 +499,14 @@ export default async function handler(req, res) {
             q,
             also,
             type: kind,
+            searchRevision: SEARCH_REVISION,
+            driveQ: driveQuery,
             files,
             nextPageToken: list.data.nextPageToken || null,
         });
     } catch (e) {
         const status = Number(e?.statusCode || e?.response?.status || e?.code) || 502;
-        const raw = e instanceof Error ? e.message : 'Drive request failed';
-        const message = String(raw).replace(/^Request failed with status code \d+\s*/i, '').slice(0, 240);
+        const message = driveErrorMessage(e);
         res.status(status >= 400 && status < 600 ? status : 502).json({
             ok: false,
             configured: true,
@@ -436,6 +514,8 @@ export default async function handler(req, res) {
             oauthClientId: oauthClientId(),
             driveId,
             driveUrl,
+            searchRevision: SEARCH_REVISION,
+            driveQ: e?.driveQ || null,
             error: message,
         });
     }

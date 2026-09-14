@@ -493,7 +493,8 @@
             updateAuthUi(false);
         }
         if (!res.ok && data.configured !== false) {
-            throw new Error(data.error || `HTTP ${res.status}`);
+            const extra = [data.searchRevision, data.driveQ].filter(Boolean).join(' · ');
+            throw new Error(`${data.error || `HTTP ${res.status}`}${extra ? ` (${extra})` : ''}`);
         }
         return data;
     }
@@ -602,7 +603,7 @@
             const message = err instanceof Error ? err.message : 'Could not load Drive.';
             setStatus(message, true);
             const fallback = $('hubArchiveFallback');
-            if (fallback) fallback.hidden = false;
+            if (fallback) fallback.hidden = Boolean(readToken());
         } finally {
             state.loading = false;
             if (moreBtn && state.nextPageToken) moreBtn.disabled = false;

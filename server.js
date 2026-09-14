@@ -8,8 +8,10 @@
  */
 import 'dotenv/config';
 import express from 'express';
+import { statSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { fileURLToPath } from 'url';
-import { dirname, join, basename } from 'path';
+import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -33,10 +35,12 @@ app.use(express.urlencoded({ extended: true }));
 // ── Vercel handler adapter ─────────────────────────────────────────
 // Vercel handlers expect (req, res) with req.query already parsed and
 // res.status().json()/send()/end() — Express provides all of this natively.
-function wrapHandler(handlerModule) {
+function wrapHandler(relPath) {
   return async (req, res) => {
     try {
-      const mod = await handlerModule();
+      const file = join(__dirname, relPath);
+      const mtime = statSync(file).mtimeMs;
+      const mod = await import(`${pathToFileURL(file).href}?t=${mtime}`);
       const fn = mod.default || mod;
       await fn(req, res);
     } catch (err) {
@@ -57,17 +61,23 @@ app.get('/health', (req, res) => {
 });
 
 // ── API routes ──────────────────────────────────────────────────────
-app.all('/api/traccar',        wrapHandler(() => import('./api/traccar.js')));
-app.all('/api/cv-position',    wrapHandler(() => import('./api/cv-position.js')));
-app.all('/api/warning-alerts', wrapHandler(() => import('./api/warning-alerts.js')));
-app.all('/api/trial-results',  wrapHandler(() => import('./api/trial-results.js')));
-app.all('/api/fetch-csv',      wrapHandler(() => import('./api/fetch-csv.js')));
-app.all('/api/check-csv',      wrapHandler(() => import('./api/check-csv.js')));
-app.all('/api/drive-archive',  wrapHandler(() => import('./api/drive-archive.js')));
-app.all('/api/race-cues',      wrapHandler(() => import('./api/race-cues.js')));
+app.all('/api/traccar',        wrapHandler('./api/traccar.js'));
+app.all('/api/cv-position',    wrapHandler('./api/cv-position.js'));
+app.all('/api/warning-alerts', wrapHandler('./api/warning-alerts.js'));
+app.all('/api/trial-results',  wrapHandler('./api/trial-results.js'));
+app.all('/api/fetch-csv',      wrapHandler('./api/fetch-csv.js'));
+app.all('/api/check-csv',      wrapHandler('./api/check-csv.js'));
+app.all('/api/drive-archive',  wrapHandler('./api/drive-archive.js'));
+app.all('/api/race-cues',      wrapHandler('./api/race-cues.js'));
 
 // ── Static files from public/ ───────────────────────────────────────
-app.use(express.static(join(__dirname, 'public')));
+app.use(express.static(join(__dirname, 'public'), {
+  setHeaders(res, filePath) {
+    if (/index\.html$|hub-drive-archive\.js$|hub-archive-sheet-search\.js$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  },
+}));
 
 // SPA fallback — serve index.html for unmatched routes
 app.get('/{*splat}', (req, res) => {
