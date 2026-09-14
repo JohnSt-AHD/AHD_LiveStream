@@ -298,6 +298,8 @@
                     <code>npm run archive:ingest -- --incoming "D:\AHD\{regatta}\{date}\incoming"</code>
                     (add <code>--apply</code> to write the cuts). Copy the <code>hub</code> folder to Drive overnight.
                     Sign in below to find those files by athlete, race, event, or year.
+                    After a search, use <strong>Hub video</strong> to pick the RowIT auto-name
+                    (e.g. <code>NZCC W_Snr_8+ 18-02-2026</code>) and jump to that clip.
                 </p>
 
                 <details class="hub-vmix-explainer hub-archive-explainer">
@@ -476,6 +478,12 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                             autocomplete="off"
                             spellcheck="false"
                         >
+                    </label>
+                    <label class="hub-archive-field hub-archive-field--video">
+                        <span class="hub-archive-label">Hub video</span>
+                        <select id="hubArchiveVideoSelect" class="hub-archive-input" disabled>
+                            <option value="">Search to list RowIT file names</option>
+                        </select>
                     </label>
                     <button type="submit" class="hub-btn hub-btn--primary">Search</button>
                     <button type="button" class="hub-btn" id="hubArchiveClear">Clear</button>
@@ -878,8 +886,8 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
     <script src="hub-vmix-guide.js"></script>
     <script src="hub-race-record.js"></script>
     <script src="https://accounts.google.com/gsi/client" async></script>
-    <script src="hub-archive-sheet-search.js?v=1"></script>
-    <script src="hub-drive-archive.js?v=4"></script>
+    <script src="hub-archive-sheet-search.js?v=2"></script>
+    <script src="hub-drive-archive.js?v=5"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="hub-cv-status.js"></script>
     <script src="hub-fleet-map.js"></script>

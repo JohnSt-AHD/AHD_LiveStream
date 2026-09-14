@@ -424,7 +424,7 @@
             btn.type = 'button';
             btn.className = 'hub-archive-sheet';
             const title = document.createElement('strong');
-            title.textContent = `${row.shortName || row.name} ${row.year || ''} · Race ${row.race}`.replace(/\s+/g, ' ').trim();
+            title.textContent = row.hubTitle || `${row.shortName || row.name} ${row.year || ''} · Race ${row.race}`.replace(/\s+/g, ' ').trim();
             const sub = document.createElement('span');
             sub.textContent = [
                 row.matchedName,
@@ -435,18 +435,44 @@
             ].filter(Boolean).join(' · ');
             btn.append(title, sub);
             btn.addEventListener('click', () => {
-                const query = row.driveQuery || `${row.shortName} ${row.year} Race ${row.raceNum}`;
+                const query = row.hubTitle || row.driveQuery || `${row.shortName} ${row.year} Race ${row.raceNum}`;
                 const input = $('hubArchiveQuery');
                 if (input) input.value = query;
                 state.q = query;
+                state.also = [];
                 state.folderId = DRIVE_ID;
                 state.crumbs = [{ id: DRIVE_ID, name: state.crumbs[0]?.name || 'AHD Drive' }];
-                load({ reset: true });
+                load({ reset: true, keepPicker: true });
             });
             list.appendChild(btn);
         }
         el.appendChild(list);
         el.hidden = false;
+    }
+
+    function renderVideoSelect(sheet) {
+        const sel = $('hubArchiveVideoSelect');
+        if (!sel) return;
+        const picker = sheet?.picker || [];
+        const current = sel.value;
+        sel.replaceChildren();
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = picker.length
+            ? `${picker.length} Hub file name${picker.length === 1 ? '' : 's'} — pick a race`
+            : 'Search to list RowIT file names';
+        sel.appendChild(blank);
+        for (const item of picker) {
+            const opt = document.createElement('option');
+            opt.value = item.title;
+            const extra = [item.round, item.dateLabel].filter(Boolean).join(' · ');
+            opt.textContent = extra ? `${item.title}  (${extra})` : item.title;
+            sel.appendChild(opt);
+        }
+        sel.disabled = picker.length === 0;
+        if (current && picker.some((item) => item.title === current)) {
+            sel.value = current;
+        }
     }
 
     function sheetStatus(fileCount, signedIn) {
@@ -517,16 +543,21 @@
         if (!more) {
             setStatus(state.q ? 'Looking up daysheets…' : 'Loading archive…');
             if (list) list.replaceChildren();
-            renderSheetMatches(null);
             updateMore(null);
-            state.also = [];
-            if (state.q && globalThis.HubArchiveSheetSearch?.search) {
-                try {
-                    const sheet = await globalThis.HubArchiveSheetSearch.search(state.q);
-                    state.also = sheet.also || [];
-                    renderSheetMatches(sheet);
-                } catch {
-                    renderSheetMatches(null);
+            if (!options.keepPicker) {
+                renderSheetMatches(null);
+                renderVideoSelect(null);
+                state.also = [];
+                if (state.q && globalThis.HubArchiveSheetSearch?.search) {
+                    try {
+                        const sheet = await globalThis.HubArchiveSheetSearch.search(state.q);
+                        state.also = sheet.also || [];
+                        renderSheetMatches(sheet);
+                        renderVideoSelect(sheet);
+                    } catch {
+                        renderSheetMatches(null);
+                        renderVideoSelect(null);
+                    }
                 }
             }
         }
@@ -709,7 +740,21 @@
             state.sheet = null;
             state.folderId = DRIVE_ID;
             state.crumbs = [{ id: DRIVE_ID, name: state.crumbs[0]?.name || 'AHD Drive' }];
+            renderVideoSelect(null);
             load({ reset: true });
+        });
+
+        $('hubArchiveVideoSelect')?.addEventListener('change', () => {
+            const sel = $('hubArchiveVideoSelect');
+            const title = String(sel?.value || '').trim();
+            if (!title) return;
+            const input = $('hubArchiveQuery');
+            if (input) input.value = title;
+            state.q = title;
+            state.also = [];
+            state.folderId = DRIVE_ID;
+            state.crumbs = [{ id: DRIVE_ID, name: state.crumbs[0]?.name || 'AHD Drive' }];
+            load({ reset: true, keepPicker: true });
         });
 
         $('hubArchiveOpenDriveFallback')?.addEventListener('click', (event) => {

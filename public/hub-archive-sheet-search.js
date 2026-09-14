@@ -4,6 +4,7 @@
  */
 (function (global) {
     const MAX_MATCHES = 12;
+    const MAX_PICKER = 80;
     const REGATTA_ONLY = new Set([
         'maadi', 'nicc', 'niss', 'siss', 'nationals', 'masters', 'beach',
         'university', 'karapiro', 'christmas', 'club', 'champs', 'cup',
@@ -352,13 +353,51 @@
         return parts.length > 0 && parts.every((p) => REGATTA_ONLY.has(p) || p.length <= 2);
     }
 
+    function hubRegattaLabel(code) {
+        const raw = String(code || '').trim();
+        const stripped = raw.replace(/20\d{2}$/i, '').replace(/_?\d{2}$/i, '').replace(/[_-]+$/g, '');
+        return (stripped || raw).toUpperCase();
+    }
+
+    function hubEventSlug(eventType) {
+        return String(eventType || '')
+            .trim()
+            .replace(/\s+/g, '_')
+            .replace(/_+/g, '_');
+    }
+
+    function hubDateLabel(ymd) {
+        const m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return '';
+        return `${m[3]}-${m[2]}-${m[1]}`;
+    }
+
+    function isNamedFinal(round) {
+        return /^(?:a\s*)?final\b/i.test(String(round || '').trim());
+    }
+
+    function hubTitle(row) {
+        const parts = [
+            hubRegattaLabel(row.code),
+            hubEventSlug(row.eventType),
+            hubDateLabel(row.date),
+        ].filter(Boolean);
+        let title = parts.join(' ');
+        if (row.raceNum && !isNamedFinal(row.round)) {
+            title = `${title} Race ${row.raceNum}`.trim();
+        }
+        return title.replace(/\s+/g, ' ').trim();
+    }
+
     function decorate(row, extra) {
         const eventBits = eventTokens(row.eventType);
-        const driveQuery = [row.shortName, row.year, 'Race', row.raceNum].filter(Boolean).join(' ');
+        const title = hubTitle(row);
+        const driveQuery = title || [row.shortName, row.year, 'Race', row.raceNum].filter(Boolean).join(' ');
         const driveEventQuery = [row.shortName, row.year, ...eventBits].filter(Boolean).join(' ');
         return {
             ...row,
             ...extra,
+            hubTitle: title,
             driveQuery,
             driveEventQuery,
         };
@@ -367,20 +406,25 @@
     async function search(rawQuery) {
         const q = String(rawQuery || '').trim();
         if (q.length < 1) {
-            return { matches: [], mode: '', also: [], total: 0 };
+            return { matches: [], picker: [], mode: '', also: [], total: 0 };
         }
         const parsed = parseQuery(q);
-        const wantsSheets = Boolean(parsed.raceNum || (parsed.restNorm && !isRegattaOnly(parsed.restNorm)));
+        const wantsSheets = Boolean(
+            parsed.raceNum
+            || parsed.years.length
+            || parsed.restNorm,
+        );
         if (!wantsSheets) {
-            return { matches: [], mode: '', also: [], total: 0 };
+            return { matches: [], picker: [], mode: '', also: [], total: 0 };
         }
 
         const { races } = await loadIndex();
         const scored = [];
         const restLooksLikeEvent = EVENT_HINT.test(parsed.rest);
+        const restLooksLikeRegatta = Boolean(parsed.restNorm) && isRegattaOnly(parsed.restNorm);
         const restLooksLikeName = Boolean(parsed.restNorm)
             && !restLooksLikeEvent
-            && !isRegattaOnly(parsed.restNorm)
+            && !restLooksLikeRegatta
             && /[a-z]/i.test(parsed.rest);
 
         for (const row of races) {
@@ -407,6 +451,11 @@
                 score = eventMatches(row.eventType, parsed.restNorm);
                 if (score === 0) continue;
                 mode = 'event';
+            } else if (parsed.restNorm && restLooksLikeRegatta) {
+                const blob = normalize(`${row.shortName} ${row.name} ${row.code}`);
+                if (!parsed.restNorm.split(' ').every((p) => blob.includes(p))) continue;
+                score = 25;
+                mode = 'race';
             } else if (parsed.restNorm) {
                 const eventScore = eventMatches(row.eventType, parsed.restNorm);
                 let nameScore = 0;
@@ -430,6 +479,9 @@
             } else if (parsed.raceNum != null) {
                 score = 75;
                 mode = 'race';
+            } else if (parsed.years.length) {
+                score = 15;
+                mode = 'race';
             } else {
                 continue;
             }
@@ -440,6 +492,8 @@
 
         scored.sort((a, b) => {
             if (b.score !== a.score) return b.score - a.score;
+            const dateCmp = String(b.date || '').localeCompare(String(a.date || ''));
+            if (dateCmp) return dateCmp;
             if ((b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0);
             return (a.raceNum || 0) - (b.raceNum || 0);
         });
@@ -447,10 +501,25 @@
         const total = scored.length;
         const matches = scored.slice(0, MAX_MATCHES);
         const mode = matches[0]?.matchKind || '';
+        const picker = [];
+        const pickerSeen = new Set();
+        for (const row of scored) {
+            const title = row.hubTitle;
+            if (!title || pickerSeen.has(title)) continue;
+            pickerSeen.add(title);
+            picker.push({
+                title,
+                race: row.race,
+                eventType: row.eventType,
+                round: row.round,
+                dateLabel: row.dateLabel,
+            });
+            if (picker.length >= MAX_PICKER) break;
+        }
         const also = [];
         const seen = new Set();
         for (const row of matches) {
-            for (const term of [row.driveEventQuery, row.driveQuery]) {
+            for (const term of [row.hubTitle, row.driveEventQuery]) {
                 if (!term || seen.has(term)) continue;
                 seen.add(term);
                 also.push(term);
@@ -459,7 +528,7 @@
             if (also.length >= 3) break;
         }
 
-        return { matches, mode, also, total };
+        return { matches, picker, mode, also, total };
     }
 
     global.HubArchiveSheetSearch = {
