@@ -72,9 +72,64 @@ async function raceCuesRequest(method, body) {
     return json;
 }
 
+const HUB_CAMERAS = [
+    { id: 'stream', label: 'Stream', hint: 'PGM with graphics and audio' },
+    { id: 'start-cam', label: 'Start cam', hint: 'Start pontoon / start tower' },
+    { id: 'barge', label: 'Barge', hint: 'Follow / mid-course barge' },
+    { id: 'drone', label: 'Drone', hint: 'Aerial' },
+    { id: 'podium', label: 'Podium', hint: 'Medal / presentation' },
+    { id: 'slow-motion', label: 'Slow motion', hint: 'Hi-speed / replay' },
+    { id: 'other', label: 'Other', hint: 'Spare or one-off camera' },
+];
+
 function openRaceFromDay(day) {
     if (!day?.openId) return null;
     return (day.races || []).find((r) => r.id === day.openId && !r.endAt) || null;
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function copyButton(label, text) {
+    if (!text) return '';
+    return `<button type="button" class="hub-race-record-copy" data-copy="${escapeHtml(text)}" data-copy-label="${escapeHtml(label)}">${escapeHtml(label)}</button>`;
+}
+
+function renderCameraPicker(day) {
+    const host = document.getElementById('hubRaceRecordCameras');
+    if (!host) return;
+    const selected = day?.cameras || ['stream', 'start-cam', 'barge', 'drone'];
+    const key = selected.join(',');
+    if (host.dataset.selected === key && host.querySelector('[data-camera]')) return;
+    host.dataset.selected = key;
+    const chosen = new Set(selected);
+    const legend = host.querySelector('legend');
+    const boxes = HUB_CAMERAS.map((cam) => {
+        const on = chosen.has(cam.id);
+        return `<label class="hub-race-record-cam" title="${escapeHtml(cam.hint)}">
+            <input type="checkbox" data-camera="${escapeHtml(cam.id)}" ${on ? 'checked' : ''}>
+            <span>${escapeHtml(cam.label)}</span>
+        </label>`;
+    }).join('');
+    host.innerHTML = `${legend ? legend.outerHTML : ''}${boxes}`;
+}
+
+function hubBlock(race) {
+    const hub = race?.hub;
+    if (!hub?.title && !hub?.description) return '';
+    const files = (hub.files || [])
+        .map((f) => `<li><code>${escapeHtml(f.filename)}</code> ${copyButton('Copy', f.filename)}</li>`)
+        .join('');
+    return `<div class="hub-race-record-hub">
+        <p><strong>Hub title</strong> <code>${escapeHtml(hub.title || '')}</code> ${copyButton('Copy title', hub.title)}</p>
+        <p><strong>Description</strong> ${escapeHtml(hub.description || '—')} ${copyButton('Copy description', hub.description)}</p>
+        ${files ? `<ul class="hub-race-record-files">${files}</ul>` : ''}
+    </div>`;
 }
 
 function renderRaceRecord(day) {
@@ -110,11 +165,12 @@ function renderRaceRecord(day) {
                 .map((l) => `L${l.lane} ${l.crew}`)
                 .join(' · ');
             openEl.hidden = false;
-            openEl.innerHTML = `<strong>Open:</strong> Race ${open.race || open.raceNum}
-                ${open.eventType ? `· ${open.eventType}` : ''}
-                ${open.round ? open.round : ''}
+            openEl.innerHTML = `<strong>Open:</strong> Race ${escapeHtml(open.race || open.raceNum)}
+                ${open.eventType ? `· ${escapeHtml(open.eventType)}` : ''}
+                ${open.round ? escapeHtml(open.round) : ''}
                 · draw ${formatCueClock(open.drawAt)}
-                ${lanes ? `<span class="hub-race-record-lanes">${lanes}</span>` : ''}`;
+                ${open.hub?.title ? `<span class="hub-race-record-hub-title">${escapeHtml(open.hub.title)}</span>` : ''}
+                ${lanes ? `<span class="hub-race-record-lanes">${escapeHtml(lanes)}</span>` : ''}`;
         } else {
             openEl.hidden = true;
             openEl.textContent = '';
@@ -127,6 +183,7 @@ function renderRaceRecord(day) {
         fileHint.textContent = `/data/race-cues/${day.regatta}/${day.date}.json`;
         fileHint.href = `data/race-cues/${day.regatta}/${day.date}.json`;
     }
+    renderCameraPicker(day);
     if (list) {
         const races = [...(day?.races || [])].reverse();
         if (!races.length) {
@@ -146,13 +203,14 @@ function renderRaceRecord(day) {
                         : '';
                     return `<article class="hub-race-record-card${r.endAt ? '' : ' is-open'}">
                         <header>
-                            <strong>Race ${r.race || r.raceNum}</strong>
-                            <span>${r.eventType || ''} ${r.round || ''}</span>
+                            <strong>Race ${escapeHtml(r.race || r.raceNum)}</strong>
+                            <span>${escapeHtml(r.eventType || '')} ${escapeHtml(r.round || '')}</span>
                         </header>
                         <p>Draw ${formatCueClock(r.drawAt)} → ${end}</p>
-                        <p>${(r.lanes || []).map((l) => `${l.lane}:${l.crew}`).join(' · ') || 'No lane draw'}</p>
-                        <p>${(r.competitors || []).slice(0, 8).join(', ')}${(r.competitors || []).length > 8 ? '…' : ''}</p>
-                        <p>${resultBits || pending || ''}</p>
+                        <p>${escapeHtml((r.lanes || []).map((l) => `${l.lane}:${l.crew}`).join(' · ') || 'No lane draw')}</p>
+                        <p>${escapeHtml((r.competitors || []).slice(0, 8).join(', '))}${(r.competitors || []).length > 8 ? '…' : ''}</p>
+                        <p>${escapeHtml(resultBits) || pending || ''}</p>
+                        ${hubBlock(r)}
                     </article>`;
                 })
                 .join('');
@@ -190,6 +248,31 @@ function bindRaceRecord() {
     document.getElementById('hubRaceRecordToggle')?.addEventListener('click', async () => {
         const next = !raceRecordState.day?.recording;
         await postRaceCue('recording', { recording: next });
+    });
+
+    root.addEventListener('change', async (e) => {
+        const box = e.target.closest('#hubRaceRecordCameras [data-camera]');
+        if (!box) return;
+        const cameras = [...root.querySelectorAll('#hubRaceRecordCameras [data-camera]:checked')]
+            .map((el) => el.getAttribute('data-camera'));
+        await postRaceCue('cameras', { cameras });
+    });
+
+    root.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-copy]');
+        if (!btn) return;
+        const text = btn.getAttribute('data-copy') || '';
+        try {
+            await navigator.clipboard.writeText(text);
+            btn.classList.add('is-copied');
+            btn.textContent = 'Copied';
+            setTimeout(() => {
+                btn.classList.remove('is-copied');
+            btn.textContent = btn.getAttribute('data-copy-label') || 'Copy';
+            }, 1200);
+        } catch {
+            /* ignore */
+        }
     });
 
     document.addEventListener('altitudehd:vmixtrigger', (e) => {

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Race-day record · Altitude HD</title>
     <link rel="stylesheet" href="hub.css">
-    <link rel="stylesheet" href="hub-landing.css?v=12">
+    <link rel="stylesheet" href="hub-landing.css?v=13">
     <link rel="stylesheet" href="race-day-record.css">
 </head>
 <body class="hub-page race-record-page">
@@ -26,7 +26,8 @@
             Press <strong>Record</strong> at the start of the session. Each <strong>Draw (D)</strong> opens a race
             and stores the RowIT lane draw and competitors. <strong>Results (R)</strong> closes that race with
             official placings when the sheet is up. If you skip Results, the <strong>next Draw</strong> ends the
-            previous race instead.
+            previous race instead. Tick the cameras that are rolling so each cut gets a Stream / Start cam / Barge /
+            Drone (or Podium, Slow motion, Other) filename for the Rowing Hub.
         </p>
 
         <section class="hub-live-race" id="hubLiveRacePanel">
@@ -59,6 +60,9 @@
                     <p class="hub-race-record-file-wrap">Log file: <a id="hubRaceRecordFile" href="data/race-cues/">data/race-cues/</a></p>
                 </div>
             </div>
+            <fieldset class="hub-race-record-cameras" id="hubRaceRecordCameras" aria-label="Cameras rolling">
+                <legend>Cameras rolling</legend>
+            </fieldset>
             <div class="hub-race-record-list" id="hubRaceRecordList"></div>
         </section>
     </main>

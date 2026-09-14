@@ -114,11 +114,77 @@
 }
 
 .hub-page.race-record-page .hub-race-record-card {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: inherit;
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #111;
 }
 
 .hub-page.race-record-page .hub-race-record-card p {
-    color: rgba(255, 255, 255, 0.72);
+    color: #444;
+}
+
+.hub-race-record-cameras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin: 0 0 20px;
+    padding: 0;
+    border: 0;
+}
+
+.hub-race-record-cameras legend {
+    padding: 0;
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.hub-race-record-cam {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.hub-race-record-hub {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.hub-race-record-hub code {
+    font-size: 12px;
+}
+
+.hub-race-record-files {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.hub-race-record-files li {
+    margin: 4px 0;
+}
+
+.hub-race-record-copy {
+    margin-left: 6px;
+    border: 0;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    background: #eee;
+    color: #111;
+}
+
+.hub-race-record-copy.is-copied {
+    background: #111;
+    color: #fff;
+}
+
+.hub-race-record-hub-title {
+    display: block;
+    margin-top: 4px;
+    font-family: ui-monospace, monospace;
 }

@@ -2,6 +2,11 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseRaceLabel, raceSnapshot } from './lib/rowit-race-snapshot.mjs';
+import {
+    DEFAULT_CAMERAS,
+    buildHubClip,
+    sanitizeCameras,
+} from './lib/rowing-hub-names.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -40,6 +45,7 @@ function emptyDay(regatta, date) {
         openId: null,
         updatedAt: nowIso(),
         persisted: false,
+        cameras: DEFAULT_CAMERAS.slice(),
         races: [],
     };
 }
@@ -94,6 +100,28 @@ function recentMs(iso) {
     return Date.now() - t;
 }
 
+function ensureCameras(day) {
+    const cams = sanitizeCameras(day.cameras);
+    day.cameras = cams.length ? cams : DEFAULT_CAMERAS.slice();
+    return day.cameras;
+}
+
+function attachHub(day, race) {
+    if (!race) return race;
+    race.hub = buildHubClip({
+        regatta: day.regatta,
+        eventType: race.eventType,
+        raceDate: race.raceDate || day.date,
+        round: race.round,
+        raceNum: race.raceNum,
+        lanes: race.lanes,
+        competitors: race.competitors,
+        results: race.results,
+        cameras: ensureCameras(day),
+    });
+    return race;
+}
+
 async function closeOpen(day, endedBy) {
     const open = openRace(day);
     if (!open) return null;
@@ -102,7 +130,9 @@ async function closeOpen(day, endedBy) {
     if (!open.results) {
         const snap = await raceSnapshot(day.regatta, open.race || String(open.raceNum));
         if (snap?.results) open.results = snap.results;
+        if (snap?.date && !open.raceDate) open.raceDate = snap.date;
     }
+    attachHub(day, open);
     day.openId = null;
     return open;
 }
@@ -139,6 +169,7 @@ async function handleDraw(day, raceRaw) {
         division: snap?.division || '',
         scheduledTime: snap?.time || '',
         dateLabel: snap?.dateLabel || '',
+        raceDate: snap?.date || day.date,
         drawAt: nowIso(),
         endAt: null,
         endedBy: null,
@@ -146,6 +177,7 @@ async function handleDraw(day, raceRaw) {
         competitors: snap?.competitors || [],
         results: null,
     };
+    attachHub(day, race);
     day.races.push(race);
     day.openId = race.id;
     return { day, opened: race };
@@ -162,6 +194,8 @@ async function handleResults(day, raceRaw) {
     open.endAt = nowIso();
     open.endedBy = 'results';
     if (snap?.results) open.results = snap.results;
+    if (snap?.date && !open.raceDate) open.raceDate = snap.date;
+    attachHub(day, open);
     day.openId = null;
     return { day, closed: open };
 }
@@ -187,6 +221,10 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
         const day = await loadDay(regatta, date);
+        ensureCameras(day);
+        (day.races || []).forEach((race) => {
+            if (!race.hub?.title) attachHub(day, race);
+        });
         res.setHeader('Cache-Control', 'no-store');
         res.status(200).json({ ok: true, ...day });
         return;
@@ -201,8 +239,19 @@ export default async function handler(req, res) {
     const day = await loadDay(regatta, date);
     day.regatta = regatta;
     day.date = date;
+    ensureCameras(day);
 
     try {
+        if (action === 'cameras') {
+            day.cameras = sanitizeCameras(body.cameras);
+            if (!day.cameras.length) day.cameras = DEFAULT_CAMERAS.slice();
+            const open = openRace(day);
+            if (open) attachHub(day, open);
+            await saveDay(day);
+            res.status(200).json({ ok: true, ...day });
+            return;
+        }
+
         if (action === 'recording') {
             day.recording = Boolean(body.recording);
             if (!day.recording && openRace(day)) {
@@ -235,7 +284,7 @@ export default async function handler(req, res) {
             return;
         }
 
-        res.status(400).json({ ok: false, error: 'action must be recording, draw, or results' });
+        res.status(400).json({ ok: false, error: 'action must be recording, draw, results, or cameras' });
     } catch (e) {
         const status = Number(e?.statusCode) || 500;
         res.status(status).json({ ok: false, error: e instanceof Error ? e.message : 'Cue failed' });

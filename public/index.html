@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=12">
+    <link rel="stylesheet" href="hub-landing.css?v=13">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -148,6 +148,7 @@
                                     <a href="race-day-record.html">Open recorder page</a>
                                     · log <a id="hubRaceRecordFile" href="data/race-cues/">data/race-cues/</a>
                                 </p>
+                                <fieldset class="hub-race-record-cameras" id="hubRaceRecordCameras" aria-label="Cameras rolling"></fieldset>
                             </div>
                         </div>
                     </div>
@@ -323,6 +324,31 @@
                             <em>no results sheet</em>.
                         </p>
 
+                        <h3>Rowing Hub names</h3>
+                        <p>
+                            When you cut a race, name the files for the Rowing Hub like this
+                            (no extension needed in the workflow):
+                        </p>
+                        <p>
+                            <code>(Regatta) (Event_with_underscores) (day-month-year)</code><br>
+                            Example: <code>NZCC W_Snr_8+ 18-02-2026</code>
+                        </p>
+                        <p>
+                            Heats and other non-finals add <code>Race 52</code> so two races of the same event
+                            on the same day do not collide. A finals keep the short Hub title.
+                            The recorder writes that title, plus a description of crews and athletes:
+                        </p>
+                        <p>
+                            <code>DUAC 2, WKOC 1|Charlotte Crosbie, Perri Stevenson</code>
+                        </p>
+                        <p>
+                            Crews (comma-separated) sit before the pipe; athlete names after it.
+                            Tick <strong>Cameras rolling</strong> on the recorder so each cut is labelled
+                            Stream (PGM with graphics and audio), Start cam, Barge, Drone, Podium,
+                            Slow motion, or Other. Stream uses the Hub title as-is; the other cameras
+                            append the camera name, e.g. <code>NZCC W_Snr_8+ 18-02-2026 Start cam</code>.
+                        </p>
+
                         <h3>The log file</h3>
                         <p>
                             Written live to
@@ -370,16 +396,17 @@
                         </p>
 
                         <h3>Drive folders</h3>
-                        <p>Use race-aware folders so this archive page can find them later:</p>
-                        <pre class="hub-archive-explainer-tree">AHD Drive / Maadi 2026 / 2026-03-23 / Race 012 B U15 2X heat /
-  vmix-pgm.mp4
-  vmix-iso2.mp4
-  cam-a.mp4
-  2026-03-23.json</pre>
+                        <p>Keep a date folder, then store the Hub-named cuts (camera in the filename):</p>
+                        <pre class="hub-archive-explainer-tree">AHD Drive / NZCC / 2026-02-18 /
+  NZCC W_Snr_8+ 18-02-2026
+  NZCC W_Snr_8+ 18-02-2026 Start cam
+  NZCC W_Snr_8+ 18-02-2026 Barge
+  NZCC W_Snr_8+ 18-02-2026 Drone
+  2026-02-18.json</pre>
                         <p>
-                            Keep original camera names in the sidecar. The folder and race label are what people
-                            (and athlete/race search from the daysheets) will find. Put a copy of that day’s
-                            race-cues JSON in the date folder as well.
+                            Paste the Hub description on the Stream file. Keep original camera names in a sidecar
+                            if you still have the SD card IDs. Athlete/race search from the daysheets will match
+                            the event slug and date in that title.
                         </p>
 
                         <h3>Storage</h3>
