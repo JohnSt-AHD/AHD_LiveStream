@@ -498,6 +498,58 @@ button.hub-stat:hover .hub-stat-value {
     opacity: 0.4;
 }
 
+.hub-live-race .hub-race-record--inline {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hub-live-race .hub-race-record-bar {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.hub-live-race .hub-race-record-toggle {
+    min-width: 120px;
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.hub-live-race .hub-race-record-toggle.is-recording {
+    background: #e11d48;
+    color: #fff;
+}
+
+.hub-live-race .hub-race-record-status,
+.hub-live-race .hub-race-record-open,
+.hub-live-race .hub-race-record-file-wrap,
+.hub-live-race .hub-race-record-persist {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.hub-live-race .hub-race-record-file-wrap a {
+    color: #fff;
+}
+
+.hub-live-race .hub-race-record-persist {
+    color: #fda4af;
+}
+
+.hub-live-race .hub-race-record-open .hub-race-record-lanes {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
 /* Overlay packs as product grid */
 .hub-links--product {
     display: grid;

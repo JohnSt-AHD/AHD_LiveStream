@@ -64,6 +64,7 @@ app.all('/api/trial-results',  wrapHandler(() => import('./api/trial-results.js'
 app.all('/api/fetch-csv',      wrapHandler(() => import('./api/fetch-csv.js')));
 app.all('/api/check-csv',      wrapHandler(() => import('./api/check-csv.js')));
 app.all('/api/drive-archive',  wrapHandler(() => import('./api/drive-archive.js')));
+app.all('/api/race-cues',      wrapHandler(() => import('./api/race-cues.js')));
 
 // ── Static files from public/ ───────────────────────────────────────
 app.use(express.static(join(__dirname, 'public')));
@@ -87,5 +88,6 @@ app.listen(PORT, () => {
   console.log(`    /api/fetch-csv`);
   console.log(`    /api/check-csv`);
   console.log(`    /api/drive-archive`);
+  console.log(`    /api/race-cues`);
   console.log();
 });

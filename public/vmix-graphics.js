@@ -2074,7 +2074,22 @@ function vgResetToIdle() {
     if (layer) layer.replaceChildren();
 }
 
+function vgPostRaceCue(graphic) {
+    if (graphic !== 'draw' && graphic !== 'results') return;
+    fetch('/api/race-cues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: graphic,
+            race: vgGetRaceParam(),
+            regatta: vgGetRegattaCode(),
+        }),
+        keepalive: true,
+    }).catch(() => {});
+}
+
 function vgTriggerIn(graphic) {
+    vgPostRaceCue(graphic);
     if (vgPlayback.state !== 'idle') return;
     const kpOwns = vgKarapiroOwns(graphic);
     if (!kpOwns) {

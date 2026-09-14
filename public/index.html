@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=11">
+    <link rel="stylesheet" href="hub-landing.css?v=12">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -49,6 +49,7 @@
             <div class="hub-hero-actions">
                 <button type="button" class="hub-pill hub-pill--solid" data-hub-role="broadcast" data-hub-scroll="hubLiveRacePanel">Open live race</button>
                 <button type="button" class="hub-pill hub-pill--ghost" data-hub-role="broadcast" data-hub-scroll="hub-vmix-title">vMix overlays</button>
+                <a class="hub-pill hub-pill--ghost" href="race-day-record.html">Race-day recorder</a>
             </div>
         </div>
     </section>
@@ -136,6 +137,20 @@
                         </label>
                     </div>
                     <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
+                    <div class="hub-race-record hub-race-record--inline" id="hubRaceRecord">
+                        <div class="hub-race-record-bar">
+                            <button type="button" class="hub-race-record-toggle" id="hubRaceRecordToggle" aria-pressed="false">Record</button>
+                            <div>
+                                <p class="hub-race-record-status" id="hubRaceRecordStatus">Graphics PC recorder — Draw starts a race, Results or the next Draw ends it.</p>
+                                <p class="hub-race-record-open" id="hubRaceRecordOpen" hidden></p>
+                                <p class="hub-race-record-persist" id="hubRaceRecordPersist" hidden>Could not write the JSON file on this machine.</p>
+                                <p class="hub-race-record-file-wrap">
+                                    <a href="race-day-record.html">Open recorder page</a>
+                                    · log <a id="hubRaceRecordFile" href="data/race-cues/">data/race-cues/</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="hub-vmix-guide">
@@ -283,32 +298,43 @@
                     <summary class="hub-vmix-explainer-summary">Race-day recording and ingest</summary>
                     <div class="hub-vmix-explainer-body hub-archive-explainer-body">
                         <p>
-                            Treat <strong>Draw (D)</strong> as the race-start cue, not the daysheet clock.
-                            The daysheet time is the plan; the draw press is when that race actually went to air.
-                            Results (R) is the end cue. Those two times index every camera — vMix ISOs and SD cards alike.
+                            On the graphics PC, keep the local hub running and bookmark
+                            <a href="race-day-record.html"><code>http://localhost:3000/race-day-record.html</code></a>.
+                            Press <strong>Record</strong> there, or on Broadcast, before the first race.
+                            Draw, Results, and live-race stepping on that page (or the hub, or the vMix overlay keys)
+                            all write the same log.
                         </p>
 
-                        <h3>What to log</h3>
+                        <h3>What each race stores</h3>
                         <p>
-                            One line per cue, written live to the recorder PC as <code>cues.jsonl</code>
-                            (and copied to Drive when you can). Do not wait until overnight.
+                            <strong>Draw (D)</strong> is the start — not the daysheet clock. The daysheet time is the plan;
+                            the Draw press is when that race actually went to air. The recorder snapshots RowIT at that moment:
+                            race label, event, round, lane draw, and competitor names.
                         </p>
-                        <ul>
-                            <li>Wall-clock ISO, e.g. <code>2026-03-23T08:55:12+13:00</code></li>
-                            <li>Race number and label, e.g. <code>12 (L)</code></li>
-                            <li>Event, round, and scheduled start from the daysheet</li>
-                            <li>Graphic: <code>draw</code> or <code>results</code></li>
-                            <li>Which cameras were rolling (a fixed session list is enough)</li>
-                        </ul>
                         <p>
-                            The hub already has the live race number, event/round, and the timestamp when D is pressed.
-                            Daysheet <code>08:55</code> is a useful label. It is not the time to search video with.
+                            <strong>Results (R)</strong> is the end, and it attaches official placings when the results sheet is up.
+                            Some races never get a Results graphic. In that case the <strong>next Draw</strong> closes the previous
+                            race (<code>endedBy: next-draw</code>) and opens the new one. Step the live race with <strong>+</strong>
+                            before that next Draw so the new window is the next race. A second Draw on the same race does not
+                            start a new window.
+                        </p>
+                        <p>
+                            If Results is not published yet, the race still closes with the draw and crews, marked
+                            <em>no results sheet</em>.
+                        </p>
+
+                        <h3>The log file</h3>
+                        <p>
+                            Written live to
+                            <code>public/data/race-cues/{regatta}/{yyyy-mm-dd}.json</code>
+                            (NZ date). Copy that file with the video at end of day.
+                            Keep it on the PC until the day is safely in Drive — Drive must not be the only copy.
                         </p>
 
                         <h3>Clocks</h3>
-                        <p>This makes or breaks matching. A minute of drift puts a clip on the wrong race.</p>
+                        <p>A minute of drift puts a clip on the wrong race.</p>
                         <ul>
-                            <li>Recorder / vMix PC: NTP, always.</li>
+                            <li>Graphics / vMix PC: NTP, always. The cue times come from this clock.</li>
                             <li>Cameras: set from that PC (or a GPS camera) at briefing, then leave them.</li>
                             <li>Check drift once at lunch.</li>
                         </ul>
@@ -326,11 +352,12 @@
                             <li>
                                 Copy SD cards and vMix files onto the recorder disk first, not straight to Drive:
                                 <code>D:\AHD\{regatta}\{date}\incoming\vmix\</code> and
-                                <code>…\incoming\cam-a\</code> etc.
+                                <code>…\incoming\cam-a\</code> etc. Copy the day’s
+                                <code>race-cues</code> JSON next to them.
                             </li>
                             <li>
-                                Match each file’s start time + duration against the cue log.
-                                Overlap with draw → results (plus about 30s preroll and a minute of tail)
+                                Match each file’s start time + duration against the log.
+                                Overlap with draw → end (Results, or the next Draw), plus about 30s preroll and a minute of tail,
                                 tags that file to that race.
                             </li>
                             <li>
@@ -344,28 +371,25 @@
 
                         <h3>Drive folders</h3>
                         <p>Use race-aware folders so this archive page can find them later:</p>
-<pre class="hub-archive-explainer-tree">AHD Drive / Maadi 2026 / 2026-03-23 / Race 012 B U15 2X heat /
+                        <pre class="hub-archive-explainer-tree">AHD Drive / Maadi 2026 / 2026-03-23 / Race 012 B U15 2X heat /
   vmix-pgm.mp4
   vmix-iso2.mp4
   cam-a.mp4
-  cues.json</pre>
+  2026-03-23.json</pre>
                         <p>
                             Keep original camera names in the sidecar. The folder and race label are what people
-                            (and athlete/race search from the daysheets) will find.
+                            (and athlete/race search from the daysheets) will find. Put a copy of that day’s
+                            race-cues JSON in the date folder as well.
                         </p>
 
                         <h3>Storage</h3>
                         <ul>
                             <li>
-                                <strong>Race day working set:</strong> fast local disk on the recorder PC.
+                                <strong>Race day working set:</strong> fast local disk on the graphics PC.
                                 Do not upload while you are still racing unless you have a spare NIC and a quiet window.
                             </li>
                             <li>
                                 <strong>Archive:</strong> this Shared Drive, overnight, after files are tagged.
-                            </li>
-                            <li>
-                                Keep <code>cues.jsonl</code> on the PC until the day is safely in Drive.
-                                Drive must not be the only copy of the cue log.
                             </li>
                         </ul>
                     </div>
@@ -814,6 +838,7 @@
     <script src="hub-calendar.js"></script>
     <script src="hub-regatta.js"></script>
     <script src="hub-vmix-guide.js"></script>
+    <script src="hub-race-record.js"></script>
     <script src="https://accounts.google.com/gsi/client" async></script>
     <script src="hub-archive-sheet-search.js?v=1"></script>
     <script src="hub-drive-archive.js?v=2"></script>

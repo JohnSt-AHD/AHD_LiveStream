@@ -855,6 +855,47 @@
     min-height: 1.4em;
 }
 
+.hub-race-record--inline {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hub-race-record-bar {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.hub-race-record-toggle {
+    min-width: 112px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.hub-race-record-toggle.is-recording {
+    background: #e11d48;
+    color: #fff;
+}
+
+.hub-race-record-status,
+.hub-race-record-open,
+.hub-race-record-file-wrap,
+.hub-race-record-persist {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: var(--ahd-muted);
+}
+
+.hub-race-record-file-wrap a {
+    color: inherit;
+}
+
 .hub-btn--compact {
     height: 44px;
     padding: 0 12px;

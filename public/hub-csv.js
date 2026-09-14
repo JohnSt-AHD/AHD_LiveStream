@@ -94,10 +94,10 @@ function saveRegattaCode(code) {
 
 function getRegattaCode() {
     const input = document.getElementById('hubRegattaCode');
-    if (input) {
+    if (input && normalizeRegattaCode(input.value)) {
         return normalizeRegattaCode(input.value);
     }
-    return loadRegattaCode();
+    return loadRegattaCode() || DEFAULT_REGATTA_CODE;
 }
 
 function collectValues() {

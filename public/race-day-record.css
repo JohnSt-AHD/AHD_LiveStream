@@ -1,0 +1,124 @@
+.race-record-page .hub-topbar-inner {
+    align-items: center;
+}
+
+.race-record-back {
+    margin: 0;
+}
+
+.race-record-back a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.race-record-main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px 64px;
+}
+
+.race-record-main h1 {
+    margin: 0 0 8px;
+    letter-spacing: -0.03em;
+}
+
+.race-record-lead {
+    color: var(--hub-mute, #666);
+    max-width: 62ch;
+    line-height: 1.5;
+}
+
+.race-record-page .hub-live-race {
+    margin: 28px 0 20px;
+}
+
+.race-record-page .hub-vmix-trigger-row {
+    margin-top: 16px;
+}
+
+.hub-race-record-bar {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.hub-race-record-toggle {
+    min-width: 132px;
+    height: 52px;
+    border: 0;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.hub-race-record-toggle.is-recording {
+    background: #b42318;
+}
+
+.hub-race-record-status,
+.hub-race-record-open,
+.hub-race-record-file-wrap,
+.hub-race-record-persist,
+.hub-race-record-empty {
+    margin: 0 0 6px;
+    line-height: 1.4;
+}
+
+.hub-race-record-open .hub-race-record-lanes {
+    display: block;
+    margin-top: 4px;
+    opacity: 0.8;
+    font-size: 13px;
+}
+
+.hub-race-record-persist {
+    color: #b42318;
+}
+
+.hub-race-record-list {
+    display: grid;
+    gap: 10px;
+}
+
+.hub-race-record-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #fff;
+}
+
+.hub-race-record-card.is-open {
+    border-color: #111;
+}
+
+.hub-race-record-card header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.hub-race-record-card p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #444;
+}
+
+.hub-race-record-pending {
+    color: #9a3412;
+}
+
+.hub-page.race-record-page .hub-race-record-card {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: inherit;
+}
+
+.hub-page.race-record-page .hub-race-record-card p {
+    color: rgba(255, 255, 255, 0.72);
+}

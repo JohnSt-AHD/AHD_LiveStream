@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Race-day record · Altitude HD</title>
+    <link rel="stylesheet" href="hub.css">
+    <link rel="stylesheet" href="hub-landing.css?v=12">
+    <link rel="stylesheet" href="race-day-record.css">
+</head>
+<body class="hub-page race-record-page">
+    <header class="hub-topbar">
+        <div class="hub-topbar-inner">
+            <div class="hub-topbar-brands">
+                <img src="altitude-hd-logo.png" alt="Altitude HD" class="hub-logo" width="320" height="120">
+            </div>
+            <p class="hub-tagline">Graphics PC · race-day recorder</p>
+            <p class="race-record-back"><a href="index.html">← Hub</a></p>
+        </div>
+    </header>
+
+    <main class="race-record-main">
+        <h1>Race-day record</h1>
+        <p class="race-record-lead">
+            Bookmark this page on the graphics PC (<code>http://localhost:3000/race-day-record.html</code>).
+            Press <strong>Record</strong> at the start of the session. Each <strong>Draw (D)</strong> opens a race
+            and stores the RowIT lane draw and competitors. <strong>Results (R)</strong> closes that race with
+            official placings when the sheet is up. If you skip Results, the <strong>next Draw</strong> ends the
+            previous race instead.
+        </p>
+
+        <section class="hub-live-race" id="hubLiveRacePanel">
+            <h2 class="hub-live-race-title">Live graphic race</h2>
+            <p class="hub-live-race-lead">Step this before the next Draw so the next window is the next race.</p>
+            <div class="hub-live-race-controls">
+                <button type="button" class="hub-live-race-step" id="hubLiveRaceMinus" aria-label="Previous race">−</button>
+                <label class="hub-live-race-field">
+                    <span class="hub-live-race-label">Race</span>
+                    <input type="text" id="hubLiveRaceInput" class="hub-live-race-input" autocomplete="off" spellcheck="false" placeholder="12">
+                </label>
+                <button type="button" class="hub-live-race-step" id="hubLiveRacePlus" aria-label="Next race">+</button>
+            </div>
+            <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
+
+            <div class="hub-vmix-trigger-row" id="hubVmixTriggerButtons" role="group" aria-label="Draw and Results">
+                <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="d" title="Draw in">D</button>
+                <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="r" title="Results in">R</button>
+                <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--out" data-vmix-trigger="out" title="Out">O</button>
+            </div>
+        </section>
+
+        <section class="hub-race-record" id="hubRaceRecord">
+            <div class="hub-race-record-bar">
+                <button type="button" class="hub-race-record-toggle" id="hubRaceRecordToggle" aria-pressed="false">Record</button>
+                <div>
+                    <p class="hub-race-record-status" id="hubRaceRecordStatus">Checking recorder…</p>
+                    <p class="hub-race-record-open" id="hubRaceRecordOpen" hidden></p>
+                    <p class="hub-race-record-persist" id="hubRaceRecordPersist" hidden>Could not write the JSON file — keep this tab open and copy the log before closing Node.</p>
+                    <p class="hub-race-record-file-wrap">Log file: <a id="hubRaceRecordFile" href="data/race-cues/">data/race-cues/</a></p>
+                </div>
+            </div>
+            <div class="hub-race-record-list" id="hubRaceRecordList"></div>
+        </section>
+    </main>
+
+    <script src="hub-csv.js"></script>
+    <script src="hub-live-race.js"></script>
+    <script src="hub-vmix-guide.js"></script>
+    <script src="hub-race-record.js"></script>
+</body>
+</html>

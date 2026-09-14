@@ -22,6 +22,9 @@
     },
     "api/drive-archive.js": {
       "maxDuration": 20
+    },
+    "api/race-cues.js": {
+      "maxDuration": 15
     }
   }
 }
