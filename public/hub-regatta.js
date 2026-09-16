@@ -1,7 +1,7 @@
 /**
  * Daysheet schedule board — parse RowIT CSV, clock modes, race window display.
  */
-const LS_CLOCK = 'altitudeHdClock_v1';
+const LS_CLOCK = 'altitudeHdClock_v2';
 
 const MONTHS = {
     january: 0,
@@ -78,12 +78,16 @@ function parseDayHeader(line) {
 
 function parseRaceLabel(raw) {
     const s = String(raw || '').trim();
-    const withLetter = s.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-    if (withLetter) {
+    const withParen = s.match(/^(\d+)\s*\(([^)]*)\)\s*$/);
+    if (withParen) {
+        const inner = withParen[2].trim();
+        const letter = inner.match(/^[A-Za-z]$/);
         return {
-            raceNum: parseInt(withLetter[1], 10),
-            raceLetter: withLetter[2].toUpperCase(),
-            label: `${withLetter[1]} (${withLetter[2].toUpperCase()})`,
+            raceNum: parseInt(withParen[1], 10),
+            raceLetter: letter ? letter[0].toUpperCase() : '',
+            label: letter
+                ? `${withParen[1]} (${letter[0].toUpperCase()})`
+                : withParen[1],
         };
     }
     const plain = s.match(/^(\d+)$/);
@@ -195,6 +199,10 @@ function isCrewCell(raw) {
 
 function parseLanes(cols, headerCols) {
     if (headerCols?.length) {
+        const hasLaneCols = headerCols.some((h) =>
+            /^lane[_\s-]?\d+$/i.test((h || '').trim()),
+        );
+        if (!hasLaneCols) return [];
         const lanes = [];
         for (let i = 0; i < headerCols.length; i++) {
             const h = (headerCols[i] || '').trim().toLowerCase();
@@ -260,10 +268,10 @@ function parseResultsCsv(text) {
 function loadClockSettings() {
     const defaults = {
         mode: 'fixed',
-        fixedDate: '2026-03-23',
-        fixedTime: '09:00',
+        fixedDate: '2026-09-19',
+        fixedTime: '08:30',
         offsetMinutes: 0,
-        autoRefresh: false,
+        autoRefresh: true,
     };
     try {
         const raw = localStorage.getItem(LS_CLOCK);
@@ -363,7 +371,7 @@ function getCsvUrl(id) {
     if (window.AltitudeHdHub && typeof window.AltitudeHdHub.getCsvUrl === 'function') {
         return window.AltitudeHdHub.getCsvUrl(id);
     }
-    const code = 'mads2026';
+    const code = window.AltitudeHdHub?.getRegattaCode?.() || 'nzmm2026';
     const defaults = {
         daysheet: `https://l.rowit.nz/altitude/${code}/daysheet.csv`,
         results: `https://l.rowit.nz/altitude/${code}/results.csv`,
@@ -569,7 +577,7 @@ function renderBoard() {
         if (!boardState.races.length) {
             status.textContent = boardState.loading
                 ? 'Loading daysheet…'
-                : 'Load a daysheet URL in Setup, then refresh.';
+                : 'No race list yet — waiting for daysheet or competitor names.';
         } else if (!dayRaces.length) {
             const days = [
                 ...new Set(boardState.races.map((r) => r.dayLabel)),
@@ -581,7 +589,11 @@ function renderBoard() {
                 currentIndex >= 0
                     ? `Race ${dayRaces[currentIndex].race}`
                     : 'Before first race';
-            status.textContent = `${day} · ${dayRaces.length} races · ${cur}`;
+            const hasLanes = dayRaces.some((r) => r.lanes?.length);
+            const laneNote = hasLanes
+                ? ''
+                : ' · lane draw when daysheet publishes';
+            status.textContent = `${day} · ${dayRaces.length} races · ${cur}${laneNote}`;
         }
     }
 
@@ -634,8 +646,8 @@ function applySettingsFromDom() {
 
     boardState.settings = {
         mode: modeLive && modeLive.checked ? 'live' : 'fixed',
-        fixedDate: fixedDate ? fixedDate.value : '2026-03-23',
-        fixedTime: fixedTime ? fixedTime.value : '09:00',
+        fixedDate: fixedDate ? fixedDate.value : '2026-09-19',
+        fixedTime: fixedTime ? fixedTime.value : '08:30',
         offsetMinutes: offset ? parseInt(offset.value, 10) || 0 : 0,
         autoRefresh: autoRefresh ? autoRefresh.checked : false,
     };

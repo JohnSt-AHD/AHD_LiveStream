@@ -9,7 +9,7 @@ const ROWIT_ALTITUDE_BASES = [
     'https://l.rowit.nz/altitude',
     'https://rowit.nz/altitude',
 ];
-const DEFAULT_REGATTA_CODE = 'mads2026';
+const DEFAULT_REGATTA_CODE = 'nzmm2026';
 const CSV_POLL_INTERVAL_MS = 60_000;
 
 const CSV_FIELDS = [
@@ -57,7 +57,7 @@ function loadRegattaCode() {
         const raw = localStorage.getItem(LS_REGATTA_CODE);
         if (raw) {
             const c = normalizeRegattaCode(raw);
-            if (c) return c;
+            if (c && c !== 'mads2026') return c;
         }
     } catch {
         /* ignore */
@@ -73,7 +73,24 @@ function loadRegattaCode() {
     } catch {
         /* ignore */
     }
-    return '';
+    return DEFAULT_REGATTA_CODE;
+}
+
+function isCsvLike(text) {
+    const t = String(text || '')
+        .replace(/^\uFEFF/, '')
+        .trim();
+    if (t.length < 20 || !t.includes(',')) return false;
+    if (/^<!doctype html/i.test(t) || /<html[\s>]/i.test(t)) return false;
+    if (/nothing published/i.test(t)) return false;
+    return /event|race|day |competitor|lane_/i.test(t);
+}
+
+function localCsvPath(code, fileId) {
+    const c = normalizeRegattaCode(code);
+    const f = String(fileId || '').toLowerCase();
+    if (!c || !f) return '';
+    return `data/archives/${c}/latest/${f}.csv`;
 }
 
 function saveRegattaCode(code) {
@@ -156,8 +173,27 @@ async function checkCsvUrl(url) {
         const res = await fetch(trimmed, { method: 'GET', mode: 'cors' });
         const text = await res.text();
         return {
-            ok: res.ok && text.length > 0 && text.includes(','),
+            ok: res.ok && isCsvLike(text),
             status: res.status,
+            bytes: text.length,
+        };
+    } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    }
+}
+
+async function checkLocalCsv(code, fileId) {
+    const path = localCsvPath(code, fileId);
+    if (!path) return { ok: false };
+    try {
+        const res = await fetch(path);
+        if (!res.ok) return { ok: false, status: res.status };
+        const text = await res.text();
+        return {
+            ok: isCsvLike(text),
+            status: res.status,
+            bytes: text.length,
+            local: true,
         };
     } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
@@ -166,19 +202,38 @@ async function checkCsvUrl(url) {
 
 async function checkRow(row) {
     const url = row.dataset.csvUrl;
-    if (!url) return;
+    const fileId = row.dataset.csvId;
+    const code = getRegattaCode();
+    if (!url && !fileId) return;
     setStatus(row, 'pending', 'Checking…');
-    const result = await checkCsvUrl(url);
-    if (result.ok) {
-        setStatus(row, 'ok', `OK (${result.bytes ?? 'CSV'} bytes)`);
-    } else {
-        setStatus(
-            row,
-            'fail',
-            result.error || `HTTP ${result.status ?? 'error'}`,
-        );
+    const candidates = fileId ? buildCsvUrlCandidates(code, fileId) : [url];
+    let last = { ok: false };
+    for (const candidate of candidates.filter(Boolean)) {
+        last = await checkCsvUrl(candidate);
+        if (last.ok) {
+            setStatus(row, 'ok', `OK (${last.bytes ?? 'CSV'} bytes)`);
+            return last;
+        }
     }
-    return result;
+    const local = await checkLocalCsv(code, fileId);
+    if (local.ok) {
+        setStatus(row, 'ok', `Local copy (${local.bytes ?? 'CSV'} bytes)`);
+        return local;
+    }
+    const unpublished =
+        last.status === 404 ||
+        last.status === 200 ||
+        /not published|nothing published|HTTP 404/i.test(
+            String(last.error || last.status || ''),
+        );
+    setStatus(
+        row,
+        'fail',
+        unpublished
+            ? 'Not published yet'
+            : last.error || `HTTP ${last.status ?? 'error'}`,
+    );
+    return last;
 }
 
 function refreshCsvRows(code) {
@@ -224,6 +279,103 @@ function notifyUrlsChanged() {
     );
 }
 
+const ROWIT_CHANNEL = 'altitudehd-rowit';
+
+function notifyRowitReload(detail) {
+    document.dispatchEvent(new CustomEvent('altitudehd:rowit', { detail }));
+    try {
+        const ch = new BroadcastChannel(ROWIT_CHANNEL);
+        ch.postMessage({ action: 'reload', ...detail, t: Date.now() });
+        ch.close();
+    } catch {
+        /* ignore */
+    }
+}
+
+function formatAge(ms) {
+    if (!Number.isFinite(ms) || ms < 0) return '—';
+    if (ms < 1000) return 'just now';
+    if (ms < 60_000) return `${Math.round(ms / 1000)}s ago`;
+    return `${Math.round(ms / 60_000)}m ago`;
+}
+
+async function refreshRowitStatus() {
+    const el = document.getElementById('hubRowitCacheStatus');
+    const code = getRegattaCode();
+    if (!el) return;
+    if (!code) {
+        el.textContent = 'Enter a regatta code to download CSVs locally.';
+        return;
+    }
+    try {
+        const res = await fetch(`/api/rowit-cache?code=${encodeURIComponent(code)}`);
+        if (!res.ok) {
+            el.textContent = 'Local cache API not available — overlays still fetch RowIT live.';
+            return;
+        }
+        const data = await res.json();
+        const row = (data.codes || []).find((c) => c.code === code) || data.codes?.[0];
+        if (!row) {
+            el.textContent = `${code}: no local copies yet — will download on first overlay/schedule load.`;
+            return;
+        }
+        const bits = row.files
+            .filter((f) => f.cached)
+            .map((f) => `${f.fileId} ${formatAge(f.ageMs)}`);
+        el.textContent = bits.length
+            ? `Local (${data.storage || 'disk'}): ${bits.join(' · ')}`
+            : `${code}: waiting for first download.`;
+    } catch {
+        el.textContent = 'Could not read local RowIT cache status.';
+    }
+}
+
+async function updateResultsNow() {
+    const code = getRegattaCode();
+    const buttons = ['hubResultsRefresh', 'hubResultsRefreshBoard']
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+    if (!code) {
+        const el = document.getElementById('hubRowitCacheStatus');
+        if (el) el.textContent = 'Enter a regatta code first.';
+        return;
+    }
+    buttons.forEach((b) => {
+        b.disabled = true;
+        b.dataset.label = b.textContent;
+        b.textContent = 'Updating…';
+    });
+    try {
+        const res = await fetch('/api/rowit-cache', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'refresh',
+                code,
+                files: ['results', 'daysheet'],
+                force: true,
+            }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        notifyRowitReload({ code, files: data.files });
+        await refreshRowitStatus();
+        notifyUrlsChanged();
+    } catch (err) {
+        const el = document.getElementById('hubRowitCacheStatus');
+        if (el) {
+            el.textContent =
+                'Results update failed: ' +
+                (err instanceof Error ? err.message : 'unknown error');
+        }
+    } finally {
+        buttons.forEach((b) => {
+            b.disabled = false;
+            if (b.dataset.label) b.textContent = b.dataset.label;
+        });
+    }
+}
+
 window.AltitudeHdHub = {
     CSV_FIELDS,
     DEFAULT_REGATTA_CODE,
@@ -237,6 +389,9 @@ window.AltitudeHdHub = {
     getCsvUrls: collectValues,
     getCsvUrl,
     loadRegattaCode,
+    updateResultsNow,
+    isCsvLike,
+    localCsvPath,
 };
 
 /* ── Auto-poll state ──────────────────────────────────────────────── */
@@ -374,7 +529,13 @@ function initHubCsv() {
         refreshCsvRows(c);
         notifyUrlsChanged();
         if (c) {
+            fetch('/api/rowit-cache', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'watch', code: c }),
+            }).catch(() => {});
             list.querySelectorAll('.hub-csv-row').forEach((row) => checkRowWithTimestamp(row));
+            refreshRowitStatus();
         }
     };
 
@@ -393,20 +554,32 @@ function initHubCsv() {
                 await checkRowWithTimestamp(row);
             }
             checkAll.disabled = false;
+            refreshRowitStatus();
         });
     }
 
-    /* Auto-poll toggle */
     const pollToggle = document.getElementById('hubCsvPollToggle');
     if (pollToggle) {
         pollToggle.checked = loadPollSetting();
         pollToggle.addEventListener('change', () => syncPollToggle(pollToggle));
     }
 
+    for (const id of ['hubResultsRefresh', 'hubResultsRefreshBoard']) {
+        const btn = document.getElementById(id);
+        if (btn) btn.addEventListener('click', () => updateResultsNow());
+    }
+
     refreshCsvRows(code);
     if (code) {
         list.querySelectorAll('.hub-csv-row').forEach((row) => checkRowWithTimestamp(row));
+        fetch('/api/rowit-cache', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'watch', code }),
+        }).catch(() => {});
     }
+    refreshRowitStatus();
+    setInterval(refreshRowitStatus, 15000);
     notifyUrlsChanged();
 
     /* Start poll if saved as on */

@@ -143,7 +143,7 @@
         const p = params().get('regatta');
         if (p) return global.AltitudeHdHub?.normalizeRegattaCode?.(p) || p;
         if (global.AltitudeHdHub?.loadRegattaCode) return global.AltitudeHdHub.loadRegattaCode();
-        return 'mads2026';
+        return 'nzmm2026';
     }
 
     function getRaceParam() {

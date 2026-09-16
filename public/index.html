@@ -261,11 +261,11 @@
                         </a>
                     </li>
                     <li>
-                        <a class="hub-link-card" href="rowing-regatta.html?regatta=mads2026">
+                        <a class="hub-link-card" href="rowing-regatta.html?regatta=nzmm2026">
                             <span class="hub-link-icon" aria-hidden="true">🚣</span>
                             <span class="hub-link-text">
                                 <h3>Rowing Regatta dashboard</h3>
-                                <p>Flat-water regatta results, RowIT progression, club logos — Maadi 2026 and other RowIT regattas (GPS later).</p>
+                                <p>Flat-water regatta results, RowIT progression, club logos — NZ Masters 2026 and other RowIT regattas (GPS later).</p>
                             </span>
                             <span class="hub-link-arrow" aria-hidden="true">→</span>
                         </a>
@@ -671,7 +671,7 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                 <div class="hub-dashboard-sidebar">
                 <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
                     <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
-                    <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code> through this hub’s <code>/api/fetch-csv</code> proxy (needs internet). Tick auto-refresh to poll every 1 min, or use <strong>Update results now</strong> to pull immediately.</p>
+                    <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. Default this weekend is <code class="hub-csv-code-inline">nzmm2026</code> (NZ Masters). Until the daysheet is published, the race board uses the competitor names list. Daysheet and results refresh every <strong>1 min</strong> (use <strong>Update results now</strong> to pull immediately).</p>
                     <label class="hub-regatta-code-field">
                         <span class="hub-regatta-code-label">Regatta code</span>
                         <input
@@ -679,7 +679,7 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                             id="hubRegattaCode"
                             class="hub-regatta-code-input"
                             value=""
-                            placeholder="e.g. mads2026"
+                            placeholder="e.g. nzmm2026"
                             spellcheck="false"
                             autocomplete="off"
                             autocapitalize="off"
@@ -703,7 +703,7 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                     <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
                     <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
                     <ol class="hub-calendar-list" id="hubCalendarList">
-                        <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20">
+                        <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20" data-code="nzmm2026">
                             <span class="hub-calendar-dates">19–20 Sep 2026</span>
                             <span class="hub-calendar-name">New Zealand Master Rowing</span>
                         </li>

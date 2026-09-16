@@ -5,6 +5,16 @@ const ALLOWED_HOSTS = new Set([
     'www.rowit.nz',
 ]);
 
+function isCsvLike(text) {
+    const t = String(text || '')
+        .replace(/^\uFEFF/, '')
+        .trim();
+    if (t.length < 20 || !t.includes(',')) return false;
+    if (/^<!doctype html/i.test(t) || /<html[\s>]/i.test(t)) return false;
+    if (/nothing published/i.test(t)) return false;
+    return /event|race|day |competitor|lane_/i.test(t);
+}
+
 function isAllowedUrl(raw) {
     try {
         const u = new URL(String(raw).trim());
@@ -36,10 +46,7 @@ export default async function handler(req, res) {
             signal: AbortSignal.timeout(15000),
         });
         const text = await upstream.text();
-        const looksCsv =
-            upstream.ok &&
-            text.length > 0 &&
-            (text.includes(',') || text.toLowerCase().includes('event'));
+        const looksCsv = upstream.ok && isCsvLike(text);
 
         res.status(200).json({
             ok: looksCsv,

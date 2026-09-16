@@ -1,15 +1,19 @@
 /**
  * Rowing Regatta Dashboard — RowIT CSV results + World Rowing progression (2025+).
- * Default regatta: mads2026 (Maadi 2026 — RowIT daysheet + bundled results fallback).
+ * Default regatta: nzmm2026 (NZ Masters 2026 — programme + competitor names until daysheet/results publish).
  */
 (function () {
     function regattaCrewAthletes() {
         return window.RegattaCrewAthletes || null;
     }
 
-    const DEFAULT_REGATTA = 'mads2026';
+    const DEFAULT_REGATTA = 'nzmm2026';
     const ROWIT_CSV_BASES = ['https://l.rowit.nz/altitude', 'https://rowit.nz/altitude'];
     const LOCAL_REGATTA_CSV = {
+        nzmm2026: {
+            events: 'data/nzmm2026-events.csv',
+            competitors: 'data/nzmm2026-competitors.csv',
+        },
         mads2026: {
             daysheet: 'data/mads2026-daysheet.csv',
             results: 'data/mads2026-results.csv',
@@ -18,6 +22,11 @@
         nicc: { results: 'data/nicc-results.csv' },
     };
     const REGATTA_META = {
+        nzmm2026: {
+            name: 'NZ Masters Championships 2026',
+            location: 'Lake Karāpiro, Cambridge',
+            venue: 'NZ Masters',
+        },
         mads2026: {
             name: 'Maadi Regatta 2026',
             location: 'Lake Ruataniwha, Twizel',
@@ -138,9 +147,16 @@
 
     function parseRaceLabel(raw) {
         const s = String(raw || '').trim();
-        const withLetter = s.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-        if (withLetter) {
-            return { raceNum: parseInt(withLetter[1], 10), label: `${withLetter[1]} (${withLetter[2].toUpperCase()})` };
+        const withParen = s.match(/^(\d+)\s*\(([^)]*)\)\s*$/);
+        if (withParen) {
+            const inner = withParen[2].trim();
+            const letter = inner.match(/^[A-Za-z]$/);
+            return {
+                raceNum: parseInt(withParen[1], 10),
+                label: letter
+                    ? `${withParen[1]} (${letter[0].toUpperCase()})`
+                    : withParen[1],
+            };
         }
         const plain = s.match(/^(\d+)$/);
         if (plain) return { raceNum: parseInt(plain[1], 10), label: plain[1] };
@@ -181,6 +197,10 @@
             }
             lanes.sort((a, b) => a.lane - b.lane);
             if (lanes.length) return lanes;
+            const hasLaneCols = headerCols.some((h) =>
+                /^lane[_\s-]?\d+$/i.test((h || '').trim()),
+            );
+            if (!hasLaneCols) return [];
         }
         const lanes = [];
         for (let lane = 1; lane <= 9; lane++) {
@@ -1787,6 +1807,9 @@
         }
 
         state.races = daysheet ? parseDaysheet(daysheet) : [];
+        if (!state.races.length && competitors) {
+            state.races = parseDaysheet(competitors);
+        }
         state.results = results ? parseResults(results) : new Map();
         state.competitors = competitors ? parseCompetitors(competitors) : new Map();
         state.events = events ? parseEvents(events) : [];

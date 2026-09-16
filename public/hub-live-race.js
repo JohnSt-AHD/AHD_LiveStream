@@ -4,7 +4,7 @@
  */
 const LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
 const LS_LEADER_LANE = 'altitudeHdLeaderLane_v1';
-const DEFAULT_LIVE_RACE = '12';
+const DEFAULT_LIVE_RACE = '1';
 const DEFAULT_LEADER_LANE = 4;
 
 const liveRaceState = {

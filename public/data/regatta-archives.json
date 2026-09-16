@@ -3,6 +3,24 @@
   "snapshotDate": "2026-09-16",
   "configSource": "scripts/regatta-archive-codes.json",
   "regattas": {
+    "nzmm2026": {
+      "name": "NZ Masters Championships 2026",
+      "daily": ["2026-09-17"],
+      "latest": {
+        "events": "data/archives/nzmm2026/latest/events.csv",
+        "competitors": "data/archives/nzmm2026/latest/competitors.csv"
+      },
+      "files": {
+        "events": {
+          "sourceUrl": "local:nzmm2026-programme.csv",
+          "archivedAt": "2026-09-17T00:00:00.000Z"
+        },
+        "competitors": {
+          "sourceUrl": "local:nzmm2026-competitornames.csv",
+          "archivedAt": "2026-09-17T00:00:00.000Z"
+        }
+      }
+    },
     "mads2026": {
       "name": "Maadi Cup 2026",
       "daily": [

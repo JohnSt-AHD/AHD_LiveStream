@@ -70,7 +70,7 @@ function hubVmixUrl(page, graphic, race) {
     const code =
         window.AltitudeHdHub?.getRegattaCode?.() ||
         document.getElementById('hubRegattaCode')?.value ||
-        'mads2026';
+        'nzmm2026';
     const u = new URL(hubVmixBaseUrl(page));
     u.searchParams.set('g', graphic);
     u.searchParams.set('race', race || hubGetLiveRace());
@@ -203,7 +203,7 @@ function hubRenderVmixGuide() {
                 const u = new URL(hubVmixBaseUrl(page));
                 u.searchParams.set('dev', '1');
                 u.searchParams.set('g', 'd');
-                u.searchParams.set('regatta', document.getElementById('hubRegattaCode')?.value || 'mads2026');
+                u.searchParams.set('regatta', document.getElementById('hubRegattaCode')?.value || 'nzmm2026');
                 u.searchParams.set('race', race);
                 return `<a href="${u.href}" target="_blank" rel="noopener">${theme} layout editor</a>`;
             })

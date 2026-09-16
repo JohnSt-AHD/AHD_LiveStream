@@ -2,6 +2,7 @@
   "comment": "Regatta codes to snapshot daily from RowIT altitude feeds.",
   "updated": "2026-06-05",
   "regattas": [
+    { "code": "nzmm2026", "name": "NZ Masters Championships 2026", "snapshot": true, "startDate": "2026-09-19", "endDate": "2026-09-20" },
     { "code": "nzmm2025", "name": "NZ Masters Multi-lane 2025", "snapshot": true },
     { "code": "nicc2026", "name": "NICC 2026", "snapshot": true },
     { "code": "nzcc2026", "name": "NZ Club Champs 2026", "snapshot": true },

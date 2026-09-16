@@ -1,7 +1,7 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
  * Keys: d/l/r/t = play in · w = leader · x = CV leader (KRI/Karāpiro) · h = CV draw boats · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
- * URL: ?g=d  &race=12  &regatta=mads2026  (&autoplay=1 to run in on load)
+ * URL: ?g=d  &race=1  &regatta=nzmm2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
     t: 'title',
@@ -141,7 +141,7 @@ const vgState = {
     races: [],
     competitors: new Map(),
     results: new Map(),
-    regattaCode: 'mads2026',
+    regattaCode: 'nzmm2026',
     csvFingerprint: '',
 };
 
@@ -182,11 +182,15 @@ function vgParseDayHeader(line) {
 
 function vgParseRaceLabel(raw) {
     const s = String(raw || '').trim();
-    const withLetter = s.match(/^(\d+)\s*\(([A-Za-z])\)\s*$/);
-    if (withLetter) {
+    const withParen = s.match(/^(\d+)\s*\(([^)]*)\)\s*$/);
+    if (withParen) {
+        const inner = withParen[2].trim();
+        const letter = inner.match(/^[A-Za-z]$/);
         return {
-            raceNum: parseInt(withLetter[1], 10),
-            label: `${withLetter[1]} (${withLetter[2].toUpperCase()})`,
+            raceNum: parseInt(withParen[1], 10),
+            label: letter
+                ? `${withParen[1]} (${letter[0].toUpperCase()})`
+                : withParen[1],
         };
     }
     const plain = s.match(/^(\d+)$/);
@@ -234,6 +238,10 @@ function vgParseLanes(cols, headerCols) {
         }
         lanes.sort((a, b) => a.lane - b.lane);
         if (lanes.length) return lanes;
+        const hasLaneCols = headerCols.some((h) =>
+            /^lane[_\s-]?\d+$/i.test((h || '').trim()),
+        );
+        if (!hasLaneCols) return [];
     }
     const lanes = [];
     for (let lane = 1; lane <= 9; lane++) {
@@ -352,9 +360,9 @@ function vgGetRegattaCode() {
         return window.AltitudeHdHub.getRegattaCode();
     }
     try {
-        return localStorage.getItem('altitudeHdRegattaCode_v1') || 'mads2026';
+        return localStorage.getItem('altitudeHdRegattaCode_v1') || 'nzmm2026';
     } catch {
-        return 'mads2026';
+        return 'nzmm2026';
     }
 }
 
@@ -366,18 +374,100 @@ function vgGetCsvUrl(fileId) {
     return `https://l.rowit.nz/altitude/${code}/${fileId}.csv`;
 }
 
-async function vgFetchCsv(url) {
+function vgIsCsvLike(text) {
+    const t = String(text || '')
+        .replace(/^\uFEFF/, '')
+        .trim();
+    if (window.AltitudeHdHub?.isCsvLike) return window.AltitudeHdHub.isCsvLike(t);
+    if (t.length < 20 || !t.includes(',')) return false;
+    if (/^<!doctype html/i.test(t) || /<html[\s>]/i.test(t)) return false;
+    if (/nothing published/i.test(t)) return false;
+    return /event|race|day |competitor|lane_/i.test(t);
+}
+
+async function vgFetchCsvRaw(url) {
     try {
         const res = await fetch(
             `/api/fetch-csv?url=${encodeURIComponent(url)}`,
         );
-        if (res.ok) return res.text();
+        if (res.ok) {
+            const text = await res.text();
+            if (vgIsCsvLike(text)) return text;
+        }
     } catch {
         /* direct */
     }
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.text();
+    const text = await res.text();
+    if (!vgIsCsvLike(text)) throw new Error('Not a CSV');
+    return text;
+}
+
+async function vgFetchRegattaFile(fileId) {
+    const code = vgGetRegattaCode();
+    if (window.RegattaCsvArchive?.fetchRegattaCsv) {
+        try {
+            const text = await window.RegattaCsvArchive.fetchRegattaCsv(
+                code,
+                fileId,
+            );
+            if (vgIsCsvLike(text)) return text;
+        } catch {
+            /* local paths */
+        }
+    }
+    const urls = window.AltitudeHdHub?.buildCsvUrlCandidates
+        ? window.AltitudeHdHub.buildCsvUrlCandidates(code, fileId)
+        : [vgGetCsvUrl(fileId)];
+    if (fileId === 'daysheet' && window.AltitudeHdHub?.buildCsvUrlCandidates) {
+        urls.push(
+            ...window.AltitudeHdHub.buildCsvUrlCandidates(code, 'competitors'),
+        );
+    }
+    for (const url of urls) {
+        try {
+            const text = await vgFetchCsvRaw(url);
+            if (vgIsCsvLike(text)) return text;
+        } catch {
+            /* next */
+        }
+    }
+    const locals = [
+        window.AltitudeHdHub?.localCsvPath?.(code, fileId),
+        `data/archives/${code}/latest/${fileId}.csv`,
+        `data/${code}-${fileId}.csv`,
+    ].filter(Boolean);
+    if (fileId === 'daysheet') {
+        locals.push(
+            window.AltitudeHdHub?.localCsvPath?.(code, 'competitors'),
+            `data/archives/${code}/latest/competitors.csv`,
+            `data/${code}-competitors.csv`,
+        );
+    }
+    for (const path of [...new Set(locals)]) {
+        try {
+            const res = await fetch(path);
+            if (!res.ok) continue;
+            const text = await res.text();
+            if (vgIsCsvLike(text)) return text;
+        } catch {
+            /* next */
+        }
+    }
+    return '';
+}
+
+async function vgFetchCsv(url) {
+    if (window.RegattaCsvArchive?.fetchCsvUrl) {
+        try {
+            const text = await window.RegattaCsvArchive.fetchCsvUrl(url);
+            if (vgIsCsvLike(text)) return text;
+        } catch {
+            /* fallback */
+        }
+    }
+    return vgFetchCsvRaw(url);
 }
 
 async function vgLoadLookup() {
@@ -3624,9 +3714,9 @@ async function vgReload() {
     const [lookup, daysheetText, competitorsText, resultsText] =
         await Promise.all([
             vgLoadLookup(),
-            vgFetchCsv(vgGetCsvUrl('daysheet')),
-            vgFetchCsv(vgGetCsvUrl('competitors')).catch(() => ''),
-            vgFetchCsv(vgGetCsvUrl('results')).catch(() => ''),
+            vgFetchRegattaFile('daysheet'),
+            vgFetchRegattaFile('competitors'),
+            vgFetchRegattaFile('results'),
             vgLoadKriSponsorImages(),
         ]);
     const fingerprint = vgCsvFingerprint(daysheetText, competitorsText, resultsText);

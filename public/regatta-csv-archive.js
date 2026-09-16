@@ -97,8 +97,13 @@
     }
 
     function isCsvLike(text) {
-        const t = String(text || '').trim();
-        return t.length > 20 && t.includes(',') && !/nothing published/i.test(t);
+        const t = String(text || '')
+            .replace(/^\uFEFF/, '')
+            .trim();
+        if (t.length < 20 || !t.includes(',')) return false;
+        if (/^<!doctype html/i.test(t) || /<html[\s>]/i.test(t)) return false;
+        if (/nothing published/i.test(t)) return false;
+        return /event|race|day |competitor|lane_/i.test(t);
     }
 
     async function loadManifest() {
@@ -179,6 +184,18 @@
             }
         }
 
+        if (!range) {
+            try {
+                const text = await fetchText(archiveLatestPath(c, 'competitors'), {
+                    skipProxy: true,
+                });
+                range = parseDaysheetDateRange(text);
+                if (range) rangeSource = 'competitors';
+            } catch {
+                /* no archived competitors yet */
+            }
+        }
+
         const today = todayYmd();
         const phase = resolvePhase(today, range, c);
         const preferLive = phase === 'live-day' || phase === 'before' || phase === 'unknown';
@@ -251,6 +268,14 @@
             }
         }
 
+        if (fileId === 'daysheet') {
+            try {
+                return await fetchArchiveCsv(c, 'competitors');
+            } catch {
+                /* continue */
+            }
+        }
+
         throw new Error(`No archive for ${c}/${fileId} (tried ${tried.join(', ')})`);
     }
 
@@ -261,6 +286,13 @@
             try {
                 const text = await fetchText(url);
                 return { text, source: 'rowit-live', url };
+            } catch (err) {
+                lastErr = err;
+            }
+        }
+        if (fileId === 'daysheet') {
+            try {
+                return await fetchLiveCsv(code, 'competitors');
             } catch (err) {
                 lastErr = err;
             }

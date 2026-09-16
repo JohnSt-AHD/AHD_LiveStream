@@ -32,7 +32,7 @@ function loadRegattaCodeForOverlay() {
     } catch {
         /* ignore */
     }
-    return 'mads2026';
+    return 'nzmm2026';
 }
 
 function defaultCsvUrls() {
