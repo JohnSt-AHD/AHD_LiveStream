@@ -142,6 +142,7 @@ const vgState = {
     competitors: new Map(),
     results: new Map(),
     regattaCode: 'nzmm2026',
+    regattaTitle: '',
     csvFingerprint: '',
 };
 
@@ -351,6 +352,22 @@ function vgParseResults(text) {
         map.set(raceNum, { status: cols[5].trim(), placings });
     }
     return map;
+}
+
+function vgRegattaTitle() {
+    const named = String(vgState.regattaTitle || '').trim();
+    if (named) return named;
+    const code = String(vgState.regattaCode || vgGetRegattaCode() || '').trim();
+    return code ? code.toUpperCase() : '';
+}
+
+async function vgLoadRegattaTitle(code) {
+    const archive = window.RegattaCsvArchive;
+    if (archive?.getRegattaDisplayName) {
+        const name = await archive.getRegattaDisplayName(code);
+        if (name) return name;
+    }
+    return String(code || '').toUpperCase();
 }
 
 function vgGetRegattaCode() {
@@ -2663,7 +2680,7 @@ function vgRenderKarapiroTitle(layer, race) {
     root.appendChild(vgKpLogo(130));
     root.appendChild(vgEl('h1', 'kp-title-word', 'Karāpiro Rowing'));
     root.appendChild(
-        vgEl('p', 'kp-title-kicker', vgKpFestive() ? 'Christmas Regatta' : 'Lake Karāpiro'),
+        vgEl('p', 'kp-title-kicker', vgKpFestive() ? 'Christmas Regatta' : (vgRegattaTitle() || 'Lake Karāpiro')),
     );
     const metaBits = ['Lake Karāpiro', day, '2000m'].filter(Boolean);
     root.appendChild(vgEl('p', 'kp-title-meta', metaBits.join(' · ')));
@@ -2917,7 +2934,7 @@ function vgRenderTitle(layer, race) {
         vgRenderKarapiroTitle(layer, race);
         return;
     }
-    const code = vgState.regattaCode.toUpperCase();
+    const headline = vgRegattaTitle();
     const day = race
         ? vgFormatDayLabel(race.dayLabel)
         : vgState.races[0]
@@ -2926,7 +2943,7 @@ function vgRenderTitle(layer, race) {
     if (vgIsKriTheme()) {
         const shell = vgKriCreateShell();
         const panel = vgKriCreatePanel('title');
-        panel.appendChild(vgEl('h1', 'vg-title-code', code));
+        panel.appendChild(vgEl('h1', 'vg-title-code', headline));
         if (day) panel.appendChild(vgEl('p', 'vg-title-date', day));
         shell.appendChild(panel);
         layer.appendChild(shell);
@@ -2935,7 +2952,7 @@ function vgRenderTitle(layer, race) {
     if (vgIsMilfordTheme()) {
         vgAppendMilfordBoardChrome(layer, 'title');
     }
-    const codeEl = vgEl('h1', 'vg-title-code', code);
+    const codeEl = vgEl('h1', 'vg-title-code', headline);
     codeEl.dataset.vgLayout = 'title-code';
     layer.appendChild(codeEl);
     if (day) {
@@ -3741,17 +3758,21 @@ function vgCsvFingerprint(daysheetText, competitorsText, resultsText) {
 
 async function vgReload() {
     vgState.regattaCode = vgGetRegattaCode();
-    const [lookup, daysheetText, competitorsText, resultsText] =
+    const [lookup, daysheetText, competitorsText, resultsText, , regattaTitle] =
         await Promise.all([
             vgLoadLookup(),
             vgFetchRegattaFile('daysheet'),
             vgFetchRegattaFile('competitors'),
             vgFetchRegattaFile('results'),
             vgLoadKriSponsorImages(),
+            vgLoadRegattaTitle(vgState.regattaCode),
         ]);
     const fingerprint = vgCsvFingerprint(daysheetText, competitorsText, resultsText);
-    const changed = fingerprint !== vgState.csvFingerprint;
+    const changed =
+        fingerprint !== vgState.csvFingerprint ||
+        regattaTitle !== vgState.regattaTitle;
     vgState.csvFingerprint = fingerprint;
+    vgState.regattaTitle = regattaTitle;
     vgState.lookup = lookup;
     vgState.races = vgParseDaysheet(daysheetText);
     vgState.competitors = vgParseCompetitors(competitorsText);

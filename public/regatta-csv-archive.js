@@ -183,7 +183,14 @@
         return 'unknown';
     }
 
-    /** 1-min RowIT polling: only on known race days. Unknown dates keep polling. */
+    /** On-air name for the title graphic: `title`, else `name`, else the code. */
+    async function getRegattaDisplayName(code) {
+        const c = normalizeRegattaCode(code);
+        if (!c) return '';
+        const config = await loadRegattaConfig();
+        const entry = (config.regattas || []).find((r) => normalizeRegattaCode(r.code) === c);
+        return String(entry?.title || entry?.name || '').trim();
+    }
     async function isLiveCsvPollDay(code) {
         const schedule = await getRegattaSchedule(code);
         return schedule.phase === 'live-day' || schedule.phase === 'unknown';
@@ -401,6 +408,7 @@
         loadRegattaConfig,
         getRegattaSchedule,
         isLiveCsvPollDay,
+        getRegattaDisplayName,
         formatPollWindow,
         todayYmd,
         fetchRegattaCsv,

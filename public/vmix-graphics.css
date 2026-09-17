@@ -1269,10 +1269,13 @@ html.vg-preview .vg-stage {
 /* Title */
 [data-vmix-theme='kri'] .vg-kri-panel--title .vg-title-code {
     margin: 0;
-    font-size: 88px;
+    font-size: 72px;
     font-weight: 800;
-    line-height: 1;
+    line-height: 1.05;
     color: var(--kri-brand-white);
+    text-transform: none;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
 }
 
 [data-vmix-theme='kri'] .vg-kri-panel--title .vg-title-date {

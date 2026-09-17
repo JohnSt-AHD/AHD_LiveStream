@@ -837,7 +837,7 @@
         inner.appendChild(logoSvg(130, 1, festive()));
         inner.appendChild(el('div', 'kp-title-kicker', 'Karāpiro Rowing'));
         inner.appendChild(
-            el('h1', 'kp-title-word', festive() ? 'Christmas Regatta' : 'Lake Karāpiro'),
+            el('h1', 'kp-title-word', festive() ? 'Christmas Regatta' : (vgRegattaTitle() || 'Lake Karāpiro')),
         );
         const meta = el('div', 'kp-title-meta');
         const bits = ['Lake Karāpiro', dayLabel(race), '2000m'].filter(Boolean);
