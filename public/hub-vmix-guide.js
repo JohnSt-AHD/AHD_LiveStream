@@ -66,6 +66,59 @@ function hubGetLiveRace() {
     );
 }
 
+const LS_KP_FESTIVE = 'altitudeHdKpFestive_v1';
+const KP_CHRISTMAS = { start: '2026-12-11', end: '2026-12-13' };
+
+function hubTodayYmdNz() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Pacific/Auckland',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date());
+}
+
+function hubKpChristmasWindow() {
+    const today = hubTodayYmdNz();
+    return today >= KP_CHRISTMAS.start && today <= KP_CHRISTMAS.end;
+}
+
+function hubKpFestiveOn() {
+    const el = document.getElementById('hubKpFestive');
+    if (el) return el.checked;
+    try {
+        const ls = localStorage.getItem(LS_KP_FESTIVE);
+        if (ls === '1') return true;
+        if (ls === '0') return false;
+    } catch {
+        /* ignore */
+    }
+    return hubKpChristmasWindow();
+}
+
+function hubKpFestiveDefault() {
+    try {
+        const ls = localStorage.getItem(LS_KP_FESTIVE);
+        if (ls === '1') return true;
+        if (ls === '0') return false;
+    } catch {
+        /* ignore */
+    }
+    return hubKpChristmasWindow();
+}
+
+function hubSyncKpFestiveUi() {
+    const on = hubKpFestiveOn();
+    const hint = document.getElementById('hubKpFestiveHint');
+    if (hint) {
+        hint.textContent = on
+            ? 'On — snow, candy bars, and Christmas copy. vMix URLs include festive=1.'
+            : 'Off for general use. Turns on for the KRI Christmas Regatta (11–13 Dec), or tick to preview.';
+    }
+    const card = document.querySelector('.hub-link-card--karapiro .hub-link-icon');
+    if (card) card.textContent = on ? '🎄' : '🚣';
+}
+
 function hubVmixUrl(page, graphic, race) {
     const code =
         window.AltitudeHdHub?.getRegattaCode?.() ||
@@ -85,6 +138,7 @@ function hubVmixUrl(page, graphic, race) {
         const typed = document.getElementById('hubCvServerUrl')?.value?.trim();
         if (typed) cv = typed.replace(/\/+$/, '');
         u.searchParams.set('cvLaptop', cv);
+        u.searchParams.set('festive', hubKpFestiveOn() ? '1' : '0');
     }
     return u.href;
 }
@@ -238,7 +292,26 @@ function hubBindVmixTriggerButtons() {
     });
 }
 
+function hubBindKpFestiveToggle() {
+    const toggle = document.getElementById('hubKpFestive');
+    if (!toggle || toggle.dataset.bound === '1') return;
+    toggle.dataset.bound = '1';
+    toggle.checked = hubKpFestiveDefault();
+    toggle.addEventListener('change', () => {
+        try {
+            localStorage.setItem(LS_KP_FESTIVE, toggle.checked ? '1' : '0');
+        } catch {
+            /* ignore */
+        }
+        hubSyncKpFestiveUi();
+        hubRenderVmixGuide();
+        hubUpdateVmixLinkCards();
+    });
+    hubSyncKpFestiveUi();
+}
+
 function initHubVmixGuide() {
+    hubBindKpFestiveToggle();
     hubRenderVmixGuide();
     hubUpdateVmixLinkCards();
     hubBindVmixTriggerButtons();

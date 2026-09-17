@@ -1674,7 +1674,7 @@
         row3.appendChild(prev);
         row3.appendChild(lab);
         row3.appendChild(next);
-        row3.appendChild(el('span', 'kp-sponsor-label', 'vMix: ?g=title,lower · ?live=1 hides keys'));
+        row3.appendChild(el('span', 'kp-sponsor-label', 'vMix: ?g=title,lower · ?live=1 hides keys · ?festive=1 Christmas'));
         root.appendChild(row3);
         document.querySelector('.vg-stage')?.appendChild(root);
         paintOps();

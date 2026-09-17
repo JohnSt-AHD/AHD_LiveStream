@@ -435,8 +435,18 @@ button.hub-stat:hover .hub-stat-value {
 .hub-schedule-lead,
 .hub-live-race-lead,
 .hub-vmix-guide-lead,
-.hub-archive-lead {
+.hub-archive-lead,
+.hub-kp-festive {
     color: var(--hub-mute);
+}
+
+.hub-kp-festive {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin: 12px 0 0;
+    font-size: 13px;
 }
 
 .hub-csv-code-inline,

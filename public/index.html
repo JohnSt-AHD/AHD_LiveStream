@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=14">
+    <link rel="stylesheet" href="hub-landing.css?v=15">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -194,7 +194,7 @@
                 <ul class="hub-links hub-links--vmix hub-links--product">
                     <li>
                         <a class="hub-link-card hub-link-card--vmix hub-link-card--karapiro" data-vmix-page="vmix-karapiro.html" data-vmix-graphic="l" href="vmix-karapiro.html?g=l">
-                            <span class="hub-link-icon" aria-hidden="true">🎄</span>
+                            <span class="hub-link-icon" aria-hidden="true">🚣</span>
                             <span class="hub-link-text">
                                 <h3>Karāpiro (Ged)</h3>
                                 <p>Ged-style boards from the daysheet. Tracker, live track, leader, and CV bugs use local Rowing CV when it is running on this PC.</p>
@@ -225,6 +225,13 @@
                         </a>
                     </li>
                 </ul>
+                <p class="hub-kp-festive">
+                    <label class="hub-csv-poll-toggle">
+                        <input type="checkbox" id="hubKpFestive">
+                        <span>Karāpiro Christmas look (snow &amp; candy bars)</span>
+                    </label>
+                    <span class="hub-csv-poll-label" id="hubKpFestiveHint">Off for general use. Turns on for the KRI Christmas Regatta (11–13 Dec), or tick to preview.</span>
+                </p>
             </section>
 
             <section class="hub-panel" aria-labelledby="hub-live-title">
@@ -690,13 +697,13 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                     <div class="hub-csv-actions">
                         <label class="hub-csv-poll-toggle">
                             <input type="checkbox" id="hubCsvPollToggle">
-                            <span>Auto-poll every 60s</span>
+                            <span>Auto-poll every 60s on race days</span>
                         </label>
                         <span class="hub-csv-poll-label" id="hubCsvPollLabel">Auto-poll OFF</span>
                         <button type="button" class="hub-btn" id="hubCsvCheckAll">Check all links</button>
                         <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefresh">Update results now</button>
                     </div>
-                    <p class="hub-csv-cache" id="hubRowitCacheStatus">Local copies download on first load, then refresh every 1 min.</p>
+                    <p class="hub-csv-cache" id="hubRowitCacheStatus">Local copies download on first load. 1-min RowIT refresh runs on race days only (19–20 Sep).</p>
                 </section>
 
                 <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
@@ -761,7 +768,7 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                         </label>
                         <label class="hub-clock-refresh">
                             <input type="checkbox" id="hubAutoRefresh" checked>
-                            Auto-refresh daysheet &amp; results every 1 min
+                            Auto-refresh daysheet &amp; results every 1 min on race days
                         </label>
                         <button type="button" class="hub-btn hub-btn--primary" id="hubResultsRefreshBoard">Update results now</button>
                     </div>
@@ -877,12 +884,12 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
-    <script src="hub-csv.js"></script>
-    <script src="regatta-csv-archive.js"></script>
+    <script src="hub-csv.js?v=2"></script>
+    <script src="regatta-csv-archive.js?v=2"></script>
     <script src="hub-live-race.js"></script>
     <script src="hub-calendar.js"></script>
-    <script src="hub-regatta.js"></script>
-    <script src="hub-vmix-guide.js"></script>
+    <script src="hub-regatta.js?v=2"></script>
+    <script src="hub-vmix-guide.js?v=2"></script>
     <script src="hub-race-record.js"></script>
     <script src="https://accounts.google.com/gsi/client" async></script>
     <script src="hub-archive-sheet-search.js?v=2"></script>

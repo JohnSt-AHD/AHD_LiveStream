@@ -1,6 +1,7 @@
 /**
  * RowIT CSV fetch with local archive fallback (public/data/archives/{code}/).
  * Past regattas: archive first. On regatta days: RowIT live first.
+ * 1-min live polling runs only on startDate–endDate (Pacific/Auckland).
  */
 (function (global) {
     const MANIFEST_URL = 'data/regatta-archives.json';
@@ -31,6 +32,8 @@
             .replace(/[^a-z0-9_-]/g, '');
     }
 
+    const NZ_TZ = 'Pacific/Auckland';
+
     function ymdLocal(d) {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -39,7 +42,32 @@
     }
 
     function todayYmd() {
-        return ymdLocal(new Date());
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: NZ_TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(new Date());
+    }
+
+    function formatPollWindow(range) {
+        if (!range?.start || !range?.end) return '';
+        const fmt = (ymd) => {
+            const [y, m, d] = String(ymd).split('-').map(Number);
+            if (!y || !m || !d) return String(ymd);
+            return new Intl.DateTimeFormat('en-NZ', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                timeZone: 'UTC',
+            }).format(new Date(Date.UTC(y, m - 1, d)));
+        };
+        if (range.start === range.end) return fmt(range.start);
+        if (range.start.slice(0, 7) === range.end.slice(0, 7)) {
+            const d1 = parseInt(range.start.slice(8), 10);
+            return `${d1}–${fmt(range.end)}`;
+        }
+        return `${fmt(range.start)} – ${fmt(range.end)}`;
     }
 
     function parseDayHeader(line) {
@@ -148,11 +176,17 @@
         }
         const yr = yearFromCode(code);
         if (yr != null) {
-            const curYear = new Date().getFullYear();
+            const curYear = parseInt(todayYmd().slice(0, 4), 10);
             if (curYear > yr) return 'past';
             if (curYear < yr) return 'before';
         }
         return 'unknown';
+    }
+
+    /** 1-min RowIT polling: only on known race days. Unknown dates keep polling. */
+    async function isLiveCsvPollDay(code) {
+        const schedule = await getRegattaSchedule(code);
+        return schedule.phase === 'live-day' || schedule.phase === 'unknown';
     }
 
     /**
@@ -366,6 +400,9 @@
         loadManifest,
         loadRegattaConfig,
         getRegattaSchedule,
+        isLiveCsvPollDay,
+        formatPollWindow,
+        todayYmd,
         fetchRegattaCsv,
         fetchArchiveCsv,
         fetchCsvUrl,

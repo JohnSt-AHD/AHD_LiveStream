@@ -1858,6 +1858,11 @@
         if (!state.liveRefresh) return;
         liveRefreshTimer = setInterval(async () => {
             if (state.loading) return;
+            const archive = window.RegattaCsvArchive;
+            if (archive?.isLiveCsvPollDay) {
+                const live = await archive.isLiveCsvPollDay(state.regattaCode);
+                if (!live) return;
+            }
             state.loading = true;
             try {
                 await applyRegattaPayload(state.regattaCode, {

@@ -422,9 +422,38 @@ async function checkRowWithTimestamp(row) {
     return result;
 }
 
+async function csvPollWindowHint(code) {
+    const archive = window.RegattaCsvArchive;
+    if (!archive?.getRegattaSchedule) return '';
+    try {
+        const schedule = await archive.getRegattaSchedule(code);
+        if (schedule.phase === 'live-day' || schedule.phase === 'unknown') return '';
+        const windowLabel =
+            archive.formatPollWindow?.(schedule.range) ||
+            (schedule.range?.start && schedule.range?.end
+                ? `${schedule.range.start} – ${schedule.range.end}`
+                : '');
+        return windowLabel ? ` — waiting until ${windowLabel}` : ' — waiting until race day';
+    } catch {
+        return '';
+    }
+}
+
 async function pollAllCsvs() {
     const list = document.getElementById('hubCsvList');
     if (!list) return;
+    const archive = window.RegattaCsvArchive;
+    if (archive?.isLiveCsvPollDay) {
+        const live = await archive.isLiveCsvPollDay(getRegattaCode());
+        if (!live) {
+            const label = document.getElementById('hubCsvPollLabel');
+            if (label) {
+                const hint = await csvPollWindowHint(getRegattaCode());
+                label.textContent = `Auto-poll ON${hint}`;
+            }
+            return;
+        }
+    }
     for (const row of list.querySelectorAll('.hub-csv-row')) {
         await checkRowWithTimestamp(row);
     }
@@ -457,15 +486,20 @@ function stopCsvPoll() {
     }
 }
 
-function syncPollToggle(toggle) {
+async function syncPollToggle(toggle) {
     if (!toggle) return;
     const on = toggle.checked;
     savePollSetting(on);
     const label = document.getElementById('hubCsvPollLabel');
     if (label) {
-        label.textContent = on
-            ? `Auto-poll ON — checking every ${CSV_POLL_INTERVAL_MS / 1000}s`
-            : 'Auto-poll OFF';
+        if (!on) {
+            label.textContent = 'Auto-poll OFF';
+        } else {
+            const hint = await csvPollWindowHint(getRegattaCode());
+            label.textContent = hint
+                ? `Auto-poll ON${hint}`
+                : `Auto-poll ON — checking every ${CSV_POLL_INTERVAL_MS / 1000}s`;
+        }
     }
     if (on) {
         startCsvPoll();

@@ -909,7 +909,7 @@ function vgEnableBrowserPreview() {
     vgFitPreviewStage();
     window.addEventListener('resize', vgFitPreviewStage);
     document.addEventListener('click', (e) => {
-        if (e.target.closest('.vg-layout-panel, .kp-ops, input, textarea, select, a, button')) {
+        if (e.target.closest('.vg-layout-panel, .kp-ops, input, textarea, select, a, button, [data-kp-festive]')) {
             return;
         }
         const raw = new URLSearchParams(location.search).get('g') || 'l';
@@ -2566,9 +2566,39 @@ function vgKriCreateLowerSponsorBox() {
     return box;
 }
 
+const VG_KP_FESTIVE_LS = 'altitudeHdKpFestive_v1';
+const VG_KP_CHRISTMAS = { start: '2026-12-11', end: '2026-12-13' };
+
+function vgKpTodayYmdNz() {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Pacific/Auckland',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date());
+}
+
+function vgKpChristmasWindow() {
+    const today = vgKpTodayYmdNz();
+    return today >= VG_KP_CHRISTMAS.start && today <= VG_KP_CHRISTMAS.end;
+}
+
+/** Snow, candy bars, Santa hat: off for general use; on for Christmas weekend or ?festive=1. */
 function vgKpFestive() {
     const p = new URLSearchParams(location.search);
-    return p.get('festive') !== '0';
+    const q = String(p.get('festive') || '')
+        .trim()
+        .toLowerCase();
+    if (q === '0' || q === 'false' || q === 'off' || q === 'no') return false;
+    if (q === '1' || q === 'true' || q === 'on' || q === 'yes') return true;
+    try {
+        const ls = localStorage.getItem(VG_KP_FESTIVE_LS);
+        if (ls === '0') return false;
+        if (ls === '1') return true;
+    } catch {
+        /* ignore */
+    }
+    return vgKpChristmasWindow();
 }
 
 function vgKpRaceChip(race) {
@@ -3808,6 +3838,11 @@ async function vgInit() {
 
     setInterval(async () => {
         try {
+            const archive = window.RegattaCsvArchive;
+            if (archive?.isLiveCsvPollDay) {
+                const live = await archive.isLiveCsvPollDay(vgGetRegattaCode());
+                if (!live) return;
+            }
             const changed = await vgReload();
             if (changed && !vgIsLayoutDevMode()) {
                 vgRefreshHoldContent();

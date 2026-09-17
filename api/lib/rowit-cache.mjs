@@ -37,6 +37,40 @@ export function normalizeRegattaCode(raw) {
         .replace(/[^a-z0-9_-]/g, '');
 }
 
+const NZ_TZ = 'Pacific/Auckland';
+const ARCHIVE_CODES_PATH = join(ROOT, 'public', 'data', 'regatta-archive-codes.json');
+let archiveCodesCache = null;
+
+export function todayYmdNz(d = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: NZ_TZ,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(d);
+}
+
+function loadArchiveCodes() {
+    if (archiveCodesCache) return archiveCodesCache;
+    try {
+        archiveCodesCache = JSON.parse(readFileSync(ARCHIVE_CODES_PATH, 'utf8'));
+    } catch {
+        archiveCodesCache = { regattas: [] };
+    }
+    return archiveCodesCache;
+}
+
+/** Codes with startDate/endDate only poll on those NZ calendar days. No dates = always poll. */
+export function isLiveCsvPollDay(code) {
+    const c = normalizeRegattaCode(code);
+    const entry = (loadArchiveCodes().regattas || []).find(
+        (r) => normalizeRegattaCode(r.code) === c,
+    );
+    if (!entry?.startDate || !entry?.endDate) return true;
+    const today = todayYmdNz();
+    return today >= entry.startDate && today <= entry.endDate;
+}
+
 export function parseRowitUrl(raw) {
     try {
         const u = new URL(String(raw || '').trim());
@@ -263,7 +297,7 @@ export async function refreshCode(code, files = ROWIT_FILES, opts = {}) {
 }
 
 export async function refreshWatched(opts = {}) {
-    const codes = watchedCodes();
+    const codes = watchedCodes().filter((c) => isLiveCsvPollDay(c));
     const out = [];
     for (const code of codes) {
         out.push(await refreshCode(code, ROWIT_FILES, opts));
@@ -314,7 +348,9 @@ export async function serveCachedCsv(targetUrl, { force = false } = {}) {
     const cached = readEntry(parsed.code, parsed.fileId);
     if (cached && isCsvLike(cached.text)) {
         const ageMs = Date.now() - cached.updatedAt;
-        if (ageMs >= STALE_MS) refreshBackground(parsed.code, parsed.fileId);
+        if (ageMs >= STALE_MS && isLiveCsvPollDay(parsed.code)) {
+            refreshBackground(parsed.code, parsed.fileId);
+        }
         return {
             text: cached.text,
             meta: {

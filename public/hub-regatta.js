@@ -665,14 +665,23 @@ function syncFixedInputsDisabled() {
     if (fixedTime) fixedTime.disabled = !fixed;
 }
 
+async function isCsvPollLiveDay() {
+    const archive = window.RegattaCsvArchive;
+    if (!archive?.isLiveCsvPollDay) return true;
+    const code = window.AltitudeHdHub?.getRegattaCode?.() || 'nzmm2026';
+    return archive.isLiveCsvPollDay(code);
+}
+
 function setupRefreshTimer() {
     if (boardState.refreshTimer) {
         clearInterval(boardState.refreshTimer);
         boardState.refreshTimer = null;
     }
-    if (boardState.settings.autoRefresh) {
-        boardState.refreshTimer = setInterval(() => reloadData(), 60_000);
-    }
+    if (!boardState.settings.autoRefresh) return;
+    boardState.refreshTimer = setInterval(async () => {
+        if (!(await isCsvPollLiveDay())) return;
+        reloadData();
+    }, 60_000);
 }
 
 function setupTickTimer() {
