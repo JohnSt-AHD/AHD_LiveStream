@@ -633,7 +633,9 @@
     function parseClubFromCrew(crew) {
         const s = String(crew || '').trim();
         if (!s) return { id: '', label: '', isComposite: false };
-        const m = s.match(/^([A-Za-z]{2,5})(\*?)(?:\s+(\d+))?$/);
+        const ageM = s.match(/^(.*?)\s*\(([A-Za-z])\*?\)\s*$/);
+        const core = (ageM ? ageM[1] : s).trim();
+        const m = core.match(/^([A-Za-z]{2,6})(\*?)(?:\s+(\d+))?$/);
         if (m) return { id: m[1].toLowerCase(), label: s, crewNum: m[3] || '', isComposite: m[2] === '*' };
         return { id: '', label: s, isComposite: s.includes('*') };
     }

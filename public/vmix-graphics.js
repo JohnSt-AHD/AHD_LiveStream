@@ -319,11 +319,13 @@ function vgParseCompetitors(text) {
         const info = vgParseRaceLabel(cols[0]);
         if (!info.raceNum) continue;
         const division = cols[5] ? cols[5].trim() : '';
-        const key = `${info.label}|${division}`;
+        const eventNum = cols[2] ? cols[2].trim() : '';
+        const key = `${info.label}|${division}|${eventNum}`;
         map.set(key, {
             race: info.label,
             raceNum: info.raceNum,
             division,
+            eventNum,
             names: cols[6] ? cols[6].trim() : '',
         });
     }
@@ -402,6 +404,10 @@ function vgIsCsvLike(text) {
     return /event|race|day |competitor|lane_/i.test(t);
 }
 
+function vgHasLaneColumns(text) {
+    return /(?:^|,)lane[_\s-]?\d+/im.test(String(text || ''));
+}
+
 async function vgFetchCsvRaw(url) {
     try {
         const res = await fetch(
@@ -421,15 +427,23 @@ async function vgFetchCsvRaw(url) {
     return text;
 }
 
+function vgAcceptRegattaFile(fileId, text) {
+    if (!vgIsCsvLike(text)) return false;
+    if (fileId === 'daysheet' && !vgHasLaneColumns(text)) return false;
+    return true;
+}
+
 async function vgFetchRegattaFile(fileId) {
     const code = vgGetRegattaCode();
+    let namesOnly = '';
     if (window.RegattaCsvArchive?.fetchRegattaCsv) {
         try {
             const text = await window.RegattaCsvArchive.fetchRegattaCsv(
                 code,
                 fileId,
             );
-            if (vgIsCsvLike(text)) return text;
+            if (vgAcceptRegattaFile(fileId, text)) return text;
+            if (fileId === 'daysheet' && vgIsCsvLike(text)) namesOnly = text;
         } catch {
             /* local paths */
         }
@@ -437,26 +451,24 @@ async function vgFetchRegattaFile(fileId) {
     const urls = window.AltitudeHdHub?.buildCsvUrlCandidates
         ? window.AltitudeHdHub.buildCsvUrlCandidates(code, fileId)
         : [vgGetCsvUrl(fileId)];
-    if (fileId === 'daysheet' && window.AltitudeHdHub?.buildCsvUrlCandidates) {
-        urls.push(
-            ...window.AltitudeHdHub.buildCsvUrlCandidates(code, 'competitors'),
-        );
-    }
     for (const url of urls) {
         try {
             const text = await vgFetchCsvRaw(url);
-            if (vgIsCsvLike(text)) return text;
+            if (vgAcceptRegattaFile(fileId, text)) return text;
+            if (fileId === 'daysheet' && vgIsCsvLike(text) && !namesOnly) namesOnly = text;
         } catch {
             /* next */
         }
     }
     const locals = [
+        `data/rowit-live/${code}/${fileId}.csv`,
         window.AltitudeHdHub?.localCsvPath?.(code, fileId),
         `data/archives/${code}/latest/${fileId}.csv`,
         `data/${code}-${fileId}.csv`,
     ].filter(Boolean);
     if (fileId === 'daysheet') {
         locals.push(
+            `data/rowit-live/${code}/competitors.csv`,
             window.AltitudeHdHub?.localCsvPath?.(code, 'competitors'),
             `data/archives/${code}/latest/competitors.csv`,
             `data/${code}-competitors.csv`,
@@ -467,12 +479,13 @@ async function vgFetchRegattaFile(fileId) {
             const res = await fetch(path);
             if (!res.ok) continue;
             const text = await res.text();
-            if (vgIsCsvLike(text)) return text;
+            if (vgAcceptRegattaFile(fileId, text)) return text;
+            if (fileId === 'daysheet' && vgIsCsvLike(text) && !namesOnly) namesOnly = text;
         } catch {
             /* next */
         }
     }
-    return '';
+    return namesOnly;
 }
 
 async function vgFetchCsv(url) {
@@ -514,17 +527,34 @@ function vgExpandEventName(eventType, lookup) {
 }
 
 function vgParseClubCode(raw) {
-    const m = String(raw || '').trim().match(/^([A-Za-z]+)(?:\s+(\d+))?$/);
-    if (!m) return { id: '', crewNum: '' };
-    return { id: m[1].toLowerCase(), crewNum: m[2] || '' };
+    const s = String(raw || '').trim();
+    if (!s) return { id: '', crewNum: '', age: '', composite: false };
+    const ageM = s.match(/^(.*?)\s*\(([A-Za-z])\*?\)\s*$/);
+    const core = (ageM ? ageM[1] : s).trim();
+    const age = ageM ? ageM[2].toUpperCase() : '';
+    const m = core.match(/^([A-Za-z]{2,6})(\*?)(?:\s+(\d+))?$/);
+    if (!m) return { id: '', crewNum: '', age, composite: /\*/.test(s) };
+    return {
+        id: m[1].toLowerCase(),
+        crewNum: m[3] || '',
+        age,
+        composite: m[2] === '*',
+    };
 }
 
 function vgClubInfo(clubId, lookup) {
-    if (!clubId || !lookup?.clubs) {
-        return { name: clubId.toUpperCase(), logoUrl: null };
+    const raw = String(clubId || '')
+        .toLowerCase()
+        .replace(/\*+$/, '');
+    if (!raw) return { name: '', logoUrl: null };
+    const clubs = lookup?.clubs;
+    if (!clubs) return { name: raw.toUpperCase(), logoUrl: null };
+    let c = clubs[raw];
+    if (!c && raw.length <= 3) {
+        const hits = Object.keys(clubs).filter((k) => k !== 'comp' && k.startsWith(raw));
+        if (hits.length) c = clubs[hits[0]];
     }
-    const c = lookup.clubs[clubId];
-    if (!c) return { name: clubId.toUpperCase(), logoUrl: null };
+    if (!c) return { name: raw.toUpperCase(), logoUrl: null };
     const logoUrl = c.logo
         ? `assets/school-logos/${encodeURIComponent(c.logo)}`
         : null;
@@ -809,25 +839,31 @@ function vgRefreshLiveRaceContent() {
 }
 
 function vgCompetitorNames(race, lane) {
-    const divisions = [];
-    if (lane?.code) {
-        const club = vgParseClubCode(lane.code);
-        if (club.crewNum) divisions.push(club.crewNum);
-        if (lane.lane) divisions.push(String(lane.lane));
-    }
-    if (race.division) divisions.push(race.division);
-    divisions.push('');
+    if (!vgState.competitors?.size) return '';
+    const club = vgParseClubCode(lane?.code);
+    const wantedDivs = [];
+    if (club.crewNum) wantedDivs.push(String(club.crewNum));
+    if (lane?.lane) wantedDivs.push(String(lane.lane));
+    if (race?.division) wantedDivs.push(String(race.division));
 
-    for (const div of divisions) {
-        const row = vgState.competitors.get(`${race.race}|${div}`);
-        if (row?.names) return row.names;
-    }
-    for (const [, v] of vgState.competitors) {
-        if (v.raceNum === race.raceNum && (!lane || v.division === String(lane.lane))) {
-            return v.names;
+    let byEvent = '';
+    let byLaneDiv = '';
+    let byRace = '';
+    for (const v of vgState.competitors.values()) {
+        if (!v?.names) continue;
+        const sameRace =
+            v.raceNum === race.raceNum ||
+            (v.race && race.race && v.race === race.race);
+        if (!sameRace) continue;
+        if (race.eventNum && v.eventNum && String(v.eventNum) === String(race.eventNum)) {
+            byEvent = v.names;
         }
+        if (lane && wantedDivs.includes(String(v.division))) {
+            byLaneDiv = v.names;
+        }
+        if (v.race === race.race || !byRace) byRace = v.names;
     }
-    return '';
+    return byEvent || byLaneDiv || byRace || '';
 }
 
 function vgFormatTime(d) {

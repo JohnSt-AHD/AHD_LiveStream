@@ -309,15 +309,11 @@
             }
         }
 
-        if (fileId === 'daysheet') {
-            try {
-                return await fetchArchiveCsv(c, 'competitors');
-            } catch {
-                /* continue */
-            }
-        }
-
         throw new Error(`No archive for ${c}/${fileId} (tried ${tried.join(', ')})`);
+    }
+
+    function hasLaneColumns(text) {
+        return /(?:^|,)lane[_\s-]?\d+/im.test(String(text || ''));
     }
 
     async function fetchLiveCsv(code, fileId) {
@@ -327,13 +323,6 @@
             try {
                 const text = await fetchText(url);
                 return { text, source: 'rowit-live', url };
-            } catch (err) {
-                lastErr = err;
-            }
-        }
-        if (fileId === 'daysheet') {
-            try {
-                return await fetchLiveCsv(code, 'competitors');
             } catch (err) {
                 lastErr = err;
             }
@@ -370,6 +359,14 @@
      * @param {string} fileId - events | daysheet | results | competitors
      * @param {{ legacyPath?: string, preferLive?: boolean }} [options]
      */
+    async function fetchCompetitorsFallback(code) {
+        try {
+            return await fetchLiveCsv(code, 'competitors');
+        } catch {
+            return fetchArchiveCsv(code, 'competitors');
+        }
+    }
+
     async function fetchRegattaCsv(code, fileId, options = {}) {
         const c = normalizeRegattaCode(code);
         const file = String(fileId || '').toLowerCase();
@@ -379,11 +376,30 @@
         const liveFn = () => fetchLiveCsv(c, file);
         const archiveFn = () => fetchArchiveCsv(c, file);
 
-        const result = preferLive
-            ? await fetchWithFallback(liveFn, archiveFn, options.legacyPath)
-            : await fetchWithFallback(archiveFn, liveFn, options.legacyPath);
+        let result;
+        try {
+            result = preferLive
+                ? await fetchWithFallback(liveFn, archiveFn, options.legacyPath)
+                : await fetchWithFallback(archiveFn, liveFn, options.legacyPath);
+        } catch (err) {
+            if (file === 'daysheet') {
+                const names = await fetchCompetitorsFallback(c);
+                return names.text != null ? names.text : names;
+            }
+            throw err;
+        }
 
-        return result.text != null ? result.text : result;
+        const text = result.text != null ? result.text : result;
+        if (file === 'daysheet' && !hasLaneColumns(text)) {
+            try {
+                const other = preferLive ? await archiveFn() : await liveFn();
+                const otherText = other.text != null ? other.text : other;
+                if (hasLaneColumns(otherText)) return otherText;
+            } catch {
+                /* keep names-only until a lane daysheet exists */
+            }
+        }
+        return text;
     }
 
     /** Fetch by full RowIT URL (hub schedule board). */
@@ -416,5 +432,6 @@
         fetchCsvUrl,
         fetchText,
         isCsvLike,
+        hasLaneColumns,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

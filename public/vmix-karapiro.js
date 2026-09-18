@@ -649,7 +649,16 @@
         const club = clubOf(lane.code);
         const { n, cox } = boatClass(race);
         const labels = seatLabels(n);
-        const parsed = splitNames(vgCompetitorNames(race, lane));
+        const perCrew = n + (cox ? 1 : 0);
+        const filled = lanes;
+        const idx = filled.findIndex((l) => l.lane === lane.lane);
+        const allNames = splitNames(vgCompetitorNames(race, lane));
+        let parsed = allNames;
+        if (idx >= 0 && perCrew > 0 && allNames.length >= filled.length * perCrew) {
+            parsed = allNames.slice(idx * perCrew, (idx + 1) * perCrew);
+        } else if (allNames.length === perCrew) {
+            parsed = allNames;
+        }
         const seats = labels.map((seat, i) => ({
             seat,
             name: parsed[i] || fakeName(race.raceNum || 0, laneNum, i),
