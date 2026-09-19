@@ -56,6 +56,8 @@
 
     let lastFrameTs = 0;
 
+    let staleTicks = 0;
+
 
 
     function params() {
@@ -730,11 +732,15 @@
 
             if (!data || data.stale) {
 
-                root.classList.add('kri-cv-draw--stale');
+                staleTicks += 1;
+
+                if (staleTicks >= 3) root.classList.add('kri-cv-draw--stale');
 
                 return;
 
             }
+
+            staleTicks = 0;
 
             root.classList.remove('kri-cv-draw--stale');
 
@@ -742,7 +748,9 @@
 
         } catch {
 
-            root.classList.add('kri-cv-draw--stale');
+            staleTicks += 1;
+
+            if (staleTicks >= 3) root.classList.add('kri-cv-draw--stale');
 
         }
 

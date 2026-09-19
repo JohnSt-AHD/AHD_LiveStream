@@ -28,7 +28,8 @@ body {
 }
 
 .cv-leader-line--stale {
-    opacity: 0.25;
+    opacity: 0;
+    visibility: hidden;
 }
 
 .cv-status-dot {

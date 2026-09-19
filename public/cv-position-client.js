@@ -24,6 +24,7 @@
 
     let cachedStreamId = '';
     let resolvePromise = null;
+    let staleTicks = 0;
 
     function params() {
         return new URLSearchParams(location.search);
@@ -186,11 +187,16 @@
         if (!line) return;
 
         if (!data || data.stale) {
-            line.classList.add('cv-leader-line--stale');
-            if (dot) dot.classList.toggle('cv-status-dot--live', Boolean(data && !data.stale));
+            staleTicks += 1;
+            if (staleTicks >= 3) {
+                line.classList.add('cv-leader-line--stale');
+                line.hidden = true;
+            }
+            if (dot) dot.classList.toggle('cv-status-dot--live', false);
             return;
         }
 
+        staleTicks = 0;
         const refW = Number(data.refW) || DEFAULT_REF_W;
         const refH = Number(data.refH) || DEFAULT_REF_H;
         const offset = data.offset || venueOffset(data.venue);

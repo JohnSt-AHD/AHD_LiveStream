@@ -26,18 +26,24 @@ if not exist "node_modules\" (
     )
 )
 
-if exist "%~dp0..\cv-improvements\launch_cv.bat" (
+set "CV_LAUNCH="
+if exist "%~dp0..\CV Improvements\launch_cv.bat" set "CV_LAUNCH=%~dp0..\CV Improvements\launch_cv.bat"
+if not defined CV_LAUNCH if exist "%~dp0..\cv-improvements\launch_cv.bat" set "CV_LAUNCH=%~dp0..\cv-improvements\launch_cv.bat"
+if defined CV_LAUNCH (
     echo  Starting CV on http://127.0.0.1:8790
-    start "Rowing CV" "%~dp0..\cv-improvements\launch_cv.bat"
+    start "Rowing CV" "%CV_LAUNCH%"
 ) else (
-    echo  [skip] CV folder not found at ..\cv-improvements
+    echo  [skip] CV folder not found at ..\CV Improvements
 )
 
-if exist "%~dp0..\traccar-overlay\apps\dji-cloud-telemetry\package.json" (
+set "DJI_DIR="
+if exist "%~dp0..\dji-cloud-telemetry\package.json" set "DJI_DIR=%~dp0..\dji-cloud-telemetry"
+if not defined DJI_DIR if exist "%~dp0..\traccar-overlay\apps\dji-cloud-telemetry\package.json" set "DJI_DIR=%~dp0..\traccar-overlay\apps\dji-cloud-telemetry"
+if defined DJI_DIR (
     echo  Starting DJI telemetry on http://127.0.0.1:5050
-    start "DJI telemetry" /D "%~dp0..\traccar-overlay\apps\dji-cloud-telemetry" cmd /k "if not exist node_modules call npm install & npm start"
+    start "DJI telemetry" /D "%DJI_DIR%" cmd /k "if not exist node_modules call npm install & npm start"
 ) else (
-    echo  [skip] DJI telemetry app not found
+    echo  [skip] DJI telemetry app not found at ..\dji-cloud-telemetry
 )
 
 echo  Opening hub in 2 seconds: http://localhost:3000

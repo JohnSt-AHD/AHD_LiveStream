@@ -36,6 +36,7 @@
     let targetAy = 0;
     let hasSmooth = false;
     let lastFrameTs = 0;
+    let staleTicks = 0;
 
     function smoothTauMs() {
         const n = parseInt(params().get('smooth') || String(SMOOTH_TAU_MS), 10);
@@ -251,9 +252,12 @@
         try {
             const data = await global.AltitudeHdCvOverlay.fetchPosition();
             if (!data || data.stale) {
-                root.classList.add('kri-cv-leader--stale');
+                staleTicks += 1;
+                // Grace a couple of polls so 5 Hz POST jitter doesn't flash off-air.
+                if (staleTicks >= 3) root.classList.add('kri-cv-leader--stale');
                 return;
             }
+            staleTicks = 0;
             root.classList.remove('kri-cv-leader--stale');
             const pt = mapCvPoint(data);
             if (!pt) return;
@@ -261,7 +265,8 @@
             const ay = Math.max(0, Math.min(OUT_H, pt.top));
             setTargetAnchor(ax, ay);
         } catch {
-            root.classList.add('kri-cv-leader--stale');
+            staleTicks += 1;
+            if (staleTicks >= 3) root.classList.add('kri-cv-leader--stale');
         }
     }
 

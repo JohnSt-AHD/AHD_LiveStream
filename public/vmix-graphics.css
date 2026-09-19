@@ -2485,6 +2485,12 @@ html.vg-preview .vg-stage {
 
 .kri-cv-leader--visible {
     visibility: visible;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
+
+.kri-cv-leader--visible.kri-cv-leader--stale {
+    opacity: 0;
 }
 
 .kri-cv-leader__svg {
@@ -2508,7 +2514,7 @@ html.vg-preview .vg-stage {
 }
 
 .kri-cv-leader--stale .kri-cv-leader__connector {
-    opacity: 0.35;
+    opacity: 0;
 }
 
 .kri-cv-leader__card-wrap {
@@ -2566,6 +2572,12 @@ html.vg-preview .vg-stage {
 
 .kri-cv-draw--visible {
     visibility: visible;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+}
+
+.kri-cv-draw--visible.kri-cv-draw--stale {
+    opacity: 0;
 }
 
 .kri-cv-draw__svg {
@@ -2593,7 +2605,7 @@ html.vg-preview .vg-stage {
 }
 
 .kri-cv-draw--stale .kri-cv-draw__connector:not(.kri-cv-draw__connector--hidden) {
-    opacity: 0.3;
+    opacity: 0;
 }
 
 .kri-cv-draw__card-wrap {
