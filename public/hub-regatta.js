@@ -345,6 +345,84 @@ function findRaceWindow(dayRaces, effectiveNow) {
     return { currentIndex, slots };
 }
 
+/** True when RowIT results CSV has a published row for this race number. */
+function raceHasPublishedResults(results, raceNum) {
+    if (!results || typeof results.get !== 'function') return false;
+    const row = results.get(Number(raceNum));
+    if (!row) return false;
+    if (Array.isArray(row.placings) && row.placings.length > 0) return true;
+    const status = String(row.status || '').trim();
+    return Boolean(status);
+}
+
+function countDaysheetCrews(race) {
+    const lanes = race?.lanes;
+    if (!Array.isArray(lanes)) return 0;
+    return lanes.filter((l) => l && l.crew).length;
+}
+
+/**
+ * Suggest the live graphic / CV race from schedule time + published results.
+ *
+ * Prefer the next race after the latest RowIT result (handles delayed programmes).
+ * Fall back to daysheet clock when no results are in yet today.
+ * Manual ± on the hub still overrides until auto is resumed.
+ */
+function pickSuggestedLiveRace(dayRaces, results, effectiveNow) {
+    if (!dayRaces?.length) {
+        return { race: null, reason: 'no_races', boatCount: 0 };
+    }
+
+    let lastDone = -1;
+    for (let i = 0; i < dayRaces.length; i++) {
+        if (raceHasPublishedResults(results, dayRaces[i].raceNum)) {
+            lastDone = i;
+        }
+    }
+
+    if (lastDone >= 0) {
+        if (lastDone >= dayRaces.length - 1) {
+            const race = dayRaces[lastDone];
+            return {
+                race,
+                reason: 'last_with_results',
+                boatCount: countDaysheetCrews(race),
+                advanced: 0,
+            };
+        }
+        const race = dayRaces[lastDone + 1];
+        return {
+            race,
+            reason: 'after_results',
+            boatCount: countDaysheetCrews(race),
+            advanced: 1,
+        };
+    }
+
+    // No published results yet — follow schedule clock
+    let idx = -1;
+    for (let i = 0; i < dayRaces.length; i++) {
+        if (dayRaces[i].startAt <= effectiveNow) idx = i;
+        else break;
+    }
+    if (idx < 0) {
+        const first = dayRaces[0];
+        return {
+            race: first,
+            reason: 'before_first',
+            boatCount: countDaysheetCrews(first),
+            advanced: 0,
+        };
+    }
+    const race = dayRaces[idx];
+    return {
+        race,
+        reason: 'by_schedule',
+        boatCount: countDaysheetCrews(race),
+        advanced: 0,
+    };
+}
+
 async function fetchCsvText(url) {
     const trimmed = (url || '').trim();
     if (!trimmed) throw new Error('No URL configured');
@@ -553,7 +631,11 @@ function renderBoard() {
     if (!list) {
         document.dispatchEvent(
             new CustomEvent('altitudehd:schedule', {
-                detail: { dayRaces: [], currentRace: null },
+                detail: {
+                    dayRaces: [],
+                    currentRace: null,
+                    suggested: { race: null, reason: 'no_board', boatCount: 0 },
+                },
             }),
         );
         return;
@@ -603,6 +685,13 @@ function renderBoard() {
                 dayRaces,
                 currentRace:
                     currentIndex >= 0 ? dayRaces[currentIndex] : null,
+                suggested: pickSuggestedLiveRace(
+                    dayRaces,
+                    boardState.results,
+                    effectiveNow,
+                ),
+                resultsCount: boardState.results?.size || 0,
+                effectiveNow: effectiveNow.toISOString(),
             },
         }),
     );
@@ -721,6 +810,10 @@ function bindClockControls() {
     if (reloadBtn) {
         reloadBtn.addEventListener('click', () => reloadData());
     }
+    for (const id of ['hubResultsRefresh', 'hubResultsRefreshBoard']) {
+        const btn = document.getElementById(id);
+        if (btn) btn.addEventListener('click', () => reloadData());
+    }
 }
 
 function initRegattaBoard() {
@@ -745,6 +838,9 @@ window.AltitudeHdRegattaBoard = {
     loadClockSettings,
     racesOnDate,
     findRaceWindow,
+    pickSuggestedLiveRace,
+    raceHasPublishedResults,
+    countDaysheetCrews,
     formatRaceTime,
     formatClock,
     formatYmd,

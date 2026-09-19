@@ -1,15 +1,24 @@
 /**
- * Hub live race selector — drives vMix draw / lower third / results.
- * Persisted in localStorage; overlays read the same value on the same origin.
+ * Hub live race selector — drives vMix draw / lower third / results, and
+ * pushes the same race to the CV laptop Setup API.
+ *
+ * Auto mode: follow schedule time + published RowIT results (from hub-regatta).
+ * Manual: ± / type-in / "Use current" — stays until "Resume auto".
  */
 const LS_LIVE_RACE = 'altitudeHdLiveRace_v1';
 const LS_LEADER_LANE = 'altitudeHdLeaderLane_v1';
+const LS_LIVE_RACE_AUTO = 'altitudeHdLiveRaceAuto_v1';
+const LS_CV_URL = 'altitudeHdCvServerUrl_v1';
 const DEFAULT_LIVE_RACE = '1';
 const DEFAULT_LEADER_LANE = 4;
 
 const liveRaceState = {
     races: [],
     scheduleCurrent: null,
+    suggested: null,
+    dayRaces: [],
+    pushing: false,
+    lastPush: null,
 };
 
 function loadLiveRace() {
@@ -22,18 +31,140 @@ function loadLiveRace() {
     return DEFAULT_LIVE_RACE;
 }
 
-function saveLiveRace(value) {
+function isAutoLiveRace() {
+    try {
+        const v = localStorage.getItem(LS_LIVE_RACE_AUTO);
+        if (v == null) return true; // default ON
+        return v === '1' || v === 'true';
+    } catch {
+        return true;
+    }
+}
+
+function setAutoLiveRace(on) {
+    try {
+        localStorage.setItem(LS_LIVE_RACE_AUTO, on ? '1' : '0');
+    } catch {
+        /* ignore */
+    }
+    syncAutoUi();
+}
+
+function getCvServerUrl() {
+    try {
+        const fromApi = window.AltitudeHdCvStatus?.getCvServerUrl?.();
+        if (fromApi) return String(fromApi).replace(/\/+$/, '');
+    } catch {
+        /* ignore */
+    }
+    try {
+        const v = localStorage.getItem(LS_CV_URL);
+        if (v && String(v).trim()) return String(v).trim().replace(/\/+$/, '');
+    } catch {
+        /* ignore */
+    }
+    const input = document.getElementById('hubCvServerUrl');
+    if (input?.value?.trim()) return input.value.trim().replace(/\/+$/, '');
+    return 'http://127.0.0.1:8790';
+}
+
+function boatCountForRace(raceParam) {
+    const suggested = liveRaceState.suggested;
+    if (suggested?.race?.race === raceParam && suggested.boatCount > 0) {
+        return suggested.boatCount;
+    }
+    const fromDay = (liveRaceState.dayRaces || []).find(
+        (r) => r.race === raceParam,
+    );
+    if (fromDay?.lanes) {
+        const n = fromDay.lanes.filter((l) => l && l.crew).length;
+        if (n > 0) return n;
+    }
+    const meta = findRaceMeta(raceParam);
+    if (meta?.lanes) {
+        const n = meta.lanes.filter((l) => l && l.crew).length;
+        if (n > 0) return n;
+    }
+    return 0;
+}
+
+async function pushLiveRaceToCv(race, { source = 'hub' } = {}) {
+    const cv = getCvServerUrl();
+    const regatta =
+        window.AltitudeHdHub?.getRegattaCode?.() ||
+        localStorage.getItem('altitudeHdRegattaCode_v1') ||
+        'nzmm2026';
+    const boatCount = boatCountForRace(race);
+    const body = {
+        cloud: {
+            live_race: String(race),
+            regatta: String(regatta).trim().toLowerCase() || 'nzmm2026',
+            race_source: source,
+            lane_map: [],
+        },
+    };
+    if (boatCount > 0) {
+        body.race_boat_count = boatCount;
+    }
+
+    const statusEl = document.getElementById('hubLiveRaceCvStatus');
+    liveRaceState.pushing = true;
+    if (statusEl) statusEl.textContent = `Pushing race ${race} to CV…`;
+
+    try {
+        const res = await fetch(`${cv}/api/config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(5000),
+            mode: 'cors',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        liveRaceState.lastPush = {
+            ok: true,
+            race: String(race),
+            at: Date.now(),
+            boatCount,
+            cv,
+        };
+        if (statusEl) {
+            const boats = boatCount > 0 ? ` · ${boatCount} boats` : '';
+            statusEl.textContent = `CV updated · race ${race}${boats}`;
+        }
+        return true;
+    } catch (e) {
+        liveRaceState.lastPush = {
+            ok: false,
+            race: String(race),
+            at: Date.now(),
+            error: e instanceof Error ? e.message : 'push failed',
+            cv,
+        };
+        if (statusEl) {
+            statusEl.textContent = `CV offline (${cv}) — race saved on hub only`;
+        }
+        return false;
+    } finally {
+        liveRaceState.pushing = false;
+    }
+}
+
+function saveLiveRace(value, { manual = false, source = 'hub' } = {}) {
     const race = String(value || '').trim();
     if (!race) return;
+    if (manual) setAutoLiveRace(false);
     try {
         localStorage.setItem(LS_LIVE_RACE, race);
     } catch {
         /* ignore */
     }
     document.dispatchEvent(
-        new CustomEvent('altitudehd:liverace', { detail: { race } }),
+        new CustomEvent('altitudehd:liverace', {
+            detail: { race, source, manual: Boolean(manual) },
+        }),
     );
     syncLiveRaceUi();
+    pushLiveRaceToCv(race, { source: manual ? 'hub-manual' : source });
 }
 
 function clampLeaderLane(value) {
@@ -115,22 +246,62 @@ function findRaceByNumberStep(races, param, delta) {
 }
 
 function findRaceMeta(param) {
-    const idx = findRaceIndex(liveRaceState.races, param);
+    const pool = liveRaceState.dayRaces.length
+        ? liveRaceState.dayRaces
+        : liveRaceState.races;
+    const idx = findRaceIndex(pool, param);
     if (idx < 0) return null;
-    return liveRaceState.races[idx];
+    return pool[idx];
 }
 
 function stepLiveRace(delta) {
-    const races = liveRaceState.races;
+    const races = liveRaceState.dayRaces.length
+        ? liveRaceState.dayRaces
+        : liveRaceState.races;
     const param = loadLiveRace();
     if (!races.length) {
         const cur = parseInt(param, 10);
         const base = Number.isFinite(cur) ? cur : 1;
-        saveLiveRace(String(Math.max(1, base + delta)));
+        saveLiveRace(String(Math.max(1, base + delta)), { manual: true });
         return;
     }
     const next = findRaceByNumberStep(races, param, delta);
-    if (next) saveLiveRace(next.race);
+    if (next) saveLiveRace(next.race, { manual: true });
+}
+
+function reasonLabel(reason) {
+    switch (reason) {
+        case 'by_schedule':
+            return 'by schedule time';
+        case 'after_results':
+            return 'advanced past published results';
+        case 'before_first':
+            return 'before first race';
+        case 'last_with_results':
+            return 'last race (results in)';
+        default:
+            return reason || '';
+    }
+}
+
+function syncAutoUi() {
+    const auto = isAutoLiveRace();
+    const chk = document.getElementById('hubLiveRaceAuto');
+    if (chk && chk.checked !== auto) chk.checked = auto;
+    const resume = document.getElementById('hubLiveRaceResumeAuto');
+    if (resume) resume.hidden = auto;
+    const modeEl = document.getElementById('hubLiveRaceMode');
+    if (modeEl) {
+        if (auto) {
+            const sug = liveRaceState.suggested?.race?.race;
+            const why = reasonLabel(liveRaceState.suggested?.reason);
+            modeEl.textContent = sug
+                ? `Auto · suggesting ${sug}${why ? ` (${why})` : ''}`
+                : 'Auto · waiting for schedule';
+        } else {
+            modeEl.textContent = 'Manual override — graphics & CV stay on this race';
+        }
+    }
 }
 
 function syncLiveRaceUi() {
@@ -143,17 +314,23 @@ function syncLiveRaceUi() {
     if (meta) {
         const row = findRaceMeta(race);
         if (row) {
-            meta.textContent = `${row.eventType} · ${row.round} · ${formatRaceTime(row.startAt)}`;
-        } else if (liveRaceState.races.length) {
+            const boats = boatCountForRace(race);
+            const boatBit = boats > 0 ? ` · ${boats} boats` : '';
+            meta.textContent = `${row.eventType || row.eventName || ''} · ${row.round || ''} · ${formatRaceTime(row.startAt)}${boatBit}`
+                .replace(/^\s·\s/, '')
+                .replace(/\s·\s·\s/g, ' · ');
+        } else if (liveRaceState.races.length || liveRaceState.dayRaces.length) {
             meta.textContent = 'Race not found on daysheet — check number or reload schedule.';
         } else {
             meta.textContent =
                 'Load daysheet in Setup to step through races with + / −.';
         }
     }
+    syncAutoUi();
 }
 
 function formatRaceTime(d) {
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '';
     return d.toLocaleTimeString(undefined, {
         hour: '2-digit',
         minute: '2-digit',
@@ -266,8 +443,35 @@ function parseDaysheetForLiveRace(text) {
 }
 
 function useScheduleCurrentRace() {
-    const cur = liveRaceState.scheduleCurrent;
-    if (cur?.race) saveLiveRace(cur.race);
+    const sug = liveRaceState.suggested?.race;
+    const cur = sug || liveRaceState.scheduleCurrent;
+    if (cur?.race) saveLiveRace(cur.race, { manual: true, source: 'hub-manual' });
+}
+
+function applySuggestedIfAuto() {
+    if (!isAutoLiveRace()) return;
+    const sug = liveRaceState.suggested?.race;
+    if (!sug?.race) return;
+    const current = loadLiveRace();
+    if (current === sug.race) {
+        const boatCount = boatCountForRace(sug.race);
+        const last = liveRaceState.lastPush;
+        if (
+            !last?.ok ||
+            last.race !== sug.race ||
+            (boatCount > 0 && last.boatCount !== boatCount)
+        ) {
+            pushLiveRaceToCv(sug.race, { source: 'hub-auto' });
+        }
+        return;
+    }
+    saveLiveRace(sug.race, { manual: false, source: 'hub-auto' });
+}
+
+function resumeAutoLiveRace() {
+    setAutoLiveRace(true);
+    applySuggestedIfAuto();
+    syncLiveRaceUi();
 }
 
 function bindLiveRaceControls() {
@@ -279,21 +483,41 @@ function bindLiveRaceControls() {
     const minus = document.getElementById('hubLiveRaceMinus');
     const plus = document.getElementById('hubLiveRacePlus');
     const syncBtn = document.getElementById('hubLiveRaceSync');
+    const autoChk = document.getElementById('hubLiveRaceAuto');
+    const resumeBtn = document.getElementById('hubLiveRaceResumeAuto');
+    const pushBtn = document.getElementById('hubLiveRacePushCv');
 
     if (input) {
         input.value = loadLiveRace();
-        input.addEventListener('change', () => saveLiveRace(input.value));
+        input.addEventListener('change', () =>
+            saveLiveRace(input.value, { manual: true }),
+        );
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 input.blur();
-                saveLiveRace(input.value);
+                saveLiveRace(input.value, { manual: true });
             }
         });
     }
     if (minus) minus.addEventListener('click', () => stepLiveRace(-1));
     if (plus) plus.addEventListener('click', () => stepLiveRace(1));
     if (syncBtn) syncBtn.addEventListener('click', useScheduleCurrentRace);
+    if (autoChk) {
+        autoChk.checked = isAutoLiveRace();
+        autoChk.addEventListener('change', () => {
+            if (autoChk.checked) resumeAutoLiveRace();
+            else setAutoLiveRace(false);
+        });
+    }
+    if (resumeBtn) resumeBtn.addEventListener('click', resumeAutoLiveRace);
+    if (pushBtn) {
+        pushBtn.addEventListener('click', () =>
+            pushLiveRaceToCv(loadLiveRace(), {
+                source: isAutoLiveRace() ? 'hub-auto' : 'hub-manual',
+            }),
+        );
+    }
 
     const leaderLaneInput = document.getElementById('hubLeaderLaneInput');
     if (leaderLaneInput) {
@@ -309,25 +533,47 @@ function bindLiveRaceControls() {
         });
     }
 
-    document.addEventListener('altitudehd:urls', () => reloadLiveRaceDaysheet());
+    document.addEventListener('altitudehd:urls', () => {
+        reloadLiveRaceDaysheet();
+        // Regatta code change — re-push current race with new code
+        pushLiveRaceToCv(loadLiveRace(), {
+            source: isAutoLiveRace() ? 'hub-auto' : 'hub-manual',
+        });
+    });
     document.addEventListener('altitudehd:schedule', (e) => {
         liveRaceState.scheduleCurrent = e.detail?.currentRace || null;
+        liveRaceState.suggested = e.detail?.suggested || null;
+        liveRaceState.dayRaces = Array.isArray(e.detail?.dayRaces)
+            ? e.detail.dayRaces
+            : [];
         const syncBtnEl = document.getElementById('hubLiveRaceSync');
         if (syncBtnEl) {
-            syncBtnEl.disabled = !liveRaceState.scheduleCurrent;
+            syncBtnEl.disabled = !(
+                liveRaceState.suggested?.race || liveRaceState.scheduleCurrent
+            );
         }
+        applySuggestedIfAuto();
+        syncLiveRaceUi();
     });
 
     reloadLiveRaceDaysheet();
     syncLiveRaceUi();
     syncLeaderLaneUi();
+    // Initial push so CV matches hub on page load
+    pushLiveRaceToCv(loadLiveRace(), {
+        source: isAutoLiveRace() ? 'hub-auto' : 'hub-manual',
+    });
 }
 
 window.AltitudeHdLiveRace = {
     getLiveRace: loadLiveRace,
-    setLiveRace: saveLiveRace,
+    setLiveRace: (race) => saveLiveRace(race, { manual: true }),
     stepLiveRace,
     getRaces: () => liveRaceState.races.slice(),
+    isAuto: isAutoLiveRace,
+    setAuto: setAutoLiveRace,
+    resumeAuto: resumeAutoLiveRace,
+    pushToCv: () => pushLiveRaceToCv(loadLiveRace()),
 };
 
 window.AltitudeHdLeaderLane = {

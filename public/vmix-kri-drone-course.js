@@ -82,7 +82,13 @@
         if (!tel) return lastPose;
         const lat = Number(tel.latitude);
         const lon = Number(tel.longitude);
-        const height = Number(tel.height);
+        const elev = Number(tel.elevation);
+        const heightRaw = Number(tel.height);
+        // DJI: elevation = AGL above takeoff; height = ellipsoid. Prefer elevation.
+        const height =
+            Number.isFinite(elev) && elev > 2
+                ? elev
+                : heightRaw;
         const prev = lastPose || {};
         const g = tel.gimbal || {};
         const pg = prev.gimbal || {};

@@ -896,6 +896,33 @@
     color: inherit;
 }
 
+.hub-live-race-controls--auto {
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+}
+
+.hub-live-race-auto {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.hub-live-race-mode,
+.hub-live-race-cv {
+    font-size: 12px;
+    color: var(--ahd-muted);
+    margin: 4px 0 8px;
+    line-height: 1.4;
+}
+
+.hub-live-race-cv {
+    color: #9fd4a8;
+}
+
 .hub-btn--compact {
     height: 44px;
     padding: 0 12px;

@@ -101,7 +101,16 @@
 
                 <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
                     <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
-                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays. Leader lane applies when the leader graphic (<code>w</code>) or CV leader (<code>x</code>) is on air. Use <strong>+</strong> / <strong>−</strong> to step through the daysheet.</p>
+                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays, and pushes the same race to the CV laptop. <strong>Auto</strong> follows daysheet time and advances when RowIT results are published. Use <strong>+</strong> / <strong>−</strong> (or type a race) for delays and swaps — that switches to manual until you resume auto.</p>
+                    <div class="hub-live-race-controls hub-live-race-controls--auto">
+                        <label class="hub-live-race-auto">
+                            <input type="checkbox" id="hubLiveRaceAuto" checked>
+                            Auto from schedule + results
+                        </label>
+                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceResumeAuto" hidden>Resume auto</button>
+                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRacePushCv">Push to CV now</button>
+                    </div>
+                    <p class="hub-live-race-mode" id="hubLiveRaceMode"></p>
                     <div class="hub-live-race-controls">
                         <button type="button" class="hub-live-race-step" id="hubLiveRaceMinus" aria-label="Previous race">−</button>
                         <label class="hub-live-race-field">
@@ -117,7 +126,7 @@
                             >
                         </label>
                         <button type="button" class="hub-live-race-step" id="hubLiveRacePlus" aria-label="Next race">+</button>
-                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceSync" disabled>Use current race</button>
+                        <button type="button" class="hub-btn hub-btn--compact" id="hubLiveRaceSync" disabled>Use suggested race</button>
                     </div>
                     <div class="hub-live-race-controls hub-live-race-controls--leader">
                         <label class="hub-live-race-field">
@@ -136,6 +145,7 @@
                         </label>
                     </div>
                     <p class="hub-live-race-meta" id="hubLiveRaceMeta"></p>
+                    <p class="hub-live-race-cv" id="hubLiveRaceCvStatus"></p>
                     <div class="hub-race-record hub-race-record--inline" id="hubRaceRecord">
                         <div class="hub-race-record-bar">
                             <button type="button" class="hub-race-record-toggle" id="hubRaceRecordToggle" aria-pressed="false">Record</button>

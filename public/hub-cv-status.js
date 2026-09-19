@@ -15,6 +15,12 @@
         try { localStorage.setItem(key, val); } catch { /* ignore */ }
     }
 
+    function getCvServerUrl() {
+        const input = document.getElementById('hubCvServerUrl');
+        if (input?.value?.trim()) return input.value.trim().replace(/\/+$/, '');
+        return load(LS_CV_URL, 'http://127.0.0.1:8790').replace(/\/+$/, '');
+    }
+
     function setDot(el, ok) {
         if (!el) return;
         el.classList.toggle('hub-cv-dot--ok', ok === true);
@@ -104,6 +110,8 @@
         refresh();
         setInterval(refresh, POLL_MS);
     }
+
+    window.AltitudeHdCvStatus = { getCvServerUrl };
 
     document.addEventListener('DOMContentLoaded', init);
 })();
