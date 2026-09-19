@@ -69,7 +69,9 @@
         const drone = droneUrl.replace(/\/+$/, '');
         const map = {
             hubCvAnalysisLink: cv + '/cv-analysis.html',
-            hubDroneMonitorLink: cv + '/cv-analysis.html#drone',
+            hubCvDroneMapLink: cv + '/cv-drone-monitor.html',
+            hubDroneMonitorLink: cv + '/cv-drone-monitor.html',
+            hubDroneTabLink: cv + '/cv-analysis.html#drone',
             hubDroneCourseOverlayLink: cv + '/cv-drone-course-overlay.html',
             hubDroneTelemetryLink: drone + '/monitor',
         };
