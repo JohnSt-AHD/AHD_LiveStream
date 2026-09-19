@@ -79,6 +79,10 @@
             const el = document.getElementById(id);
             if (el) el.href = href;
         }
+        const ged = document.getElementById('hubGedCvCourseLink');
+        if (ged) {
+            ged.href = `vmix-ged-cv-course.html?cvLaptop=${encodeURIComponent(cv)}`;
+        }
     }
 
     function init() {
