@@ -43,6 +43,8 @@
     let lastPose = null;
     let latestRace = null;
     const poseSmoother = window.CvPoseSmooth?.createPoseSmoother?.() || null;
+    let lastCvOkMs = 0;
+    const CV_LINK_GRACE_MS = 3500;
 
     function toEnu(lat, lng, lat0, lon0) {
         const lat0r = (lat0 * Math.PI) / 180;
@@ -268,6 +270,167 @@
         const diff = Math.abs(angleDiff(brg, head));
         const dist = haversineM(pose.latitude, pose.longitude, mid.lat, mid.lng);
         return { brg, head, diff, dist, inFront: diff < 80 };
+    }
+
+    function cvLinkLive() {
+        return lastCvOkMs > 0 && performance.now() - lastCvOkMs < CV_LINK_GRACE_MS;
+    }
+
+    function setCvLinkWarn(show, detail) {
+        const el = document.getElementById("cvLinkWarn");
+        const detailEl = document.getElementById("cvLinkWarnDetail");
+        if (!el) return;
+        el.hidden = !show;
+        if (detailEl && detail) detailEl.textContent = detail;
+    }
+
+    /** Orthographic bird’s-eye: start at bottom, finish at top, lanes left→right. */
+    function planToPixel(chainM, acrossM, W, H) {
+        const padX = 300;
+        const padY = 100;
+        const usableW = W - padX * 2;
+        const usableH = H - padY * 2;
+        const span = Math.max(1, 2 * halfW);
+        const x = padX + ((acrossM + halfW) / span) * usableW;
+        const y = padY + usableH - (chainM / COURSE_M) * usableH;
+        return { x, y };
+    }
+
+    function strokePlanSeg(ctx, chain0, across0, chain1, across1, W, H) {
+        const a = planToPixel(chain0, across0, W, H);
+        const b = planToPixel(chain1, across1, W, H);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+    }
+
+    function drawPlanView(ctx, canvas, race) {
+        const W = canvas.width;
+        const H = canvas.height;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        // Soft course bed
+        const tl = planToPixel(COURSE_M, -halfW, W, H);
+        const tr = planToPixel(COURSE_M, halfW, W, H);
+        const br = planToPixel(0, halfW, W, H);
+        const bl = planToPixel(0, -halfW, W, H);
+        ctx.beginPath();
+        ctx.moveTo(tl.x, tl.y);
+        ctx.lineTo(tr.x, tr.y);
+        ctx.lineTo(br.x, br.y);
+        ctx.lineTo(bl.x, bl.y);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(18, 50, 94, 0.35)";
+        ctx.fill();
+
+        if (layers.course) {
+            ctx.strokeStyle = "rgba(245,240,228,0.28)";
+            ctx.lineWidth = 2;
+            for (let lane = 1; lane <= LANE_COUNT; lane += 1) {
+                const a = -halfW + (lane - 0.5) * LANE_M;
+                strokePlanSeg(ctx, 0, a, COURSE_M, a, W, H);
+                const mid = planToPixel(COURSE_M * 0.08, a, W, H);
+                ctx.fillStyle = "rgba(245,240,228,0.55)";
+                ctx.font = "700 14px JetBrains Mono, monospace";
+                ctx.textAlign = "center";
+                ctx.fillText(String(lane), mid.x, mid.y + 4);
+            }
+            ctx.strokeStyle = "rgba(46,125,224,0.95)";
+            ctx.lineWidth = 5;
+            strokePlanSeg(ctx, 0, -halfW, COURSE_M, -halfW, W, H);
+            strokePlanSeg(ctx, 0, halfW, COURSE_M, halfW, W, H);
+            ctx.strokeStyle = "#f5f0e4";
+            ctx.lineWidth = 6;
+            strokePlanSeg(ctx, 0, -halfW, 0, halfW, W, H);
+            ctx.strokeStyle = "#e5484d";
+            strokePlanSeg(ctx, COURSE_M, -halfW, COURSE_M, halfW, W, H);
+            ctx.setLineDash([10, 8]);
+            ctx.strokeStyle = "rgba(217,231,248,0.45)";
+            ctx.lineWidth = 3;
+            [500, 1000, 1500].forEach((m) => {
+                strokePlanSeg(ctx, m, -halfW, m, halfW, W, H);
+                const label = planToPixel(m, halfW + 8, W, H);
+                ctx.setLineDash([]);
+                ctx.fillStyle = "rgba(217,231,248,0.75)";
+                ctx.font = "700 13px JetBrains Mono, monospace";
+                ctx.textAlign = "left";
+                ctx.fillText(`${m} m`, label.x + 8, label.y + 4);
+                ctx.setLineDash([10, 8]);
+            });
+            ctx.setLineDash([]);
+
+            const startLab = planToPixel(-40, 0, W, H);
+            const finLab = planToPixel(COURSE_M + 40, 0, W, H);
+            ctx.fillStyle = "#f5f0e4";
+            ctx.font = "700 16px JetBrains Mono, monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("START", startLab.x, Math.min(H - 24, startLab.y + 28));
+            ctx.fillStyle = "#e5484d";
+            ctx.fillText("FINISH", finLab.x, Math.max(28, finLab.y - 14));
+        }
+
+        if (layers.leaderLine && Number.isFinite(smoothLeaderCh)) {
+            ctx.strokeStyle = "rgba(46, 125, 224, 0.95)";
+            ctx.lineWidth = 7;
+            strokePlanSeg(ctx, smoothLeaderCh, -halfW, smoothLeaderCh, halfW, W, H);
+        }
+        if (layers.progLine && Number.isFinite(smoothProgCh)) {
+            ctx.setLineDash([18, 10]);
+            ctx.strokeStyle = "rgba(138, 150, 165, 0.95)";
+            ctx.lineWidth = 6;
+            strokePlanSeg(ctx, smoothProgCh, -halfW, smoothProgCh, halfW, W, H);
+            ctx.setLineDash([]);
+        }
+
+        (race && race.boats ? race.boats : []).forEach((b) => {
+            if (!Number.isFinite(b.chainage_m) || !Number.isFinite(b.across_m)) return;
+            const xy = planToPixel(b.chainage_m, b.across_m, W, H);
+            ctx.beginPath();
+            ctx.fillStyle = b.slot === race.leader_slot ? "#2e7de0" : "rgba(245,240,228,0.85)";
+            ctx.arc(xy.x, xy.y, b.slot === race.leader_slot ? 9 : 6, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    function updatePlanLaneCards(merged, canvas) {
+        const root = document.getElementById("laneCards");
+        if (!root) return;
+        if (!layers.lanes) {
+            root.innerHTML = "";
+            return;
+        }
+        const W = canvas.width;
+        const H = canvas.height;
+        const leaderLane = merged?.leader?.lane;
+        const byLane = new Map((merged?.rows || []).map((r) => [Number(r.lane), r]));
+        root.innerHTML = "";
+        for (let lane = 1; lane <= LANE_COUNT; lane += 1) {
+            const row = byLane.get(lane);
+            const across = -halfW + (lane - 0.5) * LANE_M;
+            const chain = Number.isFinite(row?.chainage_m) ? row.chainage_m : 120;
+            const xy = planToPixel(chain, across, W, H);
+            const card = document.createElement("div");
+            const isLeader = leaderLane === lane;
+            card.className = "lane-card" + (isLeader ? " lane-card--leader" : "");
+            card.style.left = `${xy.x}px`;
+            card.style.top = `${xy.y}px`;
+            const logo = row?.logoUrl
+                ? `<img class="lane-card__logo" src="${row.logoUrl}" alt="">`
+                : '<span class="lane-card__logo lane-card__logo--empty" aria-hidden="true"></span>';
+            const badge = isLeader ? '<span class="lane-card__badge">Leader</span>' : "";
+            const name = escapeHtml(row?.label || row?.shortLabel || `Lane ${lane}`);
+            const code = escapeHtml(row?.shortLabel || `L${lane}`);
+            card.innerHTML =
+                badge +
+                `<div class="lane-card__body">${logo}` +
+                `<div class="lane-card__copy">` +
+                `<span class="lane-card__name">${name}</span>` +
+                `<span class="lane-card__meta">${code} · Ln ${lane}</span>` +
+                `</div></div>`;
+            root.appendChild(card);
+        }
     }
 
     function drawCamera(ctx, canvas, pose, race) {
@@ -573,17 +736,48 @@
         const hud = document.getElementById("hud");
         const merged = mergedState(race);
         updateSmoothedLines(merged);
+        const linked = cvLinkLive();
 
-        if (forcePlan) {
-            hud.textContent = "Plan view (?view=plan)";
-            paintSpeedGraph(ctx, race);
-            return;
-        }
-        if (!pose || !Number.isFinite(pose.latitude) || !Number.isFinite(pose.height)) {
-            hud.textContent = "Camera view · waiting for drone GPS";
-            updateLaneCards(merged, null, canvas);
+        if (!linked || forcePlan) {
+            drawPlanView(ctx, canvas, race);
+            if (layers.lanes && latestDraw?.ok) updatePlanLaneCards(merged, canvas);
+            else if (document.getElementById("laneCards")) {
+                document.getElementById("laneCards").innerHTML = "";
+            }
             updateOrderPanel(merged);
             paintSpeedGraph(ctx, race);
+            if (!linked) {
+                setCvLinkWarn(
+                    true,
+                    `Bird’s-eye · ${laptop.replace(/^https?:\/\//, "")}`,
+                );
+                if (hud) {
+                    hud.classList.add("hud--warn");
+                    hud.textContent = "Ged · bird’s-eye · no CV link";
+                }
+            } else {
+                setCvLinkWarn(false);
+                if (hud) {
+                    hud.classList.remove("hud--warn");
+                    hud.textContent = "Ged · plan view (?view=plan)";
+                }
+            }
+            return;
+        }
+
+        setCvLinkWarn(false);
+        if (!pose || !Number.isFinite(pose.latitude) || !Number.isFinite(pose.height)) {
+            drawPlanView(ctx, canvas, race);
+            if (layers.lanes && latestDraw?.ok) updatePlanLaneCards(merged, canvas);
+            else if (document.getElementById("laneCards")) {
+                document.getElementById("laneCards").innerHTML = "";
+            }
+            updateOrderPanel(merged);
+            paintSpeedGraph(ctx, race);
+            if (hud) {
+                hud.classList.remove("hud--warn");
+                hud.textContent = "Ged · bird’s-eye · waiting for drone GPS";
+            }
             return;
         }
 
@@ -643,40 +837,52 @@
         requestAnimationFrame(tick);
     }
 
-    async function loadDraw() {
-        try {
-            const res = await fetch(configUrl);
-            if (!res.ok) return;
-            const cfg = await res.json();
-            const d = cfg.drone || {};
-            const cloud = cfg.cloud || {};
-            if (Number.isFinite(Number(d.hfov_deg))) hfovDeg = Number(d.hfov_deg);
-            if (Number.isFinite(Number(d.pitch_offset_deg))) pitchOffset = Number(d.pitch_offset_deg);
-            if (d.prefer_sn_prefix) preferSnPrefix = String(d.prefer_sn_prefix);
-            if (Number.isFinite(Number(d.takeoff_above_water_m))) {
-                window.__takeoffAboveWaterM = Number(d.takeoff_above_water_m);
-            }
-            if (window.CvOverlayDraw) {
-                latestDraw = await CvOverlayDraw.loadDraw({
-                    regatta: params.get("regatta") || cloud.regatta,
-                    race: raceOverride || params.get("race") || cloud.live_race,
-                });
-                if (latestDraw?.race) raceOverride = latestDraw.race;
-            }
-        } catch (_) {}
-    }
-
     async function poll() {
         let tel = null;
+        let linked = false;
         try {
-            const res = await fetch(telemetryFetchUrl());
-            if (res.ok) tel = pickOsdAircraft(await res.json());
+            const res = await fetch(telemetryFetchUrl(), { cache: "no-store" });
+            if (res.ok) {
+                linked = true;
+                tel = pickOsdAircraft(await res.json());
+            }
         } catch (_) {}
         try {
-            const res = await fetch(raceUrl);
-            if (res.ok) latestRace = await res.json();
+            const res = await fetch(raceUrl, { cache: "no-store" });
+            if (res.ok) {
+                linked = true;
+                latestRace = await res.json();
+            }
         } catch (_) {}
+        if (linked) lastCvOkMs = performance.now();
         ingestPose(tel);
+    }
+
+    async function loadDraw() {
+        let cloud = {};
+        try {
+            const res = await fetch(configUrl, { cache: "no-store" });
+            if (res.ok) {
+                lastCvOkMs = performance.now();
+                const cfg = await res.json();
+                const d = cfg.drone || {};
+                cloud = cfg.cloud || {};
+                if (Number.isFinite(Number(d.hfov_deg))) hfovDeg = Number(d.hfov_deg);
+                if (Number.isFinite(Number(d.pitch_offset_deg))) pitchOffset = Number(d.pitch_offset_deg);
+                if (d.prefer_sn_prefix) preferSnPrefix = String(d.prefer_sn_prefix);
+                if (Number.isFinite(Number(d.takeoff_above_water_m))) {
+                    window.__takeoffAboveWaterM = Number(d.takeoff_above_water_m);
+                }
+            }
+        } catch (_) {}
+        if (!window.CvOverlayDraw) return;
+        try {
+            latestDraw = await CvOverlayDraw.loadDraw({
+                regatta: params.get("regatta") || cloud.regatta,
+                race: raceOverride || params.get("race") || cloud.live_race,
+            });
+            if (latestDraw?.race) raceOverride = latestDraw.race;
+        } catch (_) {}
     }
 
     function onKey(e) {

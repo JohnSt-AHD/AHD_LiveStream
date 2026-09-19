@@ -8,11 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="cv-leader-graphic.css?v=3" />
-  <link rel="stylesheet" href="vmix-ged-cv-course.css?v=1" />
+  <link rel="stylesheet" href="vmix-ged-cv-course.css?v=2" />
 </head>
 <body>
   <canvas id="course" width="1920" height="1080"></canvas>
   <div class="lane-cards" id="laneCards"></div>
+  <div class="cv-link-warn" id="cvLinkWarn" hidden>
+    <span class="cv-link-warn__badge">Warning</span>
+    <span class="cv-link-warn__text">No CV link</span>
+    <span class="cv-link-warn__detail" id="cvLinkWarnDetail">Bird’s-eye course · waiting for CV laptop</span>
+  </div>
   <div class="order-panel kri-live-tracking kri-live-tracking--hold" id="orderPanel" hidden>
     <div class="kri-live-tracking__panel">
       <div class="kri-live-tracking__bar" aria-hidden="true"></div>
@@ -29,6 +34,6 @@
   <div class="keys-hint" id="keysHint" hidden></div>
   <script src="cv-overlay-draw.js?v=13"></script>
   <script src="cv-pose-smooth.js?v=3"></script>
-  <script src="vmix-ged-cv-course.js?v=2"></script>
+  <script src="vmix-ged-cv-course.js?v=3"></script>
 </body>
 </html>
