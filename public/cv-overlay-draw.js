@@ -418,9 +418,10 @@
                 last_seen_ms: cv?.last_seen_ms ?? null,
                 gap_hold_m: cv?.gap_hold_m ?? null,
                 cvStatus,
-                timing_valid: cv?.timing_valid !== false,
                 finish_elapsed_ms: cv?.finish_elapsed_ms ?? null,
                 finish_time: cv?.finish_time ?? null,
+                splits: cv?.splits || null,
+                timing_valid: cv?.timing_valid !== false,
                 finish_reason: cv?.finish_reason ?? null,
             };
         });
@@ -440,6 +441,7 @@
             race_phase: raceSnap?.race_phase || "ready",
             start_lineup: raceSnap?.start_lineup || null,
             results: raceSnap?.results || null,
+            splits: raceSnap?.splits || null,
             leader,
             rows,
             ranked,

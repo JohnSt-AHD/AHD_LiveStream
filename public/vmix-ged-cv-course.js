@@ -20,6 +20,7 @@
     const configUrl = `${laptop}/api/config`;
     const forcePlan = params.get("view") === "plan";
     // Ged default: course + crew tags + leader line across the course.
+    // Splits board (y): off until toggled — auto-fills when crews cross 500/1000/1500.
     const layers = {
         course: true,
         lanes: true,
@@ -27,6 +28,7 @@
         leaderLine: true,
         progLine: false,
         speed: false,
+        splits: false,
         hud: true,
     };
     let latestDraw = null;
@@ -36,6 +38,12 @@
     let lastLineSmoothMs = 0;
     const LINE_SMOOTH_TAU_S = 2;
     const BOAT_LEN = 12.5;
+    const splitsCtrl =
+        window.GedCvSplits?.create?.({
+            enabled: false,
+            holdMs: params.get("holdMs"),
+            showSection: params.get("section") !== "0",
+        }) || null;
 
     let hfovDeg = 73;
     let pitchOffset = 0;
@@ -524,11 +532,14 @@
             layers.order = false;
             layers.leaderLine = false;
             layers.progLine = false;
+            layers.speed = false;
+            layers.splits = false;
         } else if (g === "d") layers.lanes = true;
         else if (g === "k") layers.order = true;
         else if (g === "l" || g === "w") layers.leaderLine = true;
         else if (g === "q") layers.progLine = true;
         else if (g === "s") layers.speed = true;
+        else if (g === "y" || g === "i") layers.splits = true;
         else if (g === "u") layers.course = true;
         show.split(/[+,]/).forEach((token) => {
             const t = token.trim();
@@ -537,6 +548,7 @@
             if (t === "l" || t === "w") layers.leaderLine = true;
             if (t === "q") layers.progLine = true;
             if (t === "s") layers.speed = true;
+            if (t === "y" || t === "i") layers.splits = true;
             if (t === "u") layers.course = true;
         });
         syncLayerDom();
@@ -550,10 +562,11 @@
         if (cards) cards.hidden = !layers.lanes;
         if (order) order.hidden = !layers.order;
         if (hud) hud.hidden = !layers.hud;
+        if (splitsCtrl) splitsCtrl.setEnabled(layers.splits);
         if (hint) {
             hint.hidden = params.get("keys") !== "1";
             hint.textContent =
-                "Ged · d tags · l leader line · k order · q progression · o out · c course only";
+                "Ged · d tags · l leader · y splits · k order · q progression · o out · c course only";
         }
     }
 
@@ -856,6 +869,7 @@
         } catch (_) {}
         if (linked) lastCvOkMs = performance.now();
         ingestPose(tel);
+        if (splitsCtrl && latestRace) splitsCtrl.update(latestRace);
     }
 
     async function loadDraw() {
@@ -882,6 +896,7 @@
                 race: raceOverride || params.get("race") || cloud.live_race,
             });
             if (latestDraw?.race) raceOverride = latestDraw.race;
+            if (splitsCtrl) splitsCtrl.setDraw(latestDraw);
         } catch (_) {}
     }
 
@@ -893,6 +908,7 @@
         else if (key === "l" || key === "w") layers.leaderLine = !layers.leaderLine;
         else if (key === "q") layers.progLine = !layers.progLine;
         else if (key === "s") layers.speed = !layers.speed;
+        else if (key === "y" || key === "i") layers.splits = !layers.splits;
         else if (key === "u") layers.course = !layers.course;
         else if (key === "o") {
             layers.lanes = false;
@@ -900,12 +916,14 @@
             layers.leaderLine = false;
             layers.progLine = false;
             layers.speed = false;
+            layers.splits = false;
         } else if (key === "c") {
             layers.lanes = false;
             layers.order = false;
             layers.leaderLine = false;
             layers.progLine = false;
             layers.speed = false;
+            layers.splits = false;
             layers.course = true;
         } else {
             return;

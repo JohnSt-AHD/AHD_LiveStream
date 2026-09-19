@@ -1,0 +1,211 @@
+/* Ged CV distance splits — bottom-right placing board (transparent 1920×1080). */
+
+html,
+body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: transparent;
+  font-family: Archivo, "Segoe UI", system-ui, sans-serif;
+  color: #f5f0e4;
+}
+
+.ged-splits {
+  position: absolute;
+  right: 48px;
+  bottom: 56px;
+  width: 420px;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.ged-splits[hidden] {
+  display: none !important;
+}
+
+.ged-splits__panel {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(13, 17, 23, 0.93);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 48px rgba(13, 17, 23, 0.55);
+  animation: ged-splits-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ged-splits.is-outro .ged-splits__panel {
+  animation: ged-splits-out 0.4s ease both;
+}
+
+@keyframes ged-splits-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ged-splits-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.ged-splits__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ged-splits__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #86efac;
+}
+
+.ged-splits__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+}
+
+.ged-splits__title {
+  margin: 0;
+  font-family: "Space Grotesk", Archivo, system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f5f0e4;
+}
+
+.ged-splits__sub {
+  margin: 0 0 0 auto;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8fa3bf;
+}
+
+.ged-splits__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 6px 0 8px;
+  max-height: 520px;
+  overflow: hidden;
+}
+
+.ged-splits__row {
+  display: grid;
+  grid-template-columns: 36px 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  animation: ged-splits-row 0.35s ease both;
+}
+
+.ged-splits__row:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.ged-splits__row:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.ged-splits__row:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+@keyframes ged-splits-row {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ged-splits__row--lead {
+  background: rgba(46, 125, 224, 0.18);
+}
+
+.ged-splits__rank {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #9ec5ff;
+  text-align: center;
+}
+
+.ged-splits__row--lead .ged-splits__rank {
+  color: #f5f0e4;
+}
+
+.ged-splits__logo {
+  width: 34px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.ged-splits__logo--empty {
+  display: block;
+  width: 34px;
+  height: 40px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ged-splits__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ged-splits__name {
+  font-family: "Space Grotesk", Archivo, system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ged-splits__meta {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8fa3bf;
+}
+
+.ged-splits__time {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.ged-splits__row--lead .ged-splits__time {
+  color: #9ec5ff;
+}

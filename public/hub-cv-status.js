@@ -83,6 +83,10 @@
         if (ged) {
             ged.href = `vmix-ged-cv-course.html?cvLaptop=${encodeURIComponent(cv)}`;
         }
+        const splits = document.getElementById('hubGedCvSplitsLink');
+        if (splits) {
+            splits.href = `vmix-ged-cv-splits.html?cvLaptop=${encodeURIComponent(cv)}`;
+        }
     }
 
     function init() {
