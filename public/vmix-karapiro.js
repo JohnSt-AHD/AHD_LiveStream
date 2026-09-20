@@ -23,16 +23,22 @@
         next: 1, prev: 1, tracker: 1, speed: 1, speedchart: 1,
         livetracking: 1, livetrack: 1,
         cvleader: 1, cvdraw: 1, coursescroll: 1, course: 1,
+        cvcourse: 1, cvsplits: 1, splits: 1,
+        cvstart: 1, startlist: 1,
     };
     const CANON = {
         speed: 'speedchart',
         livetrack: 'livetracking',
-        course: 'coursescroll',
+        course: 'cvcourse',
+        coursescroll: 'cvcourse',
+        splits: 'cvsplits',
+        startlist: 'cvstart',
     };
     const GED_KEYS = {
         '1': 'title', '2': 'lower', '3': 'draw', '4': 'results', '5': 'leader',
-        '6': 'cvleader', '7': 'cvdraw', '8': 'coursescroll', '9': 'schedule',
+        '6': 'cvleader', '7': 'cvdraw', '8': 'cvcourse', '9': 'schedule',
         '0': 'tracker', q: 'speedchart', w: 'livetracking', e: 'weather',
+        y: 'cvsplits', i: 'cvstart',
         s: 'suits', a: 'suitstrip', f: 'lowersuits', b: 'brand',
     };
     const LAYER_CLASS = {
@@ -55,7 +61,10 @@
         weather: 'vg-layer--weather',
         cvleader: 'vg-layer--cvleader',
         cvdraw: 'vg-layer--cvdraw',
-        coursescroll: 'vg-layer--coursescroll',
+        coursescroll: 'vg-layer--cvcourse',
+        cvcourse: 'vg-layer--cvcourse',
+        cvsplits: 'vg-layer--cvsplits',
+        cvstart: 'vg-layer--cvstart',
     };
     const OPS = [
         ['1', 'Title', 'title'],
@@ -69,7 +78,9 @@
         ['5', 'Leader', 'leader'],
         ['6', 'CV leader', 'cvleader'],
         ['7', 'CV draw', 'cvdraw'],
-        ['8', 'Course', 'coursescroll'],
+        ['8', 'CV course', 'cvcourse'],
+        ['Y', 'CV splits', 'cvsplits'],
+        ['I', 'CV start list', 'cvstart'],
         ['9', 'Schedule', 'schedule'],
         ['0', 'Tracker', 'tracker'],
         ['Q', 'Speed', 'speedchart'],
@@ -104,6 +115,7 @@
         recordsPromise: null,
         cvRace: null,
         cvPoll: 0,
+        cvPhase: '',
         chHold: new Map(),
         speedHist: new Map(),
     };
@@ -126,10 +138,42 @@
     }
 
     function liveBadge() {
-        const s = el('span', 'kp-live');
+        const s = el('span', cvLive() ? 'kp-live' : 'kp-live kp-live--sim');
         s.appendChild(el('span', 'kp-live-dot'));
-        s.appendChild(document.createTextNode('Live'));
+        s.appendChild(document.createTextNode(cvLive() ? 'Live CV' : 'Sim'));
         return s;
+    }
+
+    function cvFrameUrl(page, extra) {
+        const origin = cvOrigin() || DEFAULT_CV;
+        const u = new URL(page, location.href);
+        u.searchParams.set('cvLaptop', origin);
+        u.searchParams.set('live', '1');
+        if (extra && typeof extra === 'object') {
+            Object.entries(extra).forEach(([k, v]) => {
+                if (v == null || v === '') return;
+                u.searchParams.set(k, String(v));
+            });
+        }
+        const race = vgGetRaceParam?.();
+        if (race) u.searchParams.set('race', String(race));
+        return u.pathname + u.search;
+    }
+
+    function mountCvFrame(layer, page, className, extra) {
+        const wrap = el('div', className || 'kp-cvframe');
+        const frame = document.createElement('iframe');
+        frame.className = 'kp-cvframe__iframe';
+        frame.title = 'CV overlay';
+        frame.setAttribute('allow', 'autoplay');
+        frame.src = cvFrameUrl(page, extra);
+        wrap.appendChild(frame);
+        if (!cvOrigin()) {
+            wrap.appendChild(
+                el('p', 'kp-cvframe__warn', 'No CV laptop URL — set ?cvLaptop= or hub CV server'),
+            );
+        }
+        layer.appendChild(wrap);
     }
 
     function chip(text, extra) {
@@ -779,6 +823,13 @@
     }
 
     function recordSpeedSamples(snap) {
+        const phase = String(snap?.race_phase || '');
+        if (phase && phase !== state.cvPhase) {
+            if (phase === 'ready' || phase === 'racing' || phase === 'started') {
+                state.speedHist.clear();
+            }
+            state.cvPhase = phase;
+        }
         for (const b of snap?.boats || []) {
             const lane = Number(b.lane);
             const m = Number(b.chainage_m);
@@ -786,10 +837,18 @@
             if (!Number.isFinite(lane) || !Number.isFinite(m) || !Number.isFinite(sp)) continue;
             const prev = state.speedHist.get(lane) || [];
             const last = prev[prev.length - 1];
-            if (last && Math.abs(last.m - m) < 0.4 && Math.abs(last.sp - sp) < 0.05) continue;
+            if (last && Math.abs(last.m - m) < 0.8 && Math.abs(last.sp - sp) < 0.04) continue;
             prev.push({ m, sp });
-            if (prev.length > 48) prev.shift();
-            state.speedHist.set(lane, prev);
+            // Keep ~10 m buckets across the full 2 km so the chart spans the race.
+            const buckets = new Map();
+            for (const p of prev) {
+                const key = Math.round(p.m / 10) * 10;
+                buckets.set(key, p);
+            }
+            state.speedHist.set(
+                lane,
+                [...buckets.values()].sort((a, b) => a.m - b.m).slice(-220),
+            );
         }
     }
 
@@ -1236,7 +1295,10 @@
         const root = el('div', 'kp-tracker');
         root.dataset.kpLive = 'tracker';
         const head = el('div', 'kp-tracker-head');
-        head.appendChild(document.createTextNode(`Race tracker · ${vgKpRaceChip(race)} · ${eventName(race)}`));
+        head.appendChild(liveBadge());
+        head.appendChild(
+            document.createTextNode(`Race tracker · ${vgKpRaceChip(race)} · ${eventName(race)}`),
+        );
         head.appendChild(el('span', 'kp-tracker-clock', raceClockText()));
         root.appendChild(head);
         const marks = el('div', 'kp-track-marks');
@@ -1332,7 +1394,8 @@
         const lines = speedLines(boats);
         const root = el('div', 'kp-speed');
         const head = el('div', 'kp-speed-head');
-        head.appendChild(document.createTextNode('Boat speed · m/s'));
+        head.appendChild(liveBadge());
+        head.appendChild(document.createTextNode(cvLive() ? 'Boat speed · m/s · CV' : 'Boat speed · m/s · sim'));
         root.appendChild(head);
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('viewBox', '0 0 700 260');
@@ -1390,33 +1453,107 @@
         layer.appendChild(root);
     }
 
-    function renderCourse(layer) {
-        const root = el('div', 'kp-course');
-        const ghost = logoSvg(640, 0.06);
-        ghost.classList.add('kp-course-ghost');
-        root.appendChild(ghost);
-        const head = el('div', 'kp-course-head');
-        head.appendChild(logoSvg(58));
-        const copy = el('div', '');
-        copy.appendChild(el('div', 'kp-course-kicker', 'Karāpiro Rowing'));
-        copy.appendChild(
-            el('div', 'kp-course-sub', festive() ? 'Christmas Regatta' : 'Lake Karāpiro'),
+    function renderCvCourse(layer) {
+        mountCvFrame(layer, 'vmix-ged-cv-course.html', 'kp-cvframe kp-cvframe--course');
+    }
+
+    function renderCvSplits(layer) {
+        mountCvFrame(layer, 'vmix-ged-cv-splits.html', 'kp-cvframe kp-cvframe--splits');
+    }
+
+    function renderCvStart(layer, race) {
+        const root = el('div', 'kp-cvstart');
+        const head = el('div', 'kp-cvstart-head');
+        head.appendChild(liveBadge());
+        head.appendChild(
+            el(
+                'span',
+                'kp-cvstart-title',
+                race
+                    ? `Start list · ${vgKpRaceChip(race)} · ${eventName(race)}`
+                    : 'Start list · waiting daysheet',
+            ),
         );
-        copy.appendChild(el('div', 'kp-course-sub', 'Lake Karāpiro · 2000m buoyed course · 8 lanes'));
-        head.appendChild(copy);
+        head.appendChild(el('span', 'kp-cvstart-hint', 'CV lane tags'));
         root.appendChild(head);
-        const marks = el('div', 'kp-course-marks');
-        ['START', '500M', '1000M', '1500M', 'FINISH'].forEach((m, i) => {
-            marks.appendChild(el('span', i === 4 ? 'kp-finish' : '', m));
+        const stage = el('div', 'kp-cvstart-stage');
+        stage.id = 'kpCvStartStage';
+        const lanes = race ? laneEntries(race) : [];
+        lanes.forEach((lane, i) => {
+            const club = clubOf(lane.code);
+            const card = el('div', 'kp-cvstart-card is-waiting');
+            card.dataset.lane = String(lane.lane);
+            card.dataset.idx = String(i);
+            const laneNum = el('span', 'kp-cvstart-lane', String(lane.lane));
+            const copy = el('div', 'kp-cvstart-copy');
+            copy.appendChild(
+                el('span', 'kp-cvstart-name', club.name || club.abbr || lane.code || `Lane ${lane.lane}`),
+            );
+            copy.appendChild(el('span', 'kp-cvstart-abbr', club.abbr || `L${lane.lane}`));
+            card.appendChild(crewLogo(club, 'kp-crew-logo--cvstart'));
+            card.appendChild(laneNum);
+            card.appendChild(copy);
+            stage.appendChild(card);
         });
-        root.appendChild(marks);
-        const lanes = el('div', 'kp-course-lanes');
-        for (let i = 1; i <= 8; i++) {
-            const ln = el('div', 'kp-course-lane', String(i));
-            lanes.appendChild(ln);
+        if (!lanes.length) {
+            stage.appendChild(el('p', 'kp-cvstart-empty', 'No crews on daysheet for this race'));
         }
-        root.appendChild(lanes);
+        root.appendChild(stage);
         layer.appendChild(root);
+        paintCvStartPositions();
+    }
+
+    function paintCvStartPositions() {
+        const stage = document.getElementById('kpCvStartStage');
+        if (!stage) return;
+        const snap = state.cvRace;
+        const fw = Math.max(1, Number(snap?.frame_w) || 1920);
+        const fh = Math.max(1, Number(snap?.frame_h) || 1080);
+        const byLane = new Map(
+            (snap?.boats || [])
+                .filter((b) => Number.isFinite(Number(b.lane)))
+                .map((b) => [Number(b.lane), b]),
+        );
+        const cards = [...stage.querySelectorAll('.kp-cvstart-card')];
+        const n = Math.max(1, cards.length);
+        cards.forEach((card, i) => {
+            const lane = Number(card.dataset.lane);
+            const b = byLane.get(lane);
+            const x = Number(b?.x);
+            const y = Number(b?.y);
+            const live =
+                Number.isFinite(x) &&
+                Number.isFinite(y) &&
+                (x > 0 || y > 0) &&
+                (b?.detected !== false);
+            if (live) {
+                const px = (x / fw) * 1920;
+                const py = (y / fh) * 1080;
+                card.style.left = `${px.toFixed(1)}px`;
+                card.style.top = `${py.toFixed(1)}px`;
+                card.classList.remove('is-waiting');
+                card.classList.toggle('is-stale', b?.coasting || b?.cv_status === 'amber');
+            } else {
+                // Waiting CV: fan tags across the lower third by draw order.
+                const t = (i + 0.5) / n;
+                card.style.left = `${(120 + t * 1680).toFixed(1)}px`;
+                card.style.top = '820px';
+                card.classList.add('is-waiting');
+                card.classList.remove('is-stale');
+            }
+        });
+        const head = stage.parentElement?.querySelector('.kp-cvstart-hint');
+        if (head) {
+            const liveN = cards.filter((c) => !c.classList.contains('is-waiting')).length;
+            head.textContent = cvLive()
+                ? `${liveN}/${cards.length} on camera`
+                : 'Waiting CV · tags park until boats are seen';
+        }
+    }
+
+    function renderCourse(layer) {
+        // Legacy decorative course — redirect to live CV drone course.
+        renderCvCourse(layer);
     }
 
     const RENDER = {
@@ -1438,7 +1575,10 @@
         livetracking: renderLiveTrack,
         cvleader: renderCvLeader,
         cvdraw: renderCvDraw,
-        coursescroll: (layer) => renderCourse(layer),
+        coursescroll: renderCvCourse,
+        cvcourse: renderCvCourse,
+        cvsplits: renderCvSplits,
+        cvstart: renderCvStart,
     };
 
     function render(layer, graphic, race) {
@@ -1447,7 +1587,16 @@
         const fn = RENDER[g];
         if (!fn) return false;
         const r = race || vgFindRace(vgGetRaceParam());
-        if (!r && g !== 'title' && g !== 'schedule' && g !== 'weather' && g !== 'brand' && g !== 'coursescroll') {
+        if (
+            !r &&
+            g !== 'title' &&
+            g !== 'schedule' &&
+            g !== 'weather' &&
+            g !== 'brand' &&
+            g !== 'cvcourse' &&
+            g !== 'cvsplits' &&
+            g !== 'coursescroll'
+        ) {
             return false;
         }
         fn(layer, r);
@@ -1807,6 +1956,9 @@
         }
         if (g === 'speedchart') {
             paintSpeedSvg(document.querySelector('.kp-speed svg'), boats);
+        }
+        if (g === 'cvstart') {
+            paintCvStartPositions();
         }
     }
 

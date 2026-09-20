@@ -21,6 +21,11 @@ const VG_GRAPHIC_ALIASES = {
     u: 'coursescroll',
     coursescroll: 'coursescroll',
     course: 'coursescroll',
+    cvcourse: 'cvcourse',
+    cvsplits: 'cvsplits',
+    splits: 'cvsplits',
+    cvstart: 'cvstart',
+    startlist: 'cvstart',
     s: 'schedule',
     g: 'speed',
     map: 'speed',
@@ -63,14 +68,17 @@ function vgGraphicFromShortcut(key) {
     if (k === 's' && vgIsCssOverlayTheme()) return 'schedule';
     if (k === 'x' && vgIsCssOverlayTheme()) return 'cvleader';
     if (k === 'h' && vgIsCssOverlayTheme()) return 'cvdraw';
-    if (k === 'u' && vgIsCssOverlayTheme()) return 'coursescroll';
+    if (k === 'u' && vgIsCssOverlayTheme()) return vgIsKarapiroTheme() ? 'cvcourse' : 'coursescroll';
     if (k === 'm' && vgIsCssOverlayTheme()) return 'weather';
     if (vgIsKarapiroTheme()) {
         if (k === 'a') return 'suitstrip';
         if (k === 'f') return 'lowersuits';
         if (k === 'b') return 'brand';
         if (k === 'q') return 'speedchart';
-        if (k === 'y') return 'drill';
+        if (k === 'y') return 'cvsplits';
+        if (k === 'i') return 'cvstart';
+        if (k === 'w') return 'livetracking';
+        if (k === '0') return 'tracker';
     }
     return VG_GRAPHIC_ALIASES[k] || null;
 }
@@ -2415,7 +2423,10 @@ function vgPrepareContent(graphic, raceParam) {
             g !== 'schedule' &&
             g !== 'weather' &&
             g !== 'brand' &&
-            g !== 'coursescroll'
+            g !== 'coursescroll' &&
+            g !== 'cvcourse' &&
+            g !== 'cvsplits' &&
+            g !== 'cvstart'
         ) {
             if (err) {
                 err.hidden = false;
