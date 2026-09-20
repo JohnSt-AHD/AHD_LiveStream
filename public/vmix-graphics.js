@@ -26,6 +26,8 @@ const VG_GRAPHIC_ALIASES = {
     splits: 'cvsplits',
     cvstart: 'cvstart',
     startlist: 'cvstart',
+    cvpositions: 'cvpositions',
+    positions: 'cvpositions',
     s: 'schedule',
     g: 'speed',
     map: 'speed',
@@ -77,6 +79,7 @@ function vgGraphicFromShortcut(key) {
         if (k === 'q') return 'speedchart';
         if (k === 'y') return 'cvsplits';
         if (k === 'i') return 'cvstart';
+        if (k === 'j') return 'cvpositions';
         if (k === 'w') return 'livetracking';
         if (k === '0') return 'tracker';
     }

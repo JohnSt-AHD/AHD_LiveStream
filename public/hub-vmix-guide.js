@@ -20,6 +20,7 @@ const VMIX_KARAPIRO_EXTRA = [
     { key: 'cvcourse', graphic: 'CV drone course' },
     { key: 'cvsplits', graphic: 'CV splits' },
     { key: 'cvstart', graphic: 'CV start list' },
+    { key: 'cvpositions', graphic: 'CV positions' },
 ];
 
 const VMIX_TRIGGERS = [
@@ -38,6 +39,7 @@ const VMIX_TRIGGERS = [
     { key: 'k', graphic: 'Live tracking', desc: 'KRI — demo live track. Karāpiro — live CV chainage (W / k). o to fade out' },
     { key: 'y', graphic: 'CV splits', desc: 'Karāpiro (Ged) only — 500/1000/1500 m placing board from CV race marks; o to fade out' },
     { key: 'i', graphic: 'CV start list', desc: 'Karāpiro (Ged) only — logo + lane + crew name tagged on each boat from live CV/drone positions; o to fade out' },
+    { key: 'j', graphic: 'CV positions', desc: 'Karāpiro (Ged) only — bottom-right placing table for stable CV crews; race clock, leader metres to go, gap to leader; o to fade out' },
     { key: 'm', graphic: 'Weather map', desc: 'KRI and Karāpiro packs — full-screen Lake Karāpiro live weather (wind, temp, rain, 3 hr forecast); o to fade out' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
     { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },

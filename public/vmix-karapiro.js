@@ -25,6 +25,7 @@
         cvleader: 1, cvdraw: 1, coursescroll: 1, course: 1,
         cvcourse: 1, cvsplits: 1, splits: 1,
         cvstart: 1, startlist: 1,
+        cvpositions: 1, positions: 1,
     };
     const CANON = {
         speed: 'speedchart',
@@ -33,12 +34,13 @@
         coursescroll: 'cvcourse',
         splits: 'cvsplits',
         startlist: 'cvstart',
+        positions: 'cvpositions',
     };
     const GED_KEYS = {
         '1': 'title', '2': 'lower', '3': 'draw', '4': 'results', '5': 'leader',
         '6': 'cvleader', '7': 'cvdraw', '8': 'cvcourse', '9': 'schedule',
         '0': 'tracker', q: 'speedchart', w: 'livetracking', e: 'weather',
-        y: 'cvsplits', i: 'cvstart',
+        y: 'cvsplits', i: 'cvstart', j: 'cvpositions',
         s: 'suits', a: 'suitstrip', f: 'lowersuits', b: 'brand',
     };
     const LAYER_CLASS = {
@@ -65,6 +67,7 @@
         cvcourse: 'vg-layer--cvcourse',
         cvsplits: 'vg-layer--cvsplits',
         cvstart: 'vg-layer--cvstart',
+        cvpositions: 'vg-layer--cvpositions',
     };
     const OPS = [
         ['1', 'Title', 'title'],
@@ -81,6 +84,7 @@
         ['8', 'CV course', 'cvcourse'],
         ['Y', 'CV splits', 'cvsplits'],
         ['I', 'CV start list', 'cvstart'],
+        ['J', 'CV positions', 'cvpositions'],
         ['9', 'Schedule', 'schedule'],
         ['0', 'Tracker', 'tracker'],
         ['Q', 'Speed', 'speedchart'],
@@ -880,6 +884,12 @@
             const m = Number.isFinite(held)
                 ? Math.max(0, Math.min(COURSE_M, held))
                 : 0;
+            const status = String(cv?.cv_status || '');
+            const detected = cv?.detected !== false && !cv?.coasting;
+            const stable =
+                Number.isFinite(ch) &&
+                detected &&
+                (status === 'green' || status === '' || status === 'ok');
             return {
                 ...club,
                 lane: l.lane,
@@ -887,9 +897,30 @@
                 dur: 372,
                 live: Number.isFinite(ch),
                 speed: Number(cv?.speed_mps),
-                cvStatus: cv?.cv_status || '',
+                cvStatus: status,
+                detected: Boolean(detected),
+                coasting: Boolean(cv?.coasting),
+                stable,
             };
         });
+    }
+
+    const BOAT_LEN = 12.5;
+
+    function stableBoatsRanked(race) {
+        const boats = boatsNow(race).filter((b) => {
+            if (cvLive()) return b.stable && Number.isFinite(b.m);
+            return Number.isFinite(b.m);
+        });
+        return [...boats].sort((a, b) => b.m - a.m);
+    }
+
+    function gapFromLeader(leadM, boatM) {
+        if (!Number.isFinite(leadM) || !Number.isFinite(boatM)) return '—';
+        const d = leadM - boatM;
+        if (d < 0.4) return 'LDR';
+        if (d / BOAT_LEN >= 0.8) return `+${(d / BOAT_LEN).toFixed(1)} L`;
+        return `+${d.toFixed(0)} m`;
     }
 
     function leadOf(race) {
@@ -1503,6 +1534,100 @@
         paintCvStartPositions();
     }
 
+    function renderCvPositions(layer, race) {
+        const root = el('div', 'kp-cvpos');
+        root.id = 'kpCvPos';
+        const panel = el('div', 'kp-cvpos__panel');
+        const head = el('div', 'kp-cvpos__head');
+        const titleRow = el('div', 'kp-cvpos__title-row');
+        titleRow.appendChild(liveBadge());
+        titleRow.appendChild(el('h2', 'kp-cvpos__title', 'CV positions'));
+        titleRow.appendChild(el('span', 'kp-cvpos__clock kp-tracker-clock', raceClockText()));
+        head.appendChild(titleRow);
+        head.appendChild(
+            el(
+                'p',
+                'kp-cvpos__meta',
+                race ? `${vgKpRaceChip(race)} · ${eventName(race)}` : 'Waiting daysheet',
+            ),
+        );
+        head.appendChild(el('p', 'kp-cvpos__togo', '—'));
+        panel.appendChild(head);
+        panel.appendChild(el('div', 'kp-cvpos__list'));
+        root.appendChild(panel);
+        layer.appendChild(root);
+        paintCvPositions(race);
+    }
+
+    function paintCvPositions(race) {
+        const root = document.getElementById('kpCvPos');
+        if (!root) return;
+        const r = race || vgFindRace(vgGetRaceParam());
+        const list = root.querySelector('.kp-cvpos__list');
+        const toGo = root.querySelector('.kp-cvpos__togo');
+        const clock = root.querySelector('.kp-cvpos__clock');
+        const badgeHost = root.querySelector('.kp-cvpos__title-row');
+        if (clock) clock.textContent = raceClockText();
+        if (badgeHost) {
+            const old = badgeHost.querySelector('.kp-live');
+            const next = liveBadge();
+            if (old && old.className === next.className && old.textContent === next.textContent) {
+                /* keep */
+            } else if (old) {
+                old.replaceWith(next);
+            }
+        }
+        const ranked = r ? stableBoatsRanked(r) : [];
+        const leadM = ranked[0]?.m;
+        if (toGo) {
+            if (Number.isFinite(leadM)) {
+                const left = Math.max(0, Math.round(COURSE_M - leadM));
+                toGo.textContent = `${left.toLocaleString('en-NZ')} m to go`;
+            } else {
+                toGo.textContent = cvLive() ? 'Waiting stable CV' : 'Sim · no leader yet';
+            }
+        }
+        if (!list) return;
+        const sig = ranked.map((b) => b.lane).join(',');
+        if (list.dataset.sig === sig && list.children.length === ranked.length) {
+            ranked.forEach((b, i) => {
+                const row = list.children[i];
+                if (!row) return;
+                row.classList.toggle('kp-cvpos__row--lead', i === 0);
+                const rank = row.querySelector('.kp-cvpos__rank');
+                const gap = row.querySelector('.kp-cvpos__gap');
+                if (rank) rank.textContent = String(i + 1);
+                if (gap) gap.textContent = gapFromLeader(leadM, b.m);
+            });
+            return;
+        }
+        list.dataset.sig = sig;
+        list.replaceChildren();
+        if (!ranked.length) {
+            list.appendChild(
+                el(
+                    'div',
+                    'kp-cvpos__empty',
+                    cvLive() ? 'No stable CV crews yet' : 'Waiting CV link',
+                ),
+            );
+            return;
+        }
+        ranked.forEach((b, i) => {
+            const row = el('div', i === 0 ? 'kp-cvpos__row kp-cvpos__row--lead' : 'kp-cvpos__row');
+            row.dataset.lane = String(b.lane);
+            row.appendChild(el('span', 'kp-cvpos__rank', String(i + 1)));
+            row.appendChild(crewLogo(b, 'kp-crew-logo--cvpos'));
+            row.appendChild(el('span', 'kp-cvpos__lane', String(b.lane)));
+            const copy = el('div', 'kp-cvpos__copy');
+            copy.appendChild(el('span', 'kp-cvpos__name', b.name || b.abbr || `Lane ${b.lane}`));
+            copy.appendChild(el('span', 'kp-cvpos__abbr', b.abbr || `L${b.lane}`));
+            row.appendChild(copy);
+            row.appendChild(el('span', 'kp-cvpos__gap', gapFromLeader(leadM, b.m)));
+            list.appendChild(row);
+        });
+    }
+
     function paintCvStartPositions() {
         const stage = document.getElementById('kpCvStartStage');
         if (!stage) return;
@@ -1579,6 +1704,7 @@
         cvcourse: renderCvCourse,
         cvsplits: renderCvSplits,
         cvstart: renderCvStart,
+        cvpositions: renderCvPositions,
     };
 
     function render(layer, graphic, race) {
@@ -1959,6 +2085,9 @@
         }
         if (g === 'cvstart') {
             paintCvStartPositions();
+        }
+        if (g === 'cvpositions') {
+            paintCvPositions(race);
         }
     }
 
