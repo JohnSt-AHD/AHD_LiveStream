@@ -38,7 +38,7 @@ function hubStatsTodayRangeIso(timeZone = HUB_STATS_TIMEZONE) {
 async function hubStatsLoadDistanceTodayFromLogbook() {
     const params = new URLSearchParams({
         action: 'logbook',
-        days: '7',
+        days: '45',
         tz: HUB_STATS_TIMEZONE,
     });
     if (window.AltitudeHdTrackerSource) {
