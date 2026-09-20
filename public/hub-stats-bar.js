@@ -189,13 +189,36 @@ function hubStatsWireBarLinks() {
 function hubStatsCalendarParts() {
     const label = hubStatsCalendarLabel();
     const many = label.match(/^(\d+) days to (.+)$/);
-    if (many) return { value: many[1], label: `Days to ${many[2]}` };
-    if (label.startsWith('1 day to ')) return { value: '1', label: `Day to ${label.slice(9)}` };
-    if (label.startsWith('Now: ')) return { value: 'Now', label: label.slice(5) };
-    if (label.startsWith('Next: ')) {
-        return { value: 'Next', label: label.replace(/^Next:\s*/, '').replace(/\s*\(today\)$/, '') };
+    if (many) return { value: many[1], label: `Days to ${many[2]}`, full: label };
+    if (label.startsWith('1 day to ')) {
+        return { value: '1', label: `Day to ${label.slice(9)}`, full: label };
     }
-    return { value: '—', label: label === '—' ? 'Regatta' : label };
+    if (label.startsWith('Now: ')) {
+        return { value: 'Now', label: label.slice(5), full: label };
+    }
+    if (label.startsWith('Next: ')) {
+        return {
+            value: 'Next',
+            label: label.replace(/^Next:\s*/, '').replace(/\s*\(today\)$/, ''),
+            full: label,
+        };
+    }
+    return { value: '—', label: label === '—' ? 'Regatta' : label, full: label };
+}
+
+/** Hub cards use value+label; RowSafe one-line bar needs the full "N days to …" string. */
+function hubStatsSetEvent() {
+    const parts = hubStatsCalendarParts();
+    const el = document.getElementById('hubStatEvent');
+    if (!el) return;
+    if (el.querySelector('.hub-stat-value')) {
+        hubStatsSetItem('hubStatEvent', parts.label, {
+            value: parts.value,
+            label: parts.label,
+        });
+    } else {
+        el.textContent = parts.full || parts.label;
+    }
 }
 
 function hubStatsSetItem(id, text, options = {}) {
@@ -304,17 +327,13 @@ function hubStatsSnapshotFetch() {
 function hubStatsOnSnapshotError(err) {
     console.error('Hub stats bar:', err);
     const isRnzPage = document.body?.classList.contains('rnz-page');
-    const eventParts = hubStatsCalendarParts();
     hubStatsSetItem('hubStatWarnings', isRnzPage ? 'Capsize: —' : 'Warnings: —', {
         value: '0',
         label: isRnzPage ? 'Capsize' : 'Warnings',
     });
     hubStatsSetItem('hubStatOnWater', 'On water: —', { value: '0', label: 'On water' });
     hubStatsSetItem('hubStatDistance', 'Distance today: —', { value: '0 m', label: 'Distance today' });
-    hubStatsSetItem('hubStatEvent', eventParts.label, {
-        value: eventParts.value,
-        label: eventParts.label,
-    });
+    hubStatsSetEvent();
 }
 
 async function hubStatsApplySnapshot(data) {
@@ -384,11 +403,7 @@ async function hubStatsApplySnapshot(data) {
         });
     }
 
-    const eventParts = hubStatsCalendarParts();
-    hubStatsSetItem('hubStatEvent', eventParts.label, {
-        value: eventParts.value,
-        label: eventParts.label,
-    });
+    hubStatsSetEvent();
 
     const distanceM = await hubStatsRefreshDistance(!hubStatsDistanceEverLoaded);
     hubStatsDistanceEverLoaded = true;
@@ -464,6 +479,8 @@ window.addEventListener('altitudehd:tracker-source', () => {
 document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('hubStatsBar')) return;
     hubStatsWireBarLinks();
+    // Regatta countdown is local calendar data — paint immediately (RowSafe never polls alone).
+    hubStatsSetEvent();
     if (!hubStatsIsSnapshotConsumerOnly()) {
         hubStatsRefresh();
         hubStatsStartPolling();
