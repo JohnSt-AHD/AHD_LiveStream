@@ -63,6 +63,12 @@
 [data-vmix-theme='karapiro'] .vg-layer--weather,
 [data-vmix-theme='karapiro'] .vg-layer--cvleader,
 [data-vmix-theme='karapiro'] .vg-layer--cvdraw,
+[data-vmix-theme='karapiro'] .vg-layer--cvcourse,
+[data-vmix-theme='karapiro'] .vg-layer--cvsplits,
+[data-vmix-theme='karapiro'] .vg-layer--cvstart,
+[data-vmix-theme='karapiro'] .vg-layer--cvpositions,
+[data-vmix-theme='karapiro'] .vg-layer--cvfollow,
+[data-vmix-theme='karapiro'] .vg-layer--cvboattags,
 [data-vmix-theme='karapiro'] .vg-layer--coursescroll {
     inset: 0;
     width: auto;
@@ -1082,11 +1088,13 @@
     animation: kup 0.7s var(--kp-ease) both;
 }
 
+.kp-speed-canvas,
 .kp-speed svg { display: block; width: 100%; height: 260px; }
 
 .kp-speed-legend {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 12px 16px;
     padding: 8px 20px 14px;
     font-family: var(--font-mono);
     font-size: 13px;
@@ -1254,21 +1262,42 @@
   inset: 0;
 }
 
+.kp-cvstart-stage.has-start-still {
+  background-color: #3c4e58;
+}
+
+.kp-cvstart-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .kp-cvstart-card {
   position: absolute;
-  transform: translate(-50%, -118%);
+  z-index: 1;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center center;
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  max-width: 280px;
+  max-width: 240px;
   padding: 8px 14px 8px 10px;
   border-radius: 10px;
   background: rgba(13, 17, 23, 0.93);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 14px 36px rgba(13, 17, 23, 0.55);
   transition: left 0.18s linear, top 0.18s linear, opacity 0.25s ease;
-  animation: kpop 0.45s var(--kp-ease) both;
+  animation: kcvstartin 0.45s var(--kp-ease) both;
+}
+
+@keyframes kcvstartin {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .kp-cvstart-card.is-waiting {
@@ -1341,6 +1370,140 @@
   color: var(--alt-cream);
   font-family: var(--font-mono);
   font-size: 14px;
+}
+
+/* —— CV follow (leader ticket + arrow on lead boat) —— */
+.kp-cvfollow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 14;
+}
+
+.kp-cvfollow-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 1;
+}
+
+.kp-cvfollow-connector {
+  fill: var(--alt-sky);
+  opacity: 0.92;
+  filter: drop-shadow(0 2px 6px rgba(0, 96, 191, 0.35));
+}
+
+.kp-cvfollow.is-waiting .kp-cvfollow-connector {
+  opacity: 0;
+}
+
+.kp-cvfollow-cardwrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+  transform-origin: top left;
+  will-change: transform;
+}
+
+.kp-cvfollow-card {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(13, 17, 23, 0.55);
+}
+
+.kp-cvfollow-body {
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.kp-cvfollow-name {
+  font-size: 20px;
+}
+
+.kp-cvfollow-lane {
+  font-size: 14px;
+}
+
+.kp-cvfollow .kp-bug-dist,
+.kp-cvfollow .kp-bug-gap {
+  font-size: 18px;
+}
+
+.kp-cvfollow .kp-crew-logo--bug {
+  width: 36px;
+  height: 46px;
+}
+
+/* —— CV boat tags (suit-strip cells on each hull) —— */
+.kp-boattags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.kp-boattag {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -50%) rotate(var(--kp-tag-rot, 0deg));
+  transform-origin: center center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 44px;
+  padding: 6px 7px 5px;
+  border-radius: 8px;
+  background: rgba(13, 17, 23, 0.93);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 24px rgba(13, 17, 23, 0.5);
+  transition: left 0.12s linear, top 0.12s linear, opacity 0.2s ease;
+  animation: kcvstartin 0.4s var(--kp-ease) both;
+}
+
+.kp-boattag .kp-crew-logo--strip {
+  width: 26px;
+  height: 32px;
+}
+
+.kp-boattag .kp-suit-lane {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.kp-boattag .kp-suit-abbr {
+  font-size: 11px;
+  color: var(--alt-cream);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.kp-boattag--lead {
+  border-color: var(--alt-sky);
+  box-shadow: 0 0 0 1px var(--alt-sky), 0 10px 24px rgba(13, 17, 23, 0.5);
+}
+
+.kp-boattag--under-follow {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kp-boattag.is-waiting {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.kp-boattag.is-stale {
+  opacity: 0.55;
 }
 
 /* —— CV positions (bottom-right placing table) —— */

@@ -21,6 +21,8 @@ const VMIX_KARAPIRO_EXTRA = [
     { key: 'cvsplits', graphic: 'CV splits' },
     { key: 'cvstart', graphic: 'CV start list' },
     { key: 'cvpositions', graphic: 'CV positions' },
+    { key: 'cvfollow', graphic: 'CV follow' },
+    { key: 'cvboattags', graphic: 'CV boat tags' },
 ];
 
 const VMIX_TRIGGERS = [
@@ -29,8 +31,8 @@ const VMIX_TRIGGERS = [
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
     { key: 'w', graphic: 'Leader', desc: 'KRI — leader box top-right (Milford placement, white panel + blue accents); fade in/out with o · 1–8 switch lane · Milford — leader video + lane text' },
-    { key: 'x', graphic: 'CV leader', desc: 'KRI only — single leader box follows live CV position; crew from lane 1–8 (same as w) · o to fade out' },
-    { key: 'h', graphic: 'CV draw', desc: 'KRI only — one line + crew card per CV boat slot (daysheet draw); race leader gets gold glow · boat count from CV Analysis · o to fade out' },
+    { key: 'x', graphic: 'CV follow', desc: 'Karāpiro — leader ticket on the lead boat with an arrow to the hull (X). KRI — leader box follows live CV position; crew from lane 1–8 · o to fade out' },
+    { key: 'h', graphic: 'CV boat tags', desc: 'Karāpiro — small suit-strip lane tags on each CV boat (H). KRI — one line + crew card per CV boat slot · o to fade out' },
     { key: 'u', graphic: 'Course underlay', desc: 'KRI — procedural course underlay (sim / CrewSight). Karāpiro (Ged) — live drone CV course (same as vmix-ged-cv-course; crew tags + leader). o to fade out.' },
     { key: 's', graphic: 'Schedule', desc: 'KRI only — upcoming 10 races from hub live race (CSS gradient panel); fade in/out with o' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
@@ -38,7 +40,7 @@ const VMIX_TRIGGERS = [
     { key: 'v', graphic: 'Speed chart', desc: 'KRI — demo speed chart. Karāpiro — live CV boat speed vs distance (Q). o to fade out' },
     { key: 'k', graphic: 'Live tracking', desc: 'KRI — demo live track. Karāpiro — live CV chainage (W / k). o to fade out' },
     { key: 'y', graphic: 'CV splits', desc: 'Karāpiro (Ged) only — 500/1000/1500 m placing board from CV race marks; o to fade out' },
-    { key: 'i', graphic: 'CV start list', desc: 'Karāpiro (Ged) only — logo + lane + crew name tagged on each boat from live CV/drone positions; o to fade out' },
+    { key: 'i', graphic: 'CV start list', desc: 'Karāpiro (Ged) only — start pontoon PNG with lane tags in preview (clip video hidden); on-air (`live=1`) tags on camera; o to fade out' },
     { key: 'j', graphic: 'CV positions', desc: 'Karāpiro (Ged) only — bottom-right placing table for stable CV crews; race clock, leader metres to go, gap to leader; o to fade out' },
     { key: 'm', graphic: 'Weather map', desc: 'KRI and Karāpiro packs — full-screen Lake Karāpiro live weather (wind, temp, rain, 3 hr forecast); o to fade out' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },

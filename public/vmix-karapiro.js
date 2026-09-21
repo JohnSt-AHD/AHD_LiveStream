@@ -26,6 +26,7 @@
         cvcourse: 1, cvsplits: 1, splits: 1,
         cvstart: 1, startlist: 1,
         cvpositions: 1, positions: 1,
+        cvfollow: 1, cvboattags: 1,
     };
     const CANON = {
         speed: 'speedchart',
@@ -41,6 +42,7 @@
         '6': 'cvleader', '7': 'cvdraw', '8': 'cvcourse', '9': 'schedule',
         '0': 'tracker', q: 'speedchart', w: 'livetracking', e: 'weather',
         y: 'cvsplits', i: 'cvstart', j: 'cvpositions',
+        x: 'cvfollow', h: 'cvboattags',
         s: 'suits', a: 'suitstrip', f: 'lowersuits', b: 'brand',
     };
     const LAYER_CLASS = {
@@ -68,6 +70,8 @@
         cvsplits: 'vg-layer--cvsplits',
         cvstart: 'vg-layer--cvstart',
         cvpositions: 'vg-layer--cvpositions',
+        cvfollow: 'vg-layer--cvfollow',
+        cvboattags: 'vg-layer--cvboattags',
     };
     const OPS = [
         ['1', 'Title', 'title'],
@@ -80,6 +84,8 @@
         ['4', 'Results', 'results'],
         ['5', 'Leader', 'leader'],
         ['6', 'CV leader', 'cvleader'],
+        ['X', 'CV follow', 'cvfollow'],
+        ['H', 'CV boat tags', 'cvboattags'],
         ['7', 'CV draw', 'cvdraw'],
         ['8', 'CV course', 'cvcourse'],
         ['Y', 'CV splits', 'cvsplits'],
@@ -100,6 +106,223 @@
         'data/karapiro-u18-fastest.csv',
     ];
 
+    const START_TAG_LIFT_PX = 200;
+    const START_STILL_SRC = 'assets/vmix/karapiro-start.png?v=2';
+    const START_STILL_XY = {
+        1: { x: 240, y: 450 },
+        2: { x: 446, y: 450 },
+        3: { x: 664, y: 450 },
+        4: { x: 863, y: 450 },
+        5: { x: 1069, y: 450 },
+        6: { x: 1275, y: 450 },
+        7: { x: 1476, y: 450 },
+        8: { x: 1676, y: 450 },
+    };
+
+    function isLiveVmix() {
+        return new URLSearchParams(location.search).get('live') === '1';
+    }
+
+    /** Start list always uses the pontoon still in preview. On-air (`live=1`) stays over camera. */
+    function startStillTestSrc() {
+        if (isLiveVmix()) return '';
+        const g = canon(vgPlayback.graphic);
+        if (g === 'cvstart') return START_STILL_SRC;
+        if (isLiveCvFeed()) return '';
+        return String(state.cvRace?.start_image || START_STILL_SRC).trim();
+    }
+
+    function syncClipBackground(g) {
+        window.CvClipReplay?.setStillMode?.(canon(g || vgPlayback.graphic) === 'cvstart');
+    }
+
+    function startStillLaneXy(lane) {
+        const lineup = state.cvRace?.start_lineup?.lanes?.[String(lane)];
+        if (lineup && Number.isFinite(Number(lineup.x))) {
+            return { x: Number(lineup.x), y: Number(lineup.y) };
+        }
+        return START_STILL_XY[Number(lane)] || null;
+    }
+
+    function cvFrameSize() {
+        const snap = state.cvRace;
+        return {
+            fw: Math.max(1, Number(snap?.frame_w) || 1920),
+            fh: Math.max(1, Number(snap?.frame_h) || 1080),
+        };
+    }
+
+    function boatDirection() {
+        const d = String(state.cvRace?.boat_direction || '').toLowerCase();
+        const next = d === 'right' || d === 'left' ? d : 'away';
+        const hold = state.dirHold;
+        if (!hold.dir) hold.dir = next;
+        if (next === hold.dir) {
+            hold.since = 0;
+            return hold.dir;
+        }
+        const now = performance.now();
+        if (!hold.since) hold.since = now;
+        if (now - hold.since >= 900) {
+            hold.dir = next;
+            hold.since = 0;
+        }
+        return hold.dir;
+    }
+
+    function boatScreenXy(src) {
+        const x = Number(src?.x);
+        const y = Number(src?.y);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+        if (x <= 0 && y <= 0) return null;
+        const { fw, fh } = cvFrameSize();
+        return { x: (x / fw) * 1920, y: (y / fh) * 1080 };
+    }
+
+    function cvBoatRaw(lane) {
+        return (state.cvRace?.boats || []).find((b) => Number(b.lane) === Number(lane)) || null;
+    }
+
+    function emaPoint(prev, x, y, now, tauMs) {
+        if (!prev) return { x, y, t: now };
+        const dt = Math.max(8, Math.min(48, now - (prev.t || now)));
+        const a = 1 - Math.exp(-dt / Math.max(80, tauMs));
+        return {
+            x: prev.x + (x - prev.x) * a,
+            y: prev.y + (y - prev.y) * a,
+            t: now,
+        };
+    }
+
+    function pullClipRace() {
+        if (!window.CvClipReplay?.active()) return false;
+        const snap = window.CvClipReplay.raceSnapshot();
+        if (!snap) return false;
+        const prevMs = Number(state.cvRace?.clock?.elapsed_ms);
+        const nextMs = Number(snap.clock?.elapsed_ms);
+        if (
+            Number.isFinite(prevMs) &&
+            Number.isFinite(nextMs) &&
+            (nextMs + 600 < prevMs || nextMs > prevMs + 1500)
+        ) {
+            state.boatSmooth.clear();
+            state.boatTel.clear();
+            state.speedHist.clear();
+            state.followPos = null;
+            state.followBoat = null;
+            state.leadLane = null;
+            state.viewBlend = null;
+            state.dirHold = { dir: 'away', since: 0 };
+        }
+        state.cvSource = 'clip';
+        state.cvRace = snap;
+        mixAllTelemetry();
+        return true;
+    }
+
+    function smoothCvScreen() {
+        const now = performance.now();
+        const raw = [];
+        for (const b of state.cvRace?.boats || []) {
+            const xy = boatScreenXy(b);
+            if (!xy) continue;
+            raw.push({ lane: Number(b.lane), x: xy.x, y: xy.y });
+        }
+        const stepOf = (r) => {
+            const prev = state.boatSmooth.get(r.lane);
+            if (!prev) return 0;
+            return Math.hypot(r.x - prev.x, r.y - prev.y);
+        };
+        const tracked = raw.filter((r) => state.boatSmooth.has(r.lane));
+        const cam = tracked.length
+            ? Math.min(...tracked.map(stepOf))
+            : 0;
+        for (const r of raw) {
+            const prev = state.boatSmooth.get(r.lane);
+            if (!prev) {
+                state.boatSmooth.set(r.lane, {
+                    x: r.x,
+                    y: r.y,
+                    rawX: r.x,
+                    rawY: r.y,
+                    t: now,
+                    rejectSince: 0,
+                });
+                continue;
+            }
+            const step = stepOf(r);
+            const isOutlier = step > Math.max(80, cam + 70);
+            let tx = r.x;
+            let ty = r.y;
+            let rawX = r.x;
+            let rawY = r.y;
+            let rejectSince = 0;
+            if (isOutlier) {
+                const since = prev.rejectSince || now;
+                if (now - since < 550) {
+                    tx = prev.x;
+                    ty = prev.y;
+                    rawX = prev.rawX;
+                    rawY = prev.rawY;
+                    rejectSince = since;
+                }
+            }
+            const next = emaPoint(prev, tx, ty, now, isOutlier ? 420 : 300);
+            state.boatSmooth.set(r.lane, { ...next, rawX, rawY, rejectSince });
+        }
+    }
+
+    function boatScreenSmoothed(lane) {
+        const s = state.boatSmooth.get(Number(lane));
+        if (s && Number.isFinite(s.x) && Number.isFinite(s.y)) return { x: s.x, y: s.y };
+        return boatScreenXy(cvBoatRaw(lane));
+    }
+
+    function mixAllTelemetry() {
+        const now = performance.now();
+        for (const b of state.cvRace?.boats || []) {
+            const lane = Number(b.lane);
+            const m = Number(b.chainage_m);
+            const sp = Number(b.speed_mps);
+            if (!Number.isFinite(lane)) continue;
+            const prev = state.boatTel.get(lane);
+            if (!prev) {
+                state.boatTel.set(lane, {
+                    m: Number.isFinite(m) ? m : 0,
+                    sp: Number.isFinite(sp) ? sp : 0,
+                    t: now,
+                });
+                continue;
+            }
+            const dt = Math.max(8, Math.min(48, now - (prev.t || now)));
+            let tm = Number.isFinite(m) ? m : prev.m;
+            let tsp = Number.isFinite(sp) ? sp : prev.sp;
+            if (Number.isFinite(m) && Math.abs(m - prev.m) > 35) tm = prev.m;
+            if (Number.isFinite(sp) && Math.abs(sp - prev.sp) > 1.15) tsp = prev.sp;
+            const am = 1 - Math.exp(-dt / 420);
+            const as = 1 - Math.exp(-dt / 580);
+            state.boatTel.set(lane, {
+                m: prev.m + (tm - prev.m) * am,
+                sp: prev.sp + (tsp - prev.sp) * as,
+                t: now,
+            });
+        }
+    }
+
+    function boatTel(lane) {
+        return state.boatTel.get(Number(lane)) || null;
+    }
+
+    function mixFollow(px, py) {
+        state.followPos = emaPoint(state.followPos, px, py, performance.now(), 280);
+        return state.followPos;
+    }
+
+    function mixFollowBoat(xy) {
+        if (!xy) return null;
+        state.followBoat = emaPoint(state.followBoat, xy.x, xy.y, performance.now(), 220);
+        return { x: state.followBoat.x, y: state.followBoat.y };
+    }
     const LS_CV_URL = 'altitudeHdCvServerUrl_v1';
     const DEFAULT_CV = 'http://127.0.0.1:8790';
     const COURSE_M = 2000;
@@ -119,9 +342,22 @@
         recordsPromise: null,
         cvRace: null,
         cvPoll: 0,
+        cvBusy: false,
         cvPhase: '',
         chHold: new Map(),
         speedHist: new Map(),
+        simGraphicFp: '',
+        cvSource: '',
+        liveFailUntil: 0,
+        followPos: null,
+        followBoat: null,
+        followSide: { left: false, down: false },
+        boatSmooth: new Map(),
+        boatTel: new Map(),
+        leadLane: null,
+        dirHold: { dir: 'away', since: 0 },
+        viewBlend: null,
+        cvPaintRaf: 0,
     };
 
     function el(tag, className, text) {
@@ -142,17 +378,20 @@
     }
 
     function liveBadge() {
-        const s = el('span', cvLive() ? 'kp-live' : 'kp-live kp-live--sim');
+        const s = el('span', isLiveCvFeed() ? 'kp-live' : 'kp-live kp-live--sim');
         s.appendChild(el('span', 'kp-live-dot'));
-        s.appendChild(document.createTextNode(cvLive() ? 'Live CV' : 'Sim'));
+        s.appendChild(document.createTextNode(isLiveCvFeed() ? 'Live CV' : 'Sim'));
         return s;
     }
 
     function cvFrameUrl(page, extra) {
-        const origin = cvOrigin() || DEFAULT_CV;
+        const origin = cvLaptopOrigin() || DEFAULT_CV;
         const u = new URL(page, location.href);
         u.searchParams.set('cvLaptop', origin);
         u.searchParams.set('live', '1');
+        if (new URLSearchParams(location.search).get('sim') === '1') {
+            u.searchParams.set('sim', '1');
+        }
         if (extra && typeof extra === 'object') {
             Object.entries(extra).forEach(([k, v]) => {
                 if (v == null || v === '') return;
@@ -772,7 +1011,76 @@
         return `${m}:${(s % 60).toFixed(1).padStart(4, '0')}`;
     }
 
-    function cvOrigin() {
+    function simRaceStub() {
+        const s = state.cvRace;
+        if (!s?.sim) return null;
+        return {
+            race: String(s.raceNum || 1),
+            raceNum: s.raceNum || 1,
+            eventType: s.eventType || s.event || 'M 1X',
+            event: s.event || s.eventType || 'M 1X',
+            lanes: (s.boats || []).map((b) => ({
+                lane: b.lane,
+                code: b.code || b.label,
+            })),
+        };
+    }
+
+    function clipRaceStub() {
+        const s = state.cvRace;
+        if (!s || s.source !== 'clip') return null;
+        const lanes = (s.draw_lanes || s.boats || []).map((b) => ({
+            lane: Number(b.lane),
+            code: b.code || b.label,
+        }));
+        return {
+            race: String(s.raceNum || 1),
+            raceNum: s.raceNum || 1,
+            eventType: s.eventType || s.event || 'U 8+',
+            event: s.event || s.eventType || 'U 8+',
+            lanes,
+        };
+    }
+
+    function currentRace() {
+        return clipRaceStub() || vgFindRace(vgGetRaceParam()) || simRaceStub();
+    }
+
+    function simCrewFp() {
+        const race = currentRace();
+        const lanes = laneEntries(race)
+            .map((l) => `${l.lane}:${l.code}`)
+            .join('|');
+        return `${state.cvSource || ''}|${race?.race || ''}|${lanes}`;
+    }
+
+    function remountSimGraphic() {
+        const g = canon(vgPlayback.graphic);
+        if (!g || vgPlayback.state === 'idle') return;
+        const fp = simCrewFp();
+        if (fp === state.simGraphicFp) {
+            if (g === 'cvstart') paintCvStartPositions();
+            if (g === 'cvfollow') paintCvFollow();
+            if (g === 'cvboattags') paintCvBoatTags();
+            if (g === 'speedchart') {
+                paintSpeedChart(document.querySelector('.kp-speed canvas'), boatsNow(currentRace()));
+            }
+            return;
+        }
+        const layer = document.getElementById('vgLayer');
+        const fn = RENDER[g];
+        if (!layer || !fn) return;
+        state.simGraphicFp = fp;
+        layer.replaceChildren();
+        fn(layer, currentRace());
+    }
+
+    function simFallbackEnabled() {
+        const q = new URLSearchParams(location.search);
+        return q.get('sim') !== '0';
+    }
+
+    function cvLaptopOrigin() {
         const q = new URLSearchParams(location.search);
         if (q.get('cv') === '0') return '';
         const fromUrl = (q.get('cvLaptop') || q.get('laptop') || '').replace(/\/+$/, '');
@@ -784,6 +1092,58 @@
             /* ignore */
         }
         return DEFAULT_CV;
+    }
+
+    function cvOrigin() {
+        if (state.cvSource === 'live') return cvLaptopOrigin();
+        if (simFallbackEnabled()) return location.origin.replace(/\/+$/, '');
+        return cvLaptopOrigin();
+    }
+
+    function isLiveCvFeed() {
+        return state.cvSource === 'live' || (cvLive() && state.cvRace?.sim !== true);
+    }
+
+    function isLiveCvRace(data) {
+        if (window.CvOverlayDraw?.isLiveCvSnapshot) return CvOverlayDraw.isLiveCvSnapshot(data);
+        if (!data || typeof data !== 'object' || data.sim === true) return false;
+        return (
+            data.ok === true ||
+            (Array.isArray(data.boats) && data.boats.length > 0) ||
+            (Array.isArray(data.draw_lanes) && data.draw_lanes.length > 0) ||
+            (Array.isArray(data.occupied_lanes) && data.occupied_lanes.length > 0) ||
+            Number.isFinite(Number(data.leader_chainage_m)) ||
+            Boolean(data.race_phase)
+        );
+    }
+
+    function liveRaceUsable(data) {
+        if (!isLiveCvRace(data) || data.sim === true) return false;
+        const boats = Array.isArray(data.boats) ? data.boats : [];
+        if (boats.some((b) => Number.isFinite(Number(b.chainage_m)) && Number(b.chainage_m) > 1)) {
+            return true;
+        }
+        const series = Array.isArray(data.speed_series) ? data.speed_series : [];
+        return series.some((row) => (row?.points || []).length >= 2);
+    }
+
+    async function fetchCvRace(origin, timeoutMs) {
+        if (!origin) return null;
+        const ac = new AbortController();
+        const timeout = setTimeout(() => ac.abort(), timeoutMs || 600);
+        try {
+            const res = await fetch(`${origin}/api/race`, {
+                cache: 'no-store',
+                signal: ac.signal,
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data && typeof data === 'object' ? data : null;
+        } catch {
+            return null;
+        } finally {
+            clearTimeout(timeout);
+        }
     }
 
     function cvLive() {
@@ -800,29 +1160,50 @@
     }
 
     async function pollCv() {
-        const origin = cvOrigin();
-        if (!origin) {
-            state.cvRace = null;
-            return;
-        }
-        const n = ++state.cvPoll;
-        const ac = new AbortController();
-        const timeout = setTimeout(() => ac.abort(), 1500);
+        if (state.cvBusy) return;
+        state.cvBusy = true;
         try {
-            const res = await fetch(`${origin}/api/race`, {
-                cache: 'no-store',
-                signal: ac.signal,
-            });
-            if (n !== state.cvPoll) return;
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            state.cvRace = data && typeof data === 'object' ? data : null;
-            recordSpeedSamples(state.cvRace);
-        } catch {
-            if (n !== state.cvPoll) return;
+            if (window.CvClipReplay?.active()) {
+                if (pullClipRace()) {
+                    recordSpeedSamples(state.cvRace);
+                    remountSimGraphic();
+                }
+                return;
+            }
+            const liveBase = cvLaptopOrigin();
+            const simOn = simFallbackEnabled();
+            const now = Date.now();
+            let live = null;
+            if (liveBase && now >= (state.liveFailUntil || 0)) {
+                live = await fetchCvRace(liveBase, 400);
+                if (!liveRaceUsable(live)) {
+                    live = null;
+                    state.liveFailUntil = Date.now() + 5000;
+                }
+            }
+            if (live) {
+                state.cvSource = 'live';
+                state.cvRace = live;
+                mixAllTelemetry();
+                recordSpeedSamples(live);
+                remountSimGraphic();
+                return;
+            }
+            if (simOn) {
+                const sim = await fetchCvRace(location.origin.replace(/\/+$/, ''), 800);
+                state.cvSource = sim ? 'sim' : '';
+                state.cvRace = sim;
+                if (sim) {
+                    mixAllTelemetry();
+                    recordSpeedSamples(sim);
+                }
+                remountSimGraphic();
+                return;
+            }
+            state.cvSource = '';
             state.cvRace = null;
         } finally {
-            clearTimeout(timeout);
+            state.cvBusy = false;
         }
     }
 
@@ -836,12 +1217,14 @@
         }
         for (const b of snap?.boats || []) {
             const lane = Number(b.lane);
-            const m = Number(b.chainage_m);
-            const sp = Number(b.speed_mps);
+            const tel = boatTel(lane);
+            const m = Number.isFinite(tel?.m) ? tel.m : Number(b.chainage_m);
+            const sp = Number.isFinite(tel?.sp) ? tel.sp : Number(b.speed_mps);
             if (!Number.isFinite(lane) || !Number.isFinite(m) || !Number.isFinite(sp)) continue;
             const prev = state.speedHist.get(lane) || [];
             const last = prev[prev.length - 1];
             if (last && Math.abs(last.m - m) < 0.8 && Math.abs(last.sp - sp) < 0.04) continue;
+            if (last && Math.abs(last.sp - sp) > 1.2) continue;
             prev.push({ m, sp });
             // Keep ~10 m buckets across the full 2 km so the chart spans the race.
             const buckets = new Map();
@@ -873,34 +1256,61 @@
 
     function boatsNow(race) {
         const lanes = laneEntries(race);
-        if (!cvLive()) return simBoats(race);
-        const byLane = new Map((state.cvRace.boats || []).map((b) => [Number(b.lane), b]));
+        const cvBoats = Array.isArray(state.cvRace?.boats) ? state.cvRace.boats : [];
+        const byLane = new Map(cvBoats.map((b) => [Number(b.lane), b]));
+        const mapCvOnly = (b) => ({
+            name: b.label || b.name || '',
+            logoUrl: b.logoUrl || null,
+            abbr: b.shortLabel || b.code || '',
+            id: String(b.code || '').toLowerCase(),
+            lane: Number(b.lane),
+            m: Number(b.chainage_m) || 0,
+            dur: 372,
+            live: true,
+            speed: Number(b.speed_mps),
+            cvStatus: b.cv_status || 'green',
+            detected: true,
+            coasting: false,
+            stable: true,
+            x: Number(b.x),
+            y: Number(b.y),
+        });
+        if (!lanes.length) {
+            if (cvBoats.length) return cvBoats.map(mapCvOnly);
+            return [];
+        }
+        if (!cvBoats.length && !cvLive()) return simBoats(race);
         return lanes.map((l) => {
             const club = clubOf(l.code);
-            const cv = byLane.get(l.lane);
-            const ch = Number(cv?.chainage_m);
+            const cv = byLane.get(Number(l.lane));
+            const tel = boatTel(l.lane);
+            const ch = Number.isFinite(tel?.m) ? tel.m : Number(cv?.chainage_m);
             if (Number.isFinite(ch)) state.chHold.set(l.lane, ch);
             const held = state.chHold.get(l.lane);
             const m = Number.isFinite(held)
                 ? Math.max(0, Math.min(COURSE_M, held))
-                : 0;
+                : Number.isFinite(ch)
+                  ? Math.max(0, Math.min(COURSE_M, ch))
+                  : 0;
             const status = String(cv?.cv_status || '');
-            const detected = cv?.detected !== false && !cv?.coasting;
+            const detected = cv ? cv.detected !== false && !cv.coasting : false;
             const stable =
                 Number.isFinite(ch) &&
                 detected &&
-                (status === 'green' || status === '' || status === 'ok');
+                (status === 'green' || status === '' || status === 'ok' || state.cvRace?.sim === true);
             return {
                 ...club,
                 lane: l.lane,
                 m,
                 dur: 372,
                 live: Number.isFinite(ch),
-                speed: Number(cv?.speed_mps),
+                speed: Number.isFinite(tel?.sp) ? tel.sp : Number(cv?.speed_mps),
                 cvStatus: status,
                 detected: Boolean(detected),
                 coasting: Boolean(cv?.coasting),
                 stable,
+                x: Number(cv?.x),
+                y: Number(cv?.y),
             };
         });
     }
@@ -924,7 +1334,17 @@
     }
 
     function leadOf(race) {
-        const boats = boatsNow(race).sort((a, b) => b.m - a.m);
+        const boats = [...boatsNow(race)].sort((a, b) => b.m - a.m);
+        const top = boats[0];
+        const heldLane = state.leadLane;
+        if (heldLane != null && top) {
+            const held = boats.find((b) => b.lane === heldLane);
+            if (held && held.lane !== top.lane && top.m - held.m < 8) {
+                const rest = boats.filter((b) => b.lane !== heldLane);
+                return { lead: held, second: rest[0], boats };
+            }
+        }
+        if (top) state.leadLane = top.lane;
         return { lead: boats[0], second: boats[1], boats };
     }
 
@@ -1353,64 +1773,193 @@
     }
 
     function speedCols() {
-        return ['#2e7de0', '#d9e7f8', '#8a96a5', festive() ? '#e5484d' : '#4e5a68'];
+        return festive()
+            ? ['#4aa3ff', '#f4f7fb', '#e5484d', '#f5c542', '#22c55e', '#f97316', '#c4b5fd', '#22d3ee']
+            : ['#4aa3ff', '#f4f7fb', '#f5c542', '#22c55e', '#f97316', '#c4b5fd', '#22d3ee', '#fb7185'];
+    }
+
+    const SPEED_Y_MIN = 3.5;
+    const SPEED_Y_MAX = 6;
+
+    function speedXy(m, sp) {
+        const x = 52 + (Math.max(0, Math.min(COURSE_M, Number(m) || 0)) / COURSE_M) * 508;
+        const t = (Math.max(SPEED_Y_MIN, Math.min(SPEED_Y_MAX, Number(sp) || SPEED_Y_MIN)) - SPEED_Y_MIN) /
+            (SPEED_Y_MAX - SPEED_Y_MIN);
+        return { x, y: 228 - t * 198 };
+    }
+
+    function parseSpeedPoints(row) {
+        const fromSeries = [];
+        for (const p of row?.points || []) {
+            let m;
+            let sp;
+            let t;
+            if (Array.isArray(p)) {
+                t = Number(p[0]);
+                sp = Number(p[1]);
+                m = Number.isFinite(Number(p[2])) ? Number(p[2]) : null;
+            } else if (p && typeof p === 'object') {
+                t = Number(p.t);
+                sp = Number(p.s ?? p.sp ?? p.speed);
+                m = Number(p.d ?? p.m ?? p.distance);
+            }
+            if (!Number.isFinite(sp)) continue;
+            fromSeries.push({
+                t: Number.isFinite(t) ? t : null,
+                m: Number.isFinite(m) ? m : null,
+                sp,
+            });
+        }
+        const xs = fromSeries.map((p) => (p.m != null ? p.m : p.t)).filter((v) => Number.isFinite(v));
+        const deltas = [];
+        for (let i = 1; i < xs.length; i += 1) deltas.push(xs[i] - xs[i - 1]);
+        deltas.sort((a, b) => a - b);
+        const med = deltas[Math.floor(deltas.length / 2)] || 0;
+        const firstColIsDistance = med >= 15 && med <= 120 && (xs[xs.length - 1] || 0) >= 40;
+        if (fromSeries.some((p) => p.m == null)) {
+            if (firstColIsDistance) {
+                fromSeries.forEach((p) => {
+                    if (p.m == null && p.t != null) p.m = p.t;
+                });
+            } else if (fromSeries.some((p) => p.t != null)) {
+                let d = 0;
+                let prevT = fromSeries[0]?.t || 0;
+                fromSeries.forEach((p) => {
+                    if (p.m != null) {
+                        d = p.m;
+                        if (p.t != null) prevT = p.t;
+                        return;
+                    }
+                    if (p.t != null) {
+                        d += Math.max(0, p.sp) * Math.max(0, p.t - prevT);
+                        prevT = p.t;
+                        p.m = d;
+                    }
+                });
+            }
+        }
+        return fromSeries.filter((p) => Number.isFinite(p.m) && Number.isFinite(p.sp));
+    }
+
+    function speedPointList(boat, index, usedRows) {
+        const series = Array.isArray(state.cvRace?.speed_series) ? state.cvRace.speed_series : [];
+        let row = series.find((r) => Number(r.lane) === Number(boat.lane) && !usedRows.has(r));
+        if (!row) row = series.find((r) => !usedRows.has(r));
+        if (row) usedRows.add(row);
+        const fromSeries = row ? parseSpeedPoints(row) : [];
+        const fromHist = (state.speedHist.get(Number(boat.lane)) || []).filter(
+            (p) => Number.isFinite(p.m) && Number.isFinite(p.sp),
+        );
+        const byM = new Map();
+        for (const p of fromSeries.concat(fromHist)) {
+            if (!Number.isFinite(p.m) || !Number.isFinite(p.sp)) continue;
+            byM.set(Math.round(p.m), { m: p.m, sp: p.sp });
+        }
+        if (Number.isFinite(boat.m) && Number.isFinite(boat.speed) && boat.speed > 0.2) {
+            byM.set(Math.round(boat.m), { m: boat.m, sp: boat.speed });
+        }
+        const pts = [...byM.values()].sort((a, b) => a.m - b.m);
+        if (pts.length === 1) {
+            pts.unshift({ m: 0, sp: pts[0].sp });
+            if (pts[1].m < 8) pts.push({ m: Math.max(8, pts[1].m + 8), sp: pts[1].sp });
+        }
+        return pts;
+    }
+
+    function speedCrews(boats) {
+        const list = [...(boats || [])].sort((a, b) => Number(a.lane) - Number(b.lane));
+        if (list.length) return list;
+        const series = Array.isArray(state.cvRace?.speed_series) ? state.cvRace.speed_series : [];
+        return series.map((row, i) => ({
+            lane: Number(row.lane) || i + 1,
+            abbr: row.label || row.code || `L${row.lane || i + 1}`,
+            name: row.label || '',
+            m: NaN,
+            speed: NaN,
+        }));
     }
 
     function speedLines(boats) {
-        const top = [...boats].sort((a, b) => b.m - a.m).slice(0, 4);
         const cols = speedCols();
-        const live = cvLive();
-        return top.map((b, k) => {
-            const hist = live ? state.speedHist.get(b.lane) || [] : [];
-            const pts = [];
-            if (hist.length >= 2) {
-                hist.forEach((p) => {
-                    const x = 52 + (Math.max(0, Math.min(COURSE_M, p.m)) / COURSE_M) * 508;
-                    const y = Math.max(30, Math.min(228, 228 - (p.sp - 4) * 90));
-                    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-                });
-            } else {
-                for (let i = 0; i <= 36; i++) {
-                    const sp =
-                        4.6 + 0.45 * Math.sin(i / 4.2 + k * 1.9) + 0.12 * Math.sin(i / 1.7 + k) - k * 0.09 + 0.35;
-                    const x = 52 + i * 14.1;
-                    const y = Math.max(30, Math.min(228, 228 - (sp - 4) * 90));
-                    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-                }
-            }
-            return { pts: pts.join(' '), col: cols[k], abbr: b.abbr };
+        const usedRows = new Set();
+        return speedCrews(boats).map((b, k) => {
+            const hist = speedPointList(b, k, usedRows);
+            return {
+                hist,
+                col: cols[k % cols.length],
+                abbr: b.abbr || b.name || `L${b.lane}`,
+                lane: b.lane,
+                last: hist[hist.length - 1] || null,
+            };
         });
     }
 
-    function paintSpeedSvg(svg, boats) {
-        if (!svg) return;
+    function paintSpeedChart(canvas, boats) {
+        if (!canvas || typeof canvas.getContext !== 'function') return;
+        const w = 700;
+        const h = 260;
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
         const cols = speedCols();
         const lines = speedLines(boats);
-        let grid = '';
+        ctx.clearRect(0, 0, w, h);
+        ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+        ctx.textBaseline = 'middle';
         [
-            [48, '6.0'],
-            [138, '5.0'],
-            [228, '4.0'],
+            [30, '6.0'],
+            [109, '5.0'],
+            [188, '4.0'],
+            [228, '3.5'],
         ].forEach(([y, lab]) => {
-            grid += `<line x1="52" y1="${y}" x2="660" y2="${y}" stroke="rgba(245,240,228,0.12)" />`;
-            grid += `<text x="12" y="${y + 4}" fill="#8a96a5" font-size="12" font-family="JetBrains Mono,monospace">${lab}</text>`;
+            ctx.strokeStyle = 'rgba(245,240,228,0.16)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(52, y);
+            ctx.lineTo(660, y);
+            ctx.stroke();
+            ctx.fillStyle = '#9aa6b4';
+            ctx.fillText(lab, 10, y);
         });
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#9aa6b4';
+        ctx.font = '11px "JetBrains Mono", ui-monospace, monospace';
         [
             [52, '0'],
             [179, '500'],
             [306, '1000'],
             [433, '1500'],
-            [560, '2000M'],
-        ].forEach(([x, lab]) => {
-            grid += `<text x="${x}" y="252" fill="#8a96a5" font-size="11" font-family="JetBrains Mono,monospace">${lab}</text>`;
+            [548, '2000M'],
+        ].forEach(([x, lab]) => ctx.fillText(lab, x, 252));
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        lines.forEach((l) => {
+            if (l.hist.length >= 2) {
+                ctx.beginPath();
+                l.hist.forEach((p, i) => {
+                    const xy = speedXy(p.m, p.sp);
+                    if (i === 0) ctx.moveTo(xy.x, xy.y);
+                    else ctx.lineTo(xy.x, xy.y);
+                });
+                ctx.strokeStyle = l.col;
+                ctx.lineWidth = 3.2;
+                ctx.stroke();
+            }
+            if (l.last) {
+                const xy = speedXy(l.last.m, l.last.sp);
+                ctx.beginPath();
+                ctx.arc(xy.x, xy.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = l.col;
+                ctx.fill();
+                ctx.lineWidth = 1.4;
+                ctx.strokeStyle = 'rgba(13,17,23,0.9)';
+                ctx.stroke();
+            }
         });
-        const polylines = lines
-            .map((l) => `<polyline fill="none" stroke="${l.col}" stroke-width="2.4" points="${l.pts}"/>`)
-            .join('');
-        svg.innerHTML = grid + polylines;
-        const legend = svg.parentElement?.querySelector('.kp-speed-legend');
+        const legend = canvas.parentElement?.querySelector('.kp-speed-legend');
         if (legend) {
-            legend.replaceChildren();
+            legend.innerHTML = '';
             lines.forEach((l, i) => {
                 const s = el('span', '', l.abbr);
                 s.style.color = cols[i];
@@ -1420,25 +1969,26 @@
     }
 
     function renderSpeed(layer, race) {
-        const { boats } = leadOf(race);
-        const cols = speedCols();
-        const lines = speedLines(boats);
+        const boats = boatsNow(race);
         const root = el('div', 'kp-speed');
         const head = el('div', 'kp-speed-head');
         head.appendChild(liveBadge());
-        head.appendChild(document.createTextNode(cvLive() ? 'Boat speed · m/s · CV' : 'Boat speed · m/s · sim'));
+        head.appendChild(
+            el(
+                'span',
+                'kp-speed-title',
+                `${vgKpRaceChip(race)} · ${isLiveCvFeed() ? 'Boat speed · m/s · CV' : 'Boat speed · m/s · sim'}`,
+            ),
+        );
+        head.appendChild(el('span', 'kp-tracker-clock', raceClockText()));
         root.appendChild(head);
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 700 260');
-        root.appendChild(svg);
-        const legend = el('div', 'kp-speed-legend');
-        lines.forEach((l, i) => {
-            const s = el('span', '', l.abbr);
-            s.style.color = cols[i];
-            legend.appendChild(s);
-        });
-        root.appendChild(legend);
-        paintSpeedSvg(svg, boats);
+        const canvas = document.createElement('canvas');
+        canvas.className = 'kp-speed-canvas';
+        canvas.width = 700;
+        canvas.height = 260;
+        root.appendChild(canvas);
+        root.appendChild(el('div', 'kp-speed-legend'));
+        paintSpeedChart(canvas, boats);
         layer.appendChild(root);
     }
 
@@ -1496,6 +2046,7 @@
         const root = el('div', 'kp-cvstart');
         const head = el('div', 'kp-cvstart-head');
         head.appendChild(liveBadge());
+        const simCrews = state.cvRace?.sim ? boatsNow(race) : null;
         head.appendChild(
             el(
                 'span',
@@ -1509,9 +2060,39 @@
         root.appendChild(head);
         const stage = el('div', 'kp-cvstart-stage');
         stage.id = 'kpCvStartStage';
-        const lanes = race ? laneEntries(race) : [];
+        const still = startStillTestSrc();
+        if (still) {
+            stage.classList.add('has-start-still');
+            const pic = document.createElement('img');
+            pic.className = 'kp-cvstart-still';
+            pic.src = still;
+            pic.alt = '';
+            stage.appendChild(pic);
+        }
+        const lanes = simCrews?.length
+            ? simCrews.map((b) => ({
+                  lane: b.lane,
+                  code: b.abbr,
+                  name: b.name,
+                  logoUrl: b.logoUrl,
+                  abbr: b.abbr,
+              }))
+            : (race ? laneEntries(race) : []).map((lane) => {
+                  const club = clubOf(lane.code);
+                  return {
+                      lane: lane.lane,
+                      code: lane.code,
+                      name: club.name || club.abbr,
+                      logoUrl: club.logoUrl,
+                      abbr: club.abbr,
+                  };
+              });
         lanes.forEach((lane, i) => {
-            const club = clubOf(lane.code);
+            const club = {
+                name: lane.name,
+                abbr: lane.abbr,
+                logoUrl: lane.logoUrl,
+            };
             const card = el('div', 'kp-cvstart-card is-waiting');
             card.dataset.lane = String(lane.lane);
             card.dataset.idx = String(i);
@@ -1644,16 +2225,18 @@
         cards.forEach((card, i) => {
             const lane = Number(card.dataset.lane);
             const b = byLane.get(lane);
-            const x = Number(b?.x);
-            const y = Number(b?.y);
+            const stillXy = startStillTestSrc() ? startStillLaneXy(lane) : null;
+            const x = Number(stillXy?.x ?? b?.x);
+            const y = Number(stillXy?.y ?? b?.y);
+            const onStill = Boolean(stillXy);
             const live =
                 Number.isFinite(x) &&
                 Number.isFinite(y) &&
                 (x > 0 || y > 0) &&
-                (b?.detected !== false);
+                (onStill || b?.detected !== false);
             if (live) {
                 const px = (x / fw) * 1920;
-                const py = (y / fh) * 1080;
+                const py = (y / fh) * 1080 - START_TAG_LIFT_PX;
                 card.style.left = `${px.toFixed(1)}px`;
                 card.style.top = `${py.toFixed(1)}px`;
                 card.classList.remove('is-waiting');
@@ -1670,10 +2253,215 @@
         const head = stage.parentElement?.querySelector('.kp-cvstart-hint');
         if (head) {
             const liveN = cards.filter((c) => !c.classList.contains('is-waiting')).length;
-            head.textContent = cvLive()
-                ? `${liveN}/${cards.length} on camera`
-                : 'Waiting CV · tags park until boats are seen';
+            head.textContent = startStillTestSrc()
+                ? 'Test still · tags on start pontoons'
+                : cvLive()
+                  ? `${liveN}/${cards.length} on camera`
+                  : 'Waiting CV · tags park until boats are seen';
         }
+    }
+
+    function svgEl(tag, attrs) {
+        const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        Object.entries(attrs || {}).forEach(([k, v]) => node.setAttribute(k, String(v)));
+        return node;
+    }
+
+    function followConnectorPoints(ax, ay, bx, by, cardW, cardH) {
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        const px = -uy;
+        const py = ux;
+        const thin = 1.5;
+        const thick = 14;
+        // KRI: fat end continues past the wrap origin so it reads as going behind the panel.
+        const extend = Math.max(32, Math.min((cardW || 180) * 0.45, (cardH || 100) * 0.55, 80));
+        const ex = bx + ux * extend;
+        const ey = by + uy * extend;
+        return [
+            [ax + px * thin, ay + py * thin],
+            [ax - px * thin, ay - py * thin],
+            [ex - px * thick, ey - py * thick],
+            [ex + px * thick, ey + py * thick],
+        ]
+            .map((pt) => pt.map((n) => n.toFixed(1)).join(','))
+            .join(' ');
+    }
+
+    function renderCvFollow(layer, race) {
+        state.followPos = null;
+        const { lead } = leadOf(race);
+        const root = el('div', 'kp-cvfollow');
+        root.id = 'kpCvFollow';
+        const svg = svgEl('svg', {
+            class: 'kp-cvfollow-svg',
+            viewBox: '0 0 1920 1080',
+            preserveAspectRatio: 'none',
+        });
+        svg.appendChild(svgEl('polygon', { class: 'kp-cvfollow-connector', points: '' }));
+        root.appendChild(svg);
+        const wrap = el('div', 'kp-cvfollow-cardwrap');
+        const card = el('div', 'kp-cvfollow-card');
+        card.appendChild(bar('kp-bar--sm'));
+        const body = el('div', 'kp-bug-body kp-cvfollow-body');
+        body.appendChild(chip('Leader'));
+        if (lead) body.appendChild(crewLogo(lead, 'kp-crew-logo--bug'));
+        body.appendChild(el('span', 'kp-bug-name kp-cvfollow-name', lead?.abbr || lead?.name || '—'));
+        body.appendChild(el('span', 'kp-bug-lane kp-cvfollow-lane', lead ? `Lane ${lead.lane}` : ''));
+        body.appendChild(el('span', 'kp-bug-rule'));
+        body.appendChild(
+            el('span', 'kp-bug-dist', lead ? `${Math.round((lead.m || 0) / 10) * 10}m` : ''),
+        );
+        body.appendChild(el('span', 'kp-bug-gap', ''));
+        card.appendChild(body);
+        wrap.appendChild(card);
+        root.appendChild(wrap);
+        layer.appendChild(root);
+        paintCvFollow();
+    }
+
+    function paintCvFollow() {
+        const root = document.getElementById('kpCvFollow');
+        if (!root) return;
+        const race = currentRace();
+        const { lead, second } = leadOf(race);
+        const wrap = root.querySelector('.kp-cvfollow-cardwrap');
+        const card = root.querySelector('.kp-cvfollow-card');
+        const connector = root.querySelector('.kp-cvfollow-connector');
+        const name = root.querySelector('.kp-cvfollow-name');
+        const laneEl = root.querySelector('.kp-cvfollow-lane');
+        const dist = root.querySelector('.kp-bug-dist');
+        const gap = root.querySelector('.kp-bug-gap');
+        if (name && lead) name.textContent = lead.abbr || lead.name || '—';
+        if (laneEl && lead) laneEl.textContent = `Lane ${lead.lane}`;
+        if (dist && lead) dist.textContent = `${Math.round((lead.m || 0) / 10) * 10}m`;
+        if (gap && lead && second) {
+            const d = lead.m - second.m;
+            gap.textContent = cvLive()
+                ? d < 0.4
+                    ? 'LDR'
+                    : `+${d.toFixed(0)}m`
+                : `+${(d / 5.35).toFixed(1)}s`;
+        } else if (gap) {
+            gap.textContent = '';
+        }
+        const xy = mixFollowBoat(lead ? boatScreenSmoothed(lead.lane) : null);
+        if (!xy || !lead) {
+            root.classList.add('is-waiting');
+            if (wrap) wrap.style.transform = 'translate(1600px, 200px) translate(-100%, -100%)';
+            if (connector) connector.setAttribute('points', '');
+            return;
+        }
+        root.classList.remove('is-waiting');
+        const cardW = card?.offsetWidth || 280;
+        const cardH = card?.offsetHeight || 72;
+        const distPx = Math.max(80, cardH * 2) * 0.75;
+        const side = state.followSide || { left: false, down: false };
+        const overflowRight = xy.x + distPx * Math.SQRT1_2 + cardW;
+        const overflowTop = xy.y - distPx * Math.SQRT1_2 - cardH;
+        if (side.left) {
+            if (overflowRight < 1800) side.left = false;
+        } else if (overflowRight > 1880) {
+            side.left = true;
+        }
+        if (side.down) {
+            if (overflowTop > 48) side.down = false;
+        } else if (overflowTop < 24) {
+            side.down = true;
+        }
+        state.followSide = side;
+        const pos = mixFollow(
+            xy.x + distPx * (side.left ? -Math.SQRT1_2 : Math.SQRT1_2),
+            xy.y + distPx * (side.down ? Math.SQRT1_2 : -Math.SQRT1_2),
+        );
+        if (wrap) {
+            const ox = side.left ? '-100%' : '0';
+            const oy = side.down ? '0' : '-100%';
+            wrap.style.transform = `translate(${pos.x.toFixed(1)}px, ${pos.y.toFixed(1)}px) translate(${ox}, ${oy})`;
+        }
+        if (connector) {
+            connector.setAttribute(
+                'points',
+                followConnectorPoints(xy.x, xy.y, pos.x, pos.y, cardW, cardH),
+            );
+        }
+    }
+
+    function renderCvBoatTags(layer, race) {
+        const root = el('div', 'kp-boattags');
+        root.id = 'kpCvBoatTags';
+        boatsNow(race).forEach((club, i) => {
+            const tag = el('div', 'kp-boattag is-waiting');
+            tag.dataset.lane = String(club.lane);
+            tag.style.animationDelay = `${0.06 + i * 0.04}s`;
+            tag.appendChild(crewLogo(club, 'kp-crew-logo--strip'));
+            tag.appendChild(el('span', 'kp-suit-lane', `L${club.lane}`));
+            tag.appendChild(el('span', 'kp-suit-abbr', club.abbr || `L${club.lane}`));
+            root.appendChild(tag);
+        });
+        if (!root.childElementCount) {
+            root.appendChild(el('p', 'kp-cvstart-empty', 'Waiting draw / CV boats'));
+        }
+        layer.appendChild(root);
+        paintCvBoatTags();
+    }
+
+    function viewSideBlend() {
+        const pts = [];
+        for (const b of state.cvRace?.boats || []) {
+            const xy = boatScreenSmoothed(Number(b.lane));
+            if (xy) pts.push(xy);
+        }
+        let raw = 0;
+        if (pts.length >= 2) {
+            const ys = pts.map((p) => p.y);
+            const xs = pts.map((p) => p.x);
+            const yr = Math.max(...ys) - Math.min(...ys);
+            const xr = Math.max(...xs) - Math.min(...xs);
+            if (yr < 140 || (xr > 280 && yr < xr * 0.28)) raw = 1;
+        } else if (boatDirection() !== 'away') {
+            raw = 1;
+        }
+        if (state.viewBlend == null) state.viewBlend = raw;
+        else state.viewBlend += (raw - state.viewBlend) * 0.07;
+        return state.viewBlend;
+    }
+
+    function paintCvBoatTags() {
+        const root = document.getElementById('kpCvBoatTags');
+        if (!root) return;
+        const race = currentRace();
+        const boats = boatsNow(race);
+        const leadLane = leadOf(race).lead?.lane;
+        const blend = viewSideBlend();
+        const rot = '0deg';
+        const tags = [...root.querySelectorAll('.kp-boattag')];
+        const n = Math.max(1, tags.length);
+        tags.forEach((tag, i) => {
+            const lane = Number(tag.dataset.lane);
+            const club = boats.find((b) => b.lane === lane);
+            const xy = boatScreenSmoothed(lane);
+            tag.classList.toggle('kp-boattag--lead', Number(leadLane) === lane);
+            tag.style.setProperty('--kp-tag-rot', rot);
+            const abbr = tag.querySelector('.kp-suit-abbr');
+            if (abbr && club) abbr.textContent = club.abbr || `L${lane}`;
+            if (xy) {
+                const off = { dx: 46 * (1 - blend), dy: -46 * blend };
+                tag.style.left = `${(xy.x + off.dx).toFixed(1)}px`;
+                tag.style.top = `${(xy.y + off.dy).toFixed(1)}px`;
+                tag.classList.remove('is-waiting');
+                tag.classList.toggle('is-stale', club?.coasting || club?.cvStatus === 'amber');
+            } else {
+                const t = (i + 0.5) / n;
+                tag.style.left = `${(140 + t * 1640).toFixed(1)}px`;
+                tag.style.top = '820px';
+                tag.classList.add('is-waiting');
+                tag.classList.remove('is-stale');
+            }
+        });
     }
 
     function renderCourse(layer) {
@@ -1687,7 +2475,8 @@
         draw: renderDraw,
         results: renderResults,
         schedule: (layer) => renderSchedule(layer, vgGetRaceParam()),
-        leader: (layer, race) => renderLeader(layer, race, vgLeaderLane ?? vgGetLeaderLane()),
+        leader: (layer, race) =>
+            renderLeader(layer, race, cvLive() ? null : (vgLeaderLane ?? vgGetLeaderLane())),
         drill: renderDrill,
         suits: renderSuits,
         suitstrip: renderSuitStrip,
@@ -1705,6 +2494,8 @@
         cvsplits: renderCvSplits,
         cvstart: renderCvStart,
         cvpositions: renderCvPositions,
+        cvfollow: renderCvFollow,
+        cvboattags: renderCvBoatTags,
     };
 
     function render(layer, graphic, race) {
@@ -1712,7 +2503,7 @@
         vgSetLayerGraphicClass(layer, LAYER_CLASS[g] || 'vg-layer--title');
         const fn = RENDER[g];
         if (!fn) return false;
-        const r = race || vgFindRace(vgGetRaceParam());
+        const r = currentRace() || race;
         if (
             !r &&
             g !== 'title' &&
@@ -1721,11 +2512,20 @@
             g !== 'brand' &&
             g !== 'cvcourse' &&
             g !== 'cvsplits' &&
-            g !== 'coursescroll'
+            g !== 'coursescroll' &&
+            g !== 'cvstart' &&
+            g !== 'cvdraw' &&
+            g !== 'cvpositions' &&
+            g !== 'cvfollow' &&
+            g !== 'cvboattags' &&
+            g !== 'speedchart' &&
+            g !== 'tracker' &&
+            g !== 'livetracking'
         ) {
             return false;
         }
         fn(layer, r);
+        syncClipBackground(g);
         paintOps();
         return true;
     }
@@ -2011,9 +2811,11 @@
 
     function tick() {
         state.t += 0.1;
+        pullClipRace();
         const g = canon(vgPlayback.graphic);
+        syncClipBackground(vgPlayback.state === 'idle' ? '' : g);
         if (!g || vgPlayback.state === 'idle') return;
-        const race = vgFindRace(vgGetRaceParam());
+        const race = currentRace();
         if (!race) return;
         const boats = boatsNow(race);
         const leadM = Math.max(...boats.map((b) => b.m), 1);
@@ -2051,7 +2853,11 @@
             const { lead, second } = leadOf(race);
             const dist = document.querySelector('.kp-bug-dist');
             const gap = document.querySelector('.kp-bug-gap');
+            const name = document.querySelector('.kp-bug-name');
+            const laneEl = document.querySelector('.kp-bug-lane');
             if (dist && lead) dist.textContent = `${Math.round(lead.m / 10) * 10}m`;
+            if (name && lead) name.textContent = lead.name || lead.abbr || '';
+            if (laneEl && lead) laneEl.textContent = `Lane ${lead.lane}`;
             if (gap && lead && second) {
                 const d = lead.m - second.m;
                 gap.textContent = cvLive()
@@ -2081,7 +2887,7 @@
             });
         }
         if (g === 'speedchart') {
-            paintSpeedSvg(document.querySelector('.kp-speed svg'), boats);
+            paintSpeedChart(document.querySelector('.kp-speed canvas'), boats);
         }
         if (g === 'cvstart') {
             paintCvStartPositions();
@@ -2089,6 +2895,17 @@
         if (g === 'cvpositions') {
             paintCvPositions(race);
         }
+    }
+
+    function cvPaintFrame() {
+        state.cvPaintRaf = requestAnimationFrame(cvPaintFrame);
+        pullClipRace();
+        smoothCvScreen();
+        const g = canon(vgPlayback.graphic);
+        if (!g || vgPlayback.state === 'idle') return;
+        if (g === 'cvfollow') paintCvFollow();
+        if (g === 'cvboattags') paintCvBoatTags();
+        if (g === 'cvstart') paintCvStartPositions();
     }
 
     function init() {
@@ -2103,11 +2920,20 @@
         buildOps();
         window.addEventListener('keyup', onKeyUp);
         if (!state.motionTimer) state.motionTimer = setInterval(tick, 100);
+        if (!state.cvPaintRaf) state.cvPaintRaf = requestAnimationFrame(cvPaintFrame);
         pollCv();
         setInterval(pollCv, 200);
         document.addEventListener('altitudehd:liverace', () => {
             state.chHold.clear();
             state.speedHist.clear();
+            state.boatSmooth.clear();
+            state.boatTel.clear();
+            state.followPos = null;
+            state.followBoat = null;
+            state.leadLane = null;
+            state.viewBlend = null;
+            state.dirHold = { dir: 'away', since: 0 };
+            state.simGraphicFp = '';
             paintOps();
         });
     }

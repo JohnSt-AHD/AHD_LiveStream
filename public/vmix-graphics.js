@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = leader · x = CV leader (KRI/Karāpiro) · h = CV draw boats · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = leader · x = CV follow (Karāpiro) / CV leader (KRI) · h = CV boat tags (Karāpiro) / CV draw (KRI) · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=1  &regatta=nzmm2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -16,8 +16,10 @@ const VG_GRAPHIC_ALIASES = {
     leader: 'leader',
     x: 'cvleader',
     cvleader: 'cvleader',
+    cvfollow: 'cvfollow',
     h: 'cvdraw',
     cvdraw: 'cvdraw',
+    cvboattags: 'cvboattags',
     u: 'coursescroll',
     coursescroll: 'coursescroll',
     course: 'coursescroll',
@@ -68,6 +70,10 @@ const VG_GRAPHIC_ALIASES = {
 function vgGraphicFromShortcut(key) {
     const k = String(key || '').toLowerCase();
     if (k === 's' && vgIsCssOverlayTheme()) return 'schedule';
+    if (vgIsKarapiroTheme()) {
+        if (k === 'x') return 'cvfollow';
+        if (k === 'h') return 'cvboattags';
+    }
     if (k === 'x' && vgIsCssOverlayTheme()) return 'cvleader';
     if (k === 'h' && vgIsCssOverlayTheme()) return 'cvdraw';
     if (k === 'u' && vgIsCssOverlayTheme()) return vgIsKarapiroTheme() ? 'cvcourse' : 'coursescroll';
@@ -1607,6 +1613,13 @@ function vgSetStageState(state) {
 function vgShowBackground(visible) {
     const bg = vgGetBgEl();
     if (!bg) return;
+    const clipLoop = bg.classList.contains('vg-bg--clip-loop');
+    const still = document.body.classList.contains('cv-clip-still');
+    if (clipLoop && !still) {
+        bg.classList.add('vg-bg--visible');
+        bg.classList.toggle('vg-bg--outro', vgPlayback.state === 'outro');
+        return;
+    }
     bg.classList.toggle('vg-bg--visible', visible);
     bg.classList.toggle('vg-bg--outro', vgPlayback.state === 'outro');
 }
@@ -2087,11 +2100,10 @@ function vgStartIntroPlayback(isVideo, video) {
     /* CSS-built graphics: optional intro delay, then fade in on hold. */
     if (vgUsesCssBackground(graphic)) {
         const introMs = vgGetVideoProfile(graphic).textInMs || 0;
-        const startHold = () => requestAnimationFrame(() => vgEnterHold());
         if (introMs > 0) {
-            vgPlayback.introTimer = setTimeout(startHold, introMs);
+            vgPlayback.introTimer = setTimeout(() => vgEnterHold(), introMs);
         } else {
-            startHold();
+            vgEnterHold();
         }
         return;
     }
@@ -2292,6 +2304,21 @@ function vgTriggerIn(graphic) {
         return;
     }
 
+    if (kpOwns) {
+        try {
+            vgPrepareContent(graphic, vgGetRaceParam());
+        } catch (err) {
+            console.warn('Karāpiro graphic prepare failed', err);
+        }
+        if (vgUsesCssBackground(graphic)) {
+            vgStartIntroPlayback(false, null);
+            return;
+        }
+        const { isVideo, video } = vgLoadBackgroundAsset(graphic);
+        vgStartIntroPlayback(isVideo, video);
+        return;
+    }
+
     if (vgIsSpeedGraphic(graphic) && vgMilfordCssGraphic(graphic)) {
         vgPrepareTrackerContent();
         vgStartIntroPlayback(false, null);
@@ -2429,7 +2456,14 @@ function vgPrepareContent(graphic, raceParam) {
             g !== 'coursescroll' &&
             g !== 'cvcourse' &&
             g !== 'cvsplits' &&
-            g !== 'cvstart'
+            g !== 'cvstart' &&
+            g !== 'cvdraw' &&
+            g !== 'cvpositions' &&
+            g !== 'cvfollow' &&
+            g !== 'cvboattags' &&
+            g !== 'speedchart' &&
+            g !== 'tracker' &&
+            g !== 'livetracking'
         ) {
             if (err) {
                 err.hidden = false;

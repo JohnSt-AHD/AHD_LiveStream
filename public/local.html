@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AHD · Local vMix overlays</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { margin: 0; background: #0b1220; color: #e8eef8; padding: 24px; }
+    h1 { font-size: 1.2rem; margin: 0 0 8px; }
+    p { color: #93a4bd; max-width: 52rem; }
+    code, a { color: #7eb6ff; }
+    ul { line-height: 1.7; padding-left: 1.2rem; }
+    .card {
+      background: #121a2b; border: 1px solid #243049; border-radius: 12px;
+      padding: 16px 18px; margin: 16px 0; max-width: 52rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Local vMix overlays</h1>
+  <p>This PC is serving graphics (same files as Vercel). In vMix add a <strong>Browser</strong> input, 1920×1080, transparent, and paste a URL below.</p>
+  <div class="card">
+    <strong>KRI</strong>
+    <ul id="kri"></ul>
+  </div>
+  <div class="card">
+    <strong>Other</strong>
+    <ul id="other"></ul>
+  </div>
+  <p>Draw/results are stored locally under <code>data/rowit-live/</code> and refresh every 1 min. Use the hub <strong>Update results now</strong> button for an immediate pull.</p>
+  <script>
+    const origin = location.origin;
+    function add(id, href, label) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = label;
+      a.target = '_blank';
+      li.appendChild(a);
+      const code = document.createElement('div');
+      code.innerHTML = '<code></code>';
+      code.querySelector('code').textContent = href;
+      li.appendChild(code);
+      document.getElementById(id).appendChild(li);
+    }
+    add('kri', origin + '/vmix-kri.html?g=t', 'Title');
+    add('kri', origin + '/vmix-kri.html?g=d', 'Draw');
+    add('kri', origin + '/vmix-kri.html?g=w', 'Leader');
+    add('kri', origin + '/vmix-kri.html?g=x', 'CV leader');
+    add('kri', origin + '/vmix-kri.html?g=h', 'CV draw boats');
+    add('kri', origin + '/vmix-kri.html?g=u', 'Course underlay');
+    add('kri', origin + '/vmix-karapiro.html?g=t&preview=1&autoplay=1', 'Karāpiro — title');
+    add('kri', origin + '/vmix-karapiro.html?g=l&preview=1&autoplay=1', 'Karāpiro — lower third');
+    add('kri', origin + '/vmix-karapiro.html?g=d&preview=1&autoplay=1', 'Karāpiro — draw');
+    add('kri', origin + '/vmix-karapiro.html?g=r&preview=1&autoplay=1', 'Karāpiro — results');
+    add('kri', origin + '/vmix-karapiro.html?g=suits&preview=1&autoplay=1', 'Karāpiro — rowsuits');
+    add('kri', origin + '/vmix-karapiro.html?g=drill&preview=1&autoplay=1', 'Karāpiro — drill-down');
+    add('kri', origin + '/vmix-karapiro.html?g=s&preview=1&autoplay=1', 'Karāpiro — schedule');
+    add('kri', origin + '/vmix-ged-cv-course.html?sim=1&keys=1', 'Ged CV course (sim until live CV/drone)');
+    add('kri', origin + '/vmix-ged-cv-splits.html?sim=1', 'Ged CV splits (sim until live CV)');
+    add('kri', origin + '/vmix-karapiro.html?g=d&sim=1&preview=1&autoplay=1', 'Karāpiro draw (sim until live CV)');
+    add('kri', origin + '/vmix-karapiro.html?g=7&sim=1&preview=1&autoplay=1', 'Karāpiro CV draw (sim until live CV)');
+    add('kri', origin + '/vmix-karapiro.html?g=i&preview=1&autoplay=1', 'Karāpiro CV start draw (test still)');
+    add('kri', origin + '/vmix-karapiro.html?g=q&sim=1&preview=1&autoplay=1', 'Karāpiro Speed (sim until live CV)');
+    add('kri', origin + '/cv-position-monitor.html?streamId=ged-sim&sim=1', 'CV position monitor (sim until live)');
+    add('other', origin + '/index.html', 'Hub');
+    add('other', origin + '/vmix-rnz-milford.html?g=l&preview=1&autoplay=1', 'Milford lower third (browser preview)');
+  </script>
+</body>
+</html>

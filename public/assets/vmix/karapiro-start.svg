@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7eb6e8"/>
+      <stop offset="1" stop-color="#4a8fc4"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3d7ea6"/>
+      <stop offset="1" stop-color="#1f4f6e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect y="210" width="1920" height="870" fill="url(#water)"/>
+  <g fill="none" stroke="#d9e7f8" stroke-opacity="0.35" stroke-width="3">
+    <path d="M120 1080 L430 240"/>
+    <path d="M334 1080 L590 240"/>
+    <path d="M548 1080 L750 240"/>
+    <path d="M762 1080 L910 240"/>
+    <path d="M976 1080 L1070 240"/>
+    <path d="M1190 1080 L1230 240"/>
+    <path d="M1404 1080 L1390 240"/>
+    <path d="M1618 1080 L1550 240"/>
+    <path d="M1832 1080 L1710 240"/>
+  </g>
+  <path d="M80 790 L1840 790" stroke="#f5f0e4" stroke-width="10"/>
+  <g fill="#c5cdd6" stroke="#8a96a5" stroke-width="2">
+    <rect x="146" y="704" width="128" height="86" rx="6"/>
+    <rect x="360" y="704" width="128" height="86" rx="6"/>
+    <rect x="574" y="704" width="128" height="86" rx="6"/>
+    <rect x="788" y="704" width="128" height="86" rx="6"/>
+    <rect x="1002" y="704" width="128" height="86" rx="6"/>
+    <rect x="1216" y="704" width="128" height="86" rx="6"/>
+    <rect x="1430" y="704" width="128" height="86" rx="6"/>
+    <rect x="1644" y="704" width="128" height="86" rx="6"/>
+  </g>
+  <g fill="#1b5cb4" opacity="0.9">
+    <ellipse cx="210" cy="742" rx="46" ry="11"/>
+    <ellipse cx="424" cy="742" rx="46" ry="11"/>
+    <ellipse cx="638" cy="742" rx="46" ry="11"/>
+    <ellipse cx="852" cy="742" rx="46" ry="11"/>
+    <ellipse cx="1066" cy="742" rx="46" ry="11"/>
+    <ellipse cx="1280" cy="742" rx="46" ry="11"/>
+    <ellipse cx="1494" cy="742" rx="46" ry="11"/>
+    <ellipse cx="1708" cy="742" rx="46" ry="11"/>
+  </g>
+  <text x="960" y="80" text-anchor="middle" fill="#f5f0e4" font-family="Archivo, Segoe UI, sans-serif" font-size="36" font-weight="700">Lake Karapiro start</text>
+</svg>

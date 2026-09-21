@@ -247,6 +247,29 @@ html.vg-preview .vg-stage {
     visibility: hidden;
 }
 
+.vg-bg.vg-bg--clip-loop {
+    opacity: 1 !important;
+}
+
+.cv-clip-video {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    object-fit: fill;
+    pointer-events: none;
+}
+
+.vg-stage[data-vg-state='idle'] .vg-bg.vg-bg--clip-loop .cv-clip-video {
+    visibility: visible;
+    opacity: 1;
+}
+
+body.cv-clip-still .cv-clip-video {
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
 .vg-map-wrap {
     position: absolute;
     inset: 0;
