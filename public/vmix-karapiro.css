@@ -2097,3 +2097,63 @@ html:not(.vg-preview) .kp-ops,
 [data-vmix-theme='karapiro'] .kri-weather-wind-speed-unit {
     color: var(--alt-sky);
 }
+
+.kp-cvboxes {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.kp-cvbox {
+    position: absolute;
+    width: var(--kp-cvbox-size, 96px);
+    height: var(--kp-cvbox-size, 96px);
+    transform: translate(-50%, -50%);
+    border: 3px solid #ff2d2d;
+    box-sizing: border-box;
+    background: rgba(255, 45, 45, 0.1);
+}
+
+.kp-cvbox-x,
+.kp-cvbox-y {
+    position: absolute;
+    background: #ff2d2d;
+}
+
+.kp-cvbox-x {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+}
+
+.kp-cvbox-y {
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.kp-cvbox-lab {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translate(-50%, 4px);
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #ff2d2d;
+    font: 700 13px/1.2 var(--font-mono);
+    white-space: nowrap;
+}
+
+.kp-cvbox-lift {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    width: 2px;
+    background: #39d353;
+    transform: translateX(-50%);
+}

@@ -107,6 +107,9 @@
     ];
 
     const START_TAG_LIFT_PX = 200;
+    const CV_BOX_PX = 96;
+    const CV_BOX_HALF = CV_BOX_PX / 2;
+    const CV_TAG_GAP_PX = 10;
     const START_STILL_SRC = 'assets/vmix/karapiro-start.png?v=2';
     const START_STILL_XY = {
         1: { x: 240, y: 450 },
@@ -276,6 +279,54 @@
         const s = state.boatSmooth.get(Number(lane));
         if (s && Number.isFinite(s.x) && Number.isFinite(s.y)) return { x: s.x, y: s.y };
         return boatScreenXy(cvBoatRaw(lane));
+    }
+
+    function cvBoxesOn() {
+        return new URLSearchParams(location.search).get('boxes') === '1';
+    }
+
+    function paintCvDebugBoxes() {
+        if (!cvBoxesOn()) {
+            document.getElementById('kpCvBoxes')?.remove();
+            return;
+        }
+        let layer = document.getElementById('kpCvBoxes');
+        if (!layer) {
+            layer = el('div', 'kp-cvboxes');
+            layer.id = 'kpCvBoxes';
+            document.querySelector('.vg-stage')?.appendChild(layer);
+        }
+        const g = canon(vgPlayback.graphic);
+        const pts = [];
+        if (g === 'cvstart' && startStillTestSrc()) {
+            boatsNow(currentRace()).forEach((club) => {
+                const xy = startStillLaneXy(club.lane);
+                if (xy) pts.push({ lane: club.lane, x: xy.x, y: xy.y, lift: true });
+            });
+        } else {
+            (state.cvRace?.boats || []).forEach((b) => {
+                const xy = boatScreenSmoothed(b.lane);
+                if (xy) pts.push({ lane: b.lane, x: xy.x, y: xy.y, lift: false });
+            });
+        }
+        const sig = pts.map((p) => `${p.lane}:${p.x.toFixed(0)},${p.y.toFixed(0)},${p.lift ? 1 : 0}`).join('|');
+        if (layer.dataset.sig === sig) return;
+        layer.dataset.sig = sig;
+        layer.replaceChildren();
+        pts.forEach((p) => {
+            const box = el('div', 'kp-cvbox');
+            box.style.left = `${p.x.toFixed(1)}px`;
+            box.style.top = `${p.y.toFixed(1)}px`;
+            box.appendChild(el('i', 'kp-cvbox-x'));
+            box.appendChild(el('i', 'kp-cvbox-y'));
+            box.appendChild(el('span', 'kp-cvbox-lab', `CV box L${p.lane}`));
+            if (p.lift) {
+                const lift = el('i', 'kp-cvbox-lift');
+                lift.style.height = `${START_TAG_LIFT_PX}px`;
+                box.appendChild(lift);
+            }
+            layer.appendChild(box);
+        });
     }
 
     function mixAllTelemetry() {
@@ -2360,8 +2411,8 @@
         const cardH = card?.offsetHeight || 72;
         const distPx = Math.max(80, cardH * 2) * 0.75;
         const side = state.followSide || { left: false, down: false };
-        const overflowRight = xy.x + distPx * Math.SQRT1_2 + cardW;
-        const overflowTop = xy.y - distPx * Math.SQRT1_2 - cardH;
+        const overflowRight = xy.x + CV_BOX_HALF + distPx * Math.SQRT1_2 + cardW;
+        const overflowTop = xy.y - CV_BOX_HALF - distPx * Math.SQRT1_2 - cardH;
         if (side.left) {
             if (overflowRight < 1800) side.left = false;
         } else if (overflowRight > 1880) {
@@ -2373,9 +2424,11 @@
             side.down = true;
         }
         state.followSide = side;
+        const ax = xy.x + (side.left ? -CV_BOX_HALF : CV_BOX_HALF);
+        const ay = xy.y + (side.down ? CV_BOX_HALF : -CV_BOX_HALF);
         const pos = mixFollow(
-            xy.x + distPx * (side.left ? -Math.SQRT1_2 : Math.SQRT1_2),
-            xy.y + distPx * (side.down ? Math.SQRT1_2 : -Math.SQRT1_2),
+            ax + distPx * (side.left ? -Math.SQRT1_2 : Math.SQRT1_2),
+            ay + distPx * (side.down ? Math.SQRT1_2 : -Math.SQRT1_2),
         );
         if (wrap) {
             const ox = side.left ? '-100%' : '0';
@@ -2385,7 +2438,7 @@
         if (connector) {
             connector.setAttribute(
                 'points',
-                followConnectorPoints(xy.x, xy.y, pos.x, pos.y, cardW, cardH),
+                followConnectorPoints(ax, ay, pos.x, pos.y, cardW, cardH),
             );
         }
     }
@@ -2449,9 +2502,12 @@
             const abbr = tag.querySelector('.kp-suit-abbr');
             if (abbr && club) abbr.textContent = club.abbr || `L${lane}`;
             if (xy) {
-                const off = { dx: 46 * (1 - blend), dy: -46 * blend };
-                tag.style.left = `${(xy.x + off.dx).toFixed(1)}px`;
-                tag.style.top = `${(xy.y + off.dy).toFixed(1)}px`;
+                const tw = tag.offsetWidth || 52;
+                const th = tag.offsetHeight || 70;
+                const dx = (CV_BOX_HALF + tw / 2 + CV_TAG_GAP_PX) * (1 - blend);
+                const dy = -(CV_BOX_HALF + th / 2 + CV_TAG_GAP_PX) * blend;
+                tag.style.left = `${(xy.x + dx).toFixed(1)}px`;
+                tag.style.top = `${(xy.y + dy).toFixed(1)}px`;
                 tag.classList.remove('is-waiting');
                 tag.classList.toggle('is-stale', club?.coasting || club?.cvStatus === 'amber');
             } else {
@@ -2906,6 +2962,7 @@
         if (g === 'cvfollow') paintCvFollow();
         if (g === 'cvboattags') paintCvBoatTags();
         if (g === 'cvstart') paintCvStartPositions();
+        paintCvDebugBoxes();
     }
 
     function init() {

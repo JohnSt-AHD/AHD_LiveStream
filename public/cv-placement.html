@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CV box placement</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { margin: 0; background: #0b1220; color: #e8eef8; padding: 28px; }
+    h1 { font-size: 1.35rem; margin: 0 0 8px; }
+    p { color: #93a4bd; max-width: 44rem; line-height: 1.5; }
+    a.card {
+      display: block; max-width: 44rem; margin: 14px 0; padding: 16px 18px;
+      background: #121a2b; border: 1px solid #243049; border-radius: 12px;
+      color: #7eb6ff; text-decoration: none;
+    }
+    a.card:hover { border-color: #3d5a88; }
+    a.card strong { display: block; color: #e8eef8; font-size: 1.05rem; margin-bottom: 4px; }
+    code { color: #93a4bd; font-size: 0.82rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>CV tracking box vs graphic</h1>
+  <p>Open in a normal browser window (not the Cursor dashboard). Red box is the CV track centre. The graphic sits off that point.</p>
+  <a class="card" href="vmix-karapiro.html?clip=nzuu26&g=cvfollow&autoplay=1&boxes=1">
+    <strong>X · Follow</strong>
+    Wedge starts at the CV box corner toward the ticket.
+    <div><code id="a"></code></div>
+  </a>
+  <a class="card" href="vmix-karapiro.html?clip=nzuu26&g=cvboattags&autoplay=1&boxes=1">
+    <strong>H · Boat tags</strong>
+    Each strip sits outside the CV box (right overhead, above in a side shot).
+    <div><code id="b"></code></div>
+  </a>
+  <a class="card" href="vmix-karapiro.html?clip=nzuu26&g=cvstart&autoplay=1&boxes=1">
+    <strong>I · Start draw</strong>
+    Ticket is 200px above the pontoon box, rotated −90°.
+    <div><code id="c"></code></div>
+  </a>
+  <script>
+    const o = location.origin + location.pathname.replace(/[^/]*$/, '');
+    document.getElementById('a').textContent = o + 'vmix-karapiro.html?clip=nzuu26&g=cvfollow&autoplay=1&boxes=1';
+    document.getElementById('b').textContent = o + 'vmix-karapiro.html?clip=nzuu26&g=cvboattags&autoplay=1&boxes=1';
+    document.getElementById('c').textContent = o + 'vmix-karapiro.html?clip=nzuu26&g=cvstart&autoplay=1&boxes=1';
+  </script>
+</body>
+</html>
