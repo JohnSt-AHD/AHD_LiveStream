@@ -157,6 +157,8 @@
 
     function stabilizeFrame(frame, tSec) {
         if (!frame?.boats?.length) return frame;
+        // YOLO recording already locked track ids to lanes — don't reassign on camera moves.
+        if (data?.lockedIds) return frame;
         if (identLock && (tSec + 0.45 < identLock.t || tSec > identLock.t + 1.2)) identLock = null;
         const dets = frame.boats.map((row) => ({
             lane: Number(row[0]),
