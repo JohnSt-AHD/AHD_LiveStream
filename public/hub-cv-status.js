@@ -70,6 +70,8 @@
         const map = {
             hubCvAnalysisLink: cv + '/cv-analysis.html',
             hubCvDroneMapLink: cv + '/cv-drone-monitor.html',
+            hubCvTrainLink: cv + '/cv-train.html',
+            hubCvTrainAdvancedLink: cv + '/cv-train.html',
             hubDroneMonitorLink: cv + '/cv-drone-monitor.html',
             hubDroneTabLink: cv + '/cv-analysis.html#drone',
             hubDroneCourseOverlayLink: cv + '/cv-drone-course-overlay.html',
