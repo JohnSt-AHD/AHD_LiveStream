@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CrewSight mark treatments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      font-family: Outfit, system-ui, sans-serif;
+      color: #f5faf8;
+      background: linear-gradient(165deg, #0f4f5e, #0b3d4a 50%, #08313b);
+      padding: 28px 20px 48px;
+    }
+    h1 { font-family: "Barlow Condensed", sans-serif; font-size: 28px; margin: 0 0 6px; letter-spacing: 0.02em; }
+    p.lead { margin: 0 0 24px; opacity: 0.75; max-width: 52ch; }
+    .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); max-width: 960px; }
+    figure {
+      margin: 0;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 18px;
+    }
+    figcaption { font-weight: 600; margin-bottom: 4px; }
+    .note { font-size: 13px; opacity: 0.72; line-height: 1.4; margin: 0 0 14px; }
+    .preview {
+      display: flex; align-items: center; gap: 10px;
+      background: #0b3d4a; border-radius: 14px; padding: 10px 14px 10px 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .preview .name { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 0.02em; text-transform: uppercase; }
+    .mark {
+      width: 44px; height: 44px; border-radius: 12px; overflow: hidden;
+      background: #fff; border: 1px solid rgba(255,255,255,0.35); flex-shrink: 0;
+    }
+    .mark.large { width: 52px; height: 52px; border-radius: 14px; }
+    .mark.teal { background: transparent; border-color: rgba(255,255,255,0.2); }
+    .mark img, .mark object { width: 100%; height: 100%; display: block; object-fit: cover; }
+    a.open { display: inline-block; margin-top: 12px; color: #9ee7f0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>CrewSight topbar mark — treatments</h1>
+  <p class="lead">Primary uses the official color PNG, cropped to the circle and converted to crisp B&amp;W. Open each link to see it live in the app topbar.</p>
+  <div class="grid">
+    <figure>
+      <figcaption>A · Official B&amp;W @44</figcaption>
+      <p class="note">256px PNG from color source, displayed at 44px on a white plate.</p>
+      <div class="preview">
+        <span class="mark"><img src="crewsight-mark-bw-256.png?v=21" alt="" /></span>
+        <span class="name">Regatta NZ</span>
+      </div>
+      <a class="open" href="../index.html?mark=small&amp;v=21">Open app (?mark=small)</a>
+    </figure>
+    <figure>
+      <figcaption>B · Larger @52 (default)</figcaption>
+      <p class="note">Same asset, 52px — reads clearer on phone topbars.</p>
+      <div class="preview">
+        <span class="mark large"><img src="crewsight-mark-bw-256.png?v=21" alt="" /></span>
+        <span class="name">Regatta NZ</span>
+      </div>
+      <a class="open" href="../index.html?v=21">Open app (default)</a>
+    </figure>
+    <figure>
+      <figcaption>C · White on teal</figcaption>
+      <p class="note">No white plate — mark blends with the topbar teal.</p>
+      <div class="preview">
+        <span class="mark teal"><img src="crewsight-mark-teal-256.png?v=21" alt="" /></span>
+        <span class="name">Regatta NZ</span>
+      </div>
+      <a class="open" href="../index.html?mark=teal&amp;v=21">Open app (?mark=teal)</a>
+    </figure>
+    <figure>
+      <figcaption>D · Traced SVG</figcaption>
+      <p class="note">Proportion-tuned SVG (3 notches). Sharper but less exact than the raster.</p>
+      <div class="preview">
+        <span class="mark large"><img src="crewsight-mark-bw.svg?v=21" alt="" /></span>
+        <span class="name">Regatta NZ</span>
+      </div>
+      <a class="open" href="../index.html?mark=svg&amp;v=21">Open app (?mark=svg)</a>
+    </figure>
+  </div>
+</body>
+</html>

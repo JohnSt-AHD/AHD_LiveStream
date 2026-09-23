@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b3d4a" />
+  <meta name="description" content="Follow a New Zealand regatta, club, or athlete — timetable, alerts, and live track when the race is on camera." />
+  <title>Regatta NZ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="assets/crewsight-mark-bw-256.png?v=23" type="image/png" />
+  <link rel="stylesheet" href="styles.css?v=23" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <button type="button" class="topbar__back" id="btnBack" hidden aria-label="Back">←</button>
+      <div class="topbar__brand">
+        <!-- Primary: B&W mark @52 (treatment B). Alternates: ?mark=small | ?mark=teal | ?mark=svg -->
+        <span class="topbar__mark" id="topMark" aria-hidden="true">
+          <img
+            class="topbar__mark-img"
+            src="assets/crewsight-mark-bw-256.png?v=23"
+            width="52"
+            height="52"
+            alt=""
+            decoding="async"
+          />
+        </span>
+        <div>
+          <p class="topbar__name">Regatta NZ</p>
+          <p class="topbar__sub" id="topSub">NZ Masters 2026</p>
+        </div>
+      </div>
+      <button type="button" class="topbar__live" id="btnLiveJump" hidden>Live</button>
+    </header>
+
+    <main id="main" class="main"></main>
+
+    <nav class="tabbar" id="tabbar" aria-label="Main">
+      <button type="button" class="tab is-active" data-tab="home">Home</button>
+      <button type="button" class="tab" data-tab="schedule">Schedule</button>
+      <button type="button" class="tab" data-tab="follow">Follow</button>
+      <button type="button" class="tab" data-tab="myday">My day</button>
+      <button type="button" class="tab" data-tab="live">Live</button>
+    </nav>
+  </div>
+
+  <script type="module" src="app.js?v=12"></script>
+  <script>
+    // Mark treatment preview: default B @52; ?mark=small | ?mark=teal | ?mark=svg
+    (function () {
+      var mark = document.getElementById('topMark');
+      var img = mark && mark.querySelector('img');
+      if (!mark || !img) return;
+      var q = new URLSearchParams(location.search).get('mark');
+      if (q === 'small') {
+        mark.classList.add('is-small');
+        img.width = 44;
+        img.height = 44;
+      } else if (q === 'teal') {
+        mark.classList.add('is-teal');
+        img.src = 'assets/crewsight-mark-teal-256.png?v=23';
+      } else if (q === 'svg') {
+        img.replaceWith((function () {
+          var o = document.createElement('object');
+          o.data = 'assets/crewsight-mark-bw.svg?v=23';
+          o.type = 'image/svg+xml';
+          o.width = 52;
+          o.height = 52;
+          o.setAttribute('aria-hidden', 'true');
+          return o;
+        })());
+      }
+      // ?mark=large kept as no-op (now the default)
+    })();
+  </script>
+</body>
+</html>

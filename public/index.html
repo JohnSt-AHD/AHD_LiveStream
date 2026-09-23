@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=15">
+    <link rel="stylesheet" href="hub-landing.css?v=16">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -756,6 +756,129 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                     <p class="hub-csv-cache" id="hubRowitCacheStatus">Local copies download on first load. 1-min RowIT refresh runs on race days only (19–20 Sep).</p>
                 </section>
 
+
+                <section class="hub-panel hub-panel--regatta-nz" id="hubRegattaNzPanel" aria-labelledby="hub-regatta-nz-title">
+                    <h2 id="hub-regatta-nz-title" class="hub-section-title">Regatta NZ · Spectator app</h2>
+                    <p class="hub-csv-lead">Configure the public spectator app at <code class="hub-csv-code-inline">/regatta-nz/</code>. Settings save in this browser and are read by the app (same origin). Regatta code stays in sync with RowIT above.</p>
+
+                    <label class="hub-regatta-code-field">
+                        <span class="hub-regatta-code-label">Regatta code</span>
+                        <input
+                            type="text"
+                            id="hubRnzCode"
+                            class="hub-regatta-code-input"
+                            value=""
+                            placeholder="e.g. nzmm2026"
+                            spellcheck="false"
+                            autocomplete="off"
+                            autocapitalize="off"
+                        >
+                    </label>
+
+                    <label class="hub-regatta-code-field">
+                        <span class="hub-regatta-code-label">Livestream URL</span>
+                        <input
+                            type="url"
+                            id="hubRnzLivestreamUrl"
+                            class="hub-regatta-code-input hub-rnz-url-input"
+                            value=""
+                            placeholder="https://…"
+                            spellcheck="false"
+                            autocomplete="off"
+                        >
+                    </label>
+                    <label class="hub-csv-poll-toggle hub-rnz-toggle">
+                        <input type="checkbox" id="hubRnzLivestreamActive">
+                        <span>Show livestream on the Live tab</span>
+                    </label>
+                    <label class="hub-regatta-code-field">
+                        <span class="hub-regatta-code-label">Livestream label</span>
+                        <input
+                            type="text"
+                            id="hubRnzLivestreamLabel"
+                            class="hub-regatta-code-input hub-rnz-url-input"
+                            value="Watch the livestream"
+                            spellcheck="false"
+                        >
+                    </label>
+
+                    <fieldset class="hub-rnz-mode">
+                        <legend class="hub-regatta-code-label">Feed mode</legend>
+                        <label class="hub-clock-radio">
+                            <input type="radio" name="hubRnzMode" value="sim" checked>
+                            Simulation (GED CV)
+                        </label>
+                        <label class="hub-clock-radio">
+                            <input type="radio" name="hubRnzMode" value="live">
+                            Live regatta
+                        </label>
+                        <p class="hub-csv-cache" id="hubRnzModeHint">Simulation: spectator Live tab uses GED CV sim (/api/race).</p>
+                    </fieldset>
+
+                    <label class="hub-regatta-code-field">
+                        <span class="hub-regatta-code-label">CV stream id</span>
+                        <input
+                            type="text"
+                            id="hubRnzStreamId"
+                            class="hub-regatta-code-input"
+                            value="ged-sim"
+                            placeholder="ged-sim"
+                            spellcheck="false"
+                            autocomplete="off"
+                            autocapitalize="off"
+                        >
+                    </label>
+
+                    <div class="hub-csv-actions hub-rnz-actions">
+                        <button type="button" class="hub-btn hub-btn--primary" id="hubRnzSave">Save</button>
+                        <button type="button" class="hub-btn" id="hubRnzCheckBtn">Check links</button>
+                        <a class="hub-btn hub-rnz-open" id="hubRnzOpenApp" href="regatta-nz/">Open spectator app</a>
+                    </div>
+                    <p class="hub-csv-cache" id="hubRnzSaveStatus" hidden></p>
+
+                    <h3 class="hub-rnz-subtitle">CV / drone health</h3>
+                    <ul class="hub-csv-list hub-rnz-checks" aria-label="API health checks">
+                        <li class="hub-csv-row" id="hubRnzCheckRace">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">/api/race</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                        <li class="hub-csv-row" id="hubRnzCheckCv">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">/api/cv-position</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                        <li class="hub-csv-row" id="hubRnzCheckDrone">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">/api/drone-telemetry</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                    </ul>
+
+                    <h3 class="hub-rnz-subtitle">RowIT information</h3>
+                    <ul class="hub-csv-list hub-rnz-checks" aria-label="RowIT feed checks">
+                        <li class="hub-csv-row" id="hubRnzCheckRowit_daysheet">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">Daysheet</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                        <li class="hub-csv-row" id="hubRnzCheckRowit_competitors">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">Competitors</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                        <li class="hub-csv-row" id="hubRnzCheckRowit_results">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">Results</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                        <li class="hub-csv-row" id="hubRnzCheckRowit_events">
+                            <span class="hub-csv-status" aria-hidden="true">–</span>
+                            <span class="hub-csv-label">Events</span>
+                            <span class="hub-rnz-check-detail hub-csv-url"></span>
+                        </li>
+                    </ul>
+                </section>
                 <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
                     <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
                     <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
@@ -875,7 +998,22 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                     Switch the fleet map on the <strong>Safety</strong> view to <strong>CrewSight</strong> to use this data on AHD maps.
                 </p>
                 <ul class="hub-links">
-                    <li>
+                                        <li>
+                        <a
+                            class="hub-link-card"
+                            href="#hubRegattaNzPanel"
+                            data-hub-role="setup"
+                            data-hub-scroll="hubRegattaNzPanel"
+                        >
+                            <span class="hub-link-icon" aria-hidden="true">🏁</span>
+                            <span class="hub-link-text">
+                                <h3>Regatta NZ spectator app</h3>
+                                <p>Set regatta code, livestream link, sim/live mode, and check CV + RowIT health.</p>
+                            </span>
+                            <span class="hub-link-arrow" aria-hidden="true">→</span>
+                        </a>
+                    </li>
+<li>
                         <a
                             class="hub-link-card hub-link-card--crewsight"
                             href="https://rowing-app-recorder-pwa.vercel.app/install-native.html"
@@ -934,6 +1072,8 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
     <script src="rnz-safety-core.js"></script>
     <script src="hub-regatta-events.js"></script>
     <script src="hub-stats-bar.js"></script>
+    <script src="regatta-nz-config.js"></script>
+    <script src="hub-regatta-nz.js"></script>
     <script src="hub-csv.js?v=2"></script>
     <script src="regatta-csv-archive.js?v=4"></script>
     <script src="hub-live-race.js"></script>

@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Regatta NZ logo options</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100dvh; font-family: Outfit, system-ui, sans-serif;
+    background: linear-gradient(165deg, #0f4f5e, #0b3d4a 45%, #08313b);
+    color: #f5faf8; padding: 32px 20px 48px;
+  }
+  h1 { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 28px; margin: 0 0 8px; letter-spacing: 0.02em; }
+  p.lead { margin: 0 0 28px; opacity: 0.75; }
+  .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); max-width: 920px; }
+  figure {
+    margin: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 20px; text-align: center;
+  }
+  img.big { width: 180px; height: 180px; border-radius: 40px; display: block; margin: 0 auto 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+  img.small { width: 42px; height: 42px; border-radius: 12px; vertical-align: middle; }
+  figcaption { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .note { font-size: 13px; opacity: 0.7; line-height: 1.4; margin: 0 0 14px; }
+  .topbar-preview {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(0,0,0,0.25); border-radius: 14px; padding: 8px 12px 8px 8px;
+  }
+  .topbar-preview span { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 18px; }
+</style>
+</head>
+<body>
+  <h1>Regatta NZ — logo options</h1>
+  <p class="lead">Large = store / splash. Small = topbar size (42px).</p>
+  <div class="grid">
+    <figure>
+      <img class="big" src="mark-oar.png" alt="Oar / shell mark" />
+      <figcaption>1 · Oar / shell</figcaption>
+      <p class="note">Classic sports mark — racing shell, gold accent, wake.</p>
+      <div class="topbar-preview"><img class="small" src="mark-oar.png" alt="" /><span>Regatta NZ</span></div>
+    </figure>
+    <figure>
+      <img class="big" src="mark-r.png" alt="R monogram mark" />
+      <figcaption>2 · R monogram</figcaption>
+      <p class="note">Shell + gold arc reading as an R.</p>
+      <div class="topbar-preview"><img class="small" src="mark-r.png" alt="" /><span>Regatta NZ</span></div>
+    </figure>
+    <figure>
+      <img class="big" src="mark-lanes.png" alt="Lanes / finish mark" />
+      <figcaption>3 · Lanes</figcaption>
+      <p class="note">Finish line + crew dot — matches the live tracker.</p>
+      <div class="topbar-preview"><img class="small" src="mark-lanes.png" alt="" /><span>Regatta NZ</span></div>
+    </figure>
+  </div>
+</body>
+</html>

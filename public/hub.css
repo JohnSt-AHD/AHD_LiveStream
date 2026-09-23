@@ -2365,3 +2365,52 @@ a.hub-archive-open {
 #hubArchiveMore {
     margin-top: 2px;
 }
+
+/* Regatta NZ spectator management (Setup) */
+.hub-panel--regatta-nz {
+    margin-top: 16px;
+}
+.hub-panel--regatta-nz .hub-section-title {
+    color: #34d399;
+}
+.hub-rnz-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ahd-text);
+    margin: 16px 0 8px;
+}
+.hub-rnz-mode {
+    border: 0;
+    padding: 0;
+    margin: 12px 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.hub-rnz-toggle {
+    margin: 4px 0 10px;
+}
+.hub-rnz-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+a.hub-rnz-open.hub-btn {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    padding: 8px 14px;
+}
+.hub-rnz-url-input {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 500;
+}
+.hub-rnz-checks .hub-csv-row {
+    align-items: flex-start;
+}
+.hub-rnz-check-detail {
+    display: block;
+    width: 100%;
+    font-size: 12px;
+}

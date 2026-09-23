@@ -69,6 +69,10 @@ app.all('/api/fetch-csv',      wrapHandler('./api/fetch-csv.js'));
 app.all('/api/check-csv',      wrapHandler('./api/check-csv.js'));
 app.all('/api/drive-archive',  wrapHandler('./api/drive-archive.js'));
 app.all('/api/race-cues',      wrapHandler('./api/race-cues.js'));
+app.all('/api/race',           wrapHandler('./api/race.js'));
+app.all('/api/drone-telemetry/all', wrapHandler('./api/drone-telemetry.js'));
+app.all('/api/drone-telemetry', wrapHandler('./api/drone-telemetry.js'));
+app.all('/api/config',         wrapHandler('./api/config.js'));
 
 // ── Static files from public/ ───────────────────────────────────────
 app.use(express.static(join(__dirname, 'public'), {
@@ -99,5 +103,8 @@ app.listen(PORT, () => {
   console.log(`    /api/check-csv`);
   console.log(`    /api/drive-archive`);
   console.log(`    /api/race-cues`);
+  console.log(`    /api/race          (Ged World Rowing sim loop)`);
+  console.log(`    /api/drone-telemetry`);
+  console.log(`    /api/config`);
   console.log();
 });

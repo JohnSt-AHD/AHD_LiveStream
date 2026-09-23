@@ -161,7 +161,17 @@ export default async function handler(req, res) {
     try {
         if (req.method === 'GET') {
             const streamId = req.query?.streamId;
-            const data = await loadCvPosition(streamId);
+            let data = await loadCvPosition(streamId);
+            const wantSim =
+                String(streamId || '') === 'ged-sim' ||
+                req.query?.sim === '1' ||
+                req.query?.sim === true;
+            if (wantSim && (!data || data.stale)) {
+                const { simCvPosition } = await import('./lib/ged-cv-sim.mjs');
+                const payload = simCvPosition();
+                const offset = venueOffset(payload.venue);
+                data = { ...payload, offset, stale: false, ageMs: 40, sim: true };
+            }
             if (!data) {
                 res.status(404).json({
                     error: 'No CV position for this streamId yet.',
