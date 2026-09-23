@@ -1186,6 +1186,10 @@
     border-color: rgba(96, 165, 250, 0.35);
 }
 
+.hub-link-card--regatta-nz {
+    border-color: rgba(245, 197, 66, 0.4);
+}
+
 .hub-link-card--crewsight,
 .hub-link-card--crewsight-manager {
     border-color: rgba(0, 229, 255, 0.35);

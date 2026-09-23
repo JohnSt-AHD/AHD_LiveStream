@@ -1,0 +1,6 @@
+node_modules/
+.capacitor/
+install/*.apk
+*.keystore
+*.jks
+local.properties

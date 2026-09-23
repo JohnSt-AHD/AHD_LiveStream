@@ -27,6 +27,7 @@
     "proposals:all": "node scripts/generate-kri-proposal-pdfs.mjs && node scripts/generate-crewsight-technical-pdf.mjs && node scripts/generate-crewsight-roadmap-pdf.mjs && node scripts/generate-crewsight-comparison-pdf.mjs",
     "start": "node server.js",
     "local": "node server.mjs",
+    "regatta-nz:apk": "powershell -ExecutionPolicy Bypass -File apps/regatta-nz-native/scripts/build-apk.ps1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

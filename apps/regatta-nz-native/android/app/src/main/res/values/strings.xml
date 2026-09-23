@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Regatta NZ</string>
+    <string name="title_activity_main">Regatta NZ</string>
+    <string name="package_name">nz.co.altitudehd.regattanz</string>
+    <string name="custom_url_scheme">nz.co.altitudehd.regattanz</string>
+</resources>

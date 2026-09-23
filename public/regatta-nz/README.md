@@ -28,3 +28,7 @@ Operators configure this app from the AHD hub **Setup** view → **Regatta NZ ·
 - Health checks for `/api/race`, `/api/cv-position`, `/api/drone-telemetry`, and RowIT CSVs
 
 Settings are stored in `localStorage` key `altitudeHdRegattaNz_v1` (same browser origin). Open with `?regatta=CODE` to override the code for a session.
+
+## Android APK
+
+Sideload install: [install-native.html](./install-native.html) · Capacitor shell in `apps/regatta-nz-native/` (loads this production URL).

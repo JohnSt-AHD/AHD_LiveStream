@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Install Regatta NZ — Android</title>
+  <link rel="icon" href="assets/crewsight-mark-bw-256.png?v=23" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a1628;
+      --card: rgba(15, 30, 52, 0.92);
+      --text: #e8eef7;
+      --muted: #94a3b8;
+      --accent: #f5c542;
+      --line: rgba(148, 163, 184, 0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Outfit, system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(245, 197, 66, 0.12), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(0, 229, 255, 0.08), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+    h1 {
+      font-family: "Barlow Condensed", sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      letter-spacing: 0.02em;
+      margin: 0 0 0.35rem;
+    }
+    .lead { color: var(--muted); margin: 0 0 1.5rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 1.35rem;
+      margin: 0 0 0.65rem;
+      letter-spacing: 0.02em;
+    }
+    ol { margin: 0; padding-left: 1.2rem; color: var(--muted); }
+    ol li { margin: 0.4rem 0; }
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 0.75rem 0 0.35rem;
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a1628;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+    a.btn:hover { filter: brightness(1.05); }
+    a.secondary {
+      color: #7dd3fc;
+      font-size: 0.9rem;
+    }
+    .meta { font-size: 0.85rem; color: var(--muted); margin-top: 0.75rem; }
+    .back { display: inline-block; margin-bottom: 1.25rem; color: #7dd3fc; text-decoration: none; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="./">← Regatta NZ app</a>
+    <h1>Install Regatta NZ</h1>
+    <p class="lead">Android APK for the spectator app — schedule, follow clubs, and live course (same web app as the browser).</p>
+
+    <section class="card">
+      <h2>Download</h2>
+      <a
+        class="btn"
+        href="https://github.com/JohnSt-AHD/AHD_LiveStream/releases/download/android-apk-regatta-nz-latest/Regatta-NZ.apk"
+      >Download Regatta-NZ.apk</a>
+      <p class="meta">
+        Or open
+        <a class="secondary" href="https://github.com/JohnSt-AHD/AHD_LiveStream/releases/tag/android-apk-regatta-nz-latest">GitHub Releases</a>
+        if the direct link 404s (re-run Actions → Regatta NZ APK).
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Install on phone</h2>
+      <ol>
+        <li>Open the downloaded APK (Chrome / Files).</li>
+        <li>Allow <strong>Install unknown apps</strong> for that app if prompted.</li>
+        <li>Tap Install → Open. The app loads the live site at ahd-livestream.vercel.app.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Web (no install)</h2>
+      <p class="meta" style="margin:0">
+        <a class="secondary" href="./">Open Regatta NZ in the browser</a>
+        · Hub Setup configures regatta code and livestream.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

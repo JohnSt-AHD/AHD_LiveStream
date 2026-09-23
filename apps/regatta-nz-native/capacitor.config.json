@@ -1,0 +1,13 @@
+{
+  "appId": "nz.co.altitudehd.regattanz",
+  "appName": "Regatta NZ",
+  "webDir": "www",
+  "server": {
+    "url": "https://ahd-livestream.vercel.app/regatta-nz/",
+    "androidScheme": "https",
+    "allowNavigation": ["ahd-livestream.vercel.app", "*.vercel.app"]
+  },
+  "android": {
+    "backgroundColor": "#0a1628"
+  }
+}
