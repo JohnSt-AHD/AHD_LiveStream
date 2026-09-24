@@ -12,9 +12,9 @@ import {
   raceStageTitle,
   eventProgressionExplainer,
   progressionDestForPlace,
-} from './data.js?v=34';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=34';
-import { enhanceLogoImages } from './logo-cutout.js?v=34';
+} from './data.js?v=35';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=35';
+import { enhanceLogoImages } from './logo-cutout.js?v=35';
 import {
   loadNotifyPrefs,
   saveNotifyPrefs,
@@ -23,12 +23,13 @@ import {
   scheduleFollowedRaceNotifications,
   maybeWebNotifyRace,
   NOTIFY_BEFORE_MS,
-} from './notify.js?v=34';
-import { runIntro } from './intro.js?v=34';
+} from './notify.js?v=35';
+import { runIntro } from './intro.js?v=35';
 
 runIntro();
 
 const LS_FOLLOWS = 'regattaNzFollows_v1';
+const LS_ACTIVE_DAY = 'regattaNzActiveDay_v1';
 
 const state = {
   data: null,
@@ -49,6 +50,7 @@ const state = {
   liveError: null,
   lastRaceSnap: null,
   expanded: new Set(),
+  /** Viewing day for Home / Schedule / My day (one day at a time). */
   scheduleDayIndex: 1,
   notifySyncTimer: null,
   /** Results tab */
@@ -303,11 +305,103 @@ function racesForFollows() {
   return out;
 }
 
-/** Soonest followed race that has not finished yet. */
+/** Parse daysheet labels like "Friday 27th March 2026". */
+function parseDayLabelDate(label) {
+  const m = String(label || '').match(/(\d{1,2})(?:st|nd|rd|th)?\s+(\w+)\s+(\d{4})/i);
+  if (!m) return null;
+  const months = {
+    january: 0,
+    february: 1,
+    march: 2,
+    april: 3,
+    may: 4,
+    june: 5,
+    july: 6,
+    august: 7,
+    september: 8,
+    october: 9,
+    november: 10,
+    december: 11,
+  };
+  const month = months[m[2].toLowerCase()];
+  if (month == null) return null;
+  return new Date(Number(m[3]), month, Number(m[1]));
+}
+
+/**
+ * Prefer today's calendar day when the daysheet includes it;
+ * otherwise the final day (e.g. Maadi Cup finals).
+ */
+function pickDefaultDayIndex(days) {
+  if (!days?.length) return 1;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (const d of days) {
+    const dt = parseDayLabelDate(d.label);
+    if (!dt) continue;
+    dt.setHours(0, 0, 0, 0);
+    if (dt.getTime() === today.getTime()) return d.index;
+  }
+  return days[days.length - 1].index;
+}
+
+function loadSavedDayIndex(regattaCode, days) {
+  if (!days?.length) return null;
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_ACTIVE_DAY) || 'null');
+    if (!raw || String(raw.code || '').toLowerCase() !== String(regattaCode || '').toLowerCase()) {
+      return null;
+    }
+    const idx = Number(raw.dayIndex);
+    if (days.some((d) => d.index === idx)) return idx;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function saveActiveDayIndex(regattaCode, dayIndex) {
+  try {
+    localStorage.setItem(
+      LS_ACTIVE_DAY,
+      JSON.stringify({ code: String(regattaCode || ''), dayIndex: Number(dayIndex) }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function ensureActiveDay() {
+  const days = state.data?.days || [];
+  if (!days.length) return null;
+  if (!days.some((d) => d.index === state.scheduleDayIndex)) {
+    state.scheduleDayIndex = pickDefaultDayIndex(days);
+  }
+  return days.find((d) => d.index === state.scheduleDayIndex) || days[days.length - 1];
+}
+
+function setActiveDay(dayIndex) {
+  state.scheduleDayIndex = Number(dayIndex);
+  const code = state.data?.meta?.code || state.data?.paths?.code || '';
+  saveActiveDayIndex(code, state.scheduleDayIndex);
+}
+
+function racesOnActiveDay() {
+  const day = ensureActiveDay();
+  return day ? day.races : state.data?.races || [];
+}
+
+function followedItemsOnActiveDay() {
+  const day = ensureActiveDay();
+  if (!day) return racesForFollows();
+  return racesForFollows().filter((item) => item.race.dayIndex === day.index);
+}
+
+/** Soonest followed race on the active day that has not finished yet. */
 function nextFollowedRaceItem() {
   const now = nowMs();
   let best = null;
-  for (const item of racesForFollows()) {
+  for (const item of followedItemsOnActiveDay()) {
     const start = item.race.startMsOfDay;
     if (!Number.isFinite(start)) continue;
     const finish = start + (item.race.raceDurationMs || REGATTA.defaultRaceMs);
@@ -782,7 +876,7 @@ function renderExpandableRace(race, phase, { showDay } = {}) {
 function homeBuckets() {
   const now = nowMs();
   const buckets = { start_blocks: [], live: [], finished: [] };
-  for (const race of state.data.races) {
+  for (const race of racesOnActiveDay()) {
     const phase = racePhase(now, race);
     if (phase.status === 'start_blocks') buckets.start_blocks.push({ race, phase });
     else if (phase.status === 'live') buckets.live.push({ race, phase });
@@ -793,6 +887,16 @@ function homeBuckets() {
   buckets.live.sort(byTime);
   buckets.finished.sort(byTime);
   return buckets;
+}
+
+function renderActiveDayHint() {
+  const day = ensureActiveDay();
+  if (!day) return '';
+  const days = state.data?.days || [];
+  if (days.length <= 1) {
+    return `<p class="muted" style="margin:0 0 12px">${escapeHtml(day.label)}</p>`;
+  }
+  return `<p class="muted" style="margin:0 0 12px">Day ${day.index} · ${escapeHtml(day.label)} · change day on Schedule</p>`;
 }
 
 function renderBucket(title, items, empty) {
@@ -816,6 +920,7 @@ function renderHome() {
   return `
     <section class="hero hero--compact">
       <h1>Follow the racing</h1>
+      ${renderActiveDayHint()}
     </section>
     ${renderBucket('In the start blocks', buckets.start_blocks, 'No races in the next 10 minutes')}
     ${renderBucket('Live on course', buckets.live, 'No race on the water right now')}
@@ -837,10 +942,7 @@ function renderSchedule() {
   if (!days.length) {
     return `<div class="panel"><p class="empty">No daysheet</p></div>`;
   }
-  if (!days.some((d) => d.index === state.scheduleDayIndex)) {
-    state.scheduleDayIndex = days[0].index;
-  }
-  const day = days.find((d) => d.index === state.scheduleDayIndex) || days[0];
+  const day = ensureActiveDay() || days[days.length - 1];
   const now = nowMs();
   return `
     <div class="panel">
@@ -1451,7 +1553,7 @@ function renderMyDay() {
       </div>
       ${renderNotifySettings()}`;
   }
-  const items = racesForFollows();
+  const items = followedItemsOnActiveDay();
   const now = nowMs();
   return `
     ${renderCountdownCard()}
@@ -1459,20 +1561,21 @@ function renderMyDay() {
       ${infoTip(
         'myday',
         '<h2>My day</h2>',
-        'Heats that match your follows (club, scoped club, or confirmed crew).',
+        'Heats that match your follows on the selected day (change day on Schedule).',
         { label: 'About My day' },
       )}
+      ${renderActiveDayHint()}
       ${
         items.length
           ? `<div class="race-list">
         ${items
           .map(({ race }) => {
             const phase = racePhase(now, race);
-            return renderExpandableRace(race, phase, { showDay: true });
+            return renderExpandableRace(race, phase);
           })
           .join('')}
       </div>`
-          : `<p class="empty">No matching heats in this daysheet.</p>`
+          : `<p class="empty">No matching heats on this day. Try another day on Schedule, or follow more crews.</p>`
       }
     </div>
     ${renderNotifySettings()}`;
@@ -1633,7 +1736,7 @@ function wireDom() {
 
   for (const el of main.querySelectorAll('[data-day]')) {
     el.addEventListener('click', () => {
-      state.scheduleDayIndex = Number(el.dataset.day);
+      setActiveDay(el.dataset.day);
       render();
     });
   }
@@ -1852,7 +1955,12 @@ async function boot() {
       setTimeout(() => reject(new Error('Load timed out (15s)')), 15000),
     );
     state.data = await Promise.race([loaded, timeout]);
-    if (state.data.days[0]) state.scheduleDayIndex = state.data.days[0].index;
+    if (state.data.days.length) {
+      const code = state.data.meta?.code || state.data.paths?.code || '';
+      const saved = loadSavedDayIndex(code, state.data.days);
+      state.scheduleDayIndex = saved ?? pickDefaultDayIndex(state.data.days);
+      saveActiveDayIndex(code, state.scheduleDayIndex);
+    }
     try {
       localStorage.removeItem('regattaNzDemoClock_v1');
     } catch {
