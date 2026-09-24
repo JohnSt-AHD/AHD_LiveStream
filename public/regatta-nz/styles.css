@@ -12,6 +12,7 @@
   --line: rgba(12, 28, 34, 0.1);
   --shadow: 0 10px 30px rgba(11, 61, 74, 0.12);
   --radius: 16px;
+  --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --tab-h: 64px;
   --font: "Outfit", system-ui, sans-serif;
@@ -60,7 +61,9 @@ input {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px 10px;
+  /* Clear phone status bar / notch (APK draws edge-to-edge).
+     max(..., 32px) covers Android WebViews that report inset 0. */
+  padding: calc(max(var(--safe-t), 32px) + 12px) 16px 12px;
   color: #f5faf8;
 }
 
@@ -571,27 +574,6 @@ a.btn {
 .empty--sm {
   padding: 8px 0 4px;
   font-size: 0.85rem;
-}
-
-.clock-bar__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 4px;
-}
-
-.clock-bar__label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.clock-bar__time {
-  font-family: var(--display);
-  font-size: 1.6rem;
-  color: var(--lake);
 }
 
 .race-list {

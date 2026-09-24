@@ -16,7 +16,7 @@ Open [http://localhost:3000/regatta-nz/](http://localhost:3000/regatta-nz/).
 - **Schedule** — full day list with Day 1 / Day 2 switcher.
 - **Follow / My day / Live** — as before (sim track via `/api/race`).
 
-Use the **Demo clock** chips to scrub the sample daysheet when you are outside race-day hours.
+Home race buckets use the phone’s real time of day against the daysheet.
 
 ## Hub configuration
 

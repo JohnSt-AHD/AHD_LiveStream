@@ -3,13 +3,11 @@ import {
   REGATTA,
   racePhase,
   msOfDayFromDate,
-  formatMsOfDay,
-} from './data.js?v=13';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=13';
-import { enhanceLogoImages } from './logo-cutout.js?v=13';
+} from './data.js?v=14';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=14';
+import { enhanceLogoImages } from './logo-cutout.js?v=14';
 
 const LS_FOLLOWS = 'regattaNzFollows_v1';
-const LS_CLOCK = 'regattaNzDemoClock_v1';
 
 const state = {
   data: null,
@@ -25,8 +23,6 @@ const state = {
   lastRaceSnap: null,
   expanded: new Set(),
   scheduleDayIndex: 1,
-  /** null = use device time-of-day; number = fixed ms of day for demo */
-  clockOverrideMs: loadClockOverride(),
 };
 
 const main = document.getElementById('main');
@@ -51,22 +47,6 @@ function saveFollows() {
   localStorage.setItem(LS_FOLLOWS, JSON.stringify(state.follows));
 }
 
-function loadClockOverride() {
-  try {
-    const raw = localStorage.getItem(LS_CLOCK);
-    if (raw == null || raw === '') return null;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveClockOverride() {
-  if (state.clockOverrideMs == null) localStorage.removeItem(LS_CLOCK);
-  else localStorage.setItem(LS_CLOCK, String(state.clockOverrideMs));
-}
-
 function escapeHtml(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
@@ -76,7 +56,7 @@ function escapeHtml(s) {
 }
 
 function nowMs() {
-  return state.clockOverrideMs != null ? state.clockOverrideMs : msOfDayFromDate();
+  return msOfDayFromDate();
 }
 
 function setTab(tab) {
@@ -295,24 +275,6 @@ function homeBuckets() {
   return buckets;
 }
 
-function renderClockBar() {
-  const clock = formatMsOfDay(nowMs());
-  const usingDevice = state.clockOverrideMs == null;
-  return `<div class="clock-bar panel">
-    <div class="clock-bar__row">
-      <span class="clock-bar__label">Demo clock</span>
-      <strong class="clock-bar__time">${clock}</strong>
-    </div>
-    <p class="panel__lead" style="margin-bottom:10px">Uses time of day against the daysheet. Override to scrub the sample day.</p>
-    <div class="chip-row">
-      <button type="button" class="chip ${usingDevice ? 'is-on' : ''}" data-clock="device">Device time</button>
-      <button type="button" class="chip" data-clock="0830">08:30</button>
-      <button type="button" class="chip" data-clock="1020">10:20</button>
-      <button type="button" class="chip" data-clock="1400">14:00</button>
-    </div>
-  </div>`;
-}
-
 function renderBucket(title, items, empty) {
   if (!items.length) {
     return `<div class="panel panel--tight">
@@ -335,7 +297,6 @@ function renderHome() {
     <section class="hero hero--compact">
       <h1>Follow the racing</h1>
     </section>
-    ${renderClockBar()}
     ${renderBucket('In the start blocks', buckets.start_blocks, 'No races in the next 10 minutes')}
     ${renderBucket('Live on course', buckets.live, 'No race on the water right now')}
     ${renderBucket('Just finished', buckets.finished, 'No new results in the last 10 minutes')}
@@ -374,7 +335,6 @@ function renderSchedule() {
           .join('')}
       </div>
       <p class="muted" style="margin:0 0 8px">${escapeHtml(day.label)} · ${day.races.length} races</p>
-      ${renderClockBar()}
       <div class="race-list">
         ${day.races
           .map((race) => {
@@ -519,28 +479,14 @@ function render() {
   }
 
   if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday') {
-    if (state.clockOverrideMs == null) {
-      state.homeTimer = setInterval(() => {
-        if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday') {
-          render();
-        }
-      }, 30000);
-    }
+    state.homeTimer = setInterval(() => {
+      if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday') {
+        render();
+      }
+    }, 30000);
   }
 
   wireDom();
-}
-
-function setClockPreset(key) {
-  if (key === 'device') {
-    state.clockOverrideMs = null;
-  } else if (/^\d{4}$/.test(key)) {
-    const h = Number(key.slice(0, 2));
-    const m = Number(key.slice(2));
-    state.clockOverrideMs = (h * 60 + m) * 60 * 1000;
-  }
-  saveClockOverride();
-  render();
 }
 
 function wireDom() {
@@ -559,9 +505,6 @@ function wireDom() {
   }
   enhanceLogoImages(main);
 
-  for (const el of main.querySelectorAll('[data-clock]')) {
-    el.addEventListener('click', () => setClockPreset(el.dataset.clock));
-  }
   for (const el of main.querySelectorAll('[data-day]')) {
     el.addEventListener('click', () => {
       state.scheduleDayIndex = Number(el.dataset.day);
@@ -735,17 +678,10 @@ async function boot() {
     );
     state.data = await Promise.race([loaded, timeout]);
     if (state.data.days[0]) state.scheduleDayIndex = state.data.days[0].index;
-    const tod = msOfDayFromDate();
-    const first = state.data.races.find((r) => Number.isFinite(r.startMsOfDay));
-    const last = [...state.data.races].reverse().find((r) => Number.isFinite(r.startMsOfDay));
-    if (
-      state.clockOverrideMs == null &&
-      first &&
-      last &&
-      (tod < first.startMsOfDay - REGATTA.startBlocksMs ||
-        tod > last.startMsOfDay + REGATTA.defaultRaceMs + REGATTA.finishedWindowMs)
-    ) {
-      state.clockOverrideMs = (8 * 60 + 40) * 60 * 1000;
+    try {
+      localStorage.removeItem('regattaNzDemoClock_v1');
+    } catch {
+      /* ignore */
     }
     render();
   } catch (err) {
