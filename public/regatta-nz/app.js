@@ -149,6 +149,19 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+/** Compact ⓘ control: title stays visible; tip expands on tap (collapsed by default). */
+function infoTip(id, titleHtml, tipText, { html = false, label = 'More information' } = {}) {
+  const tipId = `info-tip-${id}`;
+  const body = html ? tipText : escapeHtml(tipText);
+  return `<div class="info-tip">
+    <div class="info-tip__head">
+      ${titleHtml}
+      <button type="button" class="info-tip__btn" data-info-tip="${escapeHtml(id)}" aria-expanded="false" aria-controls="${tipId}" aria-label="${escapeHtml(label)}">i</button>
+    </div>
+    <div class="info-tip__body" id="${tipId}" role="region" hidden>${body}</div>
+  </div>`;
+}
+
 function nowMs() {
   return msOfDayFromDate();
 }
@@ -652,8 +665,12 @@ function renderLivestreamCard() {
     </div>`;
   }
   return `<div class="panel panel--stream panel--stream-off">
-    <h2>Livestream</h2>
-    <p class="panel__lead">${escapeHtml(stream.note || 'Livestream not on air for this regatta yet.')}</p>
+    ${infoTip(
+      'livestream',
+      '<h2>Livestream</h2>',
+      stream.note || 'Livestream not on air for this regatta yet.',
+      { label: 'About livestream' },
+    )}
     <button type="button" class="btn btn--ghost" disabled aria-disabled="true">${escapeHtml(label)} · soon</button>
   </div>`;
 }
@@ -840,8 +857,12 @@ function renderNotifySettings() {
   const mins = Math.round(NOTIFY_BEFORE_MS / 60000);
   return `
     <div class="panel panel--settings">
-      <h2>Notifications</h2>
-      <p class="panel__lead">Alert ~${mins} min before a followed crew races. Scheduled on this device from the daysheet (works offline once loaded). Native APK preferred.</p>
+      ${infoTip(
+        'notifications',
+        '<h2>Notifications</h2>',
+        `Alert ~${mins} min before a followed crew races. Scheduled on this device from the daysheet (works offline once loaded). Native APK preferred.`,
+        { label: 'About notifications' },
+      )}
       <label class="toggle">
         <input type="checkbox" id="notifyToggle" ${on ? 'checked' : ''} />
         <span class="toggle__ui" aria-hidden="true"></span>
@@ -864,8 +885,12 @@ function renderCrewConfirm(athlete) {
   }
   return `
     <div class="crew-confirm" id="crewConfirm">
-      <p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>
-      <p class="muted" style="margin:0 0 10px">Tick the boat(s) to follow, then add. Allocation may change if entries change.</p>
+      ${infoTip(
+        'crew-confirm',
+        `<p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>`,
+        'Tick the boat(s) to follow, then add. Allocation may change if entries change.',
+        { label: 'About crew confirmation' },
+      )}
       <div class="crew-confirm__list">
         ${crews
           .map((c) => {
@@ -1129,13 +1154,23 @@ function renderFollow() {
       body = renderClubFunnel();
     } else {
       body = `
-        <p class="panel__lead" style="margin-top:0">Pick a club or school, then follow everyone — or narrow by gender, age/level, and class.</p>
+        ${infoTip(
+          'club-funnel',
+          '<p class="follow-section__title">Clubs</p>',
+          'Pick a club or school, then follow everyone — or narrow by gender, age/level, and class.',
+          { label: 'How club follow works' },
+        )}
         <input class="search" id="followSearch" type="search" placeholder="Search clubs…" value="${escapeHtml(state.search)}" />
         <div class="list">${renderClubList()}</div>`;
     }
   } else {
     body = `
-      <p class="follow-note">Crew allocation is estimated from the published draw and <strong>may be wrong if entries change</strong>. Confirm which boat(s) to follow.</p>
+      ${infoTip(
+        'athlete-alloc',
+        '<p class="follow-section__title">Athletes</p>',
+        'Crew allocation is estimated from the published draw and <strong>may be wrong if entries change</strong>. Confirm which boat(s) to follow.',
+        { html: true, label: 'About athlete crew allocation' },
+      )}
       <input class="search" id="followSearch" type="search" placeholder="Search athletes…" value="${escapeHtml(state.search)}" />
       ${pickAthlete ? renderCrewConfirm(pickAthlete) : ''}
       <div class="list">${renderAthleteList()}</div>`;
@@ -1143,8 +1178,12 @@ function renderFollow() {
 
   return `
     <div class="panel">
-      <h2>Follow</h2>
-      <p class="panel__lead">Saved on this phone for My day, alerts, and lane highlights.</p>
+      ${infoTip(
+        'follow',
+        '<h2>Follow</h2>',
+        'Saved on this phone for My day, alerts, and lane highlights.',
+        { label: 'About Follow' },
+      )}
       ${renderFollowingSummary()}
       ${modeToggle}
       ${body}
@@ -1193,8 +1232,12 @@ function renderMyDay() {
   return `
     ${renderCountdownCard()}
     <div class="panel">
-      <h2>My day</h2>
-      <p class="panel__lead">Heats that match your follows (club, scoped club, or confirmed crew).</p>
+      ${infoTip(
+        'myday',
+        '<h2>My day</h2>',
+        'Heats that match your follows (club, scoped club, or confirmed crew).',
+        { label: 'About My day' },
+      )}
       ${
         items.length
           ? `<div class="race-list">
@@ -1242,8 +1285,12 @@ function renderLive() {
         <canvas id="courseCanvas" width="360" height="560" aria-label="Live course"></canvas>
       </div>
       <div class="panel" id="unofficialPanel" hidden>
-        <h2>Unofficial results</h2>
-        <p class="panel__lead">Based on CV tracking — not official RowIT results.</p>
+        ${infoTip(
+          'unofficial',
+          '<h2>Unofficial results</h2>',
+          'Based on CV tracking — not official RowIT results.',
+          { label: 'About unofficial results' },
+        )}
         <div class="order" id="orderList"></div>
       </div>
     </div>`;
@@ -1302,6 +1349,24 @@ function wireDom() {
   main.querySelector('[data-go="follow"]')?.addEventListener('click', () => setTab('follow'));
   main.querySelector('[data-go="live"]')?.addEventListener('click', () => setTab('live'));
   main.querySelector('[data-go="schedule"]')?.addEventListener('click', () => setTab('schedule'));
+
+  for (const btn of main.querySelectorAll('[data-info-tip]')) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.infoTip;
+      const body = document.getElementById(`info-tip-${id}`);
+      if (!body) return;
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      for (const other of main.querySelectorAll('[data-info-tip]')) {
+        if (other === btn) continue;
+        other.setAttribute('aria-expanded', 'false');
+        const otherBody = document.getElementById(`info-tip-${other.dataset.infoTip}`);
+        if (otherBody) otherBody.hidden = true;
+      }
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      body.hidden = open;
+    });
+  }
 
   for (const img of main.querySelectorAll('img.logo[data-fallback]')) {
     img.addEventListener('error', () => {
