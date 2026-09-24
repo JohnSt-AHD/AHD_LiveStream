@@ -8,6 +8,6 @@
     "allowNavigation": ["ahd-livestream.vercel.app", "*.vercel.app"]
   },
   "android": {
-    "backgroundColor": "#0a1628"
+    "backgroundColor": "#0b3d4a"
   }
 }
