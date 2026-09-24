@@ -6,9 +6,15 @@ import {
   AGE_GROUP_OPTIONS,
   GENDER_OPTIONS,
   crewDisplayLabel,
-} from './data.js?v=28';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=28';
-import { enhanceLogoImages } from './logo-cutout.js?v=28';
+  classifyRound,
+  roundChipLabel,
+  racesInRound,
+  raceStageTitle,
+  eventProgressionExplainer,
+  progressionDestForPlace,
+} from './data.js?v=33';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=33';
+import { enhanceLogoImages } from './logo-cutout.js?v=33';
 import {
   loadNotifyPrefs,
   saveNotifyPrefs,
@@ -17,8 +23,8 @@ import {
   scheduleFollowedRaceNotifications,
   maybeWebNotifyRace,
   NOTIFY_BEFORE_MS,
-} from './notify.js?v=28';
-import { runIntro } from './intro.js?v=32';
+} from './notify.js?v=33';
+import { runIntro } from './intro.js?v=33';
 
 runIntro();
 
@@ -45,6 +51,11 @@ const state = {
   expanded: new Set(),
   scheduleDayIndex: 1,
   notifySyncTimer: null,
+  /** Results tab */
+  resultsFilter: 'all', // 'all' | 'followed'
+  resultsEventNum: null,
+  resultsRound: null,
+  resultsExplainerOpen: false,
 };
 
 const main = document.getElementById('main');
@@ -855,6 +866,204 @@ function renderSchedule() {
     </div>`;
 }
 
+function eventsForResultsFilter() {
+  const all = state.data.events || [];
+  if (state.resultsFilter !== 'followed') return all;
+  const followedIds = new Set(racesForFollows().map((x) => x.race.id));
+  return all.filter((ev) => ev.races.some((r) => followedIds.has(r.id)));
+}
+
+function ensureResultsSelection() {
+  const events = eventsForResultsFilter();
+  if (!events.length) {
+    state.resultsEventNum = null;
+    state.resultsRound = null;
+    return null;
+  }
+  let ev = events.find((e) => e.eventNum === state.resultsEventNum) || null;
+  if (!ev) {
+    ev = events[0];
+    state.resultsEventNum = ev.eventNum;
+    state.resultsRound = null;
+  }
+  const rounds = ev.rounds?.length ? ev.rounds : [];
+  if (!rounds.length) {
+    state.resultsRound = null;
+    return ev;
+  }
+  if (!rounds.includes(state.resultsRound)) {
+    // Prefer first round that still has races without results; else last round.
+    const unfinished = rounds.find((k) =>
+      racesInRound(ev.races, k).some((r) => !r.hasResult),
+    );
+    state.resultsRound = unfinished || rounds[rounds.length - 1];
+  }
+  return ev;
+}
+
+function renderResultsPlacings(race) {
+  const format = race.progressionFormat || race.progression || race.resultFormat || '';
+  const showProg = Boolean(format);
+  if (!race.result?.placings?.length) {
+    return `<div class="lanes">${race.lanes
+      .map((l) => {
+        const followed = laneIsFollowed(l, race);
+        return `<div class="lane ${followed ? 'is-followed' : ''}">
+          <span class="lane__n">${l.lane}</span>
+          ${logoHtml(l.logoUrl, l.clubCode)}
+          <div class="lane__crew">${escapeHtml(l.entry)}
+            <small>${escapeHtml(l.clubName || '')}${followed ? ' · Following' : ''}</small>
+          </div>
+        </div>`;
+      })
+      .join('')}</div>
+      <p class="muted empty--sm">Awaiting official results</p>`;
+  }
+  return `<div class="lanes lanes--results">
+    ${race.result.placings
+      .map((p) => {
+        const place = p.place >= 90 ? '—' : p.place;
+        const dest =
+          showProg && Number.isFinite(p.place) && p.place < 90
+            ? progressionDestForPlace(p.place, format)
+            : '';
+        const followed =
+          (state.follows.clubs || []).includes(p.clubId) ||
+          (state.follows.clubScopes || []).some((s) => s.clubId === p.clubId);
+        return `<div class="lane ${followed ? 'is-followed' : ''}">
+          <span class="lane__n">${place}</span>
+          ${logoHtml(p.logoUrl, p.clubCode)}
+          <div class="lane__crew">${escapeHtml(p.competitor)}
+            <small>${escapeHtml(p.time || '')}</small>
+          </div>
+          ${
+            dest
+              ? `<span class="prog-pill prog-pill--${dest === '—' ? 'out' : 'go'}">${escapeHtml(dest)}</span>`
+              : ''
+          }
+        </div>`;
+      })
+      .join('')}
+  </div>`;
+}
+
+function renderResultsRaceCard(race) {
+  const open = state.expanded.has(race.id);
+  const phase = racePhase(nowMs(), race);
+  const title = raceStageTitle(race);
+  const nextRounds = (ensureResultsSelection()?.rounds || []);
+  const curIdx = nextRounds.indexOf(state.resultsRound);
+  const nextChip = curIdx >= 0 ? nextRounds[curIdx + 1] : null;
+  return `<article class="race-card race-card--${phase.status}">
+    <button type="button" class="race-card__head" data-expand="${escapeHtml(race.id)}" aria-expanded="${open}">
+      <div class="race-card__top">
+        <span class="heat__time">${escapeHtml(title)}</span>
+        ${badgeForStatus(phase.status)}
+      </div>
+      <p class="heat__event">Race ${escapeHtml(String(race.raceNum || race.key))} · ${escapeHtml(race.time || '—')}</p>
+      <p class="heat__who">tap to ${open ? 'hide' : 'show'} results</p>
+    </button>
+    ${
+      open
+        ? `<div class="race-card__body">
+      ${renderResultsPlacings(race)}
+      ${
+        nextChip
+          ? `<button type="button" class="btn btn--ghost" style="margin-top:10px" data-results-round="${nextChip}">Go to ${escapeHtml(roundChipLabel(nextChip))}</button>`
+          : ''
+      }
+    </div>`
+        : ''
+    }
+  </article>`;
+}
+
+function renderResults() {
+  const events = eventsForResultsFilter();
+  const followedEmpty = state.resultsFilter === 'followed' && !events.length && !hasAnyFollows();
+  const followedNoEvents = state.resultsFilter === 'followed' && !events.length && hasAnyFollows();
+
+  if (!state.data.events?.length) {
+    return `<div class="panel"><p class="empty">No events on the daysheet</p></div>`;
+  }
+
+  const ev = ensureResultsSelection();
+  const rounds = ev?.rounds || [];
+  const roundRaces = ev && state.resultsRound ? racesInRound(ev.races, state.resultsRound) : [];
+  const explainer = ev ? eventProgressionExplainer(ev) : '';
+
+  return `
+    <div class="panel panel--tight results-head">
+      <h2>Results</h2>
+      <p class="panel__lead">Heats through finals for one event</p>
+      <div class="chip-row" style="margin-bottom:12px" role="group" aria-label="Event filter">
+        <button type="button" class="chip ${state.resultsFilter === 'all' ? 'is-on' : ''}" data-results-filter="all">All events</button>
+        <button type="button" class="chip ${state.resultsFilter === 'followed' ? 'is-on' : ''}" data-results-filter="followed">Followed</button>
+      </div>
+      ${
+        followedEmpty
+          ? `<p class="empty empty--sm">Follow a club or athlete first, then filter here.</p>
+             <button type="button" class="btn btn--primary" data-go="follow">Follow</button>`
+          : ''
+      }
+      ${
+        followedNoEvents
+          ? `<p class="empty empty--sm">None of your follows appear in this regatta’s events yet.</p>`
+          : ''
+      }
+      ${
+        events.length
+          ? `<label class="results-select-label">
+              <span class="muted">Event</span>
+              <select class="results-select" id="resultsEventSelect" aria-label="Select event">
+                ${events
+                  .map(
+                    (e) =>
+                      `<option value="${escapeHtml(e.eventNum)}" ${e.eventNum === state.resultsEventNum ? 'selected' : ''}>${escapeHtml(e.displayTitle)}</option>`,
+                  )
+                  .join('')}
+              </select>
+            </label>`
+          : ''
+      }
+      ${
+        ev && explainer
+          ? `<button type="button" class="results-explainer-toggle" data-results-explainer aria-expanded="${state.resultsExplainerOpen}">
+              How this event progresses ${state.resultsExplainerOpen ? '▴' : '▾'}
+            </button>
+            <div class="results-explainer" ${state.resultsExplainerOpen ? '' : 'hidden'}>
+              <p>${escapeHtml(explainer).replace(/\n/g, '<br>')}</p>
+            </div>`
+          : ''
+      }
+    </div>
+    ${
+      ev && rounds.length
+        ? `<div class="chip-row chip-row--scroll results-rounds" role="tablist" aria-label="Round">
+        ${rounds
+          .map(
+            (k) =>
+              `<button type="button" class="chip ${k === state.resultsRound ? 'is-on' : ''}" data-results-round="${k}" role="tab" aria-selected="${k === state.resultsRound}">${escapeHtml(roundChipLabel(k))}</button>`,
+          )
+          .join('')}
+      </div>
+      <div class="panel panel--tight">
+        <h2>${escapeHtml(roundChipLabel(state.resultsRound))} <span class="count">${roundRaces.length}</span></h2>
+        <div class="race-list">
+          ${
+            roundRaces.length
+              ? roundRaces.map((r) => renderResultsRaceCard(r)).join('')
+              : '<p class="empty empty--sm">No races in this round</p>'
+          }
+        </div>
+      </div>`
+        : ev
+          ? `<div class="panel"><p class="empty">No round structure for this event</p></div>`
+          : ''
+    }
+  `;
+}
+
 function renderNotifySettings() {
   const on = state.notify.enabled;
   const mins = Math.round(NOTIFY_BEFORE_MS / 60000);
@@ -1320,6 +1529,7 @@ function render() {
 
   if (state.tab === 'home') main.innerHTML = renderHome();
   else if (state.tab === 'schedule') main.innerHTML = renderSchedule();
+  else if (state.tab === 'results') main.innerHTML = renderResults();
   else if (state.tab === 'follow') main.innerHTML = renderFollow();
   else if (state.tab === 'myday') main.innerHTML = renderMyDay();
   else if (state.tab === 'live') {
@@ -1327,11 +1537,11 @@ function render() {
     startLive();
   }
 
-  if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday') {
+  if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday' || state.tab === 'results') {
     state.homeTimer = setInterval(() => {
-      if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday') {
-        render();
-      }
+        if (state.tab === 'home' || state.tab === 'schedule' || state.tab === 'myday' || state.tab === 'results') {
+          render();
+        }
     }, 30000);
   }
 
@@ -1364,6 +1574,33 @@ function wireDom() {
   main.querySelector('[data-go="follow"]')?.addEventListener('click', () => setTab('follow'));
   main.querySelector('[data-go="live"]')?.addEventListener('click', () => setTab('live'));
   main.querySelector('[data-go="schedule"]')?.addEventListener('click', () => setTab('schedule'));
+  main.querySelector('[data-go="results"]')?.addEventListener('click', () => setTab('results'));
+
+  for (const btn of main.querySelectorAll('[data-results-filter]')) {
+    btn.addEventListener('click', () => {
+      state.resultsFilter = btn.dataset.resultsFilter === 'followed' ? 'followed' : 'all';
+      state.resultsEventNum = null;
+      state.resultsRound = null;
+      render();
+    });
+  }
+  main.querySelector('#resultsEventSelect')?.addEventListener('change', (e) => {
+    state.resultsEventNum = String(e.target.value || '').trim() || null;
+    state.resultsRound = null;
+    state.expanded.clear();
+    render();
+  });
+  for (const btn of main.querySelectorAll('[data-results-round]')) {
+    btn.addEventListener('click', () => {
+      state.resultsRound = btn.dataset.resultsRound || null;
+      state.expanded.clear();
+      render();
+    });
+  }
+  main.querySelector('[data-results-explainer]')?.addEventListener('click', () => {
+    state.resultsExplainerOpen = !state.resultsExplainerOpen;
+    render();
+  });
 
   for (const btn of main.querySelectorAll('[data-info-tip]')) {
     btn.addEventListener('click', (e) => {
@@ -1618,6 +1855,34 @@ async function boot() {
     if (state.data.days[0]) state.scheduleDayIndex = state.data.days[0].index;
     try {
       localStorage.removeItem('regattaNzDemoClock_v1');
+    } catch {
+      /* ignore */
+    }
+    try {
+      const q = new URLSearchParams(location.search);
+      const ev = String(q.get('event') || '').trim();
+      const raceQ = String(q.get('race') || '').trim();
+      if (raceQ) {
+        const num = Number(raceQ);
+        const found =
+          state.data.races.find((r) => r.raceNum === num) ||
+          state.data.races.find((r) => String(r.key).startsWith(raceQ));
+        if (found) {
+          state.tab = 'results';
+          state.resultsEventNum = found.eventNum;
+          state.resultsRound = classifyRound(found.round);
+          state.expanded.add(found.id);
+          for (const btn of tabbar.querySelectorAll('.tab')) {
+            btn.classList.toggle('is-active', btn.dataset.tab === 'results');
+          }
+        }
+      } else if (ev) {
+        state.tab = 'results';
+        state.resultsEventNum = ev;
+        for (const btn of tabbar.querySelectorAll('.tab')) {
+          btn.classList.toggle('is-active', btn.dataset.tab === 'results');
+        }
+      }
     } catch {
       /* ignore */
     }

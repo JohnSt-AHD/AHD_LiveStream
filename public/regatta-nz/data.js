@@ -407,6 +407,7 @@ function parseResultsCsv(text) {
       eventNum: String(cols[1] || '').trim(),
       round: String(cols[2] || '').trim(),
       division: String(cols[3] || '').trim(),
+      format: String(cols[4] || '').trim(),
       status: String(cols[5] || '').trim(),
       placings: parseResultPlacings(cols),
     };
@@ -571,11 +572,16 @@ export async function loadRegatta() {
     if (match && match.placings?.length) {
       race.result = match;
       race.hasResult = true;
+      race.resultFormat = match.format || '';
       const win = match.placings.find((p) => p.place === 1 && p.timeMs);
       if (win?.timeMs) {
         race.raceDurationMs = Math.max(90_000, Math.min(15 * 60_000, win.timeMs + 30_000));
       }
+    } else {
+      race.resultFormat = '';
     }
+    // Prefer daysheet progression; fall back to results format string.
+    race.progressionFormat = String(race.progression || race.resultFormat || '').trim();
 
     for (const lane of race.lanes) {
       lane.logoUrl = clubLogoUrl(lookup, lane.clubId);
@@ -673,12 +679,166 @@ export async function loadRegatta() {
     spectator,
     days,
     races,
+    events: buildEventGroups(races),
     clubs: [...clubs.values()].sort((a, b) => a.name.localeCompare(b.name)),
     clubById: clubs,
     athletes: [...athletes.values()].sort((a, b) => a.name.localeCompare(b.name)),
     raceById: new Map(races.map((r) => [r.id, r])),
     raceByKey: new Map(races.map((r) => [r.key, r])),
   };
+}
+
+/** Classify RowIT Round column → heat | rep | qf | sf | final | other */
+export function classifyRound(round) {
+  const r = String(round || '').toLowerCase();
+  if (r === 'r' || /rep|repechage/.test(r)) return 'rep';
+  if (r === 'q' || /quarter|\bqf\b/.test(r)) return 'qf';
+  if (r === 's' || /semi|\bsf\b/.test(r)) return 'sf';
+  if (r === 'f' || /final|\bf\b/.test(r)) return 'final';
+  if (r === 'h' || /heat/.test(r)) return 'heat';
+  if (r === 'e' || /exhibition/.test(r)) return 'final';
+  return 'other';
+}
+
+const ROUND_ORDER = ['heat', 'rep', 'qf', 'sf', 'final'];
+const ROUND_LABELS = {
+  heat: 'Heats',
+  rep: 'Reps',
+  qf: 'Quarters',
+  sf: 'Semis',
+  final: 'Finals',
+  other: 'Other',
+};
+
+export function roundChipLabel(kind) {
+  return ROUND_LABELS[kind] || kind;
+}
+
+export function roundsPresent(races) {
+  const set = new Set((races || []).map((r) => classifyRound(r.round)));
+  return ROUND_ORDER.filter((k) => set.has(k));
+}
+
+function finalDivisionRank(race) {
+  const div = String(race?.division ?? '').trim();
+  const num = parseInt(div, 10);
+  if (Number.isFinite(num) && num >= 1 && num <= 12) return num;
+  const lower = div.toLowerCase();
+  if (lower === 'a' || /^a\s*final/.test(lower)) return 1;
+  if (lower === 'b' || /^b\s*final/.test(lower)) return 2;
+  if (lower === 'c' || /^c\s*final/.test(lower)) return 3;
+  if (lower === 'd' || /^d\s*final/.test(lower)) return 4;
+  return 99;
+}
+
+/** A Final / B Final / Heat 1 / Semi A … */
+export function raceStageTitle(race) {
+  const kind = classifyRound(race.round);
+  const div = String(race.division || '').trim();
+  if (kind === 'final') {
+    const rank = finalDivisionRank(race);
+    if (rank >= 1 && rank <= 12) return `${String.fromCharCode(64 + rank)} Final`;
+    return 'Final';
+  }
+  if (kind === 'heat') return div ? `Heat ${div}` : 'Heat';
+  if (kind === 'rep') return div ? `Rep ${div}` : 'Repechage';
+  if (kind === 'qf') return div ? `Quarter ${div}` : 'Quarter-final';
+  if (kind === 'sf') return div ? `Semi ${div}` : 'Semi-final';
+  return [race.round, div].filter(Boolean).join(' ') || race.key;
+}
+
+export function racesInRound(races, kind) {
+  const list = (races || []).filter((r) => classifyRound(r.round) === kind);
+  if (kind === 'final') {
+    return list.sort((a, b) => {
+      const da = finalDivisionRank(a);
+      const db = finalDivisionRank(b);
+      if (da !== db) return da - db;
+      return (a.startMsOfDay || a.raceNum) - (b.startMsOfDay || b.raceNum);
+    });
+  }
+  return list.sort((a, b) => {
+    const da = parseInt(a.division, 10);
+    const db = parseInt(b.division, 10);
+    if (Number.isFinite(da) && Number.isFinite(db) && da !== db) return da - db;
+    const cmp = String(a.division || '').localeCompare(String(b.division || ''), undefined, {
+      numeric: true,
+    });
+    if (cmp) return cmp;
+    return (a.startMsOfDay || a.raceNum) - (b.startMsOfDay || b.raceNum);
+  });
+}
+
+export function buildEventGroups(races) {
+  /** @type {Map<string, { eventNum: string, eventName: string, races: object[] }>} */
+  const map = new Map();
+  for (const race of races || []) {
+    const key = String(race.eventNum || '').trim();
+    if (!key) continue;
+    if (!map.has(key)) {
+      map.set(key, {
+        eventNum: key,
+        eventName: race.eventType || `Event ${key}`,
+        races: [],
+      });
+    }
+    const g = map.get(key);
+    g.races.push(race);
+    if (race.eventType && (!g.eventName || g.eventName.startsWith('Event '))) {
+      g.eventName = race.eventType;
+    }
+  }
+  return [...map.values()]
+    .map((g) => ({
+      ...g,
+      displayTitle: `Event ${g.eventNum} · ${g.eventName}`,
+      rounds: roundsPresent(g.races),
+    }))
+    .sort((a, b) => Number(a.eventNum) - Number(b.eventNum) || a.eventNum.localeCompare(b.eventNum));
+}
+
+/** Plain-language / RowIT string for the collapsed explainer. */
+export function eventProgressionExplainer(event) {
+  if (!event?.races?.length) return 'No races in this event.';
+  const formats = [
+    ...new Set(
+      event.races
+        .map((r) => String(r.progressionFormat || r.progression || r.resultFormat || '').trim())
+        .filter(Boolean),
+    ),
+  ];
+  const rounds = event.rounds?.length ? event.rounds : roundsPresent(event.races);
+  const path = rounds.map((k) => ROUND_LABELS[k] || k).join(' → ');
+  if (formats.length === 1) {
+    return `${path}.\n\nRowIT: ${formats[0]}`;
+  }
+  if (formats.length > 1) {
+    return `${path}.\n\nThis event uses more than one progression string across races (common when heats and finals differ). Tap a heat to see place-by-place destinations.`;
+  }
+  if (rounds.length <= 1) {
+    return `${path || 'Finals only'}. No detailed progression string was published for this event.`;
+  }
+  return `${path}. Progression labels appear when RowIT publishes a format string on the daysheet or results.`;
+}
+
+/**
+ * Destination label for a finishing place (uses shared WorldRowingProgression when loaded).
+ * @param {number} place
+ * @param {string} format
+ */
+export function progressionDestForPlace(place, format) {
+  if (!Number.isFinite(place) || place >= 90) return '—';
+  const W = typeof globalThis !== 'undefined' ? globalThis.WorldRowingProgression : null;
+  if (!W?.parseRowitProgressionRules) return '';
+  const rules = W.parseRowitProgressionRules(format);
+  if (!rules || rules.type === 'fastest-each') return '';
+  for (const d of rules.direct || []) {
+    if (d.places.includes(place)) return d.dest;
+  }
+  for (const l of rules.lower || []) {
+    if (place >= l.minPlace) return l.dest;
+  }
+  return '—';
 }
 
 /**

@@ -14,6 +14,7 @@ Open [http://localhost:3000/regatta-nz/](http://localhost:3000/regatta-nz/).
 
 - **Home** — races in start blocks (next 10 min), live on course, just finished (RowIT result within last 10 min). Tap to expand draw or results; club/school logos when available.
 - **Schedule** — full day list with Day 1 / Day 2 switcher.
+- **Results** — event dropdown (all or followed), round chips (Heats → … → **Finals** as one chip with A/B/C listed), expandable heat results + progression.
 - **Follow** — **Athlete** or **Club** mode. Club: pick a school/club (crew count only), then follow all or narrow Gender → Age/level → Class from the daysheet; live “Crews you’ll follow” preview. Athlete: search → confirm crew(s). Removable chips for whole clubs, scoped club follows, and crews. Persisted in `localStorage` (`regattaNzFollows_v1`).
 - **My day** — live countdown to the next followed race, plus matching heats.
 - **Live** — sim track via `/api/race`.
