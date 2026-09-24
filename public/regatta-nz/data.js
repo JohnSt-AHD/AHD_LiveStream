@@ -213,13 +213,22 @@ export const GENDER_OPTIONS = [
   { id: 'mixed', label: 'Mixed' },
 ];
 
+/** Boat-class token from RowIT event type (1X, 2X, 4+, 8+, …). */
+export function parseBoatClass(eventType) {
+  const s = String(eventType || '');
+  // No trailing \b: tokens like 4+ / 8+ end on non-word chars, so \b never matches.
+  const m = s.match(/\b(8X?\+|8X|8\+|8|4X?\+|4X|4\+|4-|2X|2-|1X)(?!\w)/i);
+  if (!m) return null;
+  return m[1].toUpperCase().replace(/\s+/g, '');
+}
+
 /**
- * Parse RowIT event-type codes into age group + gender tags.
+ * Parse RowIT event-type codes into age group + gender + boat class tags.
  * School: "B U17 1X", "G U15 4X+", "B N18 2X"
  * Masters: "W Mst C 2X", "Mx G-M 2X", "Opn 1X (P)"
  * Club: "M Clb 2X", "W Int 4+", "M Snr 2-", "W Prm 1X", "W Nov 2X"
  * @param {string} eventType
- * @returns {{ ageGroup: string|null, gender: string|null, raw: string }}
+ * @returns {{ ageGroup: string|null, gender: string|null, boatClass: string|null, raw: string }}
  */
 export function parseEventTags(eventType) {
   const raw = String(eventType || '').trim();
@@ -261,7 +270,7 @@ export function parseEventTags(eventType) {
     ageGroup = 'Masters';
   }
 
-  return { ageGroup, gender, raw };
+  return { ageGroup, gender, boatClass: parseBoatClass(s), raw };
 }
 
 /**
@@ -270,10 +279,8 @@ export function parseEventTags(eventType) {
  * @returns {number}
  */
 export function boatSeatCount(eventType) {
-  const s = String(eventType || '');
-  const m = s.match(/\b(8X?\+|8X|8\+|8|4X?\+|4X|4\+|4-|2X|2-|1X)\b/i);
-  if (!m) return 1;
-  const boat = m[1].toUpperCase().replace(/\s+/g, '');
+  const boat = parseBoatClass(eventType);
+  if (!boat) return 1;
   if (boat.startsWith('8')) return boat.includes('+') ? 9 : 8;
   if (boat.startsWith('4')) return boat.includes('+') ? 5 : 4;
   if (boat.startsWith('2')) return 2;
@@ -506,6 +513,7 @@ function parseDaysheet(text) {
       eventType,
       ageGroup: tags.ageGroup,
       gender: tags.gender,
+      boatClass: tags.boatClass,
       round: obj.Round || '',
       division: obj.Division || '',
       progression: obj.Progression || '',
@@ -592,9 +600,12 @@ export async function loadRegatta() {
           name: lane.clubName,
           logo: lane.logoUrl,
           raceCount: 0,
+          crewCount: 0,
         });
       }
-      clubs.get(lane.clubId).raceCount += 1;
+      const club = clubs.get(lane.clubId);
+      club.raceCount += 1;
+      club.crewCount += 1;
     }
   }
 

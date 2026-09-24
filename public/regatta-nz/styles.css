@@ -792,6 +792,149 @@ a.btn {
   color: var(--muted);
 }
 
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(11, 61, 74, 0.06);
+  border: 1px solid var(--line);
+}
+
+.mode-toggle__btn {
+  border: 0;
+  border-radius: 11px;
+  padding: 11px 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.mode-toggle__btn.is-on {
+  background: var(--lake);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(232, 163, 23, 0.55);
+}
+
+.club-funnel {
+  display: grid;
+  gap: 12px;
+}
+
+.funnel-back {
+  width: auto;
+  justify-self: start;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.funnel-club {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(232, 163, 23, 0.35);
+  background: linear-gradient(145deg, #fff9ef 0%, #fff 70%);
+}
+
+.funnel-club__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.funnel-club__meta strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.funnel-club__meta span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.funnel-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.funnel-steps li {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  padding: 8px 4px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(11, 61, 74, 0.04);
+}
+
+.funnel-steps li.is-active {
+  color: var(--lake);
+  border-color: rgba(11, 61, 74, 0.2);
+  background: #fff;
+}
+
+.funnel-steps li.is-done {
+  color: #fff;
+  background: var(--lake-mid);
+  border-color: var(--lake-mid);
+}
+
+.crew-preview {
+  margin-bottom: 4px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #f8fbfa;
+}
+
+.crew-preview__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 28vh;
+  overflow: auto;
+}
+
+.crew-preview__list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crew-preview__list strong {
+  font-size: 0.9rem;
+}
+
+.crew-preview__list span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.crew-preview__more {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .panel--countdown {
   background: linear-gradient(145deg, #fff9ef 0%, rgba(255, 255, 255, 0.96) 55%);
   border: 1px solid rgba(232, 163, 23, 0.35);

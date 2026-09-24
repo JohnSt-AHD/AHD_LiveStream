@@ -14,7 +14,7 @@ Open [http://localhost:3000/regatta-nz/](http://localhost:3000/regatta-nz/).
 
 - **Home** — races in start blocks (next 10 min), live on course, just finished (RowIT result within last 10 min). Tap to expand draw or results; club/school logos when available.
 - **Schedule** — full day list with Day 1 / Day 2 switcher.
-- **Follow** — club/school (all crews), athlete → **confirm crew(s)** (e.g. `WAKA GU15 2X`), multi-select **age groups** and optional **gender** filter. Persisted in `localStorage` (`regattaNzFollows_v1`).
+- **Follow** — **Athlete** or **Club** mode. Club: pick a school/club (crew count only), then follow all or narrow Gender → Age/level → Class from the daysheet; live “Crews you’ll follow” preview. Athlete: search → confirm crew(s). Removable chips for whole clubs, scoped club follows, and crews. Persisted in `localStorage` (`regattaNzFollows_v1`).
 - **My day** — live countdown to the next followed race, plus matching heats.
 - **Live** — sim track via `/api/race`.
 - **Notifications** — toggle on Follow / My day (`regattaNzNotify_v1`). When on, the app schedules **local** alerts ~10 minutes before followed races from the daysheet (Capacitor Local Notifications on APK; optional Web Notification mirror in browser). No FCM server for v1. Turning off cancels pending schedules.
@@ -26,9 +26,20 @@ Home race buckets use the phone’s real time of day against the daysheet.
 ```json
 {
   "clubs": ["welc"],
-  "athletes": ["Jane Doe"],
-  "ageGroups": ["U17", "Masters"],
-  "genders": ["female"],
+  "clubScopes": [
+    {
+      "id": "waka|female|U15|2X",
+      "clubId": "waka",
+      "genders": ["female"],
+      "ageGroups": ["U15"],
+      "classes": ["2X"],
+      "label": "Waka · Female · U15 · 2X",
+      "crewCount": 2
+    }
+  ],
+  "athletes": [],
+  "ageGroups": [],
+  "genders": [],
   "crews": [
     {
       "id": "81 (E)#31|3",
@@ -43,9 +54,9 @@ Home race buckets use the phone’s real time of day against the daysheet.
 }
 ```
 
-Matching is OR across clubs, confirmed crews, legacy athletes, and age/gender. Athlete search no longer auto-follows on tap — you tick boat labels and confirm (crew allocation may change if entries change). Age groups alone match any gender; if genders are also set, both must match. Gender alone matches all races of that gender.
+Matching is OR across whole clubs, `clubScopes` (club + optional gender/age/class), confirmed crews, legacy athletes, and any leftover global age/gender. Whole-club follow uses `clubs: [id]`; filtered follows use `clubScopes`. Athlete search ticks boat labels then confirms (crew allocation may change if entries change).
 
-Event tags are parsed from RowIT `Event Type` strings (e.g. `B U17 1X`, `W Mst C 2X`, `Mx G-M 2X`, `M Clb 2X`).
+Event tags (age, gender, boat class) are parsed from RowIT `Event Type` strings (e.g. `B U17 1X`, `W Mst C 2X`, `Mx G-M 2X`, `M Clb 2X`).
 
 ## Hub configuration
 
@@ -76,6 +87,6 @@ npm run apk
 
 ### How to test
 
-**Web:** open `/regatta-nz/`, Follow → pick Masters + Female (or a club), open My day — countdown updates every second. Enable Notifications — browser may prompt; foreground nudges fire when a match enters start blocks / live. Scheduled OS alerts need the APK.
+**Web:** open `/regatta-nz/`, Follow → **Club** → pick a club → follow all or narrow Gender / Age / Class → confirm; or **Athlete** → confirm crews. Open My day — countdown updates every second. Enable Notifications — browser may prompt; foreground nudges fire when a match enters start blocks / live. Scheduled OS alerts need the APK.
 
 **APK:** install build, enable Notifications (Android 13+ permission prompt), follow a crew with an upcoming start, background the app — expect a local alert ~10 min before start.
