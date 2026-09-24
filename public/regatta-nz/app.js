@@ -5,9 +5,9 @@ import {
   msOfDayFromDate,
   AGE_GROUP_OPTIONS,
   GENDER_OPTIONS,
-} from './data.js?v=26';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=26';
-import { enhanceLogoImages } from './logo-cutout.js?v=26';
+} from './data.js?v=27';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=27';
+import { enhanceLogoImages } from './logo-cutout.js?v=27';
 import {
   loadNotifyPrefs,
   saveNotifyPrefs,
@@ -16,7 +16,7 @@ import {
   scheduleFollowedRaceNotifications,
   maybeWebNotifyRace,
   NOTIFY_BEFORE_MS,
-} from './notify.js?v=26';
+} from './notify.js?v=27';
 
 const LS_FOLLOWS = 'regattaNzFollows_v1';
 
@@ -25,6 +25,8 @@ const state = {
   tab: 'home',
   followMode: 'club',
   search: '',
+  /** @type {null | { athleteName: string, selected: Set<string> }} */
+  crewPick: null,
   selectedRaceId: null,
   follows: loadFollows(),
   notify: loadNotifyPrefs(),
@@ -45,17 +47,36 @@ const btnBack = document.getElementById('btnBack');
 const btnLiveJump = document.getElementById('btnLiveJump');
 const tabbar = document.getElementById('tabbar');
 
+function normalizeCrewFollow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = String(raw.id || '').trim();
+  if (!id) return null;
+  return {
+    id,
+    label: String(raw.label || id),
+    raceId: raw.raceId ? String(raw.raceId) : '',
+    raceKey: raw.raceKey ? String(raw.raceKey) : '',
+    lane: Number.isFinite(Number(raw.lane)) ? Number(raw.lane) : null,
+    clubId: raw.clubId ? String(raw.clubId) : '',
+    athleteName: raw.athleteName ? String(raw.athleteName) : '',
+  };
+}
+
 function loadFollows() {
   try {
     const raw = JSON.parse(localStorage.getItem(LS_FOLLOWS) || '{}');
+    const crews = Array.isArray(raw.crews)
+      ? raw.crews.map(normalizeCrewFollow).filter(Boolean)
+      : [];
     return {
       clubs: Array.isArray(raw.clubs) ? raw.clubs : [],
       athletes: Array.isArray(raw.athletes) ? raw.athletes : [],
       ageGroups: Array.isArray(raw.ageGroups) ? raw.ageGroups : [],
       genders: Array.isArray(raw.genders) ? raw.genders : [],
+      crews,
     };
   } catch {
-    return { clubs: [], athletes: [], ageGroups: [], genders: [] };
+    return { clubs: [], athletes: [], ageGroups: [], genders: [], crews: [] };
   }
 }
 
@@ -66,7 +87,13 @@ function saveFollows() {
 
 function followCount() {
   const f = state.follows;
-  return f.clubs.length + f.athletes.length + f.ageGroups.length + f.genders.length;
+  return (
+    f.clubs.length +
+    f.athletes.length +
+    f.ageGroups.length +
+    f.genders.length +
+    f.crews.length
+  );
 }
 
 function hasAnyFollows() {
@@ -88,6 +115,7 @@ function nowMs() {
 function setTab(tab) {
   state.tab = tab;
   state.selectedRaceId = null;
+  if (tab !== 'follow') state.crewPick = null;
   stopLive();
   for (const btn of tabbar.querySelectorAll('.tab')) {
     btn.classList.toggle('is-active', btn.dataset.tab === tab);
@@ -132,14 +160,36 @@ function racesForFollows() {
   const { races } = state.data;
   const clubSet = new Set(state.follows.clubs);
   const athleteSet = new Set(state.follows.athletes.map((n) => n.toLowerCase()));
+  const crewByRace = new Map();
+  for (const c of state.follows.crews) {
+    const key = c.raceId || c.raceKey;
+    if (!key) continue;
+    if (!crewByRace.has(key)) crewByRace.set(key, []);
+    crewByRace.get(key).push(c);
+  }
   const out = [];
   for (const race of races) {
     const matchedLanes = race.lanes.filter((l) => clubSet.has(l.clubId));
     const matchedAthletes = race.athletes.filter((n) => athleteSet.has(n.toLowerCase()));
+    const matchedCrews = [
+      ...(crewByRace.get(race.id) || []),
+      ...(crewByRace.get(race.key) || []),
+    ].filter((c, i, arr) => arr.findIndex((x) => x.id === c.id) === i);
+    const crewLanes = matchedCrews
+      .map((c) => race.lanes.find((l) => l.lane === c.lane))
+      .filter(Boolean);
+    for (const lane of crewLanes) {
+      if (!matchedLanes.some((l) => l.lane === lane.lane)) matchedLanes.push(lane);
+    }
     const ageGender = matchesAgeGender(race);
-    if (!matchedLanes.length && !matchedAthletes.length && !ageGender) continue;
+    if (!matchedLanes.length && !matchedAthletes.length && !matchedCrews.length && !ageGender) {
+      continue;
+    }
     const bits = [];
-    if (matchedLanes.length) {
+    if (matchedCrews.length) {
+      bits.push(matchedCrews.map((c) => c.label).filter(Boolean).slice(0, 2).join(', '));
+    }
+    if (matchedLanes.length && !matchedCrews.length) {
       bits.push(matchedLanes.map((l) => l.clubCode).filter(Boolean).slice(0, 2).join(', '));
     }
     if (matchedAthletes.length) bits.push(matchedAthletes.slice(0, 2).join(', '));
@@ -151,6 +201,7 @@ function racesForFollows() {
       race,
       matchedLanes,
       matchedAthletes,
+      matchedCrews,
       ageGender,
       matchLabel: bits.filter(Boolean).join(' · ') || 'Follow',
     });
@@ -292,6 +343,15 @@ function isFollowingAthlete(name) {
   return state.follows.athletes.some((n) => n.toLowerCase() === name.toLowerCase());
 }
 
+function isFollowingCrew(id) {
+  return state.follows.crews.some((c) => c.id === id);
+}
+
+function athleteHasFollowedCrew(athlete) {
+  if (!athlete?.crews?.length) return false;
+  return athlete.crews.some((c) => isFollowingCrew(c.id));
+}
+
 function toggleClub(id) {
   if (isFollowingClub(id)) {
     state.follows.clubs = state.follows.clubs.filter((c) => c !== id);
@@ -302,29 +362,91 @@ function toggleClub(id) {
   render();
 }
 
-function toggleAthlete(name) {
-  if (isFollowingAthlete(name)) {
-    state.follows.athletes = state.follows.athletes.filter(
-      (n) => n.toLowerCase() !== name.toLowerCase(),
-    );
-  } else {
-    state.follows.athletes = [...state.follows.athletes, name];
+function openCrewPick(athleteName) {
+  const athlete = state.data.athletes.find(
+    (a) => a.name.toLowerCase() === athleteName.toLowerCase(),
+  );
+  if (!athlete) return;
+  const selected = new Set(
+    (athlete.crews || []).filter((c) => isFollowingCrew(c.id)).map((c) => c.id),
+  );
+  state.crewPick = { athleteName: athlete.name, selected };
+  render();
+}
+
+function closeCrewPick() {
+  state.crewPick = null;
+  render();
+}
+
+function toggleCrewPickId(id) {
+  if (!state.crewPick) return;
+  if (state.crewPick.selected.has(id)) state.crewPick.selected.delete(id);
+  else state.crewPick.selected.add(id);
+  render();
+}
+
+function confirmCrewPick() {
+  if (!state.crewPick) return;
+  const athlete = state.data.athletes.find(
+    (a) => a.name.toLowerCase() === state.crewPick.athleteName.toLowerCase(),
+  );
+  if (!athlete) {
+    closeCrewPick();
+    return;
   }
+  const athleteCrewIds = new Set((athlete.crews || []).map((c) => c.id));
+  // Drop this athlete's previous crew follows, then add confirmed selection
+  state.follows.crews = state.follows.crews.filter((c) => !athleteCrewIds.has(c.id));
+  for (const crew of athlete.crews || []) {
+    if (!state.crewPick.selected.has(crew.id)) continue;
+    state.follows.crews.push({
+      id: crew.id,
+      label: crew.label,
+      raceId: crew.raceId,
+      raceKey: crew.raceKey,
+      lane: crew.lane,
+      clubId: crew.clubId || '',
+      athleteName: athlete.name,
+    });
+  }
+  // Legacy name-only follows: remove so My day uses confirmed crews
+  state.follows.athletes = state.follows.athletes.filter(
+    (n) => n.toLowerCase() !== athlete.name.toLowerCase(),
+  );
+  state.crewPick = null;
+  saveFollows();
+  render();
+}
+
+function removeCrewFollow(id) {
+  state.follows.crews = state.follows.crews.filter((c) => c.id !== id);
   saveFollows();
   render();
 }
 
 function followedLaneForRace(race) {
   if (!race) return null;
+  const crewHit = state.follows.crews.find(
+    (c) => (c.raceId === race.id || c.raceKey === race.key) && c.lane != null,
+  );
+  if (crewHit) return crewHit.lane;
   const clubSet = new Set(state.follows.clubs);
   const hit = race.lanes.find((l) => clubSet.has(l.clubId));
   if (hit) return hit.lane;
-  // Age/gender follows: highlight first lane if the whole race matches
   if (matchesAgeGender(race) && race.lanes[0]) return race.lanes[0].lane;
   return null;
 }
 
 function laneIsFollowed(lane, race) {
+  if (
+    state.follows.crews.some(
+      (c) =>
+        (c.raceId === race.id || c.raceKey === race.key) && Number(c.lane) === Number(lane.lane),
+    )
+  ) {
+    return true;
+  }
   if (state.follows.clubs.includes(lane.clubId)) return true;
   if (matchesAgeGender(race)) return true;
   return false;
@@ -556,12 +678,74 @@ function renderNotifySettings() {
     </div>`;
 }
 
+function renderCrewConfirm(athlete) {
+  const pick = state.crewPick;
+  if (!pick || !athlete) return '';
+  const crews = athlete.crews || [];
+  if (!crews.length) {
+    return `
+      <div class="crew-confirm" id="crewConfirm">
+        <p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>
+        <p class="empty">No crew entries found for this athlete in the current draw.</p>
+        <button type="button" class="btn btn--ghost" data-crew-cancel>Close</button>
+      </div>`;
+  }
+  return `
+    <div class="crew-confirm" id="crewConfirm">
+      <p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>
+      <p class="muted" style="margin:0 0 10px">Tick the boat(s) to follow, then add. Allocation may change if entries change.</p>
+      <div class="crew-confirm__list">
+        ${crews
+          .map((c) => {
+            const on = pick.selected.has(c.id);
+            const detail = [c.time, c.eventType, c.lane != null ? `Lane ${c.lane}` : '']
+              .filter(Boolean)
+              .join(' · ');
+            return `<label class="crew-check ${on ? 'is-on' : ''}">
+              <input type="checkbox" data-crew-toggle="${escapeHtml(c.id)}" ${on ? 'checked' : ''} />
+              <span class="crew-check__body">
+                <strong>${escapeHtml(c.label)}</strong>
+                <span>${escapeHtml(detail)}</span>
+              </span>
+            </label>`;
+          })
+          .join('')}
+      </div>
+      <div class="crew-confirm__actions">
+        <button type="button" class="btn btn--ghost" data-crew-cancel>Cancel</button>
+        <button type="button" class="btn btn--primary" data-crew-confirm>
+          ${pick.selected.size ? `Add ${pick.selected.size} crew${pick.selected.size === 1 ? '' : 's'}` : 'Clear crews'}
+        </button>
+      </div>
+    </div>`;
+}
+
 function renderFollow() {
   const q = state.search.trim().toLowerCase();
   const clubs = state.data.clubs.filter(
     (c) => !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
   );
   const athletes = state.data.athletes.filter((a) => !q || a.name.toLowerCase().includes(q));
+  const pickAthlete =
+    state.crewPick &&
+    state.data.athletes.find(
+      (a) => a.name.toLowerCase() === state.crewPick.athleteName.toLowerCase(),
+    );
+
+  const followedCrewChips =
+    state.follows.crews.length > 0
+      ? `<div class="follow-section">
+        <p class="follow-section__title">Following crews</p>
+        <div class="chip-row">
+          ${state.follows.crews
+            .map(
+              (c) =>
+                `<button type="button" class="chip is-on" data-remove-crew="${escapeHtml(c.id)}" title="Unfollow">${escapeHtml(c.label)} ×</button>`,
+            )
+            .join('')}
+        </div>
+      </div>`
+      : '';
 
   const list =
     state.followMode === 'club'
@@ -580,22 +764,36 @@ function renderFollow() {
           .join('')
       : athletes
           .slice(0, 80)
-          .map(
-            (a) => `<button type="button" class="list-item" data-toggle-athlete="${escapeHtml(a.name)}">
+          .map((a) => {
+            const crewLabels = (a.crews || [])
+              .map((c) => c.label)
+              .filter(Boolean)
+              .slice(0, 4);
+            const following = athleteHasFollowedCrew(a) || isFollowingAthlete(a.name);
+            const picking =
+              state.crewPick &&
+              state.crewPick.athleteName.toLowerCase() === a.name.toLowerCase();
+            return `<button type="button" class="list-item ${picking ? 'is-active' : ''}" data-pick-athlete="${escapeHtml(a.name)}">
           <span class="list-item__code">ATH</span>
           <span class="list-item__meta">
             <strong>${escapeHtml(a.name)}</strong>
-            <span>${a.raceIds.length} race${a.raceIds.length === 1 ? '' : 's'}</span>
+            <span>${crewLabels.length ? escapeHtml(crewLabels.join(' · ')) : `${a.raceIds.length} race${a.raceIds.length === 1 ? '' : 's'}`}</span>
           </span>
-          <span class="list-item__action">${isFollowingAthlete(a.name) ? 'Following' : 'Follow'}</span>
-        </button>`,
-          )
+          <span class="list-item__action">${following ? 'Following' : 'Choose'}</span>
+        </button>`;
+          })
           .join('');
+
+  const athleteNote =
+    state.followMode === 'athlete'
+      ? `<p class="follow-note">Crew allocation is estimated from the published draw and <strong>may be wrong if entries change</strong>. Confirm which boat(s) to follow.</p>`
+      : '';
 
   return `
     <div class="panel">
       <h2>Follow</h2>
-      <p class="panel__lead">Clubs include every crew from that club. Age groups and gender combine as a filter. Saved on this phone for My day, alerts, and lane highlights.</p>
+      <p class="panel__lead">Clubs include every crew from that club. Athletes let you confirm specific boats. Age groups and gender combine as a filter. Saved on this phone for My day, alerts, and lane highlights.</p>
+      ${followedCrewChips}
       <div class="follow-section">
         <p class="follow-section__title">Age groups</p>
         <div class="chip-row">
@@ -621,7 +819,9 @@ function renderFollow() {
           <button type="button" class="chip ${state.followMode === 'club' ? 'is-on' : ''}" data-mode="club">Club / school</button>
           <button type="button" class="chip ${state.followMode === 'athlete' ? 'is-on' : ''}" data-mode="athlete">Athlete</button>
         </div>
+        ${athleteNote}
         <input class="search" id="followSearch" type="search" placeholder="Search…" value="${escapeHtml(state.search)}" />
+        ${pickAthlete ? renderCrewConfirm(pickAthlete) : ''}
         <div class="list">${list || '<p class="empty">No matches</p>'}</div>
       </div>
     </div>
@@ -670,7 +870,7 @@ function renderMyDay() {
     ${renderCountdownCard()}
     <div class="panel">
       <h2>My day</h2>
-      <p class="panel__lead">Heats that match your follows (club, athlete, or age / gender).</p>
+      <p class="panel__lead">Heats that match your follows (club, confirmed crew, athlete, or age / gender).</p>
       ${
         items.length
           ? `<div class="race-list">
@@ -818,15 +1018,25 @@ function wireDom() {
   for (const el of main.querySelectorAll('[data-mode]')) {
     el.addEventListener('click', () => {
       state.followMode = el.dataset.mode;
+      state.crewPick = null;
       render();
     });
   }
   for (const el of main.querySelectorAll('[data-toggle-club]')) {
     el.addEventListener('click', () => toggleClub(el.dataset.toggleClub));
   }
-  for (const el of main.querySelectorAll('[data-toggle-athlete]')) {
-    el.addEventListener('click', () => toggleAthlete(el.dataset.toggleAthlete));
+  for (const el of main.querySelectorAll('[data-pick-athlete]')) {
+    el.addEventListener('click', () => openCrewPick(el.dataset.pickAthlete));
   }
+  for (const el of main.querySelectorAll('[data-crew-toggle]')) {
+    el.addEventListener('change', () => toggleCrewPickId(el.dataset.crewToggle));
+  }
+  main.querySelector('[data-crew-confirm]')?.addEventListener('click', () => confirmCrewPick());
+  main.querySelector('[data-crew-cancel]')?.addEventListener('click', () => closeCrewPick());
+  for (const el of main.querySelectorAll('[data-remove-crew]')) {
+    el.addEventListener('click', () => removeCrewFollow(el.dataset.removeCrew));
+  }
+  main.querySelector('#crewConfirm')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   for (const el of main.querySelectorAll('[data-toggle-age]')) {
     el.addEventListener('click', () => toggleAgeGroup(el.dataset.toggleAge));
   }

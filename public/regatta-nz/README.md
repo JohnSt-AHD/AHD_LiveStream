@@ -14,7 +14,7 @@ Open [http://localhost:3000/regatta-nz/](http://localhost:3000/regatta-nz/).
 
 - **Home** — races in start blocks (next 10 min), live on course, just finished (RowIT result within last 10 min). Tap to expand draw or results; club/school logos when available.
 - **Schedule** — full day list with Day 1 / Day 2 switcher.
-- **Follow** — club/school (all crews), athlete, multi-select **age groups** (U15–U18, Masters, Open, etc.) and optional **gender** filter. Persisted in `localStorage` (`regattaNzFollows_v1`).
+- **Follow** — club/school (all crews), athlete → **confirm crew(s)** (e.g. `WAKA GU15 2X`), multi-select **age groups** and optional **gender** filter. Persisted in `localStorage` (`regattaNzFollows_v1`).
 - **My day** — live countdown to the next followed race, plus matching heats.
 - **Live** — sim track via `/api/race`.
 - **Notifications** — toggle on Follow / My day (`regattaNzNotify_v1`). When on, the app schedules **local** alerts ~10 minutes before followed races from the daysheet (Capacitor Local Notifications on APK; optional Web Notification mirror in browser). No FCM server for v1. Turning off cancels pending schedules.
@@ -28,11 +28,22 @@ Home race buckets use the phone’s real time of day against the daysheet.
   "clubs": ["welc"],
   "athletes": ["Jane Doe"],
   "ageGroups": ["U17", "Masters"],
-  "genders": ["female"]
+  "genders": ["female"],
+  "crews": [
+    {
+      "id": "81 (E)#31|3",
+      "label": "WAKA GU15 2X",
+      "raceId": "81 (E)#31",
+      "raceKey": "81 (E)",
+      "lane": 3,
+      "clubId": "waka",
+      "athleteName": "Jane Doe"
+    }
+  ]
 }
 ```
 
-Matching is OR across clubs, athletes, and age/gender. Age groups alone match any gender; if genders are also set, both must match. Gender alone matches all races of that gender.
+Matching is OR across clubs, confirmed crews, legacy athletes, and age/gender. Athlete search no longer auto-follows on tap — you tick boat labels and confirm (crew allocation may change if entries change). Age groups alone match any gender; if genders are also set, both must match. Gender alone matches all races of that gender.
 
 Event tags are parsed from RowIT `Event Type` strings (e.g. `B U17 1X`, `W Mst C 2X`, `Mx G-M 2X`, `M Clb 2X`).
 

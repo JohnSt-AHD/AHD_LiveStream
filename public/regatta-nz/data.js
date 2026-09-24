@@ -264,6 +264,79 @@ export function parseEventTags(eventType) {
   return { ageGroup, gender, raw };
 }
 
+/**
+ * Seats per crew from boat class (includes cox when class has +).
+ * @param {string} eventType
+ * @returns {number}
+ */
+export function boatSeatCount(eventType) {
+  const s = String(eventType || '');
+  const m = s.match(/\b(8X?\+|8X|8\+|8|4X?\+|4X|4\+|4-|2X|2-|1X)\b/i);
+  if (!m) return 1;
+  const boat = m[1].toUpperCase().replace(/\s+/g, '');
+  if (boat.startsWith('8')) return boat.includes('+') ? 9 : 8;
+  if (boat.startsWith('4')) return boat.includes('+') ? 5 : 4;
+  if (boat.startsWith('2')) return 2;
+  return 1;
+}
+
+/** Compact school-style event type: "G U15 2X" → "GU15 2X". */
+export function compactEventType(eventType) {
+  return String(eventType || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/^([BG])\s+(U\d{2}|N\s*18|N18)\b/i, (_, g, age) => {
+      return `${g.toUpperCase()}${String(age).replace(/\s+/g, '').toUpperCase()}`;
+    });
+}
+
+/** Spectator crew label e.g. "WAKA GU15 2X". */
+export function crewDisplayLabel(clubCode, eventType) {
+  const code = String(clubCode || '').trim().toUpperCase() || '?';
+  const et = compactEventType(eventType);
+  return et ? `${code} ${et}` : code;
+}
+
+/**
+ * Map flat competitor names onto lanes using boat seat count.
+ * @param {object} race
+ * @returns {Map<string, object>} athlete name (lower) → crew stub for that race
+ */
+function crewAssignmentsForRace(race) {
+  const byName = new Map();
+  const lanes = race.lanes || [];
+  const names = race.athletes || [];
+  if (!lanes.length || !names.length) return byName;
+
+  let seats = boatSeatCount(race.eventType);
+  if (names.length === lanes.length) seats = 1;
+  else if (names.length % lanes.length === 0) seats = names.length / lanes.length;
+  else if (Math.abs(lanes.length * seats - names.length) > lanes.length) {
+    seats = Math.max(1, Math.round(names.length / lanes.length));
+  }
+
+  for (let i = 0; i < names.length; i++) {
+    const laneIndex = Math.min(Math.floor(i / seats), lanes.length - 1);
+    const lane = lanes[laneIndex];
+    const name = names[i];
+    const id = `${race.id}|${lane.lane}`;
+    const label = crewDisplayLabel(lane.clubCode || lane.clubName, race.eventType);
+    byName.set(name.toLowerCase(), {
+      id,
+      label,
+      raceId: race.id,
+      raceKey: race.key,
+      lane: lane.lane,
+      clubId: lane.clubId,
+      clubCode: lane.clubCode,
+      athleteName: name,
+      eventType: race.eventType,
+      time: race.time,
+    });
+  }
+  return byName;
+}
+
 function normalizeClubId(code) {
   return String(code || '')
     .toLowerCase()
@@ -527,11 +600,40 @@ export async function loadRegatta() {
 
   const athletes = new Map();
   for (const race of races) {
+    const assigned = crewAssignmentsForRace(race);
     for (const name of race.athletes) {
       const id = name.toLowerCase();
-      if (!athletes.has(id)) athletes.set(id, { id, name, raceIds: [] });
-      athletes.get(id).raceIds.push(race.id);
+      if (!athletes.has(id)) athletes.set(id, { id, name, raceIds: [], crews: [] });
+      const athlete = athletes.get(id);
+      athlete.raceIds.push(race.id);
+      let crew = assigned.get(id);
+      if (!crew && race.lanes.length) {
+        // Best-effort: last lane when seat math overflows (draw edits / odd name counts)
+        const lane = race.lanes[race.lanes.length - 1];
+        crew = {
+          id: `${race.id}|${lane.lane}`,
+          label: crewDisplayLabel(lane.clubCode || lane.clubName, race.eventType),
+          raceId: race.id,
+          raceKey: race.key,
+          lane: lane.lane,
+          clubId: lane.clubId,
+          clubCode: lane.clubCode,
+          athleteName: name,
+          eventType: race.eventType,
+          time: race.time,
+        };
+      }
+      if (crew) athlete.crews.push(crew);
     }
+  }
+
+  for (const athlete of athletes.values()) {
+    const seen = new Set();
+    athlete.crews = athlete.crews.filter((c) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
   }
 
   const meta = {
