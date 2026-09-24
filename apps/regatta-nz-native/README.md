@@ -27,6 +27,17 @@ Workflow `.github/workflows/regatta-nz-apk.yml` builds on push to paths under th
 
 Install page: `/regatta-nz/install-native.html`
 
-## Play Store
+## Play Store (release AAB)
 
-Sideload builds are **debug-signed**. For Play Store you need a release keystore + `assembleRelease` (do not commit the keystore).
+Requires a local upload keystore under `keystore/` (gitignored — never commit `.jks`, passwords, or `keystore.properties`).
+
+```powershell
+cd apps/regatta-nz-native
+npm run aab
+```
+
+Output: `apps/regatta-nz-native/install/Regatta-NZ-release.aab`
+
+Back up `keystore/README-BACKUP.txt` + `regatta-nz-upload.jks` in a password manager / offline vault. Losing them means you cannot update the Play listing with the same upload key.
+
+Upload the `.aab` in [Play Console](https://play.google.com/console) → your app → **Production** (or testing track) → **Create new release** → upload the AAB.

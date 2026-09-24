@@ -1,6 +1,10 @@
 node_modules/
 .capacitor/
 install/*.apk
+install/*.aab
 *.keystore
 *.jks
 local.properties
+
+# Release signing — never commit secrets or signed artifacts
+keystore/

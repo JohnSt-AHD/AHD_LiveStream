@@ -7,7 +7,9 @@
     "sync:android": "npx cap sync android",
     "open:android": "npx cap open android",
     "run:android": "npm run sync:android && npx cap run android",
-    "apk": "powershell -ExecutionPolicy Bypass -File ./scripts/build-apk.ps1"
+    "apk": "powershell -ExecutionPolicy Bypass -File ./scripts/build-apk.ps1",
+    "aab": "powershell -ExecutionPolicy Bypass -File ./scripts/build-aab.ps1",
+    "apk:release": "powershell -ExecutionPolicy Bypass -File ./scripts/build-aab.ps1"
   },
   "dependencies": {
     "@capacitor/android": "^7.2.0",
