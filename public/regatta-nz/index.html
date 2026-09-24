@@ -10,9 +10,33 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="assets/crewsight-mark-bw-256.png?v=24" type="image/png" />
-  <link rel="stylesheet" href="styles.css?v=31" />
+  <link rel="stylesheet" href="styles.css?v=32" />
+  <script>
+    // Skip intro on same-session navigations before first paint flash
+    try {
+      if (sessionStorage.getItem('rnzIntroSeen_v1')) {
+        document.documentElement.classList.add('rnz-intro-skip');
+      }
+    } catch (_) { /* private mode */ }
+  </script>
 </head>
 <body>
+  <!-- Continues native teal splash: mark + wordmark, then fades into app -->
+  <div id="rnzIntro" class="rnz-intro" aria-hidden="true">
+    <div class="rnz-intro__inner">
+      <div class="rnz-intro__mark">
+        <img
+          src="assets/crewsight-mark-bw-256.png?v=24"
+          width="112"
+          height="112"
+          alt=""
+          decoding="async"
+        />
+      </div>
+      <p class="rnz-intro__title">Regatta NZ</p>
+    </div>
+  </div>
+
   <div id="app" class="app">
     <header class="topbar">
       <button type="button" class="topbar__back" id="btnBack" hidden aria-label="Back">←</button>
@@ -47,7 +71,7 @@
     </nav>
   </div>
 
-  <script type="module" src="app.js?v=31"></script>
+  <script type="module" src="app.js?v=32"></script>
   <script>
     // Mark treatment preview: default B @52; ?mark=small | ?mark=teal | ?mark=svg
     (function () {

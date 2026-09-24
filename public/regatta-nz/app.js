@@ -18,6 +18,9 @@ import {
   maybeWebNotifyRace,
   NOTIFY_BEFORE_MS,
 } from './notify.js?v=28';
+import { runIntro } from './intro.js?v=32';
+
+runIntro();
 
 const LS_FOLLOWS = 'regattaNzFollows_v1';
 
