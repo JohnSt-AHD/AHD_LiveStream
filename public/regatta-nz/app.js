@@ -12,9 +12,9 @@ import {
   raceStageTitle,
   eventProgressionExplainer,
   progressionDestForPlace,
-} from './data.js?v=35';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=35';
-import { enhanceLogoImages } from './logo-cutout.js?v=35';
+} from './data.js?v=36';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=36';
+import { enhanceLogoImages } from './logo-cutout.js?v=36';
 import {
   loadNotifyPrefs,
   saveNotifyPrefs,
@@ -23,8 +23,8 @@ import {
   scheduleFollowedRaceNotifications,
   maybeWebNotifyRace,
   NOTIFY_BEFORE_MS,
-} from './notify.js?v=35';
-import { runIntro } from './intro.js?v=35';
+} from './notify.js?v=36';
+import { runIntro } from './intro.js?v=36';
 
 runIntro();
 
@@ -893,10 +893,11 @@ function renderActiveDayHint() {
   const day = ensureActiveDay();
   if (!day) return '';
   const days = state.data?.days || [];
-  if (days.length <= 1) {
-    return `<p class="muted" style="margin:0 0 12px">${escapeHtml(day.label)}</p>`;
-  }
-  return `<p class="muted" style="margin:0 0 12px">Day ${day.index} · ${escapeHtml(day.label)} · change day on Schedule</p>`;
+  const label =
+    days.length <= 1
+      ? escapeHtml(day.label)
+      : `Day ${day.index} · ${escapeHtml(day.label)}`;
+  return `<p class="day-hint" style="margin:0 0 12px">${label}</p>`;
 }
 
 function renderBucket(title, items, empty) {
@@ -1561,7 +1562,7 @@ function renderMyDay() {
       ${infoTip(
         'myday',
         '<h2>My day</h2>',
-        'Heats that match your follows on the selected day (change day on Schedule).',
+        'Heats that match your follows on the selected day.',
         { label: 'About My day' },
       )}
       ${renderActiveDayHint()}

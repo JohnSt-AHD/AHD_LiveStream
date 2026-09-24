@@ -790,6 +790,11 @@ a.btn {
   font-size: 0.85rem;
 }
 
+.day-hint {
+  color: #fff;
+  font-size: 0.85rem;
+}
+
 .info-tip {
   margin: 0 0 10px;
 }
