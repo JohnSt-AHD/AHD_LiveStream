@@ -12,9 +12,9 @@ import {
   raceStageTitle,
   eventProgressionExplainer,
   progressionDestForPlace,
-} from './data.js?v=33';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=33';
-import { enhanceLogoImages } from './logo-cutout.js?v=33';
+} from './data.js?v=34';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=34';
+import { enhanceLogoImages } from './logo-cutout.js?v=34';
 import {
   loadNotifyPrefs,
   saveNotifyPrefs,
@@ -23,8 +23,8 @@ import {
   scheduleFollowedRaceNotifications,
   maybeWebNotifyRace,
   NOTIFY_BEFORE_MS,
-} from './notify.js?v=33';
-import { runIntro } from './intro.js?v=33';
+} from './notify.js?v=34';
+import { runIntro } from './intro.js?v=34';
 
 runIntro();
 

@@ -24,8 +24,46 @@ const REGATTA = {
 };
 
 const LOOKUP_URL = new URL('../data/ahd-lookup.json', import.meta.url).href;
+const ARCHIVE_CODES_URL = new URL('../data/regatta-archive-codes.json', import.meta.url).href;
 const LS_CODE = 'altitudeHdRegattaCode_v1';
 const LS_RNZ = 'altitudeHdRegattaNz_v1';
+
+/** @type {Map<string, { name: string, title?: string }> | null} */
+let archiveNameCache = null;
+
+async function loadArchiveNameMap() {
+  if (archiveNameCache) return archiveNameCache;
+  const map = new Map();
+  try {
+    const res = await fetch(ARCHIVE_CODES_URL, { cache: 'force-cache' });
+    if (res.ok) {
+      const data = await res.json();
+      for (const row of data.regattas || []) {
+        const c = normalizeCode(row.code);
+        if (!c) continue;
+        map.set(c, {
+          name: String(row.name || '').trim(),
+          title: String(row.title || '').trim(),
+        });
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  archiveNameCache = map;
+  return map;
+}
+
+/** Prefer short title for topbar; fall back to full name, then code. */
+export async function resolveRegattaDisplayName(code) {
+  const c = normalizeCode(code) || REGATTA.code;
+  if (c === REGATTA.code) return REGATTA.name;
+  const map = await loadArchiveNameMap();
+  const hit = map.get(c);
+  if (hit?.title) return hit.title;
+  if (hit?.name) return hit.name;
+  return c.toUpperCase();
+}
 
 function normalizeCode(raw) {
   return String(raw || '')
@@ -542,13 +580,14 @@ export async function loadRegatta() {
   const spectator = await readSpectatorConfig();
   const paths = pathsForCode(spectator.code);
 
-  const [daysheetText, competitorsText, resultsText, lookup] = await Promise.all([
+  const [daysheetText, competitorsText, resultsText, lookup, displayName] = await Promise.all([
     fetchTextFirst(paths.daysheet),
     fetchTextFirst(paths.competitors),
     fetchTextFirst(paths.results).catch(() => ''),
     fetch(LOOKUP_URL)
       .then((r) => (r.ok ? r.json() : { clubs: {} }))
       .catch(() => ({ clubs: {} })),
+    resolveRegattaDisplayName(paths.code),
   ]);
 
   const days = parseDaysheet(daysheetText);
@@ -656,10 +695,7 @@ export async function loadRegatta() {
   const meta = {
     ...REGATTA,
     code: paths.code,
-    name:
-      paths.code === REGATTA.code
-        ? REGATTA.name
-        : `Regatta ${paths.code.toUpperCase()}`,
+    name: displayName,
     feedMode: spectator.mode,
     streamId: spectator.streamId,
     livestream: {
