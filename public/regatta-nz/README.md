@@ -27,7 +27,10 @@ Operators configure this app from the AHD hub **Setup** view → **Regatta NZ ·
 - Simulation vs live feed mode
 - Health checks for `/api/race`, `/api/cv-position`, `/api/drone-telemetry`, and RowIT CSVs
 
-Settings are stored in `localStorage` key `altitudeHdRegattaNz_v1` (same browser origin). Open with `?regatta=CODE` to override the code for a session.
+Settings are stored in `localStorage` on the hub browser **and** posted to
+`/api/regatta-nz-config` so the phone APK (production URL) can read the same
+regatta code / livestream / mode. Open with `?regatta=CODE` to override for a
+session.
 
 ## Android APK
 

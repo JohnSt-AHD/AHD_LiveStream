@@ -34,8 +34,23 @@ function normalizeCode(raw) {
     .replace(/[^a-z0-9_-]/g, '');
 }
 
-/** Hub + query override for spectator settings. */
-export function readSpectatorConfig() {
+function applyConfigOverlay(cfg, raw) {
+  if (!raw || typeof raw !== 'object') return;
+  const c = normalizeCode(raw.code);
+  if (c) cfg.code = c;
+  if (raw.livestreamUrl != null) cfg.livestreamUrl = String(raw.livestreamUrl).trim();
+  if (raw.livestreamActive != null) cfg.livestreamActive = Boolean(raw.livestreamActive);
+  if (raw.livestreamLabel) cfg.livestreamLabel = String(raw.livestreamLabel).trim();
+  if (raw.mode === 'live' || raw.mode === 'sim') cfg.mode = raw.mode;
+  if (raw.streamId && /^[a-zA-Z0-9._-]{1,128}$/.test(String(raw.streamId))) {
+    cfg.streamId = String(raw.streamId).trim();
+  }
+}
+
+const REMOTE_CFG_URL = new URL('../api/regatta-nz-config', import.meta.url).href;
+
+/** Hub localStorage + shared API + query override for spectator settings. */
+export async function readSpectatorConfig() {
   const cfg = {
     code: REGATTA.code,
     livestreamUrl: REGATTA.livestream?.url || '',
@@ -51,20 +66,16 @@ export function readSpectatorConfig() {
     /* ignore */
   }
   try {
-    const rawCfg = JSON.parse(localStorage.getItem(LS_RNZ) || '{}');
-    if (rawCfg && typeof rawCfg === 'object') {
-      const c = normalizeCode(rawCfg.code);
-      if (c) cfg.code = c;
-      if (rawCfg.livestreamUrl != null) cfg.livestreamUrl = String(rawCfg.livestreamUrl).trim();
-      if (rawCfg.livestreamActive != null) cfg.livestreamActive = Boolean(rawCfg.livestreamActive);
-      if (rawCfg.livestreamLabel) cfg.livestreamLabel = String(rawCfg.livestreamLabel).trim();
-      if (rawCfg.mode === 'live' || rawCfg.mode === 'sim') cfg.mode = rawCfg.mode;
-      if (rawCfg.streamId && /^[a-zA-Z0-9._-]{1,128}$/.test(String(rawCfg.streamId))) {
-        cfg.streamId = String(rawCfg.streamId).trim();
-      }
-    }
+    applyConfigOverlay(cfg, JSON.parse(localStorage.getItem(LS_RNZ) || '{}'));
   } catch {
     /* ignore */
+  }
+  // Shared hub→phone config (APK does not share the operator browser's localStorage).
+  try {
+    const res = await fetch(REMOTE_CFG_URL, { cache: 'no-store' });
+    if (res.ok) applyConfigOverlay(cfg, await res.json());
+  } catch {
+    /* ignore offline / missing API */
   }
   try {
     const q = new URLSearchParams(location.search);
@@ -80,16 +91,32 @@ export function readSpectatorConfig() {
   return cfg;
 }
 
+function isCsvLike(text) {
+  const t = String(text || '')
+    .replace(/^\uFEFF/, '')
+    .trim();
+  if (t.length < 20 || !t.includes(',')) return false;
+  // Vercel often serves index.html (200) for missing static paths.
+  if (/^<!doctype html/i.test(t) || /<html[\s>]/i.test(t)) return false;
+  if (/nothing published/i.test(t)) return false;
+  return /event|race|day |competitor|lane_/i.test(t);
+}
+
 async function fetchTextFirst(urls) {
   let lastErr = null;
   for (const url of urls) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) {
         lastErr = new Error(`${url} ${res.status}`);
         continue;
       }
-      return await res.text();
+      const text = await res.text();
+      if (!isCsvLike(text)) {
+        lastErr = new Error(`${url} not CSV`);
+        continue;
+      }
+      return text;
     } catch (e) {
       lastErr = e;
     }
@@ -97,15 +124,36 @@ async function fetchTextFirst(urls) {
   throw lastErr || new Error('No data URL succeeded');
 }
 
+function fetchCsvProxy(absoluteCsvUrl) {
+  return new URL(
+    `../api/fetch-csv?url=${encodeURIComponent(absoluteCsvUrl)}`,
+    import.meta.url,
+  ).href;
+}
+
 function pathsForCode(code) {
   const c = normalizeCode(code) || REGATTA.code;
   const live = new URL(`../data/rowit-live/${c}/`, import.meta.url).href;
   const archive = new URL(`../data/archives/${c}/latest/`, import.meta.url).href;
+  const rowitFile = (file) => `https://l.rowit.nz/altitude/${c}/${file}`;
+  // Prefer archives (in git/deploy), then local live cache, then RowIT via API proxy.
   return {
     code: c,
-    daysheet: [`${live}daysheet.csv`, `${archive}daysheet.csv`],
-    competitors: [`${live}competitors.csv`, `${archive}competitors.csv`],
-    results: [`${archive}results.csv`, `${live}results.csv`],
+    daysheet: [
+      `${archive}daysheet.csv`,
+      `${live}daysheet.csv`,
+      fetchCsvProxy(rowitFile('daysheet.csv')),
+    ],
+    competitors: [
+      `${archive}competitors.csv`,
+      `${live}competitors.csv`,
+      fetchCsvProxy(rowitFile('competitors.csv')),
+    ],
+    results: [
+      `${archive}results.csv`,
+      `${live}results.csv`,
+      fetchCsvProxy(rowitFile('results.csv')),
+    ],
   };
 }
 
@@ -331,7 +379,7 @@ function clubLogoUrl(lookup, clubId) {
 }
 
 export async function loadRegatta() {
-  const spectator = readSpectatorConfig();
+  const spectator = await readSpectatorConfig();
   const paths = pathsForCode(spectator.code);
 
   const [daysheetText, competitorsText, resultsText, lookup] = await Promise.all([

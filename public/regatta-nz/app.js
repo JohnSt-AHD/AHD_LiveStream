@@ -4,9 +4,9 @@ import {
   racePhase,
   msOfDayFromDate,
   formatMsOfDay,
-} from './data.js';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js';
-import { enhanceLogoImages } from './logo-cutout.js';
+} from './data.js?v=13';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=13';
+import { enhanceLogoImages } from './logo-cutout.js?v=13';
 
 const LS_FOLLOWS = 'regattaNzFollows_v1';
 const LS_CLOCK = 'regattaNzDemoClock_v1';

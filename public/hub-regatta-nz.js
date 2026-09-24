@@ -110,7 +110,30 @@
             status.textContent = `Saved · ${saved.code} · ${saved.mode}`;
             status.hidden = false;
         }
+        // Push to shared API so the phone APK (different browser) can read it.
+        publishRemoteConfig(saved, status);
         return saved;
+    }
+
+    async function publishRemoteConfig(saved, statusEl) {
+        try {
+            const res = await fetch('/api/regatta-nz-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(saved),
+                cache: 'no-store',
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            if (statusEl) {
+                const where = data.persisted ? 'synced to app' : 'synced (session)';
+                statusEl.textContent = `Saved · ${saved.code} · ${saved.mode} · ${where}`;
+            }
+        } catch (e) {
+            if (statusEl) {
+                statusEl.textContent = `Saved locally · app sync failed (${e.message || e})`;
+            }
+        }
     }
 
     async function probeJson(url, okFn) {
