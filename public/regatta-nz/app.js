@@ -878,19 +878,31 @@ function renderCrewConfirm(athlete) {
   if (!crews.length) {
     return `
       <div class="crew-confirm" id="crewConfirm">
-        <p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>
-        <p class="empty">No crew entries found for this athlete in the current draw.</p>
-        <button type="button" class="btn btn--ghost" data-crew-cancel>Close</button>
+        <div class="crew-confirm__head">
+          <p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>
+          <div class="crew-confirm__actions">
+            <button type="button" class="btn btn--ghost" data-crew-cancel>Close</button>
+          </div>
+        </div>
+        <p class="empty empty--sm">No crew entries found for this athlete in the current draw.</p>
       </div>`;
   }
   return `
     <div class="crew-confirm" id="crewConfirm">
-      ${infoTip(
-        'crew-confirm',
-        `<p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>`,
-        'Tick the boat(s) to follow, then add. Allocation may change if entries change.',
-        { label: 'About crew confirmation' },
-      )}
+      <div class="crew-confirm__head">
+        ${infoTip(
+          'crew-confirm',
+          `<p class="crew-confirm__title">Confirm crews for ${escapeHtml(athlete.name)}</p>`,
+          'Tick the boat(s) to follow, then add. Allocation may change if entries change.',
+          { label: 'About crew confirmation' },
+        )}
+        <div class="crew-confirm__actions">
+          <button type="button" class="btn btn--ghost" data-crew-cancel>Cancel</button>
+          <button type="button" class="btn btn--primary" data-crew-confirm>
+            ${pick.selected.size ? `Add ${pick.selected.size} crew${pick.selected.size === 1 ? '' : 's'}` : 'Clear crews'}
+          </button>
+        </div>
+      </div>
       <div class="crew-confirm__list">
         ${crews
           .map((c) => {
@@ -907,12 +919,6 @@ function renderCrewConfirm(athlete) {
             </label>`;
           })
           .join('')}
-      </div>
-      <div class="crew-confirm__actions">
-        <button type="button" class="btn btn--ghost" data-crew-cancel>Cancel</button>
-        <button type="button" class="btn btn--primary" data-crew-confirm>
-          ${pick.selected.size ? `Add ${pick.selected.size} crew${pick.selected.size === 1 ? '' : 's'}` : 'Clear crews'}
-        </button>
       </div>
     </div>`;
 }
@@ -989,80 +995,90 @@ function renderClubFunnel() {
       ? 'is-active'
       : '';
 
-  const preview = matched.slice(0, 12);
+  const previewLimit = 4;
+  const preview = matched.slice(0, previewLimit);
   const more = matched.length - preview.length;
   const scoped = hasGender || hasAge || hasClass;
   const followLabel = scoped
     ? `Follow these ${matched.length} crew${matched.length === 1 ? '' : 's'}`
     : `Follow all ${all.length} crews`;
 
-  return `
-    <div class="club-funnel">
-      <button type="button" class="btn btn--ghost funnel-back" data-funnel-back>← All clubs</button>
-      <div class="funnel-club">
-        ${logoHtml(club.logo, club.code)}
-        <div class="funnel-club__meta">
-          <strong>${escapeHtml(club.name)}</strong>
-          <span>${all.length} crew${all.length === 1 ? '' : 's'} in this regatta</span>
-        </div>
-        ${
-          isFollowingClub(club.id)
-            ? `<button type="button" class="chip is-on" data-unfollow-club="${escapeHtml(club.id)}">Following ×</button>`
-            : ''
-        }
-      </div>
-      <ol class="funnel-steps" aria-label="Narrow by">
-        <li class="${stepClub}">Club</li>
-        <li class="${stepGender}">Gender</li>
-        <li class="${stepAge}">Age / level</li>
-        <li class="${stepClass}">Class</li>
-      </ol>
-      ${
-        genderOpts.length
-          ? `<div class="follow-section">
+  const filterSections = [
+    genderOpts.length
+      ? `<div class="follow-section follow-section--tight">
         <p class="follow-section__title">Gender</p>
-        <div class="chip-row">
+        <div class="chip-row chip-row--tight">
           ${genderOpts
             .map(
               (id) =>
-                `<button type="button" class="chip ${funnel.genders.includes(id) ? 'is-on' : ''}" data-funnel-gender="${escapeHtml(id)}">${escapeHtml(genderLabel(id))}</button>`,
+                `<button type="button" class="chip chip--sm ${funnel.genders.includes(id) ? 'is-on' : ''}" data-funnel-gender="${escapeHtml(id)}">${escapeHtml(genderLabel(id))}</button>`,
             )
             .join('')}
         </div>
       </div>`
-          : ''
-      }
-      ${
-        ageOpts.length
-          ? `<div class="follow-section">
+      : '',
+    ageOpts.length
+      ? `<div class="follow-section follow-section--tight">
         <p class="follow-section__title">Age / level</p>
-        <div class="chip-row">
+        <div class="chip-row chip-row--tight">
           ${ageOpts
             .map(
               (id) =>
-                `<button type="button" class="chip ${funnel.ageGroups.includes(id) ? 'is-on' : ''}" data-funnel-age="${escapeHtml(id)}">${escapeHtml(ageGroupLabel(id))}</button>`,
+                `<button type="button" class="chip chip--sm ${funnel.ageGroups.includes(id) ? 'is-on' : ''}" data-funnel-age="${escapeHtml(id)}">${escapeHtml(ageGroupLabel(id))}</button>`,
             )
             .join('')}
         </div>
       </div>`
-          : ''
-      }
-      ${
-        classOpts.length
-          ? `<div class="follow-section">
+      : '',
+    classOpts.length
+      ? `<div class="follow-section follow-section--tight">
         <p class="follow-section__title">Class</p>
-        <div class="chip-row">
+        <div class="chip-row chip-row--tight">
           ${classOpts
             .map(
               (id) =>
-                `<button type="button" class="chip ${funnel.classes.includes(id) ? 'is-on' : ''}" data-funnel-class="${escapeHtml(id)}">${escapeHtml(id)}</button>`,
+                `<button type="button" class="chip chip--sm ${funnel.classes.includes(id) ? 'is-on' : ''}" data-funnel-class="${escapeHtml(id)}">${escapeHtml(id)}</button>`,
             )
             .join('')}
         </div>
       </div>`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('');
+
+  return `
+    <div class="club-funnel">
+      <div class="funnel-top">
+        <button type="button" class="btn btn--ghost funnel-back" data-funnel-back>← All clubs</button>
+        <div class="funnel-club">
+          ${logoHtml(club.logo, club.code)}
+          <div class="funnel-club__meta">
+            <strong>${escapeHtml(club.name)}</strong>
+            <span>${all.length} crew${all.length === 1 ? '' : 's'} in this regatta</span>
+          </div>
+          ${
+            isFollowingClub(club.id)
+              ? `<button type="button" class="chip chip--sm is-on" data-unfollow-club="${escapeHtml(club.id)}">Following ×</button>`
+              : ''
+          }
+        </div>
+        <ol class="funnel-steps" aria-label="Narrow by">
+          <li class="${stepClub}">Club</li>
+          <li class="${stepGender}">Gender</li>
+          <li class="${stepAge}">Age / level</li>
+          <li class="${stepClass}">Class</li>
+        </ol>
+        <button type="button" class="btn btn--primary funnel-cta" data-funnel-confirm ${matched.length ? '' : 'disabled'}>
+          ${escapeHtml(followLabel)}
+        </button>
+      </div>
+      ${
+        filterSections
+          ? `<div class="funnel-filters">${filterSections}</div>`
           : ''
       }
-      <div class="follow-section crew-preview">
+      <div class="crew-preview">
         <p class="follow-section__title">Crews you’ll follow · ${matched.length}</p>
         ${
           matched.length
@@ -1078,9 +1094,6 @@ function renderClubFunnel() {
             : `<p class="empty empty--sm">No crews match these filters.</p>`
         }
       </div>
-      <button type="button" class="btn btn--primary" data-funnel-confirm ${matched.length ? '' : 'disabled'}>
-        ${escapeHtml(followLabel)}
-      </button>
     </div>`;
 }
 
