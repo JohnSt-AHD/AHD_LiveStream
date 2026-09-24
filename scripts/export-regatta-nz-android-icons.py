@@ -21,7 +21,7 @@ LEGACY = {
     "mipmap-xxxhdpi": 192,
 }
 
-# Adaptive foreground canvas (px) — content fills like CrewSight mark
+# Adaptive foreground canvas (px)
 FOREGROUND = {
     "mipmap-mdpi": 108,
     "mipmap-hdpi": 162,
@@ -30,6 +30,9 @@ FOREGROUND = {
     "mipmap-xxxhdpi": 432,
 }
 
+# Mark diameter as a fraction of the icon canvas (0.5 = half previous full-bleed size).
+MARK_SCALE = 0.5
+
 
 def circle_mask(size: int) -> Image.Image:
     m = Image.new("L", (size, size), 0)
@@ -37,8 +40,23 @@ def circle_mask(size: int) -> Image.Image:
     return m
 
 
-def resize_cover(src: Image.Image, size: int) -> Image.Image:
-    return src.resize((size, size), Image.Resampling.LANCZOS)
+def centered_mark(
+    src: Image.Image,
+    canvas: int,
+    *,
+    bg: tuple[int, int, int, int] | None,
+) -> Image.Image:
+    """Place the mark at MARK_SCALE of canvas, centered on bg (or transparent)."""
+    mark_px = max(1, int(round(canvas * MARK_SCALE)))
+    logo = src.resize((mark_px, mark_px), Image.Resampling.LANCZOS)
+    if bg is None:
+        out = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
+    else:
+        out = Image.new("RGBA", (canvas, canvas), bg)
+    x = (canvas - mark_px) // 2
+    y = (canvas - mark_px) // 2
+    out.paste(logo, (x, y), logo)
+    return out
 
 
 def main() -> None:
@@ -46,26 +64,26 @@ def main() -> None:
         raise SystemExit(f"Missing source mark: {SRC}")
 
     mark = Image.open(SRC).convert("RGBA")
-    print(f"source {SRC.name} {mark.size}")
+    print(f"source {SRC.name} {mark.size} scale={MARK_SCALE}")
 
+    white = (255, 255, 255, 255)
     for folder, size in LEGACY.items():
         out_dir = RES / folder
         out_dir.mkdir(parents=True, exist_ok=True)
-        icon = resize_cover(mark, size)
+        icon = centered_mark(mark, size, bg=white)
         icon.save(out_dir / "ic_launcher.png", optimize=True)
 
         round_icon = icon.copy()
         round_icon.putalpha(circle_mask(size))
-        # Composite onto white so round PNG stays opaque where needed
-        plate = Image.new("RGBA", (size, size), (255, 255, 255, 255))
+        plate = Image.new("RGBA", (size, size), white)
         plate = Image.alpha_composite(plate, round_icon)
         plate.save(out_dir / "ic_launcher_round.png", optimize=True)
 
     for folder, size in FOREGROUND.items():
         out_dir = RES / folder
         out_dir.mkdir(parents=True, exist_ok=True)
-        # Full-bleed mark on transparent canvas (white adaptive bg behind)
-        fg = resize_cover(mark, size)
+        # Transparent canvas; white adaptive background shows around the mark
+        fg = centered_mark(mark, size, bg=None)
         fg.save(out_dir / "ic_launcher_foreground.png", optimize=True)
 
     print("wrote launcher icons under", RES)
