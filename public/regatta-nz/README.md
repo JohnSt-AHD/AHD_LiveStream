@@ -17,7 +17,7 @@ Open [http://localhost:3000/regatta-nz/](http://localhost:3000/regatta-nz/).
 - **Follow** — **Athlete** or **Club** mode. Club: pick a school/club (crew count only), then follow all or narrow Gender → Age/level → Class from the daysheet; live “Crews you’ll follow” preview. Athlete: search → confirm crew(s). Removable chips for whole clubs, scoped club follows, and crews. Persisted in `localStorage` (`regattaNzFollows_v1`).
 - **My day** — live countdown to the next followed race, plus matching heats.
 - **Live** — sim track via `/api/race`.
-- **Notifications** — toggle on Follow / My day (`regattaNzNotify_v1`). When on, the app schedules **local** alerts ~10 minutes before followed races from the daysheet (Capacitor Local Notifications on APK; optional Web Notification mirror in browser). No FCM server for v1. Turning off cancels pending schedules.
+- **Notifications** — toggle on My day only (`regattaNzNotify_v1`). When on, the app schedules **local** alerts ~10 minutes before followed races from the daysheet (Capacitor Local Notifications on APK; optional Web Notification mirror in browser). No FCM server for v1. Turning off cancels pending schedules. Scheduling still refreshes when follows change.
 
 Home race buckets use the phone’s real time of day against the daysheet.
 

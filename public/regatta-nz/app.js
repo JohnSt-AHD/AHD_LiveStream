@@ -1201,7 +1201,6 @@ function renderFollow() {
       ${modeToggle}
       ${body}
     </div>
-    ${renderNotifySettings()}
   `;
 }
 
