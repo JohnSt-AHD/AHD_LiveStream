@@ -692,3 +692,113 @@ a.btn {
   font-size: 0.82rem;
   line-height: 1.35;
 }
+
+.follow-section {
+  margin-bottom: 18px;
+}
+
+.follow-section__title {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.panel--countdown {
+  background: linear-gradient(145deg, #fff9ef 0%, rgba(255, 255, 255, 0.96) 55%);
+  border: 1px solid rgba(232, 163, 23, 0.35);
+}
+
+.panel--countdown.is-urgent {
+  background: linear-gradient(145deg, #e8f6f1 0%, rgba(255, 255, 255, 0.96) 60%);
+  border-color: rgba(15, 159, 110, 0.4);
+}
+
+.panel--countdown-empty {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+}
+
+.countdown__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.countdown__clock {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-size: clamp(1.8rem, 7vw, 2.35rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--lake);
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown__event {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.countdown__who {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.panel--settings .toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel--settings .toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.toggle__ui {
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(12, 28, 34, 0.18);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.toggle__ui::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(12, 28, 34, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.toggle input:checked + .toggle__ui {
+  background: var(--lake-mid);
+}
+
+.toggle input:checked + .toggle__ui::after {
+  transform: translateX(20px);
+}
+
+.toggle__label {
+  font-weight: 600;
+  color: var(--lake);
+}

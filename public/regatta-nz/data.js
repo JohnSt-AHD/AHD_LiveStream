@@ -190,6 +190,80 @@ function clubCodeFromEntry(raw) {
   return m ? m[1].toUpperCase() : s.split(/\s+/)[0].toUpperCase();
 }
 
+/** Followable age-group chips (ids stored in localStorage). */
+export const AGE_GROUP_OPTIONS = [
+  { id: 'U15', label: 'U15' },
+  { id: 'U16', label: 'U16' },
+  { id: 'U17', label: 'U17' },
+  { id: 'U18', label: 'U18' },
+  { id: 'U21', label: 'U21' },
+  { id: 'N18', label: 'Novice U18' },
+  { id: 'Open', label: 'Open' },
+  { id: 'Masters', label: 'Masters' },
+  { id: 'Club', label: 'Club' },
+  { id: 'Intermediate', label: 'Intermediate' },
+  { id: 'Senior', label: 'Senior' },
+  { id: 'Premier', label: 'Premier' },
+];
+
+/** Followable gender chips (ids stored in localStorage). */
+export const GENDER_OPTIONS = [
+  { id: 'male', label: 'Male' },
+  { id: 'female', label: 'Female' },
+  { id: 'mixed', label: 'Mixed' },
+];
+
+/**
+ * Parse RowIT event-type codes into age group + gender tags.
+ * School: "B U17 1X", "G U15 4X+", "B N18 2X"
+ * Masters: "W Mst C 2X", "Mx G-M 2X", "Opn 1X (P)"
+ * Club: "M Clb 2X", "W Int 4+", "M Snr 2-", "W Prm 1X", "W Nov 2X"
+ * @param {string} eventType
+ * @returns {{ ageGroup: string|null, gender: string|null, raw: string }}
+ */
+export function parseEventTags(eventType) {
+  const raw = String(eventType || '').trim();
+  const s = raw.replace(/\s+/g, ' ');
+  let gender = null;
+  let ageGroup = null;
+
+  if (/^Mx\b/i.test(s) || /\bMx\b/i.test(s) || /\bmix(ed)?\b/i.test(s)) {
+    gender = 'mixed';
+  } else if (/^(W|G)\b/i.test(s) || /\b(Wom|Girl)/i.test(s)) {
+    gender = 'female';
+  } else if (/^(M|B)\b/i.test(s) || /\b(Men|Boy)/i.test(s)) {
+    gender = 'male';
+  }
+
+  const u = s.match(/\bU(?:nder)?\s*(\d{2})\b/i);
+  if (u) {
+    ageGroup = `U${u[1]}`;
+  } else if (/\bN\s*18\b/i.test(s) || /\bN18\b/i.test(s)) {
+    ageGroup = 'N18';
+  } else if (/\bMst\b/i.test(s) || /\bMasters?\b/i.test(s)) {
+    ageGroup = 'Masters';
+  } else if (/\bOpn\b/i.test(s) || /\bOpen\b/i.test(s)) {
+    ageGroup = 'Open';
+  } else if (/\bClb\b/i.test(s) || /\bClub\b/i.test(s)) {
+    ageGroup = 'Club';
+  } else if (/\bInt\b/i.test(s) || /\bIntermediate\b/i.test(s)) {
+    ageGroup = 'Intermediate';
+  } else if (/\bSnr\b/i.test(s) || /\bSenior\b/i.test(s)) {
+    ageGroup = 'Senior';
+  } else if (/\bPrm\b/i.test(s) || /\bPremier\b/i.test(s)) {
+    ageGroup = 'Premier';
+  } else if (/\bNov\b/i.test(s) || /\bNovice\b/i.test(s)) {
+    ageGroup = 'N18';
+  } else if (/\bMNw\b|\bMNv\b/i.test(s)) {
+    ageGroup = 'Masters';
+  } else if (/\b[A-I](?:-[A-I])?\b/.test(s) && /\b(M|W|Mx)\b/i.test(s)) {
+    // Masters letter bands e.g. "M A-C 2-", "W G-M 4-" without explicit Mst
+    ageGroup = 'Masters';
+  }
+
+  return { ageGroup, gender, raw };
+}
+
 function normalizeClubId(code) {
   return String(code || '')
     .toLowerCase()
@@ -344,6 +418,8 @@ function parseDaysheet(text) {
     const eventNum = String(obj['Event #'] || '').trim();
     const time = obj.Time || '';
     const id = `${key}#${eventNum || '0'}`;
+    const eventType = obj['Event Type'] || '';
+    const tags = parseEventTags(eventType);
 
     current.races.push({
       id,
@@ -354,7 +430,9 @@ function parseDaysheet(text) {
       time,
       startMsOfDay: parseClockToMs(time),
       eventNum,
-      eventType: obj['Event Type'] || '',
+      eventType,
+      ageGroup: tags.ageGroup,
+      gender: tags.gender,
       round: obj.Round || '',
       division: obj.Division || '',
       progression: obj.Progression || '',

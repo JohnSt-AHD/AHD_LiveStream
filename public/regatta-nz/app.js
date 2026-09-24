@@ -3,9 +3,20 @@ import {
   REGATTA,
   racePhase,
   msOfDayFromDate,
-} from './data.js?v=14';
-import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=14';
-import { enhanceLogoImages } from './logo-cutout.js?v=14';
+  AGE_GROUP_OPTIONS,
+  GENDER_OPTIONS,
+} from './data.js?v=26';
+import { createLiveCourse, fetchRaceSnapshot, unofficialPlacings } from './live-course.js?v=26';
+import { enhanceLogoImages } from './logo-cutout.js?v=26';
+import {
+  loadNotifyPrefs,
+  saveNotifyPrefs,
+  requestNotifyPermission,
+  cancelScheduledNotifications,
+  scheduleFollowedRaceNotifications,
+  maybeWebNotifyRace,
+  NOTIFY_BEFORE_MS,
+} from './notify.js?v=26';
 
 const LS_FOLLOWS = 'regattaNzFollows_v1';
 
@@ -16,13 +27,16 @@ const state = {
   search: '',
   selectedRaceId: null,
   follows: loadFollows(),
+  notify: loadNotifyPrefs(),
   liveTimer: null,
   homeTimer: null,
+  countdownTimer: null,
   liveCourse: null,
   liveError: null,
   lastRaceSnap: null,
   expanded: new Set(),
   scheduleDayIndex: 1,
+  notifySyncTimer: null,
 };
 
 const main = document.getElementById('main');
@@ -37,14 +51,26 @@ function loadFollows() {
     return {
       clubs: Array.isArray(raw.clubs) ? raw.clubs : [],
       athletes: Array.isArray(raw.athletes) ? raw.athletes : [],
+      ageGroups: Array.isArray(raw.ageGroups) ? raw.ageGroups : [],
+      genders: Array.isArray(raw.genders) ? raw.genders : [],
     };
   } catch {
-    return { clubs: [], athletes: [] };
+    return { clubs: [], athletes: [], ageGroups: [], genders: [] };
   }
 }
 
 function saveFollows() {
   localStorage.setItem(LS_FOLLOWS, JSON.stringify(state.follows));
+  queueNotifySync();
+}
+
+function followCount() {
+  const f = state.follows;
+  return f.clubs.length + f.athletes.length + f.ageGroups.length + f.genders.length;
+}
+
+function hasAnyFollows() {
+  return followCount() > 0;
 }
 
 function escapeHtml(s) {
@@ -83,6 +109,25 @@ function stopHomeTimer() {
   }
 }
 
+function stopCountdownTimer() {
+  if (state.countdownTimer) {
+    clearInterval(state.countdownTimer);
+    state.countdownTimer = null;
+  }
+}
+
+function matchesAgeGender(race) {
+  const ages = state.follows.ageGroups;
+  const genders = state.follows.genders;
+  if (!ages.length && !genders.length) return false;
+  const ageOk = !ages.length || (race.ageGroup && ages.includes(race.ageGroup));
+  const genderOk = !genders.length || (race.gender && genders.includes(race.gender));
+  // Age groups + optional gender filter; genders alone also match.
+  if (ages.length && genders.length) return ageOk && genderOk;
+  if (ages.length) return ageOk;
+  return genderOk;
+}
+
 function racesForFollows() {
   const { races } = state.data;
   const clubSet = new Set(state.follows.clubs);
@@ -91,10 +136,152 @@ function racesForFollows() {
   for (const race of races) {
     const matchedLanes = race.lanes.filter((l) => clubSet.has(l.clubId));
     const matchedAthletes = race.athletes.filter((n) => athleteSet.has(n.toLowerCase()));
-    if (!matchedLanes.length && !matchedAthletes.length) continue;
-    out.push({ race, matchedLanes, matchedAthletes });
+    const ageGender = matchesAgeGender(race);
+    if (!matchedLanes.length && !matchedAthletes.length && !ageGender) continue;
+    const bits = [];
+    if (matchedLanes.length) {
+      bits.push(matchedLanes.map((l) => l.clubCode).filter(Boolean).slice(0, 2).join(', '));
+    }
+    if (matchedAthletes.length) bits.push(matchedAthletes.slice(0, 2).join(', '));
+    if (ageGender) {
+      const g = GENDER_OPTIONS.find((o) => o.id === race.gender)?.label || race.gender;
+      bits.push([race.ageGroup, g].filter(Boolean).join(' · '));
+    }
+    out.push({
+      race,
+      matchedLanes,
+      matchedAthletes,
+      ageGender,
+      matchLabel: bits.filter(Boolean).join(' · ') || 'Follow',
+    });
   }
   return out;
+}
+
+/** Soonest followed race that has not finished yet. */
+function nextFollowedRaceItem() {
+  const now = nowMs();
+  let best = null;
+  for (const item of racesForFollows()) {
+    const start = item.race.startMsOfDay;
+    if (!Number.isFinite(start)) continue;
+    const finish = start + (item.race.raceDurationMs || REGATTA.defaultRaceMs);
+    if (now >= finish) continue;
+    if (!best || start < best.race.startMsOfDay) best = item;
+  }
+  return best;
+}
+
+function formatCountdown(ms) {
+  if (!Number.isFinite(ms)) return '—';
+  if (ms <= 0) return '0:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function countdownCopy(race) {
+  const now = nowMs();
+  const start = race.startMsOfDay;
+  const finish = start + (race.raceDurationMs || REGATTA.defaultRaceMs);
+  const phase = racePhase(now, race);
+  if (phase.status === 'live' || (now >= start && now < finish)) {
+    return {
+      label: 'Racing now',
+      detail: formatCountdown(finish - now) + ' left on course',
+      urgent: true,
+    };
+  }
+  if (phase.status === 'start_blocks' || (now >= start - NOTIFY_BEFORE_MS && now < start)) {
+    return {
+      label: 'In the start blocks',
+      detail: `Starts in ${formatCountdown(start - now)}`,
+      urgent: true,
+    };
+  }
+  return {
+    label: 'Next followed race',
+    detail: `Starts in ${formatCountdown(start - now)}`,
+    urgent: false,
+  };
+}
+
+function isFollowingAgeGroup(id) {
+  return state.follows.ageGroups.includes(id);
+}
+
+function isFollowingGender(id) {
+  return state.follows.genders.includes(id);
+}
+
+function toggleAgeGroup(id) {
+  if (isFollowingAgeGroup(id)) {
+    state.follows.ageGroups = state.follows.ageGroups.filter((a) => a !== id);
+  } else {
+    state.follows.ageGroups = [...state.follows.ageGroups, id];
+  }
+  saveFollows();
+  render();
+}
+
+function toggleGender(id) {
+  if (isFollowingGender(id)) {
+    state.follows.genders = state.follows.genders.filter((g) => g !== id);
+  } else {
+    state.follows.genders = [...state.follows.genders, id];
+  }
+  saveFollows();
+  render();
+}
+
+let notifySyncQueued = null;
+function queueNotifySync() {
+  if (notifySyncQueued) clearTimeout(notifySyncQueued);
+  notifySyncQueued = setTimeout(() => {
+    notifySyncQueued = null;
+    syncNotifications();
+  }, 400);
+}
+
+async function syncNotifications() {
+  if (!state.data) return;
+  const items = racesForFollows();
+  if (!state.notify.enabled) {
+    await cancelScheduledNotifications();
+    return;
+  }
+  await scheduleFollowedRaceNotifications(items);
+  // Web mirror for races currently in start blocks / live
+  const now = nowMs();
+  for (const item of items) {
+    const phase = racePhase(now, item.race);
+    maybeWebNotifyRace(item.race, phase.status, item.matchLabel);
+  }
+}
+
+async function setNotificationsEnabled(on) {
+  if (on) {
+    const ok = await requestNotifyPermission();
+    if (!ok) {
+      const webDenied =
+        typeof Notification !== 'undefined' && Notification.permission === 'denied';
+      const nativeDenied = Boolean(window.Capacitor?.isNativePlatform?.());
+      if (webDenied || nativeDenied) {
+        state.notify = { enabled: false };
+        saveNotifyPrefs(state.notify);
+        render();
+        return;
+      }
+    }
+  }
+  state.notify = { enabled: Boolean(on) };
+  saveNotifyPrefs(state.notify);
+  if (!on) await cancelScheduledNotifications();
+  else await syncNotifications();
+  render();
 }
 
 function isFollowingClub(id) {
@@ -131,7 +318,16 @@ function followedLaneForRace(race) {
   if (!race) return null;
   const clubSet = new Set(state.follows.clubs);
   const hit = race.lanes.find((l) => clubSet.has(l.clubId));
-  return hit ? hit.lane : null;
+  if (hit) return hit.lane;
+  // Age/gender follows: highlight first lane if the whole race matches
+  if (matchesAgeGender(race) && race.lanes[0]) return race.lanes[0].lane;
+  return null;
+}
+
+function laneIsFollowed(lane, race) {
+  if (state.follows.clubs.includes(lane.clubId)) return true;
+  if (matchesAgeGender(race)) return true;
+  return false;
 }
 
 function laneLabelMap(race) {
@@ -215,11 +411,10 @@ function renderDrawOrResults(race, phase) {
         .join('')}
     </div>`;
   }
-  const clubSet = new Set(state.follows.clubs);
   return `<div class="lanes">
     ${race.lanes
       .map((l) => {
-        const followed = clubSet.has(l.clubId);
+        const followed = laneIsFollowed(l, race);
         return `<div class="lane ${followed ? 'is-followed' : ''}">
           <span class="lane__n">${l.lane}</span>
           ${logoHtml(l.logoUrl, l.clubCode)}
@@ -292,7 +487,7 @@ function renderBucket(title, items, empty) {
 
 function renderHome() {
   const buckets = homeBuckets();
-  const followCount = state.follows.clubs.length + state.follows.athletes.length;
+  const n = followCount();
   return `
     <section class="hero hero--compact">
       <h1>Follow the racing</h1>
@@ -303,7 +498,7 @@ function renderHome() {
     ${renderLivestreamCard()}
     <div class="panel">
       <div class="chip-row" style="margin-bottom:12px">
-        <span class="chip is-on">${followCount ? `${followCount} following` : 'Nothing followed yet'}</span>
+        <span class="chip is-on">${n ? `${n} following` : 'Nothing followed yet'}</span>
       </div>
       <button type="button" class="btn btn--primary" data-go="follow">Follow a club or athlete</button>
       <div style="height:8px"></div>
@@ -346,6 +541,21 @@ function renderSchedule() {
     </div>`;
 }
 
+function renderNotifySettings() {
+  const on = state.notify.enabled;
+  const mins = Math.round(NOTIFY_BEFORE_MS / 60000);
+  return `
+    <div class="panel panel--settings">
+      <h2>Notifications</h2>
+      <p class="panel__lead">Alert ~${mins} min before a followed crew races. Scheduled on this device from the daysheet (works offline once loaded). Native APK preferred.</p>
+      <label class="toggle">
+        <input type="checkbox" id="notifyToggle" ${on ? 'checked' : ''} />
+        <span class="toggle__ui" aria-hidden="true"></span>
+        <span class="toggle__label">${on ? 'On' : 'Off'}</span>
+      </label>
+    </div>`;
+}
+
 function renderFollow() {
   const q = state.search.trim().toLowerCase();
   const clubs = state.data.clubs.filter(
@@ -362,7 +572,7 @@ function renderFollow() {
           ${logoHtml(c.logo, c.code)}
           <span class="list-item__meta">
             <strong>${escapeHtml(c.name)}</strong>
-            <span>${escapeHtml(c.code)} · ${c.raceCount} race${c.raceCount === 1 ? '' : 's'}</span>
+            <span>${escapeHtml(c.code)} · all crews · ${c.raceCount} race${c.raceCount === 1 ? '' : 's'}</span>
           </span>
           <span class="list-item__action">${isFollowingClub(c.id) ? 'Following' : 'Follow'}</span>
         </button>`,
@@ -385,44 +595,96 @@ function renderFollow() {
   return `
     <div class="panel">
       <h2>Follow</h2>
-      <p class="panel__lead">Saved on this phone for My day and lane highlights.</p>
-      <div class="chip-row" style="margin-bottom:12px">
-        <button type="button" class="chip ${state.followMode === 'club' ? 'is-on' : ''}" data-mode="club">Club / school</button>
-        <button type="button" class="chip ${state.followMode === 'athlete' ? 'is-on' : ''}" data-mode="athlete">Athlete</button>
+      <p class="panel__lead">Clubs include every crew from that club. Age groups and gender combine as a filter. Saved on this phone for My day, alerts, and lane highlights.</p>
+      <div class="follow-section">
+        <p class="follow-section__title">Age groups</p>
+        <div class="chip-row">
+          ${AGE_GROUP_OPTIONS.map(
+            (o) =>
+              `<button type="button" class="chip ${isFollowingAgeGroup(o.id) ? 'is-on' : ''}" data-toggle-age="${escapeHtml(o.id)}">${escapeHtml(o.label)}</button>`,
+          ).join('')}
+        </div>
       </div>
-      <input class="search" id="followSearch" type="search" placeholder="Search…" value="${escapeHtml(state.search)}" />
-      <div class="list">${list || '<p class="empty">No matches</p>'}</div>
+      <div class="follow-section">
+        <p class="follow-section__title">Gender</p>
+        <p class="muted" style="margin:0 0 8px">Optional filter on age-group follows (or follow gender alone).</p>
+        <div class="chip-row">
+          ${GENDER_OPTIONS.map(
+            (o) =>
+              `<button type="button" class="chip ${isFollowingGender(o.id) ? 'is-on' : ''}" data-toggle-gender="${escapeHtml(o.id)}">${escapeHtml(o.label)}</button>`,
+          ).join('')}
+        </div>
+      </div>
+      <div class="follow-section">
+        <p class="follow-section__title">Club / athlete</p>
+        <div class="chip-row" style="margin-bottom:12px">
+          <button type="button" class="chip ${state.followMode === 'club' ? 'is-on' : ''}" data-mode="club">Club / school</button>
+          <button type="button" class="chip ${state.followMode === 'athlete' ? 'is-on' : ''}" data-mode="athlete">Athlete</button>
+        </div>
+        <input class="search" id="followSearch" type="search" placeholder="Search…" value="${escapeHtml(state.search)}" />
+        <div class="list">${list || '<p class="empty">No matches</p>'}</div>
+      </div>
     </div>
+    ${renderNotifySettings()}
   `;
+}
+
+function renderCountdownCard() {
+  if (!hasAnyFollows()) return '';
+  const next = nextFollowedRaceItem();
+  if (!next) {
+    return `
+      <div class="panel panel--countdown panel--countdown-empty">
+        <p class="countdown__eyebrow">My day</p>
+        <p class="countdown__label">No upcoming followed races</p>
+        <p class="panel__lead" style="margin:0">You’re all caught up for now.</p>
+      </div>`;
+  }
+  const { race, matchLabel } = next;
+  const cd = countdownCopy(race);
+  return `
+    <div class="panel panel--countdown ${cd.urgent ? 'is-urgent' : ''}">
+      <p class="countdown__eyebrow">${escapeHtml(cd.label)}</p>
+      <p class="countdown__clock" id="mydayCountdown" data-race-id="${escapeHtml(race.id)}">${escapeHtml(cd.detail)}</p>
+      <p class="countdown__event">${escapeHtml(race.time)} · ${escapeHtml(race.eventType)}</p>
+      <p class="countdown__who">${escapeHtml(matchLabel)} · ${escapeHtml(race.round)} ${escapeHtml(race.division)}</p>
+    </div>`;
 }
 
 function renderMyDay() {
   if (state.selectedRaceId) {
     return renderRaceDetail(state.selectedRaceId);
   }
-  const items = racesForFollows();
-  if (!items.length) {
+  if (!hasAnyFollows()) {
     return `
       <div class="panel">
         <h2>My day</h2>
-        <p class="empty">Follow a club or athlete to see their heats here.</p>
+        <p class="empty">Follow a club, athlete, or age group to see their heats here.</p>
         <button type="button" class="btn btn--primary" data-go="follow">Find someone to follow</button>
-      </div>`;
+      </div>
+      ${renderNotifySettings()}`;
   }
+  const items = racesForFollows();
   const now = nowMs();
   return `
+    ${renderCountdownCard()}
     <div class="panel">
       <h2>My day</h2>
-      <p class="panel__lead">Heats that include someone you follow.</p>
-      <div class="race-list">
+      <p class="panel__lead">Heats that match your follows (club, athlete, or age / gender).</p>
+      ${
+        items.length
+          ? `<div class="race-list">
         ${items
           .map(({ race }) => {
             const phase = racePhase(now, race);
             return renderExpandableRace(race, phase, { showDay: true });
           })
           .join('')}
-      </div>
-    </div>`;
+      </div>`
+          : `<p class="empty">No matching heats in this daysheet.</p>`
+      }
+    </div>
+    ${renderNotifySettings()}`;
 }
 
 function renderRaceDetail(id) {
@@ -465,6 +727,7 @@ function renderLive() {
 
 function render() {
   stopHomeTimer();
+  stopCountdownTimer();
   btnBack.hidden = !(state.tab === 'myday' && state.selectedRaceId);
   btnLiveJump.hidden = state.tab === 'live';
   topSub.textContent = state.data?.meta?.name || 'Regatta NZ';
@@ -486,7 +749,29 @@ function render() {
     }, 30000);
   }
 
+  if (state.tab === 'myday' && !state.selectedRaceId && hasAnyFollows()) {
+    state.countdownTimer = setInterval(tickCountdown, 1000);
+  }
+
   wireDom();
+}
+
+function tickCountdown() {
+  const el = document.getElementById('mydayCountdown');
+  if (!el || state.tab !== 'myday') return;
+  const next = nextFollowedRaceItem();
+  if (!next) {
+    render();
+    return;
+  }
+  const cd = countdownCopy(next.race);
+  if (el.dataset.raceId !== next.race.id) {
+    render();
+    return;
+  }
+  el.textContent = cd.detail;
+  const panel = el.closest('.panel--countdown');
+  if (panel) panel.classList.toggle('is-urgent', cd.urgent);
 }
 
 function wireDom() {
@@ -542,6 +827,15 @@ function wireDom() {
   for (const el of main.querySelectorAll('[data-toggle-athlete]')) {
     el.addEventListener('click', () => toggleAthlete(el.dataset.toggleAthlete));
   }
+  for (const el of main.querySelectorAll('[data-toggle-age]')) {
+    el.addEventListener('click', () => toggleAgeGroup(el.dataset.toggleAge));
+  }
+  for (const el of main.querySelectorAll('[data-toggle-gender]')) {
+    el.addEventListener('click', () => toggleGender(el.dataset.toggleGender));
+  }
+  main.querySelector('#notifyToggle')?.addEventListener('change', (e) => {
+    setNotificationsEnabled(e.target.checked);
+  });
 }
 
 async function tickLive() {
@@ -684,6 +978,9 @@ async function boot() {
       /* ignore */
     }
     render();
+    queueNotifySync();
+    if (state.notifySyncTimer) clearInterval(state.notifySyncTimer);
+    state.notifySyncTimer = setInterval(syncNotifications, 5 * 60 * 1000);
   } catch (err) {
     console.error(err);
     main.innerHTML = `<div class="panel"><p class="empty">Could not load sample data.<br>${escapeHtml(err.message)}</p></div>`;
