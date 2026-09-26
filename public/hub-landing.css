@@ -31,7 +31,6 @@
 .hub-topbar,
 .hub-hero,
 .hub-stats-bar,
-.hub-destinations,
 .hub-role-nav,
 .hub-wrap,
 .hub-local-banner {
@@ -305,84 +304,6 @@ button.hub-stat:hover .hub-stat-value {
 .hub-stat--event .hub-stat-value {
     color: var(--hub-ink);
     font-weight: 500;
-}
-
-/* —— Destination cards —— */
-.hub-destinations {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 clamp(16px, 4vw, 40px) clamp(48px, 7vw, 80px);
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.hub-dest-card {
-    appearance: none;
-    border: 0;
-    background: #ececee;
-    border-radius: var(--hub-radius);
-    padding: 28px 24px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
-    min-height: 420px;
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.hub-dest-card:hover {
-    transform: translateY(-2px);
-}
-
-.hub-dest-card.is-active {
-    box-shadow: inset 0 0 0 1.5px #111;
-}
-
-.hub-dest-card:focus-visible {
-    outline: 2px solid #111;
-    outline-offset: 3px;
-}
-
-.hub-dest-media {
-    width: 100%;
-    height: 210px;
-    margin: 0 0 28px;
-    object-fit: contain;
-    object-position: center;
-    pointer-events: none;
-}
-
-.hub-dest-card h2 {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin: 0 0 8px;
-    color: var(--hub-ink);
-}
-
-.hub-dest-card p {
-    font-size: 14px;
-    line-height: 1.45;
-    color: var(--hub-mute);
-    margin: 0 0 auto;
-    padding-bottom: 20px;
-}
-
-.hub-dest-card .hub-pill {
-    margin-top: 8px;
-}
-
-.hub-dest-card .hub-pill--solid {
-    background: #111;
-    color: #fff;
-}
-
-.hub-dest-card .hub-pill--solid:hover {
-    background: #000;
 }
 
 /* —— Tools wrap —— */
@@ -958,7 +879,6 @@ a.hub-archive-open.hub-btn:hover {
 }
 
 @media (max-width: 960px) {
-    .hub-destinations,
     .hub-links--product {
         grid-template-columns: 1fr 1fr;
     }
@@ -985,17 +905,8 @@ a.hub-archive-open.hub-btn:hover {
         align-items: flex-end;
     }
 
-    .hub-destinations,
     .hub-links--product {
         grid-template-columns: 1fr;
-    }
-
-    .hub-dest-card {
-        min-height: 0;
-    }
-
-    .hub-dest-media {
-        height: 180px;
     }
 
     .hub-stat-value {

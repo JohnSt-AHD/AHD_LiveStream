@@ -50,7 +50,7 @@
             el.setAttribute('aria-hidden', on ? 'false' : 'true');
         });
 
-        document.querySelectorAll('.hub-role-btn[data-hub-role], .hub-dest-card[data-hub-role]').forEach((btn) => {
+        document.querySelectorAll('.hub-role-btn[data-hub-role]').forEach((btn) => {
             const on = btn.getAttribute('data-hub-role') === next;
             btn.classList.toggle('is-active', on);
             if (btn.hasAttribute('aria-pressed')) {

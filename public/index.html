@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=16">
+    <link rel="stylesheet" href="hub-landing.css?v=17">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -70,27 +70,6 @@
                 <a class="hub-pill hub-pill--ghost" href="race-day-record.html">Race-day recorder</a>
             </div>
         </div>
-    </section>
-
-    <section class="hub-destinations" aria-label="Choose a workspace">
-        <button type="button" class="hub-dest-card is-active" data-hub-role="broadcast" data-hub-scroll="hubTools">
-            <img class="hub-dest-media" src="assets/hub/hub-card-broadcast.png" alt="" width="640" height="480">
-            <h2>Broadcast</h2>
-            <p>Daysheet graphics and vMix overlays for the live stream.</p>
-            <span class="hub-pill hub-pill--solid">Open Broadcast</span>
-        </button>
-        <button type="button" class="hub-dest-card" data-hub-role="safety" data-hub-scroll="hubTools">
-            <img class="hub-dest-media" src="assets/hub/hub-card-safety.png" alt="" width="640" height="480">
-            <h2>Safety</h2>
-            <p>Fleet map, RowSafe, and Karāpiro boundary warnings.</p>
-            <span class="hub-pill hub-pill--solid">Open Safety</span>
-        </button>
-        <button type="button" class="hub-dest-card" data-hub-role="cv" data-hub-scroll="hubTools">
-            <img class="hub-dest-media" src="assets/hub/hub-card-cv.png" alt="" width="640" height="480">
-            <h2>Computer vision</h2>
-            <p>Boat tracking, drone, and hull cards from the CV laptop.</p>
-            <span class="hub-pill hub-pill--solid">Open CV</span>
-        </button>
     </section>
 
     <div class="hub-wrap" id="hubTools">
@@ -757,6 +736,43 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                 </section>
 
 
+                <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
+                    <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
+                    <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
+                    <ol class="hub-calendar-list" id="hubCalendarList">
+                        <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20" data-code="nzmm2026">
+                            <span class="hub-calendar-dates">19–20 Sep 2026</span>
+                            <span class="hub-calendar-name">New Zealand Master Rowing</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2026-11-14" data-end="2026-11-15">
+                            <span class="hub-calendar-dates">14–15 Nov 2026</span>
+                            <span class="hub-calendar-name">KRI Memorial Rowing Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2026-11-28" data-end="2026-11-29">
+                            <span class="hub-calendar-dates">28–29 Nov 2026</span>
+                            <span class="hub-calendar-name">KRI Club Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2026-12-11" data-end="2026-12-13">
+                            <span class="hub-calendar-dates">11–13 Dec 2026</span>
+                            <span class="hub-calendar-name">KRI Christmas Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2027-01-29" data-end="2027-01-31">
+                            <span class="hub-calendar-dates">29–31 Jan 2027</span>
+                            <span class="hub-calendar-name">North Island Rowing Champs</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2027-02-26" data-end="2027-02-28">
+                            <span class="hub-calendar-dates">26–28 Feb 2027</span>
+                            <span class="hub-calendar-name">North Island Secondary School Rowing Regatta</span>
+                        </li>
+                        <li class="hub-calendar-item" data-start="2027-03-15" data-end="2027-03-20">
+                            <span class="hub-calendar-dates">15–20 Mar 2027</span>
+                            <span class="hub-calendar-name">Maadi Cup</span>
+                        </li>
+                    </ol>
+                </section>
+                </div>
+
+                <div class="hub-dashboard-main">
                 <section class="hub-panel hub-panel--regatta-nz" id="hubRegattaNzPanel" aria-labelledby="hub-regatta-nz-title">
                     <h2 id="hub-regatta-nz-title" class="hub-section-title">Regatta NZ · Spectator app</h2>
                     <p class="hub-csv-lead">Configure the public spectator app at <code class="hub-csv-code-inline">/regatta-nz/</code>. Save syncs to this browser and to the phone APK via <code class="hub-csv-code-inline">/api/regatta-nz-config</code>. Regatta code stays in sync with RowIT above.</p>
@@ -879,41 +895,6 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                         </li>
                     </ul>
                 </section>
-                <section class="hub-panel hub-panel--calendar" aria-labelledby="hub-calendar-title">
-                    <h2 id="hub-calendar-title" class="hub-section-title">Regatta calendar</h2>
-                    <p class="hub-calendar-lead">2026–27 season · New Zealand</p>
-                    <ol class="hub-calendar-list" id="hubCalendarList">
-                        <li class="hub-calendar-item" data-start="2026-09-19" data-end="2026-09-20" data-code="nzmm2026">
-                            <span class="hub-calendar-dates">19–20 Sep 2026</span>
-                            <span class="hub-calendar-name">New Zealand Master Rowing</span>
-                        </li>
-                        <li class="hub-calendar-item" data-start="2026-11-14" data-end="2026-11-15">
-                            <span class="hub-calendar-dates">14–15 Nov 2026</span>
-                            <span class="hub-calendar-name">KRI Memorial Rowing Regatta</span>
-                        </li>
-                        <li class="hub-calendar-item" data-start="2026-11-28" data-end="2026-11-29">
-                            <span class="hub-calendar-dates">28–29 Nov 2026</span>
-                            <span class="hub-calendar-name">KRI Club Regatta</span>
-                        </li>
-                        <li class="hub-calendar-item" data-start="2026-12-11" data-end="2026-12-13">
-                            <span class="hub-calendar-dates">11–13 Dec 2026</span>
-                            <span class="hub-calendar-name">KRI Christmas Regatta</span>
-                        </li>
-                        <li class="hub-calendar-item" data-start="2027-01-29" data-end="2027-01-31">
-                            <span class="hub-calendar-dates">29–31 Jan 2027</span>
-                            <span class="hub-calendar-name">North Island Rowing Champs</span>
-                        </li>
-                        <li class="hub-calendar-item" data-start="2027-02-26" data-end="2027-02-28">
-                            <span class="hub-calendar-dates">26–28 Feb 2027</span>
-                            <span class="hub-calendar-name">North Island Secondary School Rowing Regatta</span>
-                        </li>
-                        <li class="hub-calendar-item" data-start="2027-03-15" data-end="2027-03-20">
-                            <span class="hub-calendar-dates">15–20 Mar 2027</span>
-                            <span class="hub-calendar-name">Maadi Cup</span>
-                        </li>
-                    </ol>
-                </section>
-                </div>
 
                 <section class="hub-panel hub-panel--schedule" id="hubScheduleSection" aria-labelledby="hub-schedule-title">
                     <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
@@ -953,6 +934,7 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                     <p class="hub-schedule-status" id="hubScheduleStatus"></p>
                     <button type="button" class="hub-btn" id="hubScheduleReload">Reload schedule</button>
                 </section>
+                </div>
             </div>
 
             <div class="hub-nav-pair">

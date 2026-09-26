@@ -276,7 +276,8 @@
     margin-bottom: clamp(24px, 4vw, 36px);
 }
 
-.hub-dashboard-sidebar {
+.hub-dashboard-sidebar,
+.hub-dashboard-main {
     display: flex;
     flex-direction: column;
     gap: clamp(12px, 2vw, 18px);
@@ -2371,9 +2372,6 @@ a.hub-archive-open {
 }
 
 /* Regatta NZ spectator management (Setup) */
-.hub-panel--regatta-nz {
-    margin-top: 16px;
-}
 .hub-panel--regatta-nz .hub-section-title {
     color: #34d399;
 }
