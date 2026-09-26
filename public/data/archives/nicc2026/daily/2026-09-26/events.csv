@@ -1,0 +1,71 @@
+Event,#,Event Type,Gender,Class,Boat,Seats,Oars,Coxed,Other,Sponsor
+1,1C,Opn 2X (P) [1000m],Open,Opn,2X,2,Scull,N,Para,Mazda
+1,1,W Clb 2X,W,Clb,2X,2,Scull,N,,Mazda
+2,2,M Clb 2X,M,Clb,2X,2,Scull,N,,Mazda
+3,3,W Int 4+,W,Int,4+,4,Sweep,Y,,ARS Property Management 
+4,4,W Nov 2X,W,Nov,2X,2,Scull,N,,ARS Property Management 
+5,5E,M #2 Int 4X+,M,Int,4X+,4,Scull,Y,,Croker Oars - New Zealand Ltd
+6,6,M Int 4X+,M,Int,4X+,4,Scull,Y,,Croker Oars - New Zealand Ltd
+7,7,M Nov 8+,M,Nov,8+,8,Sweep,Y,,Croker Oars - New Zealand Ltd
+8,8,M Prm 1X,M,Prm,1X,1,Scull,N,,Waikato University
+9,9,W Prm 1X,W,Prm,1X,1,Scull,N,,Waikato University
+10,10,M Snr 2-,M,Snr,2-,2,Sweep,N,,Footloose Cambridge
+11,11,W Snr 2-,W,Snr,2-,2,Sweep,N,,Footloose
+12,12,W Clb 8+,W,Clb,8+,8,Sweep,Y,,Footloose
+13,13,W Int 2X,W,Int,2X,2,Scull,N,,Goldsmiths Gallery
+14,14E,W #2 Nov 4+,W,Nov,4+,4,Sweep,Y,,Goldsmiths Gallery
+15,15,W Nov 4+,W,Nov,4+,4,Sweep,Y,,Goldsmiths Gallery
+16,16,M Clb 4-,M,Clb,4-,4,Sweep,N,,Defence Force Careers
+17,17,M Clb 4+,M,Clb,4+,4,Sweep,Y,,Defence Force Careers
+18,18,M Int 8+,M,Int,8+,8,Sweep,Y,,Defence Force Careers
+19,19,M Prm 2-,M,Prm,2-,2,Sweep,N,,Tip Top
+20,20,W Prm 2-,W,Prm,2-,2,Sweep,N,,Tip Top
+21,21,M Snr 2X,M,Snr,2X,2,Scull,N,,Lewis Lawyers
+22,22,W Snr 2X,W,Snr,2X,2,Scull,N,,Lewis Lawyers
+23,23,W Int 8X+,W,Int,8X+,8,Scull,Y,,Defence Force Careers
+24,24E,M #2 Nov 4X+,M,Nov,4X+,4,Scull,Y,,Laszlo Boats
+25,25,M Nov 4X+,M,Nov,4X+,4,Scull,Y,,Laszlo Boats
+26,26,W Clb 4X-,W,Clb,4X-,4,Scull,N,,Laszlo Boats
+27,27,W Clb 4X+,W,Clb,4X+,4,Scull,Y,,Laszlo Boats
+28,28,M Clb 1X,M,Clb,1X,1,Scull,N,,Fresh Choice Supermarket Leamington
+29,29,M Int 2X,M,Int,2X,2,Scull,N,,Oarthentic Oars
+30,30A,M Prm 2X,M,Prm,2X,2,Scull,N,,Fresh Choice Supermarket Leamington
+30,30B,W Prm 2X,W,Prm,2X,2,Scull,N,,Fresh Choice Supermarket Leamington
+31,31,W Nov 8X+,W,Nov,8X+,8,Scull,Y,,S L Racing
+32,32,W Int 8+,W,Int,8+,8,Sweep,Y,,Fresh Choice Supermarket Leamington
+33,33A,M Snr 4X-,M,Snr,4X-,4,Scull,N,,S L Racing
+33,33B,Mx Opn 4X-,Mx,Opn,4X-,4,Scull,N,,S L Racing
+33,33C,W Snr 4X-,W,Snr,4X-,4,Scull,N,,Rob Bristow - rowing images
+34,34,W Clb 2-,W,Clb,2-,2,Sweep,N,,Rob Bristow - rowing images
+35,35,M Clb 8+,M,Clb,8+,8,Sweep,Y,,Rob Bristow - rowing images
+36,36E,M #2 Nov 4+,M,Nov,4+,4,Sweep,Y,,Oarthentic Oars
+37,37,M Nov 4+,M,Nov,4+,4,Sweep,Y,,Oarthentic Oars
+38,38A,M Prm 4-,M,Prm,4-,4,Sweep,N,,Tip Top
+38,38B,W Prm 4-,W,Prm,4-,4,Sweep,N,,Tip Top
+39,39,M Int 8X+,M,Int,8X+,8,Scull,Y,,Aotearoa Boat Company
+40,40,W Nov 8+,W,Nov,8+,8,Sweep,Y,,Tip Top
+41,41A,M Snr 4-,M,Snr,4-,4,Sweep,N,,MobiComm Ltd
+41,41B,W Snr 4-,W,Snr,4-,4,Sweep,N,,MobiComm Ltd
+41,41C,Opn 1X (P) [1000m],Open,Opn,1X,1,Scull,N,Para,MobiComm Ltd
+42,42,W Clb 1X,W,Clb,1X,1,Scull,N,,Top Notch Calves
+43,43,M Clb 4X-,M,Clb,4X-,4,Scull,N,,Top Notch Calves
+44,44,M Clb 4X+,M,Clb,4X+,4,Scull,Y,,Top Notch Calves
+45,45E,W #2 Int 4X+,W,Int,4X+,4,Scull,Y,,Sports Box
+46,46,W Int 4X+,W,Int,4X+,4,Scull,Y,,Sports Box
+47,47A,M Prm 4X-,M,Prm,4X-,4,Scull,N,,Waikato University
+47,47B,W Prm 4X-,W,Prm,4X-,4,Scull,N,,Waikato University
+48,48,M Int 4+,M,Int,4+,4,Sweep,Y,,Neat Meat
+49,49,M Nov 8X+,M,Nov,8X+,8,Scull,Y,,Neat Meat
+50,50,M Snr 1X,M,Snr,1X,1,Scull,N,,Tip Top
+51,51,W Snr 1X,W,Snr,1X,1,Scull,N,,Tip Top
+52,52,W Clb 4-,W,Clb,4-,4,Sweep,N,,Kaz - Design. Brand. Web.
+53,53,W Clb 4+,W,Clb,4+,4,Sweep,Y,,Kaz - Design. Brand. Web.
+54,54,M Clb 2-,M,Clb,2-,2,Sweep,N,,Kaz - Design. Brand. Web.
+55,55,W Int 1X,W,Int,1X,1,Scull,N,,Jibbitz Fairy
+56,56E,W #2 Nov 4X+,W,Nov,4X+,4,Scull,Y,,Jibbitz Fairy
+57,57,W Nov 4X+,W,Nov,4X+,4,Scull,Y,,Jibbitz Fairy
+58,58,M Int 1X,M,Int,1X,1,Scull,N,,Mitre 10 MEGA Cambridge
+59,59,M Nov 2X,M,Nov,2X,2,Scull,N,,Mitre 10 MEGA Cambridge
+60,60A,M Opn 8+,M,Opn,8+,8,Sweep,Y,,Waikato University
+60,60B,Mx Opn 8+,Mx,Opn,8+,8,Sweep,Y,,Waikato University
+60,60C,W Opn 8+,W,Opn,8+,8,Sweep,Y,,Waikato University
