@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="hub.css">
     <link rel="stylesheet" href="hub-map-refresh.css">
     <link rel="stylesheet" href="tracker-source-bar.css">
-    <link rel="stylesheet" href="hub-landing.css?v=17">
+    <link rel="stylesheet" href="hub-landing.css?v=18">
 </head>
 <body class="hub-page">
     <header class="hub-topbar">
@@ -75,12 +75,23 @@
     <div class="hub-wrap" id="hubTools">
         <div class="hub-view is-active" data-hub-view="broadcast" id="hubViewBroadcast">
             <section class="hub-panel hub-panel--vmix" aria-labelledby="hub-vmix-title">
-                <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
-                <p class="hub-vmix-lead">Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code in <strong>Setup</strong> — overlays read the same code via <code>?regatta=</code> or this page’s saved value. On race day, open this hub from <code>http://localhost:3000</code> and paste these card URLs into vMix.</p>
+                <div class="hub-section-title-row">
+                    <h2 id="hub-vmix-title" class="hub-section-title">vMix overlays</h2>
+                    <button type="button" class="info-tip-btn" data-info-tip="vmix" aria-expanded="false" aria-controls="info-tip-vmix" title="About vMix overlays" aria-label="About vMix overlays">i</button>
+                </div>
+                <div class="info-tip-panel" id="info-tip-vmix" hidden>
+                    <p>Transparent 1920×1080 graphics for vMix Web Browser inputs. Data comes from RowIT CSV feeds and <code>AHD_lookup</code> (club logos, event names). Set the regatta code in <strong>Setup</strong> — overlays use the same code via <code>?regatta=</code> or this page’s saved value. On race day, open this hub from <code>http://localhost:3000</code> and paste the card URLs into vMix.</p>
+                    <p>In vMix, focus the Milford browser input: <code>d</code>/<code>l</code>/<code>r</code>/<code>t</code> play in (3s then text), <code>g</code> speed dot + TimeTracker video, <code>o</code> out (reverse), <code>c</code> clear. Hub buttons send the same triggers to open overlay tabs. Use <strong>vmix-rnz-milford.html</strong> for regatta graphics and speed overlay. Configure the speed device on the fleet map first.</p>
+                </div>
 
                 <div class="hub-live-race" id="hubLiveRacePanel" aria-labelledby="hub-live-race-title">
-                    <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
-                    <p class="hub-live-race-lead">Sets the race for draw, lower third, and results on open vMix overlays, and pushes the same race to the CV laptop. <strong>Auto</strong> follows daysheet time and advances when RowIT results are published. Use <strong>+</strong> / <strong>−</strong> (or type a race) for delays and swaps — that switches to manual until you resume auto.</p>
+                    <div class="hub-section-title-row">
+                        <h3 id="hub-live-race-title" class="hub-live-race-title">Live graphic race</h3>
+                        <button type="button" class="info-tip-btn" data-info-tip="live-race" aria-expanded="false" aria-controls="info-tip-live-race" title="About live graphic race" aria-label="About live graphic race">i</button>
+                    </div>
+                    <div class="info-tip-panel" id="info-tip-live-race" hidden>
+                        <p>Sets the race for draw, lower third, and results on open vMix overlays, and pushes the same race to the CV laptop. <strong>Auto</strong> follows daysheet time and advances when RowIT results are published. Use <strong>+</strong> / <strong>−</strong> (or type a race) for delays and swaps — that switches to manual until you resume auto.</p>
+                    </div>
                     <div class="hub-live-race-controls hub-live-race-controls--auto">
                         <label class="hub-live-race-auto">
                             <input type="checkbox" id="hubLiveRaceAuto" checked>
@@ -143,7 +154,6 @@
                 </div>
 
                 <div class="hub-vmix-guide">
-                    <p class="hub-vmix-guide-lead">In vMix, focus the Milford browser input: <code>d</code>/<code>l</code>/<code>r</code>/<code>t</code> play in (3s then text), <code>g</code> speed dot + TimeTracker video, <code>o</code> out (reverse), <code>c</code> clear. Configure speed device on the fleet map first.</p>
                     <div class="hub-vmix-trigger-row" id="hubVmixTriggerButtons" role="group" aria-label="Send trigger to open vMix overlays">
                         <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="t" title="Title in">T</button>
                         <button type="button" class="hub-vmix-trigger-key" data-vmix-trigger="in" data-vmix-graphic="l" title="Lower third in">L</button>
@@ -160,7 +170,6 @@
                         <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--out" data-vmix-trigger="out" title="Out">O</button>
                         <button type="button" class="hub-vmix-trigger-key hub-vmix-trigger-key--clear" data-vmix-trigger="clear" title="Clear all">C</button>
                     </div>
-                    <p class="hub-vmix-trigger-hint">Buttons send triggers to open Milford overlay tabs on this site. Use <strong>vmix-rnz-milford.html</strong> for regatta graphics and speed overlay.</p>
                 </div>
 
                 <details class="hub-vmix-explainer">
@@ -294,18 +303,14 @@
 
         <div class="hub-view" data-hub-view="archive" id="hubViewArchive" hidden>
             <section class="hub-panel hub-panel--archive" id="hubDriveArchive" aria-labelledby="hub-archive-title">
-                <h2 id="hub-archive-title" class="hub-section-title">Race archive</h2>
-                <p class="hub-archive-lead">
-                    Record on race day, cut Hub-named clips at the end of the day, then search this Drive.
-                    Press <strong>Record</strong> on Broadcast before the first race. After racing, copy camera
-                    files into <code>incoming\vmix</code>, <code>start-cam</code>, <code>barge</code>, and
-                    <code>drone</code>, then on the graphics PC run
-                    <code>npm run archive:ingest -- --incoming "D:\AHD\{regatta}\{date}\incoming"</code>
-                    (add <code>--apply</code> to write the cuts). Copy the <code>hub</code> folder to Drive overnight.
-                    Sign in below to find those files by athlete, race, event, or year.
-                    After a search, use <strong>Hub video</strong> to pick the RowIT auto-name
-                    (e.g. <code>NZCC W_Snr_8+ 18-02-2026</code>) and jump to that clip.
-                </p>
+                <div class="hub-section-title-row">
+                    <h2 id="hub-archive-title" class="hub-section-title">Race archive</h2>
+                    <button type="button" class="info-tip-btn" data-info-tip="archive" aria-expanded="false" aria-controls="info-tip-archive" title="About race archive" aria-label="About race archive">i</button>
+                </div>
+                <div class="info-tip-panel" id="info-tip-archive" hidden>
+                    <p>Record on race day, cut Hub-named clips at the end of the day, then search this Drive. Press <strong>Record</strong> on Broadcast before the first race. After racing, copy camera files into <code>incoming\vmix</code>, <code>start-cam</code>, <code>barge</code>, and <code>drone</code>, then on the graphics PC run the ingest command (add <code>--apply</code> to write the cuts). Copy the <code>hub</code> folder to Drive overnight.</p>
+                    <p>Sign in below to find files by athlete, race, event, or year. After a search, use <strong>Hub video</strong> to pick the RowIT auto-name and jump to that clip.</p>
+                </div>
 
                 <details class="hub-vmix-explainer hub-archive-explainer">
                     <summary class="hub-vmix-explainer-summary">Race-day recording and ingest</summary>
@@ -549,11 +554,14 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
 
         <div class="hub-view" data-hub-view="safety" id="hubViewSafety" hidden>
             <section class="hub-panel hub-panel--fleet-map" aria-labelledby="hub-fleet-map-title">
-                <h2 id="hub-fleet-map-title" class="hub-section-title">Fleet overview</h2>
-                <p class="hub-fleet-map-lead">
-                    Live devices from <strong>Traccar</strong> or <strong>CrewSight</strong> · default view Karāpiro (Rowing NZ).
-                    <a href="live-map.html">Open full fleet map</a>
-                </p>
+                <div class="hub-section-title-row">
+                    <h2 id="hub-fleet-map-title" class="hub-section-title">Fleet overview</h2>
+                    <a class="hub-fleet-map-full" href="live-map.html">Open full fleet map</a>
+                    <button type="button" class="info-tip-btn" data-info-tip="fleet" aria-expanded="false" aria-controls="info-tip-fleet" title="About fleet overview" aria-label="About fleet overview">i</button>
+                </div>
+                <div class="info-tip-panel" id="info-tip-fleet" hidden>
+                    <p>Live devices from <strong>Traccar</strong> or <strong>CrewSight</strong>. Default view is Karāpiro (Rowing NZ). Open the full fleet map for route history and custom markers.</p>
+                </div>
                 <div class="hub-fleet-map-toolbar">
                     <div class="tracker-source-inline hub-fleet-source">
                         <div class="tracker-source-label">Position data source</div>
@@ -609,8 +617,13 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
 
         <div class="hub-view" data-hub-view="cv" id="hubViewCv" hidden>
             <section class="hub-panel hub-panel--cv" aria-labelledby="hub-cv-title">
-                <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone</h2>
-                <p class="hub-cv-lead">Race day is one CV page: start tracking, set lanes, then the <strong>Drone</strong> tab to watch. vMix uses the overlay links below — set those browser inputs once.</p>
+                <div class="hub-section-title-row">
+                    <h2 id="hub-cv-title" class="hub-section-title">Computer Vision &amp; Drone</h2>
+                    <button type="button" class="info-tip-btn" data-info-tip="cv" aria-expanded="false" aria-controls="info-tip-cv" title="About Computer Vision and Drone" aria-label="About Computer Vision and Drone">i</button>
+                </div>
+                <div class="info-tip-panel" id="info-tip-cv" hidden>
+                    <p>Race day is one CV page: start tracking, set lanes, then the <strong>Drone</strong> tab to watch. vMix uses the overlay links below — set those browser inputs once.</p>
+                </div>
 
                 <div class="hub-cv-status-row" id="hubCvStatusRow">
                     <div class="hub-cv-status-item">
@@ -706,8 +719,13 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
             <div class="hub-dashboard">
                 <div class="hub-dashboard-sidebar">
                 <section class="hub-panel hub-panel--data" aria-labelledby="hub-csv-title">
-                    <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
-                    <p class="hub-csv-lead">Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. Default this weekend is <code class="hub-csv-code-inline">nzmm2026</code> (NZ Masters). Until the daysheet is published, the race board uses the competitor names list. Daysheet and results refresh every <strong>1 min</strong> (use <strong>Update results now</strong> to pull immediately).</p>
+                    <div class="hub-section-title-row">
+                        <h2 id="hub-csv-title" class="hub-section-title">RowIT CSV data</h2>
+                        <button type="button" class="info-tip-btn" data-info-tip="csv" aria-expanded="false" aria-controls="info-tip-csv" title="About RowIT CSV data" aria-label="About RowIT CSV data">i</button>
+                    </div>
+                    <div class="info-tip-panel" id="info-tip-csv" hidden>
+                        <p>Enter the RowIT regatta code — feeds load from <code class="hub-csv-code-inline">l.rowit.nz/altitude/<em>code</em>/</code>. Default this weekend is <code class="hub-csv-code-inline">nzmm2026</code> (NZ Masters). Until the daysheet is published, the race board uses the competitor names list. Daysheet and results refresh every <strong>1 min</strong> (use <strong>Update results now</strong> to pull immediately).</p>
+                    </div>
                     <label class="hub-regatta-code-field">
                         <span class="hub-regatta-code-label">Regatta code</span>
                         <input
@@ -774,8 +792,13 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
 
                 <div class="hub-dashboard-main">
                 <section class="hub-panel hub-panel--regatta-nz" id="hubRegattaNzPanel" aria-labelledby="hub-regatta-nz-title">
-                    <h2 id="hub-regatta-nz-title" class="hub-section-title">Regatta NZ · Spectator app</h2>
-                    <p class="hub-csv-lead">Configure the public spectator app at <code class="hub-csv-code-inline">/regatta-nz/</code>. Save syncs to this browser and to the phone APK via <code class="hub-csv-code-inline">/api/regatta-nz-config</code>. Regatta code stays in sync with RowIT above.</p>
+                    <div class="hub-section-title-row">
+                        <h2 id="hub-regatta-nz-title" class="hub-section-title">Regatta NZ · Spectator app</h2>
+                        <button type="button" class="info-tip-btn" data-info-tip="spectator" aria-expanded="false" aria-controls="info-tip-spectator" title="About the spectator app" aria-label="About the spectator app">i</button>
+                    </div>
+                    <div class="info-tip-panel" id="info-tip-spectator" hidden>
+                        <p>Configure the public spectator app at <code class="hub-csv-code-inline">/regatta-nz/</code>. Save syncs to this browser and to the phone APK via <code class="hub-csv-code-inline">/api/regatta-nz-config</code>. Regatta code stays in sync with RowIT above. Simulation uses GED CV sim (<code>/api/race</code>) on the spectator Live tab.</p>
+                    </div>
 
                     <label class="hub-regatta-code-field">
                         <span class="hub-regatta-code-label">Regatta code</span>
@@ -897,8 +920,13 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                 </section>
 
                 <section class="hub-panel hub-panel--schedule" id="hubScheduleSection" aria-labelledby="hub-schedule-title">
-                    <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
-                    <p class="hub-schedule-lead">Current race plus two before and two after — lane draw and top results when available.</p>
+                    <div class="hub-section-title-row">
+                        <h2 id="hub-schedule-title" class="hub-section-title">Regatta schedule</h2>
+                        <button type="button" class="info-tip-btn" data-info-tip="schedule" aria-expanded="false" aria-controls="info-tip-schedule" title="About the regatta schedule" aria-label="About the regatta schedule">i</button>
+                    </div>
+                    <div class="info-tip-panel" id="info-tip-schedule" hidden>
+                        <p>Shows the current race plus two before and two after — lane draw and top results when available.</p>
+                    </div>
 
                     <div class="hub-clock-panel">
                         <fieldset class="hub-clock-fieldset">
@@ -974,11 +1002,13 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
                     <img src="assets/crewsight/crewsight-logo-icon-only-color.png" alt="" class="hub-crewsight-strip-mark" width="44" height="44" aria-hidden="true">
                     <span class="hub-crewsight-strip-text">CrewSight</span>
                 </div>
-                <h2 id="hub-apps-title" class="hub-section-title">Apps</h2>
-                <p class="hub-apps-lead">
-                    Download the Android apps or open the web dashboard to monitor devices live.
-                    Switch the fleet map on the <strong>Safety</strong> view to <strong>CrewSight</strong> to use this data on AHD maps.
-                </p>
+                <div class="hub-section-title-row">
+                    <h2 id="hub-apps-title" class="hub-section-title">Apps</h2>
+                    <button type="button" class="info-tip-btn" data-info-tip="apps" aria-expanded="false" aria-controls="info-tip-apps" title="About apps" aria-label="About apps">i</button>
+                </div>
+                <div class="info-tip-panel" id="info-tip-apps" hidden>
+                    <p>Download the Android apps or open the web dashboard to monitor devices live. Switch the fleet map on the <strong>Safety</strong> view to <strong>CrewSight</strong> to use this data on AHD maps.</p>
+                </div>
                 <ul class="hub-links">
                                         <li>
                         <a
@@ -1060,7 +1090,7 @@ npm run archive:ingest -- --incoming "D:\AHD\nzcc\2026-02-18\incoming" --apply</
             AHD - LiveStream
         </footer>
     </div>
-    <script src="hub-roles.js"></script>
+    <script src="hub-roles.js?v=2"></script>
     <script src="map-refresh-rate.js"></script>
     <script src="tracker-source.js"></script>
     <script src="traccar-snapshot-bus.js"></script>

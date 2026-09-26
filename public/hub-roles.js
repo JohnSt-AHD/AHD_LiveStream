@@ -43,6 +43,8 @@
         const updateUrl = Boolean(options?.updateUrl);
         const next = normalize(view) || 'broadcast';
 
+        closeInfoTips();
+
         document.querySelectorAll('[data-hub-view]').forEach((el) => {
             const on = el.getAttribute('data-hub-view') === next;
             el.classList.toggle('is-active', on);
@@ -85,9 +87,43 @@
         }
     }
 
+    function closeInfoTips(except) {
+        document.querySelectorAll('.info-tip-btn').forEach((btn) => {
+            if (except && btn === except) return;
+            const panel = document.getElementById(btn.getAttribute('aria-controls') || '');
+            btn.classList.remove('is-open');
+            btn.setAttribute('aria-expanded', 'false');
+            if (panel) panel.hidden = true;
+        });
+    }
+
+    function initInfoTips() {
+        document.querySelectorAll('.info-tip-btn').forEach((btn) => {
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                const panel = document.getElementById(btn.getAttribute('aria-controls') || '');
+                if (!panel) return;
+                const willOpen = panel.hidden;
+                closeInfoTips(willOpen ? btn : null);
+                panel.hidden = !willOpen;
+                btn.classList.toggle('is-open', willOpen);
+                btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            });
+        });
+        document.addEventListener('click', (ev) => {
+            if (ev.target.closest('.info-tip-btn, .info-tip-panel')) return;
+            closeInfoTips();
+        });
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape') closeInfoTips();
+        });
+    }
+
     function init() {
         const queryView = readQuery();
         const initial = queryView || readStored() || 'broadcast';
+        initInfoTips();
         setView(initial, { persist: true, updateUrl: false });
 
         document.querySelectorAll('[data-hub-role]').forEach((btn) => {
