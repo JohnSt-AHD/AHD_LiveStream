@@ -25,6 +25,9 @@
     },
     "api/race-cues.js": {
       "maxDuration": 15
+    },
+    "api/walkup-link.js": {
+      "maxDuration": 10
     }
   }
 }

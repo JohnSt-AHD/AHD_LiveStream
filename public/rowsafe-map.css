@@ -1933,3 +1933,62 @@ body.rnz-page .rnz-onwater-stat--distance dd {
     color: var(--rnz-muted);
     text-align: right;
 }
+
+/* CrewSight walk-up check-in QR (bottom-right) */
+.rowsafe-walkup-qr {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    z-index: 2400;
+    width: 124px;
+}
+
+.rowsafe-walkup-qr[hidden] {
+    display: none !important;
+}
+
+.rowsafe-walkup-qr__link {
+    display: block;
+    padding: 10px 10px 8px;
+    border-radius: 14px;
+    background: rgba(10, 22, 40, 0.92);
+    border: 1px solid rgba(13, 148, 136, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    color: #f8fafc;
+    text-align: center;
+    text-decoration: none;
+}
+
+.rowsafe-walkup-qr__img {
+    display: block;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 6px;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.rowsafe-walkup-qr__title {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.rowsafe-walkup-qr__sub {
+    display: block;
+    font-size: 0.62rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+    .rowsafe-walkup-qr {
+        width: 108px;
+    }
+
+    .rowsafe-walkup-qr__img {
+        width: 80px;
+        height: 80px;
+    }
+}

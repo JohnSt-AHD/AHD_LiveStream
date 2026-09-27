@@ -73,6 +73,7 @@ app.all('/api/race',           wrapHandler('./api/race.js'));
 app.all('/api/drone-telemetry/all', wrapHandler('./api/drone-telemetry.js'));
 app.all('/api/drone-telemetry', wrapHandler('./api/drone-telemetry.js'));
 app.all('/api/config',         wrapHandler('./api/config.js'));
+app.all('/api/walkup-link',    wrapHandler('./api/walkup-link.js'));
 
 // ── Static files from public/ ───────────────────────────────────────
 app.use(express.static(join(__dirname, 'public'), {
@@ -106,5 +107,6 @@ app.listen(PORT, () => {
   console.log(`    /api/race          (Ged World Rowing sim loop)`);
   console.log(`    /api/drone-telemetry`);
   console.log(`    /api/config`);
+  console.log(`    /api/walkup-link`);
   console.log();
 });
