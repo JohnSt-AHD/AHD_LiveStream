@@ -25,6 +25,11 @@
     box-sizing: border-box;
 }
 
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
 body.rnz-page {
     font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
     background-color: #0a0a0a;
@@ -34,7 +39,11 @@ body.rnz-page {
     background-repeat: no-repeat;
     background-attachment: fixed;
     color: var(--rnz-text);
-    min-height: 100vh;
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -88,7 +97,7 @@ body.rnz-page > *:not(#courseViewOverlay) {
     flex-shrink: 0;
     max-width: none;
     margin: 0;
-    padding: 10px clamp(16px, 4vw, 32px);
+    padding: 6px clamp(12px, 3vw, 24px);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -348,26 +357,28 @@ body.rnz-page .rnz-header-inner {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
 }
 
-/* --- Dashboard: warnings (left) | fixed map | data panel (right) --- */
+/* --- Dashboard: warnings (left) | map | data panel (right) — fits one viewport --- */
 .rnz-dashboard {
-    --rnz-map-w: 1162px;
-    --rnz-map-h: 726px;
-    --rnz-chart-h: 200px;
-    --rnz-map-col-gap: 12px;
-    --rnz-map-col-h: calc(var(--rnz-map-h) + var(--rnz-map-col-gap) + var(--rnz-chart-h));
-    --rnz-side-col-h: min(var(--rnz-map-col-h), 90vh);
-    flex: 1;
+    --rnz-map-w: min(1162px, 100%);
+    --rnz-chart-h: clamp(110px, 16vh, 180px);
+    --rnz-map-col-gap: 10px;
+    --rnz-side-col-h: 100%;
+    flex: 1 1 auto;
     display: grid;
-    grid-template-columns: minmax(200px, 280px) var(--rnz-map-w) minmax(280px, 400px);
-    gap: 16px;
-    justify-content: center;
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 2.4fr) minmax(240px, 1fr);
+    gap: 12px;
+    justify-content: stretch;
     align-items: stretch;
-    padding: 16px 20px 24px;
+    padding: 10px 14px 8px;
     min-height: 0;
+    height: auto;
+    max-height: none;
     border-top: 1px solid var(--rnz-line);
     transition: grid-template-columns 0.28s ease;
+    overflow: hidden;
 }
 
 .rnz-left-column {
@@ -430,10 +441,12 @@ body.rnz-page .rnz-header-inner {
     display: flex;
     flex-direction: column;
     gap: var(--rnz-map-col-gap);
-    width: var(--rnz-map-w);
+    width: 100%;
+    max-width: none;
     min-width: 0;
-    flex-shrink: 0;
-    min-height: var(--rnz-side-col-h);
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
 }
 
 .rnz-speed-chart-section {
@@ -442,24 +455,28 @@ body.rnz-page .rnz-header-inner {
     overflow: hidden;
     background: rgba(15, 23, 42, 0.92);
     box-shadow: 0 2px 14px rgba(15, 23, 42, 0.08);
+    flex: 0 0 var(--rnz-chart-h);
+    height: var(--rnz-chart-h);
+    max-height: var(--rnz-chart-h);
 }
 
 .rnz-live-speed-chart {
     display: block;
     width: 100%;
-    height: var(--rnz-chart-h);
+    height: 100%;
 }
 
 .rnz-map-stage {
     position: relative;
     width: 100%;
-    height: var(--rnz-map-h);
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--rnz-line);
     box-shadow: 0 4px 22px rgba(15, 23, 42, 0.1);
     background: #dce7ef;
-    flex-shrink: 0;
     isolation: isolate;
 }
 
@@ -790,10 +807,33 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
 
 .rnz-fleet-dock,
 .rnz-email-dock {
-    flex-shrink: 0;
-    padding: 0 20px 20px;
+    flex: 0 0 auto;
+    max-height: min(30vh, 280px);
+    padding: 0 14px 10px;
     display: flex;
     justify-content: center;
+    overflow: hidden;
+}
+
+.rnz-fleet-dock-details[open] {
+    max-height: min(30vh, 280px);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.rnz-fleet-dock-details[open] .rnz-fleet-dock-inner {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.rnz-fleet-dock-details[open] .rnz-fleet-dock-grid {
+    flex: 1;
+    max-height: none;
 }
 
 .rnz-email-dock {
@@ -1326,52 +1366,77 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
 
 @media (max-width: 1280px) {
     .rnz-dashboard {
-        --rnz-map-w: min(1162px, calc(100vw - 48px));
-        --rnz-map-h: 629px;
-        grid-template-columns: minmax(180px, 1fr) minmax(400px, var(--rnz-map-w)) minmax(220px, 1fr);
+        grid-template-columns: minmax(160px, 0.9fr) minmax(0, 2.2fr) minmax(200px, 1fr);
     }
 }
 
 @media (max-width: 1024px) {
+    /* Keep one viewport: map fills, side panels become compact drawers with internal scroll */
     .rnz-dashboard {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
         justify-items: stretch;
+        gap: 8px;
+        padding: 8px 10px 6px;
     }
 
     .rnz-map-column {
         width: 100%;
-        max-width: var(--rnz-map-w);
-        margin: 0 auto;
+        max-width: none;
+        margin: 0;
+        min-height: 0;
     }
 
     .rnz-map-stage {
         width: 100%;
-        height: min(var(--rnz-map-h), 55vh);
+        flex: 1;
+        min-height: 180px;
+    }
+
+    .rnz-speed-chart-section {
+        --rnz-chart-h: clamp(80px, 12vh, 120px);
+        flex-basis: var(--rnz-chart-h);
+        height: var(--rnz-chart-h);
+        max-height: var(--rnz-chart-h);
     }
 
     .rnz-sidebar {
         border-right: none;
         border-top: 4px solid var(--rnz-teal);
+        min-height: 0;
+        max-height: none;
+        height: auto;
+        overflow: hidden;
     }
 
     body.rnz-page .rnz-sidebar--onwater {
-        height: auto;
-        max-height: none;
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
     }
 
     body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
-        max-height: min(42vh, 360px);
+        max-height: none;
+        flex: 1;
+        overflow-y: auto;
     }
 
     .rnz-left-column {
-        height: auto;
-        max-height: none;
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
     }
 
     .rnz-left-scroll {
-        flex: 0 1 auto;
-        overflow-y: visible;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .rnz-fleet-dock,
+    .rnz-email-dock {
+        max-height: min(22vh, 200px);
+        padding-bottom: 6px;
     }
 }
 
@@ -1481,13 +1546,8 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
 }
 
 .rnz-footer {
-    flex-shrink: 0;
-    background: var(--rnz-navy-deep);
-    color: rgba(255, 255, 255, 0.82);
-    font-size: 0.8rem;
-    padding: 14px 20px;
-    text-align: center;
-    line-height: 1.5;
+    /* Keep live map on one screen — links remain on Logbook / home */
+    display: none;
 }
 
 .rnz-footer a {
