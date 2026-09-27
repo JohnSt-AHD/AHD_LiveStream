@@ -1,5 +1,5 @@
 /**
- * Bottom-right CrewSight walk-up QR on RowSafe map (no-GPS logbook check-in).
+ * CrewSight walk-up QR in the On water boats column (no-GPS logbook check-in).
  */
 (function () {
   const fab = document.getElementById('rowsafeWalkupQr');
