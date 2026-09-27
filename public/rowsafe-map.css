@@ -204,17 +204,17 @@ body.rnz-page > *:not(#courseViewOverlay) {
 }
 
 .rnz-header-crewsight {
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    border-radius: 4px;
-    padding: 3px 5px;
-    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 0;
     width: fit-content;
-    overflow: hidden;
+    overflow: visible;
 }
 
 body.rnz-page .rnz-header {
@@ -234,7 +234,7 @@ body.rnz-page .rnz-header-inner {
     flex: 1;
     width: 100%;
     max-width: none;
-    padding-left: calc(14px + clamp(160px, 22vw, 210px));
+    padding-left: calc(14px + clamp(176px, 24vw, 232px));
 }
 
 @media (max-width: 720px) {
@@ -257,7 +257,7 @@ body.rnz-page .rnz-header-inner {
 
 .rnz-crewsight-logo {
     display: block;
-    height: clamp(36px, 4.8vw, 48px);
+    height: clamp(40px, 5.3vw, 53px);
     width: auto;
     object-fit: contain;
     transform: none;
