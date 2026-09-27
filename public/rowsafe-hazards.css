@@ -1,0 +1,31 @@
+.rnz-hazards-page .rnz-logbook-day[open] {
+    border-color: #fca5a5;
+}
+
+.rnz-hazards-page .rnz-hazards-day-summary {
+    grid-template-columns: minmax(7.5rem, auto) repeat(2, minmax(0, 1fr));
+}
+
+.rnz-hazards-page .rnz-logbook-day--nested .rnz-hazards-day-summary {
+    grid-template-columns: minmax(6.5rem, auto) repeat(2, minmax(0, 1fr));
+}
+
+.rnz-hazards-page .rnz-logbook-stat-value.is-open {
+    color: #b42318;
+}
+
+.rnz-hazard-open {
+    color: #b42318;
+    font-weight: 700;
+}
+
+.rnz-hazard-name {
+    font-weight: 700;
+    color: #0f2740;
+}
+
+@media (max-width: 800px) {
+    .rnz-hazards-page .rnz-hazards-day-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+}

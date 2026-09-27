@@ -473,6 +473,23 @@ export default async function handler(req, res) {
             return;
         }
 
+        if (action === 'hazards' && useRowingSource(req)) {
+            if (!canUseRowing()) {
+                res.status(503).json({
+                    ok: false,
+                    error: 'ROWING_TRACKER_URL is not configured on the server.',
+                });
+                return;
+            }
+            const data = await rowingGetJson('/api/history', {
+                list: 'hazards',
+                days: req.query.days || '45',
+                tz: req.query.tz || req.query.timeZone || 'Pacific/Auckland',
+            });
+            res.status(200).json(data);
+            return;
+        }
+
         if (action === 'devices') {
             const { traccarUrl, cookie } = await getTraccarSession();
             const data = await traccarGetJson(traccarUrl, cookie, '/api/devices');

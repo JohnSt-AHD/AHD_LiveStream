@@ -60,6 +60,15 @@ function matchesRnzGeofenceName(name) {
     );
 }
 
+/** Hazard zones from CrewSight (attributes.kind) — not used as RNZ boundary. */
+function isHazardGeofence(g) {
+    if (!g) return false;
+    const kind = String(g.attributes?.kind || g.kind || '').toLowerCase();
+    if (kind === 'hazard') return true;
+    const n = String(g.name || '').toLowerCase();
+    return n.includes('pylon');
+}
+
 function parseGeofenceArea(areaStr) {
     if (!areaStr || typeof areaStr !== 'string') return null;
     const s = areaStr.trim();
@@ -148,8 +157,8 @@ function isInsideBoundaryParts(lat, lon, parts) {
 }
 
 function getMatchedGeofences(all) {
-    const list = Array.isArray(all) ? all : [];
-    const named = list.filter((g) => g && matchesRnzGeofenceName(g.name));
+    const list = (Array.isArray(all) ? all : []).filter((g) => g && !isHazardGeofence(g));
+    const named = list.filter((g) => matchesRnzGeofenceName(g.name));
     if (named.length > 0) return { geofences: named, mode: 'name' };
     const withArea = list.filter((g) => {
         const p = parseGeofenceArea(g && g.area);
@@ -178,25 +187,46 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
     for (const g of Array.isArray(allGeofences) ? allGeofences : []) {
         const parsed = parseGeofenceArea(g && g.area);
         if (!parsed) continue;
-        const isMatch = matchedIds.has(g.id);
-        const style = isMatch
-            ? { color: '#0f766e', weight: 3, fillColor: '#14b8a6', fillOpacity: 0.18 }
-            : { color: '#64748b', weight: 2, fillColor: '#94a3b8', fillOpacity: 0.08 };
+        const hazard = isHazardGeofence(g);
+        const isMatch = !hazard && matchedIds.has(g.id);
+        let style;
+        let label;
+        if (hazard) {
+            style = {
+                color: '#dc2626',
+                weight: 3,
+                fillColor: '#ef4444',
+                fillOpacity: 0.22,
+                dashArray: '2 6',
+            };
+            label = 'Hazard';
+        } else if (isMatch) {
+            style = { color: '#0f766e', weight: 3, fillColor: '#14b8a6', fillOpacity: 0.18 };
+            label = 'RNZ boundary';
+        } else {
+            style = { color: '#64748b', weight: 2, fillColor: '#94a3b8', fillOpacity: 0.08 };
+            label = 'Other';
+        }
 
         if (parsed.type === 'circle') {
             L.circle([parsed.lat, parsed.lon], {
                 radius: parsed.radiusM,
                 ...style,
             })
-                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${isMatch ? 'RNZ boundary' : 'Other'}`)
+                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${label}`)
                 .addTo(geofenceLayer);
         } else if (parsed.type === 'polygon') {
             L.polygon(parsed.ring, style)
-                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${isMatch ? 'RNZ boundary' : 'Other'}`)
+                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong><br>${label}`)
                 .addTo(geofenceLayer);
         } else if (parsed.type === 'line') {
-            L.polyline(parsed.points, { color: '#64748b', weight: 2, dashArray: '6 4', opacity: 0.85 })
-                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (line)`)
+            L.polyline(parsed.points, {
+                color: hazard ? '#dc2626' : '#64748b',
+                weight: 2,
+                dashArray: hazard ? '2 6' : '6 4',
+                opacity: 0.85,
+            })
+                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (${hazard ? 'hazard' : 'line'})`)
                 .addTo(geofenceLayer);
         }
     }
