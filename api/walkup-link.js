@@ -9,12 +9,15 @@ function trackerBase() {
 }
 
 function walkupToken() {
-  return String(
+  // RowSafe QR uses the shared club token. Prefer explicit walk-up override,
+  // otherwise always fall back to rnz (ignore blank env placeholders).
+  const fromEnv = String(
     process.env.WALKUP_TOKEN ||
       process.env.ROWING_INGEST_TOKEN ||
       process.env.INGEST_TOKEN ||
-      'rnz',
+      '',
   ).trim();
+  return fromEnv || 'rnz';
 }
 
 export default async function handler(req, res) {
