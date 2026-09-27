@@ -180,25 +180,25 @@ body.rnz-page > *:not(#courseViewOverlay) {
     z-index: 1;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 14px 20px;
+    padding: 6px 14px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 10px;
+    flex-wrap: nowrap;
 }
 
 .rnz-header-brand {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     flex: 1;
-    min-width: min(100%, 280px);
+    min-width: 0;
 }
 
 .rnz-logo-header {
-    width: clamp(120px, 18vw, 180px);
+    width: clamp(88px, 12vw, 130px);
     height: auto;
-    max-height: 72px;
+    max-height: 44px;
     object-fit: contain;
     flex-shrink: 0;
 }
@@ -234,7 +234,7 @@ body.rnz-page .rnz-header-inner {
     flex: 1;
     width: 100%;
     max-width: none;
-    padding-left: calc(20px + clamp(235px, 32vw, 290px));
+    padding-left: calc(14px + clamp(160px, 22vw, 210px));
 }
 
 @media (max-width: 720px) {
@@ -257,11 +257,10 @@ body.rnz-page .rnz-header-inner {
 
 .rnz-crewsight-logo {
     display: block;
-    height: clamp(55px, 7.8vw, 70px);
+    height: clamp(36px, 4.8vw, 48px);
     width: auto;
     object-fit: contain;
-    transform: scale(1.1);
-    transform-origin: center center;
+    transform: none;
 }
 
 .rnz-header-titles {
@@ -301,9 +300,9 @@ body.rnz-page .rnz-header-inner {
 }
 
 .rnz-header-title h1 {
-    font-size: clamp(1.25rem, 3vw, 1.65rem);
+    font-size: clamp(1rem, 2vw, 1.25rem);
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.15;
 }
 
 .rnz-header-nav {
@@ -360,19 +359,21 @@ body.rnz-page .rnz-header-inner {
     overflow: hidden;
 }
 
-/* --- Dashboard: warnings (left) | map | data panel (right) — fits one viewport --- */
+/* --- Dashboard: narrow rails | wide map | rail — map gets the leftover space --- */
 .rnz-dashboard {
-    --rnz-map-w: min(1162px, 100%);
-    --rnz-chart-h: clamp(110px, 16vh, 180px);
-    --rnz-map-col-gap: 10px;
+    --rnz-map-w: 100%;
+    --rnz-chart-h: clamp(72px, 9vh, 112px);
+    --rnz-map-col-gap: 6px;
     --rnz-side-col-h: 100%;
+    --rnz-rail-w: clamp(168px, 16vw, 220px);
     flex: 1 1 auto;
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) minmax(0, 2.4fr) minmax(240px, 1fr);
-    gap: 12px;
+    /* Fixed-ish side rails so the map column grows with the screen */
+    grid-template-columns: var(--rnz-rail-w) minmax(0, 1fr) var(--rnz-rail-w);
+    gap: 8px;
     justify-content: stretch;
     align-items: stretch;
-    padding: 10px 14px 8px;
+    padding: 6px 8px 4px;
     min-height: 0;
     height: auto;
     max-height: none;
@@ -398,30 +399,29 @@ body.rnz-page .rnz-header-inner {
 .rnz-left-column-title {
     flex-shrink: 0;
     margin: 0;
-    padding: 14px 14px 4px;
-    font-size: 1.05rem;
+    padding: 8px 10px 2px;
+    font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     color: #991b1b;
     text-transform: uppercase;
 }
 
 .rnz-left-column-sub {
-    flex-shrink: 0;
-    margin: 0;
-    padding: 0 14px 10px;
-    font-size: 0.82rem;
-    color: var(--rnz-muted);
-    border-bottom: 1px solid var(--rnz-line);
+    display: none;
 }
 
 .rnz-left-scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 8px;
+    padding: 4px 6px 6px;
     display: flex;
     flex-direction: column;
+}
+
+.rnz-left-column .rnz-block-hint {
+    display: none;
 }
 
 .rnz-left-scroll .rnz-panel-details--capsize {
@@ -649,21 +649,16 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
 .rnz-sidebar-title {
     flex-shrink: 0;
     margin: 0;
-    padding: 14px 14px 4px;
-    font-size: 1.05rem;
+    padding: 8px 10px 2px;
+    font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     color: var(--rnz-navy);
     text-transform: uppercase;
 }
 
 .rnz-sidebar-sub {
-    flex-shrink: 0;
-    margin: 0;
-    padding: 0 14px 10px;
-    font-size: 0.82rem;
-    color: var(--rnz-muted);
-    border-bottom: 1px solid var(--rnz-line);
+    display: none;
 }
 
 .rnz-sidebar-body {
@@ -672,7 +667,7 @@ body.rnz-map-fullscreen .rnz-map-mobile-expand-btn {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 8px;
+    padding: 4px 6px 6px;
 }
 
 body.rnz-page .rnz-sidebar--onwater .rnz-snapshot-error {
@@ -808,15 +803,15 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
 .rnz-fleet-dock,
 .rnz-email-dock {
     flex: 0 0 auto;
-    max-height: min(30vh, 280px);
-    padding: 0 14px 10px;
+    max-height: min(22vh, 200px);
+    padding: 0 8px 4px;
     display: flex;
     justify-content: center;
     overflow: hidden;
 }
 
 .rnz-fleet-dock-details[open] {
-    max-height: min(30vh, 280px);
+    max-height: min(22vh, 200px);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -923,17 +918,16 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 8px 16px;
-    padding: 12px 14px;
+    gap: 4px 12px;
+    padding: 6px 28px 6px 10px;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     color: var(--rnz-navy);
     background: var(--rnz-cream);
     border-bottom: 1px solid var(--rnz-line);
     position: relative;
-    padding-right: 32px;
 }
 
 .rnz-fleet-dock-summary::-webkit-details-marker {
@@ -1366,18 +1360,20 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
 
 @media (max-width: 1280px) {
     .rnz-dashboard {
-        grid-template-columns: minmax(160px, 0.9fr) minmax(0, 2.2fr) minmax(200px, 1fr);
+        --rnz-rail-w: clamp(150px, 15vw, 190px);
+        grid-template-columns: var(--rnz-rail-w) minmax(0, 1fr) var(--rnz-rail-w);
     }
 }
 
 @media (max-width: 1024px) {
-    /* Keep one viewport: map fills, side panels become compact drawers with internal scroll */
+    /* Keep one viewport: map gets most height; rails stack below as compact strips */
     .rnz-dashboard {
+        --rnz-rail-w: 100%;
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(0, 1.2fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+        grid-template-rows: minmax(0, 1.6fr) minmax(0, 0.55fr) minmax(0, 0.55fr);
         justify-items: stretch;
-        gap: 8px;
-        padding: 8px 10px 6px;
+        gap: 6px;
+        padding: 4px 6px 2px;
     }
 
     .rnz-map-column {
