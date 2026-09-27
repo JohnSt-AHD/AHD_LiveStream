@@ -44,8 +44,9 @@ export default async function handler(req, res) {
   }
 
   const token = walkupToken();
+  // Use walkup.html explicitly — /walkup can be caught by the CrewSight SPA rewrite.
   const walkupUrl =
-    `${base}/walkup` + (token ? `?token=${encodeURIComponent(token)}` : '');
+    `${base}/walkup.html` + (token ? `?token=${encodeURIComponent(token)}` : '');
 
   res.status(200).json({
     ok: true,
