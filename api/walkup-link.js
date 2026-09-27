@@ -13,7 +13,7 @@ function walkupToken() {
     process.env.WALKUP_TOKEN ||
       process.env.ROWING_INGEST_TOKEN ||
       process.env.INGEST_TOKEN ||
-      '',
+      'rnz',
   ).trim();
 }
 
