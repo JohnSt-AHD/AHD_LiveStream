@@ -245,9 +245,18 @@
         return n;
     }
 
+    function isWalkupCheckInDevice(device) {
+        const attrs = device?.attributes || {};
+        return attrs.noGps === true || String(attrs.source || '').toLowerCase() === 'walkup';
+    }
+
     function countActiveOnWater(devices, positions, activeMinutes = 5) {
         let n = 0;
         for (const d of devices) {
+            if (isWalkupCheckInDevice(d)) {
+                n += 1;
+                continue;
+            }
             const pos = positions[d.id];
             if (!pos || typeof pos.latitude !== 'number' || typeof pos.longitude !== 'number') continue;
             if (Number.isNaN(pos.latitude) || Number.isNaN(pos.longitude)) continue;
