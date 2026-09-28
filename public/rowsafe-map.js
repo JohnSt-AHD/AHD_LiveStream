@@ -47,6 +47,30 @@ function escapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
+/** Crew labels from CrewSight snapshot attributes (name / coach / boat). */
+function deviceCrewFields(device) {
+    const attrs = device?.attributes || {};
+    const name =
+        String(attrs.name || device?.name || device?.uniqueId || '').trim() || 'Device';
+    const coach = String(attrs.coach || attrs.athleteId || '').trim();
+    const boatName = String(attrs.boatName || '').trim();
+    const boatClass = String(attrs.boatClass || '').trim();
+    const rowerName = String(attrs.rowerName || '').trim();
+    const title = rowerName || name;
+    const detailParts = [];
+    if (coach && coach !== title) detailParts.push(`Coach ${coach}`);
+    if (boatName) detailParts.push(boatName);
+    if (boatClass) detailParts.push(boatClass);
+    return {
+        title,
+        detail: detailParts.join(' · '),
+        name,
+        coach,
+        boatName,
+        boatClass,
+    };
+}
+
 function matchesRnzGeofenceName(name) {
     if (!name || typeof name !== 'string') return false;
     const n = name.toLowerCase();
@@ -572,12 +596,16 @@ function updateMapMarkers() {
         const speedKmh = (position.speed * 3.6).toFixed(1);
         const fix = formatDateTime(position.fixTime);
         const addr = escapeHtml(position.address || 'Unknown');
+        const crew = deviceCrewFields(device);
         marker.bindPopup(
-            `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
+            `<div class="rnz-popup-title">${escapeHtml(crew.title)}</div>` +
+                (crew.detail
+                    ? `<div class="rnz-popup-crew">${escapeHtml(crew.detail)}</div>`
+                    : '') +
                 `<div><strong>Speed:</strong> ${speedKmh} km/h</div>` +
                 `<div><strong>Last fix:</strong> ${fix}</div>` +
                 `<div><strong>Location:</strong> ${addr}</div>`,
-            { maxWidth: 260 }
+            { maxWidth: 280 }
         );
 
         latlngs.push(latlng);
@@ -644,9 +672,10 @@ function renderFenceAndLists(parts, stoppedState) {
                             typeof pos.longitude === 'number' &&
                             !Number.isNaN(pos.latitude) &&
                             !Number.isNaN(pos.longitude);
+                        const crew = deviceCrewFields(w.device);
                         const nameHtml = hasLoc
-                            ? `<button type="button" class="device-name--fly device-name--fly-inline" data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${w.device.id}" title="Show on map">${escapeHtml(w.device.name)}</button>`
-                            : `<strong>${escapeHtml(w.device.name)}</strong>`;
+                            ? `<button type="button" class="device-name--fly device-name--fly-inline" data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${w.device.id}" title="Show on map">${escapeHtml(crew.title)}</button>`
+                            : `<strong>${escapeHtml(crew.title)}</strong>`;
                         return `<li>${nameHtml} — ${escapeHtml(w.detail)} (outside boundary).</li>`;
                     })
                     .join('') +
@@ -754,9 +783,10 @@ function renderFleetDevices() {
             typeof position.longitude === 'number' &&
             !Number.isNaN(position.latitude) &&
             !Number.isNaN(position.longitude);
+        const crew = deviceCrewFields(device);
         const nameHtml = hasLoc
-            ? `<button type="button" class="device-name device-name--fly rnz-fleet-name-btn" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(device.name)}</button>`
-            : `<span class="rnz-fleet-name">${escapeHtml(device.name)}</span>`;
+            ? `<button type="button" class="device-name device-name--fly rnz-fleet-name-btn" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(crew.title)}</button>`
+            : `<span class="rnz-fleet-name">${escapeHtml(crew.title)}</span>`;
 
         html += `
             <div class="rnz-fleet-row${rowCriticalClass}">
@@ -765,7 +795,11 @@ function renderFleetDevices() {
                     <span class="device-status ${statusClass}">${statusText}</span>
                 </div>
                 <div class="rnz-fleet-meta">
-                    <span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>
+                    ${
+                        crew.detail
+                            ? `<span class="rnz-fleet-crew">${escapeHtml(crew.detail)}</span>`
+                            : `<span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>`
+                    }
                 </div>
             </div>
         `;
@@ -794,7 +828,11 @@ function renderOnWaterBoats(parts) {
         boats.push({ device: d, pos });
     }
 
-    boats.sort((a, b) => String(a.device.name).localeCompare(String(b.device.name), undefined, { sensitivity: 'base' }));
+    boats.sort((a, b) =>
+        deviceCrewFields(a.device).title.localeCompare(deviceCrewFields(b.device).title, undefined, {
+            sensitivity: 'base',
+        }),
+    );
 
     if (boats.length === 0) {
         el.innerHTML =
@@ -806,12 +844,14 @@ function renderOnWaterBoats(parts) {
         .map(({ device, pos }) => {
             const kmh = (pos.speed * 3.6).toFixed(1);
             const fix = formatDateTime(pos.fixTime);
+            const crew = deviceCrewFields(device);
+            const metaParts = [crew.detail, `${kmh} km/h`, `last ${fix}`].filter(Boolean);
             return (
                 `<button type="button" class="rnz-onwater-row device-name--fly" ` +
                 `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
                 `title="Show on map">` +
-                `<span class="rnz-onwater-name">${escapeHtml(device.name)}</span>` +
-                `<span class="rnz-onwater-meta">${kmh} km/h · last ${escapeHtml(fix)}</span>` +
+                `<span class="rnz-onwater-name">${escapeHtml(crew.title)}</span>` +
+                `<span class="rnz-onwater-meta">${escapeHtml(metaParts.join(' · '))}</span>` +
                 `</button>`
             );
         })

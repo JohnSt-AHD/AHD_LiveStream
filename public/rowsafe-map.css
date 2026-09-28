@@ -1061,6 +1061,16 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
     color: var(--rnz-text);
 }
 
+.rnz-fleet-crew {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--rnz-navy, #0f2740);
+}
+
 .rnz-fleet-meta--split {
     display: flex;
     justify-content: space-between;
@@ -1575,6 +1585,13 @@ body.rnz-page .rnz-sidebar--onwater .rnz-onwater-list {
     font-weight: 700;
     color: var(--rnz-navy);
     margin-bottom: 6px;
+}
+
+.rnz-popup-crew {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--rnz-text);
+    margin: -2px 0 8px;
 }
 
 .leaflet-popup.rnz-popup--device .leaflet-popup-content-wrapper {
