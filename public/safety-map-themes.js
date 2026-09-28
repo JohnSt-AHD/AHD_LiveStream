@@ -67,7 +67,10 @@
             enableDeviceColors: true,
             enableTrailToggle: true,
             lsMapTrail: 'rnzRowsafeMapTrail',
+            // Hide boat-park clutter; safety-map still draws CrewSight hazard zones.
             showGeofencesOnMap: false,
+            geofenceHazardColor: '#dc2626',
+            geofenceHazardFill: '#ef4444',
         },
         kri: {
             id: 'kri',

@@ -883,13 +883,24 @@ function updateKriHubStatsFromUi(warningCount, onWaterCount) {
 }
 
 function geofenceDrawStyle(g, isMatch) {
+    if (isCrewSightHazardGeofence(g)) {
+        const color = SAFETY_THEME.geofenceHazardColor || '#dc2626';
+        const fill = SAFETY_THEME.geofenceHazardFill || '#ef4444';
+        return {
+            color,
+            weight: 3,
+            fillColor: fill,
+            fillOpacity: 0.28,
+            dashArray: '2 6',
+        };
+    }
     if (typeof SAFETY_THEME.classifyGeofenceName === 'function') {
         const kind = SAFETY_THEME.classifyGeofenceName(g.name);
         if (kind === 'hidden') return null;
         if (kind === 'hazard') {
             const color = SAFETY_THEME.geofenceHazardColor || '#dc2626';
             const fill = SAFETY_THEME.geofenceHazardFill || '#ef4444';
-            return { color, weight: 3, fillColor: fill, fillOpacity: 0.32 };
+            return { color, weight: 3, fillColor: fill, fillOpacity: 0.32, dashArray: '2 6' };
         }
         if (kind === 'marshal') {
             const color = SAFETY_THEME.geofenceMarshalColor || '#b45309';
@@ -916,25 +927,44 @@ function geofenceDrawStyle(g, isMatch) {
         : { color: '#64748b', weight: 2, fillColor: '#94a3b8', fillOpacity: 0.08 };
 }
 
+/** CrewSight hazard zones (attributes.kind) — also match legacy Pylons naming. */
+function isCrewSightHazardGeofence(g) {
+    if (!g) return false;
+    const kind = String(g.attributes?.kind || g.kind || '').toLowerCase();
+    if (kind === 'hazard') return true;
+    if (typeof SAFETY_THEME.classifyGeofenceName === 'function') {
+        return SAFETY_THEME.classifyGeofenceName(g.name) === 'hazard';
+    }
+    const n = String(g.name || '').toLowerCase();
+    return n.includes('pylon');
+}
+
 function drawGeofencesOnMap(allGeofences, matchedList) {
     if (!geofenceLayer || !map) return;
     geofenceLayer.clearLayers();
-    if (SAFETY_THEME.showGeofencesOnMap === false) return;
-    const matchedIds = new Set(matchedList.map((g) => g.id));
+    const matchedIds = new Set((matchedList || []).map((g) => g.id));
+    // RowSafe hides boat-park clutter, but still draws hazard zones.
+    const hazardsOnly = SAFETY_THEME.showGeofencesOnMap === false;
+    const source = Array.isArray(allGeofences) ? allGeofences : [];
+    const list = hazardsOnly ? source.filter(isCrewSightHazardGeofence) : [...source];
+    if (!list.length) return;
+    list.sort((a, b) => Number(isCrewSightHazardGeofence(a)) - Number(isCrewSightHazardGeofence(b)));
 
-    for (const g of Array.isArray(allGeofences) ? allGeofences : []) {
+    for (const g of list) {
         const parsed = parseGeofenceArea(g && g.area);
         if (!parsed) continue;
-        const isMatch = matchedIds.has(g.id);
+        const hazard = isCrewSightHazardGeofence(g);
+        const isMatch = !hazard && matchedIds.has(g.id);
         const style = geofenceDrawStyle(g, isMatch);
         if (!style) continue;
         const boundaryTag = SAFETY_THEME.boundaryPopup || 'Boundary';
-        const kind =
-            typeof SAFETY_THEME.classifyGeofenceName === 'function'
-                ? SAFETY_THEME.classifyGeofenceName(g.name)
-                : isMatch
-                  ? 'boundary'
-                  : 'other';
+        const kind = hazard
+            ? 'hazard'
+            : typeof SAFETY_THEME.classifyGeofenceName === 'function'
+              ? SAFETY_THEME.classifyGeofenceName(g.name)
+              : isMatch
+                ? 'boundary'
+                : 'other';
         const popupTag =
             kind === 'hazard'
                 ? 'Hazard area'
@@ -970,7 +1000,7 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
                 kind === 'hazard' || kind === 'marshal' || kind === 'warmupline' ? 3 : 2;
             const lineDash =
                 kind === 'hazard' || kind === 'marshal' || kind === 'warmupline'
-                    ? undefined
+                    ? '2 6'
                     : '6 4';
             L.polyline(parsed.points, {
                 color: lineColor,
@@ -978,7 +1008,7 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
                 dashArray: lineDash,
                 opacity: 0.92,
             })
-                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (line)`)
+                .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (${popupTag})`)
                 .addTo(geofenceLayer);
         }
     }
