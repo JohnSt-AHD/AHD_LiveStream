@@ -1090,21 +1090,52 @@ function showBoundaryCriticalAlert(device, position) {
     return isCriticalOutsideAlert(device, position, lastFenceParts, lastStoppedState);
 }
 
+function deviceCrewFields(device) {
+    const attrs = device?.attributes || {};
+    const name =
+        String(attrs.name || device?.name || device?.uniqueId || '').trim() || 'Device';
+    const coach = String(attrs.coach || attrs.athleteId || device?.athleteId || '').trim();
+    const boatName = String(attrs.boatName || '').trim();
+    const boatClass = String(attrs.boatClass || '').trim();
+    const rowerName = String(attrs.rowerName || '').trim();
+    const title = rowerName || name;
+    const detailParts = [];
+    if (coach && coach !== title) detailParts.push(`Coach ${coach}`);
+    if (boatName) detailParts.push(boatName);
+    if (boatClass) detailParts.push(boatClass);
+    return {
+        title,
+        detail: detailParts.join(' · '),
+        name,
+        coach,
+        boatName,
+        boatClass,
+        rowerName,
+    };
+}
+
 function athleteIdForDevice(device) {
     if (!device) return '';
     const attrs =
         device.attributes && typeof device.attributes === 'object' ? device.attributes : {};
-    const raw = device.athleteId ?? attrs.athleteId ?? attrs.athlete ?? '';
+    const raw = device.athleteId ?? attrs.athleteId ?? attrs.athlete ?? attrs.coach ?? '';
     return String(raw || '').trim();
 }
 
 function athleteMetaHtml(device, { compact = false } = {}) {
-    const id = athleteIdForDevice(device);
-    const label = id ? escapeHtml(id) : '—';
-    if (compact) {
-        return `<span class="rnz-meta-athlete" title="Athlete ID">${label}</span>`;
+    const crew = deviceCrewFields(device);
+    if (!crew.detail && !crew.coach && !crew.boatName && !crew.boatClass) {
+        const label = '—';
+        if (compact) {
+            return `<span class="rnz-meta-athlete" title="Crew">${label}</span>`;
+        }
+        return `<span class="rnz-fleet-athlete" title="Crew">Crew: <strong>${label}</strong></span>`;
     }
-    return `<span class="rnz-fleet-athlete" title="Athlete ID">Athlete: <strong>${label}</strong></span>`;
+    const label = escapeHtml(crew.detail || `Coach ${crew.coach}`);
+    if (compact) {
+        return `<span class="rnz-meta-athlete" title="Coach and boat">${label}</span>`;
+    }
+    return `<span class="rnz-fleet-athlete" title="Coach and boat">${label}</span>`;
 }
 
 function formatDevicePace(positionOrMps, deviceLabel, athleteId) {
@@ -2149,9 +2180,10 @@ function renderFleetDevices() {
             typeof position.longitude === 'number' &&
             !Number.isNaN(position.latitude) &&
             !Number.isNaN(position.longitude);
+        const crew = deviceCrewFields(device);
         const nameHtml = hasLoc
-            ? `<button type="button" class="device-name device-name--fly rnz-fleet-name-btn" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(device.name)}</button>`
-            : `<span class="rnz-fleet-name">${escapeHtml(device.name)}</span>`;
+            ? `<button type="button" class="device-name device-name--fly rnz-fleet-name-btn" data-fly-lat="${position.latitude}" data-fly-lng="${position.longitude}" data-device-id="${device.id}" title="Show on map">${escapeHtml(crew.title)}</button>`
+            : `<span class="rnz-fleet-name">${escapeHtml(crew.title)}</span>`;
         const walkupMeta = walkup
             ? `<span class="rnz-fleet-walkup" title="Logbook check-in (no GPS)">No GPS · logbook</span>`
             : '';
@@ -2163,9 +2195,12 @@ function renderFleetDevices() {
                     <span class="device-status ${statusClass}">${statusText}</span>
                 </div>
                 <div class="rnz-fleet-meta rnz-fleet-meta--split">
-                    <span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>
+                    ${
+                        crew.detail
+                            ? `<span class="rnz-fleet-crew">${escapeHtml(crew.detail)}</span>`
+                            : `<span class="rnz-fleet-group" title="Traccar group">Group: <strong>${groupName}</strong></span>`
+                    }
                     ${walkupMeta}
-                    ${athleteMetaHtml(device)}
                 </div>
             </div>
         `;
@@ -2234,14 +2269,18 @@ function renderOnWaterBoats(boundaryParts) {
                 const colorMark = palette
                     ? `<span class="rnz-onwater-color-mark" style="background:${palette.fill}" aria-hidden="true"></span>`
                     : '';
+                const crew = deviceCrewFields(device);
                 const nameHtml = walkup
-                    ? `<span class="rnz-onwater-card-name">${escapeHtml(device.name)}</span>`
+                    ? `<span class="rnz-onwater-card-name">${escapeHtml(crew.title)}</span>`
                     : `<button type="button" class="rnz-onwater-card-name device-name--fly" ` +
                       `data-fly-lat="${pos.latitude}" data-fly-lng="${pos.longitude}" data-device-id="${device.id}" ` +
-                      `title="Show on map">${escapeHtml(device.name)}</button>`;
+                      `title="Show on map">${escapeHtml(crew.title)}</button>`;
                 const pace = walkup ? '—' : formatDevicePace(pos, device.name, athleteIdForDevice(device));
                 const stroke = walkup ? '—' : formatStrokeRate(pos);
                 const fromRnz = walkup ? '—' : formatDistanceFromRnz(distM);
+                const crewMeta = crew.detail
+                    ? `<span class="rnz-meta-athlete" title="Coach and boat">${escapeHtml(crew.detail)}</span>`
+                    : athleteMetaHtml(device, { compact: true });
                 return (
                     `<article class="rnz-onwater-card${followUi.cardClasses}${palette ? ' rnz-onwater-card--device-color' : ''}" data-device-id="${device.id}"${colorAttrs}>` +
                     `<div class="rnz-onwater-card-head">` +
@@ -2258,7 +2297,7 @@ function renderOnWaterBoats(boundaryParts) {
                     `<span class="rnz-onwater-geofence-left">` +
                     `<span class="rnz-onwater-geofence-label">${walkup ? 'Status' : 'Geofence'}</span> ` +
                     `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></span>` +
-                    `${athleteMetaHtml(device, { compact: true })}</p></article>`
+                    `${crewMeta}</p></article>`
                 );
             })
             .join('');
