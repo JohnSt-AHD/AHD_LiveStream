@@ -206,9 +206,17 @@ function boundaryPartsFromGeofences(list) {
 function drawGeofencesOnMap(allGeofences, matchedList) {
     if (!geofenceLayer || !map) return;
     geofenceLayer.clearLayers();
+    if (map.createPane && !map.getPane('hazardPane')) {
+        map.createPane('hazardPane');
+        map.getPane('hazardPane').style.zIndex = '450';
+        map.getPane('hazardPane').style.pointerEvents = 'auto';
+    }
     const matchedIds = new Set(matchedList.map((g) => g.id));
+    const list = Array.isArray(allGeofences) ? [...allGeofences] : [];
+    // Draw hazards last so they sit above boat-park / boundary fills.
+    list.sort((a, b) => Number(isHazardGeofence(a)) - Number(isHazardGeofence(b)));
 
-    for (const g of Array.isArray(allGeofences) ? allGeofences : []) {
+    for (const g of list) {
         const parsed = parseGeofenceArea(g && g.area);
         if (!parsed) continue;
         const hazard = isHazardGeofence(g);
@@ -220,8 +228,9 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
                 color: '#dc2626',
                 weight: 3,
                 fillColor: '#ef4444',
-                fillOpacity: 0.22,
+                fillOpacity: 0.28,
                 dashArray: '2 6',
+                pane: 'hazardPane',
             };
             label = 'Hazard';
         } else if (isMatch) {
@@ -246,9 +255,10 @@ function drawGeofencesOnMap(allGeofences, matchedList) {
         } else if (parsed.type === 'line') {
             L.polyline(parsed.points, {
                 color: hazard ? '#dc2626' : '#64748b',
-                weight: 2,
+                weight: hazard ? 3 : 2,
                 dashArray: hazard ? '2 6' : '6 4',
-                opacity: 0.85,
+                opacity: 0.9,
+                pane: hazard ? 'hazardPane' : undefined,
             })
                 .bindPopup(`<strong>${escapeHtml(g.name || 'Geofence')}</strong> (${hazard ? 'hazard' : 'line'})`)
                 .addTo(geofenceLayer);

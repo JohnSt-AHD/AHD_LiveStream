@@ -37,9 +37,14 @@
         <section class="rnz-logbook" aria-labelledby="hazards-heading">
             <div class="rnz-logbook-intro">
                 <h2 id="hazards-heading">Hazard register</h2>
-                <p>Crew entries into hazard geofences (for example Pylons) by day — expand a day for enter/exit times.</p>
+                <p>Defined hazard zones (from CrewSight Manager) plus crew enter/exit events by day.</p>
             </div>
             <p id="hazardsStatus" class="rnz-logbook-status" role="status">Loading hazard register…</p>
+
+            <h3 class="rnz-hazards-section-title">Defined hazards</h3>
+            <div id="hazardsZones" class="rnz-hazard-zones" hidden></div>
+
+            <h3 class="rnz-hazards-section-title">Entry log</h3>
             <div id="hazardsList" class="rnz-logbook-list" hidden></div>
         </section>
     </main>

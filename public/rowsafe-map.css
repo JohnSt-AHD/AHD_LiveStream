@@ -2054,3 +2054,44 @@ body.rnz-page .rnz-onwater-stat--distance dd {
     color: #94a3b8;
     margin-top: 2px;
 }
+
+.rnz-map-legend {
+    position: absolute;
+    left: 10px;
+    bottom: 52px;
+    z-index: 500;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin: 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(15, 39, 64, 0.12);
+    box-shadow: 0 2px 8px rgba(15, 39, 64, 0.12);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #334155;
+    pointer-events: none;
+}
+
+.rnz-map-legend-item--boundary {
+    color: #0f766e;
+}
+
+.rnz-map-legend-item--hazard {
+    color: #dc2626;
+}
+
+.rnz-map-legend-item--other {
+    color: #64748b;
+}
+
+@media (max-width: 720px) {
+    .rnz-map-legend {
+        bottom: 48px;
+        left: 8px;
+        right: 8px;
+        font-size: 0.68rem;
+    }
+}

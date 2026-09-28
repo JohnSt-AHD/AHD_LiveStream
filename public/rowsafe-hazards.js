@@ -3,6 +3,7 @@
     const RECENT_DAYS = 7;
     const statusEl = document.getElementById('hazardsStatus');
     const listEl = document.getElementById('hazardsList');
+    const zonesEl = document.getElementById('hazardsZones');
 
     function setStatus(message, isError) {
         if (!statusEl) return;
@@ -64,6 +65,39 @@
             month: '2-digit',
             day: '2-digit',
         }).format(new Date(Date.now() - daysAgo * 86400000));
+    }
+
+    function shapeLabel(z) {
+        if (z.shapeType === 'polygon') return 'Polygon';
+        const r = Number(z.radiusM);
+        return Number.isFinite(r) ? `Circle · ${Math.round(r)} m` : 'Circle';
+    }
+
+    function renderZones(zones) {
+        if (!zonesEl) return;
+        if (!zones?.length) {
+            zonesEl.hidden = false;
+            zonesEl.innerHTML =
+                '<p class="rnz-logbook-status">No hazard zones defined yet. In CrewSight Manager → Setup → Geofences, set Kind to Hazard (or Edit an existing zone).</p>';
+            return;
+        }
+        zonesEl.hidden = false;
+        zonesEl.innerHTML =
+            `<ul class="rnz-hazard-zone-list">` +
+            zones
+                .map(
+                    (z) =>
+                        `<li class="rnz-hazard-zone-item">` +
+                        `<strong class="rnz-hazard-name">${escapeHtml(z.name || 'Hazard')}</strong>` +
+                        `<span class="rnz-hazard-zone-meta">${escapeHtml(shapeLabel(z))}` +
+                        `${z.notifyOnEnter ? ' · entry notify on' : ''}</span>` +
+                        (z.entryNotifyMessage
+                            ? `<span class="rnz-hazard-zone-msg">“${escapeHtml(z.entryNotifyMessage)}”</span>`
+                            : '') +
+                        `</li>`,
+                )
+                .join('') +
+            `</ul>`;
     }
 
     function renderEntries(entries) {
@@ -150,13 +184,13 @@
     }
 
     function renderDays(days) {
+        if (!listEl) return;
         if (!days?.length) {
-            setStatus('No hazard entries found in the last 45 days.', false);
-            listEl.hidden = true;
-            listEl.innerHTML = '';
+            listEl.hidden = false;
+            listEl.innerHTML =
+                '<p class="rnz-logbook-status">No crew entries yet. Entries appear when a recorder GPS fix enters a hazard zone.</p>';
             return;
         }
-        setStatus('', false);
         listEl.hidden = false;
 
         const cutoff = dateKeyDaysAgo(RECENT_DAYS);
@@ -173,7 +207,7 @@
         ].join('');
     }
 
-    async function fetchHazardDays(days) {
+    async function fetchHazardRegister(days) {
         const res = await fetch(
             '/api/traccar?action=hazards&source=rowing&days=' +
                 encodeURIComponent(String(days)) +
@@ -185,16 +219,33 @@
         if (!res.ok || data.ok === false) {
             throw new Error(data.error || `Failed to load hazards (${res.status})`);
         }
-        return Array.isArray(data.days) ? data.days : [];
+        return {
+            days: Array.isArray(data.days) ? data.days : [],
+            zones: Array.isArray(data.zones) ? data.zones : [],
+        };
     }
 
     async function loadHazards() {
         setStatus('Loading hazard register…', false);
         try {
-            renderDays(await fetchHazardDays(45));
+            const { days, zones } = await fetchHazardRegister(45);
+            renderZones(zones);
+            renderDays(days);
+            const zoneN = zones.length;
+            const entryN = days.reduce((n, d) => n + (d.entryCount || 0), 0);
+            setStatus(
+                `${zoneN} hazard zone${zoneN === 1 ? '' : 's'} · ${entryN} entr${entryN === 1 ? 'y' : 'ies'} in the last 45 days.`,
+                false,
+            );
         } catch (err) {
-            listEl.hidden = true;
-            listEl.innerHTML = '';
+            if (zonesEl) {
+                zonesEl.hidden = true;
+                zonesEl.innerHTML = '';
+            }
+            if (listEl) {
+                listEl.hidden = true;
+                listEl.innerHTML = '';
+            }
             setStatus(err instanceof Error ? err.message : String(err), true);
         }
     }
