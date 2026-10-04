@@ -11,6 +11,7 @@
         lower: [
             { id: 'lower', label: 'Lower third (whole layer)' },
             { id: 'lower-meta', label: 'Lower — round / heat' },
+            { id: 'lower-race-line', label: 'Lower — race + time' },
             { id: 'lower-race', label: 'Lower — race number + time' },
             { id: 'lower-race-time', label: 'Lower — start time' },
             { id: 'lower-race-number', label: 'Lower — race number' },

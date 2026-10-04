@@ -32,6 +32,10 @@ html.vg-preview body {
     background: #1a2830;
 }
 
+html.vg-preview body[data-vmix-theme='rnz-milford'] {
+    background: linear-gradient(180deg, #6eb4d8 0%, #2f7aa8 42%, #1c5478 100%);
+}
+
 html.vg-preview .vmix-page {
     width: 100%;
     height: 100%;
@@ -1502,6 +1506,12 @@ body.cv-clip-still .cv-clip-video {
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower {
+    --mf-navy: #101921;
+    --mf-orange: #e66911;
+    --mf-mountain: rgba(16, 25, 33, 0.72);
+    --mf-bar-white: #ffffff;
+    --mf-bar-rule: #1a1a1a;
+    --mf-ease: ease-in-out;
     left: 0;
     top: 0;
     right: auto;
@@ -1514,7 +1524,6 @@ body.cv-clip-still .cv-clip-video {
 }
 
 [data-vmix-theme='rnz-milford'] .mf-lower-chrome,
-[data-vmix-theme='rnz-milford'] .mf-lower-intro,
 [data-vmix-theme='rnz-milford'] .mf-lower-logo-dock,
 [data-vmix-theme='rnz-milford'] .mf-lower-logo-art,
 [data-vmix-theme='rnz-milford'] .mf-lower-mountains,
@@ -1531,49 +1540,69 @@ body.cv-clip-still .cv-clip-video {
     z-index: 0;
 }
 
-/* Pixel-perfect intro from LowerT.mov (45 frames @ 30fps, cropped). */
-[data-vmix-theme='rnz-milford'] .mf-lower-intro {
-    left: 0;
-    top: 923px;
-    width: 1006px;
-    height: 158px;
-    z-index: 4;
-    background-image: url('assets/vmix/milford/lower-intro-sprite.webp');
-    background-repeat: no-repeat;
-    background-size: 1006px 7110px;
-    background-position: 0 0;
-    opacity: 0;
-}
-
 [data-vmix-theme='rnz-milford'] .mf-lower-logo-dock {
     left: 0;
-    top: 925px;
+    top: 927px;
     width: 284px;
-    height: 155px;
-    z-index: 1;
-}
-
-[data-vmix-theme='rnz-milford'] .mf-lower-logo-art {
-    left: 44px;
-    top: 943px;
-    width: 240px;
-    height: 105px;
+    height: 153px;
     z-index: 2;
 }
 
+[data-vmix-theme='rnz-milford'] .mf-lower-logo-art {
+    left: 45px;
+    top: 965px;
+    width: 113px;
+    height: 82px;
+    z-index: 4;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-lower-logo-mark,
+[data-vmix-theme='rnz-milford'] .mf-lower-logo-word {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: left center;
+    pointer-events: none;
+}
+
 [data-vmix-theme='rnz-milford'] .mf-lower-mountains {
-    left: 280px;
-    top: 943px;
-    width: 724px;
-    height: 137px;
+    left: 0;
+    top: 928px;
+    width: 1010px;
+    height: 152px;
     z-index: 1;
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.52) 0%,
+        rgba(0, 0, 0, 0.52) 32%,
+        rgba(0, 0, 0, 1) 50%,
+        rgba(0, 0, 0, 0.52) 68%,
+        rgba(0, 0, 0, 0.52) 100%
+    );
+    mask-image: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.52) 0%,
+        rgba(0, 0, 0, 0.52) 32%,
+        rgba(0, 0, 0, 1) 50%,
+        rgba(0, 0, 0, 0.52) 68%,
+        rgba(0, 0, 0, 0.52) 100%
+    );
+    -webkit-mask-size: 240% 100%;
+    mask-size: 240% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-lower-bars {
-    left: 288px;
-    top: 943px;
-    width: 352px;
-    height: 44px;
+    left: 253px;
+    top: 945px;
+    width: 384px;
+    height: 40px;
     z-index: 3;
 }
 
@@ -1582,63 +1611,140 @@ body.cv-clip-still .cv-clip-video {
     opacity: 1;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-intro {
-    animation:
-        mf-lower-intro-play 1.5s steps(44) both,
-        mf-lower-intro-hide 0.01s linear 1.5s forwards;
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-dock {
+    opacity: 0;
+    animation: mf-lower-dock-in 0.75s var(--mf-ease) both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-dock,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-art,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-mountains,
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-mountains {
+    opacity: 0;
+    animation:
+        mf-lower-mountains-in 1.05s var(--mf-ease) 0.12s both,
+        mf-lower-mountains-fade-loop 9s ease-in-out 1.2s infinite;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-bars {
     opacity: 0;
-    animation: vg-fade-in 0.01s linear 1.5s both;
+    animation: mf-lower-bars-in 0.85s var(--mf-ease) 0.38s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-mark {
+    opacity: 0;
+    animation: mf-lower-logo-mark-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-word {
+    opacity: 0;
+    animation: mf-lower-logo-word-in 0.55s var(--mf-ease) 0.72s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-meta,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-race-time,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-race-number,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-progression,
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-race-line,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-event {
     opacity: 0;
-    animation: vg-fade-in 0.28s ease-out 1.4s both;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-intro {
-    animation: none !important;
-    opacity: 0;
-    background-position: 0 -6952px;
+    animation: mf-lower-text-in 0.6s var(--mf-ease) 1.05s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-logo-dock,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-logo-art,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-mountains,
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-logo-mark,
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-logo-word,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-bars,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .vg-lower-meta,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .vg-lower-race-time,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .vg-lower-race-number,
-[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .vg-lower-progression,
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .vg-lower-race-line,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .vg-lower-event {
     animation: none !important;
     opacity: 1;
+    transform: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-mountains {
+    animation: mf-lower-mountains-fade-loop 9s ease-in-out infinite !important;
+    opacity: 1;
+    transform: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-bars {
     clip-path: none;
 }
 
-@keyframes mf-lower-intro-play {
+@keyframes mf-lower-dock-in {
     from {
-        opacity: 1;
-        background-position: 0 0;
+        transform: translateX(-28px);
+        opacity: 0;
     }
     to {
+        transform: none;
         opacity: 1;
-        background-position: 0 -6952px;
     }
 }
 
-@keyframes mf-lower-intro-hide {
-    to {
+@keyframes mf-lower-mountains-in {
+    from {
+        transform: translateX(-36px);
         opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes mf-lower-mountains-fade-loop {
+    0%,
+    100% {
+        -webkit-mask-position: 100% 0;
+        mask-position: 100% 0;
+    }
+    50% {
+        -webkit-mask-position: 0% 0;
+        mask-position: 0% 0;
+    }
+}
+
+@keyframes mf-lower-bars-in {
+    from {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+}
+
+@keyframes mf-lower-logo-mark-in {
+    from {
+        transform: translateY(14px) scale(0.82);
+        opacity: 0;
+    }
+    65% {
+        transform: translateY(-2px) scale(1.04);
+        opacity: 1;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes mf-lower-logo-word-in {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+@keyframes mf-lower-text-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
 
@@ -1815,83 +1921,57 @@ body.cv-clip-still .cv-clip-video {
     box-sizing: border-box;
     margin: 0;
     position: absolute;
-    left: 270px;
-    top: 946px;
-    width: 131px;
-    height: 36px;
+    left: 253px;
+    top: 945px;
+    width: 170px;
+    height: 40px;
     z-index: 4;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    padding: 0 22px 0 8px;
+    font-size: 18px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
     line-height: 1;
     white-space: nowrap;
     overflow: visible;
     color: #fff;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-lower-race-time,
-[data-vmix-theme='rnz-milford'] .vg-lower-race-number {
+[data-vmix-theme='rnz-milford'] .vg-lower-race-line {
     box-sizing: border-box;
     margin: 0;
     position: absolute;
-    top: 946px;
+    left: 423px;
+    top: 945px;
+    width: 214px;
+    height: 40px;
     z-index: 4;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    padding: 0 28px 0 8px;
+    font-size: 18px;
     font-weight: 700;
     line-height: 1;
     white-space: nowrap;
     color: #111;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-lower-race-time {
-    left: 416px;
-    width: 77px;
-    height: 36px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-lower-race-number {
-    left: 493px;
-    width: 122px;
-    height: 36px;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-lower-progression {
-    position: absolute;
-    left: 657px;
-    top: 958px;
-    z-index: 4;
-    margin: 0;
-    width: 179px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-    color: #ffffff;
-}
-
 [data-vmix-theme='rnz-milford'] .vg-lower-event {
     position: absolute;
-    left: 287px;
+    left: 270px;
     top: 996px;
     z-index: 4;
     margin: 0;
-    width: 615px;
-    height: 64px;
+    width: 520px;
+    height: 56px;
     display: flex;
     align-items: center;
-    font-size: 36px;
-    font-weight: 700;
-    line-height: 1.15;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.1;
     color: #fff;
     text-shadow: none;
 }
