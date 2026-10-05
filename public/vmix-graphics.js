@@ -3883,11 +3883,14 @@ function vgRenderMilfordCvBoard(layer, race) {
     timer.appendChild(logo);
     root.appendChild(timer);
 
-    const obase = document.createElement('img');
+    const obase = document.createElement('div');
     obase.className = 'mf-cvboard-obase';
-    obase.src = 'assets/vmix/milford/cvboard-orange-bar.png?v=1';
-    obase.alt = '';
     obase.setAttribute('aria-hidden', 'true');
+    const obaseImg = document.createElement('img');
+    obaseImg.className = 'mf-cvboard-obase-img';
+    obaseImg.src = 'assets/vmix/milford/cvboard-orange-bar.png?v=1';
+    obaseImg.alt = '';
+    obase.appendChild(obaseImg);
     root.appendChild(obase);
 
     layer.appendChild(root);

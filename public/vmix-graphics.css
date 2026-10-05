@@ -4434,7 +4434,8 @@ body.cv-clip-still .cv-clip-video {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: rgba(16, 25, 33, 0.94);
+    transform-origin: bottom center;
+    background: rgba(16, 25, 33, 0.82);
     clip-path: polygon(
         0% 7.3%,
         4.4% 6.1%,
@@ -4514,29 +4515,51 @@ body.cv-clip-still .cv-clip-video {
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-qline {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 0 0 20px;
-    min-height: 20px;
+    position: relative;
+    display: block;
+    /* Thin slot + negative margin: sit tight to crews like the orange 1st rule */
+    flex: 0 0 12px;
+    min-height: 12px;
+    margin-top: -5px;
+    margin-bottom: -5px;
+    overflow: visible;
     pointer-events: none;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-qline-rule {
-    flex: 1 1 auto;
+    position: absolute;
+    left: 0;
+    /* Leave room for QF label at the panel edge */
+    right: 28px;
+    top: 50%;
     height: 2px;
+    margin-top: -1px;
     background: #2f6fe4;
     border-radius: 1px;
+    transition: right 0.6s cubic-bezier(0.45, 0, 0.15, 1);
+}
+
+/* Match orange 1st-place rule: extend under split column */
+[data-vmix-theme='rnz-milford'] .mf-cvboard--split .mf-cvboard-qline-rule {
+    right: -128px;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-qline-label {
-    flex: 0 0 auto;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     color: #2f6fe4;
     font-family: Inter, "Segoe UI", sans-serif;
     font-size: 13px;
     font-weight: 800;
     letter-spacing: 0.04em;
     line-height: 1;
+    transition: right 0.6s cubic-bezier(0.45, 0, 0.15, 1);
+}
+
+[data-vmix-theme='rnz-milford'] .mf-cvboard--split .mf-cvboard-qline-label {
+    right: -148px;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-rank {
@@ -4611,7 +4634,7 @@ body.cv-clip-still .cv-clip-video {
     background: var(--mf-orange, #e66911);
     z-index: 3;
     pointer-events: none;
-    transition: right 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: right 0.6s cubic-bezier(0.45, 0, 0.15, 1);
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard--split .mf-cvboard-row--lead::after {
@@ -4621,7 +4644,7 @@ body.cv-clip-still .cv-clip-video {
 /* SPLIT label — same column as split times */
 [data-vmix-theme='rnz-milford'] .mf-cvboard-split-label {
     left: calc(100% + 24px);
-    top: 22px;
+    top: 12px;
     right: auto;
     bottom: auto;
     width: 88px;
@@ -4682,7 +4705,8 @@ body.cv-clip-still .cv-clip-video {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: #fff;
+    transform-origin: bottom center;
+    background: rgba(255, 255, 255, 0.88);
     /* Left mountain face traced from MOV */
     clip-path: polygon(
         0% 100%,
@@ -4747,39 +4771,98 @@ body.cv-clip-still .cv-clip-video {
     width: 970px;
     height: 30px;
     z-index: 6;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-image: url('assets/vmix/milford/cvboard-orange-bar.png?v=1');
+    mask-image: url('assets/vmix/milford/cvboard-orange-bar.png?v=1');
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-cvboard-obase-img {
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: fill;
     object-position: left bottom;
+}
+
+/* Lighter fade sweeping left → right across the orange bar */
+[data-vmix-theme='rnz-milford'] .mf-cvboard-obase::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    bottom: -40%;
+    left: 0;
+    width: 32%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 236, 210, 0.08) 30%,
+        rgba(255, 248, 235, 0.5) 48%,
+        rgba(255, 255, 255, 0.65) 50%,
+        rgba(255, 248, 235, 0.5) 52%,
+        rgba(255, 236, 210, 0.08) 70%,
+        transparent 100%
+    );
+    mix-blend-mode: soft-light;
     pointer-events: none;
+    opacity: 0;
+    will-change: transform;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard::after {
     content: none;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-panel,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-panel-bg,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-timer,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-timer-bg,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-obase,
+/*
+ * Entrance sequence (ease-in-out):
+ * 1) orange bar grows L→R
+ * 2) white + navy plates grow up from the orange bar
+ * 3) logo + clock + row text fade in
+ */
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-obase {
+    animation: mf-cvboard-bar-in 0.78s cubic-bezier(0.45, 0, 0.15, 1) both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-obase::after {
+    animation:
+        mf-cvboard-fade-in 0.35s cubic-bezier(0.45, 0, 0.15, 1) 0.85s both,
+        mf-cvboard-obase-shine 3.6s ease-in-out 1.35s infinite;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-timer-bg {
+    animation: mf-cvboard-plate-up 0.72s cubic-bezier(0.45, 0, 0.15, 1) 0.72s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-panel-bg {
+    animation: mf-cvboard-plate-up 0.78s cubic-bezier(0.45, 0, 0.15, 1) 0.76s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-list,
 [data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-clock,
 [data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-logo {
-    animation: mf-cvboard-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: mf-cvboard-fade-in 0.65s cubic-bezier(0.45, 0, 0.15, 1) both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-timer,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-timer-bg {
-    animation-delay: 0.08s;
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-list {
+    animation-delay: 1.22s;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-panel,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-panel-bg {
-    animation-delay: 0.14s;
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-clock {
+    animation-delay: 1.28s;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-panel,
-[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-timer,
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-cvboard-logo {
+    animation-delay: 1.36s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-panel-bg,
 [data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-timer-bg,
 [data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-obase,
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-list,
 [data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-clock,
 [data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-logo {
     animation: none !important;
@@ -4787,14 +4870,65 @@ body.cv-clip-still .cv-clip-video {
     transform: none;
 }
 
-@keyframes mf-cvboard-in {
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-obase {
+    clip-path: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--cvboard.kp-refresh .mf-cvboard-obase::after {
+    opacity: 1;
+    animation: mf-cvboard-obase-shine 3.6s ease-in-out infinite !important;
+}
+
+@keyframes mf-cvboard-bar-in {
+    from {
+        clip-path: inset(0 100% 0 0);
+        opacity: 1;
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+}
+
+@keyframes mf-cvboard-plate-up {
+    /* Hidden during delay so the collapsed line isn't visible under the growing bar */
+    from {
+        transform: scaleY(0);
+        opacity: 0;
+    }
+    1% {
+        transform: scaleY(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+        transform: scaleY(0.04);
+    }
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+@keyframes mf-cvboard-fade-in {
     from {
         opacity: 0;
-        transform: translateY(28px);
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes mf-cvboard-obase-shine {
+    0%,
+    12% {
+        transform: translateX(-130%);
+    }
+    55%,
+    100% {
+        transform: translateX(380%);
     }
 }
 

@@ -467,7 +467,7 @@
                     top: 'auto',
                     bottom: '22px',
                     width: '392px',
-                    height: '520px',
+                    /* height set live from crew count (--mf-cvboard-h) */
                 },
                 'mf-cvboard-timer': {
                     left: '965px',
@@ -477,7 +477,7 @@
                 },
                 'mf-cvboard-split-label': {
                     left: 'calc(100% + 24px)',
-                    top: '22px',
+                    top: '12px',
                     width: '88px',
                     height: '40px',
                 },
@@ -485,7 +485,7 @@
                     left: '18px',
                     top: '52px',
                     width: '358px',
-                    height: '440px',
+                    /* bottom padding from CSS; height follows crew count */
                 },
             },
         },

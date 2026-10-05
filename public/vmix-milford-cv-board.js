@@ -8,9 +8,7 @@
     const SAMPLE_URL = 'data/cv-demo/milford-leaderboard-sample.json';
     const SHIFT_PX = 140;
     /** Panel height: pads + rows × rowH + gaps (bottom-anchored to orange). */
-    const PANEL_PAD_TOP = 52;
     const PANEL_PAD_BOTTOM = 28;
-    const PANEL_SLACK = 24;
     const ROW_H = 42;
     const ROW_GAP = 6;
 
@@ -319,10 +317,40 @@
         return sampleCache;
     }
 
+    /** Demo helper: ?crews=4 keeps the top N boats (by chainage) from the sample. */
+    function limitCrews(snap) {
+        const n = parseInt(params().get('crews') || '', 10);
+        if (!Number.isFinite(n) || n < 1 || !snap?.boats?.length) return snap;
+        if (n >= snap.boats.length) return snap;
+        const boats = [...snap.boats]
+            .sort((a, b) => Number(b.chainage_m) - Number(a.chainage_m))
+            .slice(0, n);
+        const lanes = new Set(boats.map((b) => Number(b.lane)));
+        snap.boats = boats;
+        if (Array.isArray(snap.draw)) {
+            snap.draw = snap.draw.filter((d) => lanes.has(Number(d.lane)));
+        }
+        if (snap.splits?.by_mark) {
+            for (const key of Object.keys(snap.splits.by_mark)) {
+                const rows = snap.splits.by_mark[key];
+                if (Array.isArray(rows)) {
+                    snap.splits.by_mark[key] = rows.filter((r) =>
+                        lanes.has(Number(r.lane)),
+                    );
+                }
+            }
+        }
+        /* Typical 4-crew heat: top 2 advance */
+        if (n <= 4 && /1\s*-\s*3\s*=/.test(String(snap.progression || ''))) {
+            snap.progression = '1-2=S; Rest Elim';
+        }
+        return snap;
+    }
+
     async function fetchRace() {
         if (useSample()) {
             const snap = await loadSample();
-            return structuredClone(snap);
+            return limitCrews(structuredClone(snap));
         }
         try {
             const res = await fetch(`${cvOrigin()}/api/race`, {
@@ -333,7 +361,7 @@
             return await res.json();
         } catch {
             const snap = await loadSample();
-            return structuredClone(snap);
+            return limitCrews(structuredClone(snap));
         }
     }
 
@@ -350,13 +378,6 @@
                   )[0]?.elapsed_ms,
               )
             : null;
-
-        rootEl.classList.toggle('mf-cvboard--split', !!split);
-        if (split) {
-            rootEl.style.setProperty('--mf-cvboard-shift', `-${SHIFT_PX}px`);
-        } else {
-            rootEl.style.setProperty('--mf-cvboard-shift', '0px');
-        }
 
         const clockEl = rootEl.querySelector('.mf-cvboard-clock');
         if (clockEl) {
@@ -387,88 +408,162 @@
                 : null;
 
         const n = Math.max(1, ranked.length);
-        const QLINE_H = 20;
+        /* Net height after qline negative margins (−5px × 2) */
+        const QLINE_H = 2;
         const childCount = n + (qCut ? 1 : 0);
-        const panelH =
-            PANEL_PAD_TOP +
-            PANEL_PAD_BOTTOM +
-            PANEL_SLACK +
+        const contentH =
             n * ROW_H +
             (qCut ? QLINE_H : 0) +
             Math.max(0, childCount - 1) * ROW_GAP;
+        /* Just enough for mountain peaks — scales lightly with crew count */
+        const padTop = Math.max(34, Math.min(46, Math.round(contentH * 0.06) + 28));
+        const panelH = padTop + PANEL_PAD_BOTTOM + contentH;
         rootEl.style.setProperty('--mf-cvboard-h', `${panelH}px`);
+        /* Inline height wins over layout defaults / saved layout height */
+        const panelEl = rootEl.querySelector('.mf-cvboard-panel');
+        if (panelEl) {
+            panelEl.style.height = `${panelH}px`;
+            panelEl.style.removeProperty('top');
+            if (!panelEl.style.bottom) panelEl.style.bottom = '22px';
+        }
+        const listEl = rootEl.querySelector('.mf-cvboard-list');
+        if (listEl) {
+            listEl.style.removeProperty('height');
+            listEl.style.top = `${padTop}px`;
+            listEl.style.bottom = `${PANEL_PAD_BOTTOM}px`;
+        }
 
         const splitByLane = new Map(
             (split?.rows || []).map((row) => [Number(row.lane), row]),
         );
 
-        list.replaceChildren();
-        ranked.forEach((b, i) => {
+        const distText = (b, i) => {
+            if (i === 0 && Number.isFinite(leadM)) {
+                return `${Math.max(0, Math.round(course - leadM))}m`;
+            }
+            if (Number.isFinite(leadM)) {
+                return `${Math.max(0, Math.round(leadM - b.m))}m`;
+            }
+            return '—';
+        };
+
+        const splitText = (b, i) => {
+            const srow = splitByLane.get(b.lane);
+            if (split && srow && Number.isFinite(Number(srow.elapsed_ms))) {
+                return i === 0
+                    ? formatSplitAbs(srow.elapsed_ms)
+                    : formatSplitDelta(srow.elapsed_ms, leadSplitMs);
+            }
+            return '';
+        };
+
+        const fillRow = (row, b, i) => {
             const place = i + 1;
-            const row = document.createElement('div');
-            row.className = 'mf-cvboard-row' + (i === 0 ? ' mf-cvboard-row--lead' : '');
+            row.className =
+                'mf-cvboard-row' + (i === 0 ? ' mf-cvboard-row--lead' : '');
             row.dataset.lane = String(b.lane);
 
-            const medal = document.createElement('span');
-            medal.className = 'mf-cvboard-medal';
-            if (showMedals && place <= 3) {
-                medal.classList.add(`mf-cvboard-medal--${place}`);
+            const medal = row.querySelector('.mf-cvboard-medal');
+            if (medal) {
+                medal.className = 'mf-cvboard-medal';
+                if (showMedals && place <= 3) {
+                    medal.classList.add(`mf-cvboard-medal--${place}`);
+                }
             }
-            row.appendChild(medal);
+            const rank = row.querySelector('.mf-cvboard-rank');
+            if (rank) rank.textContent = ordinal(place);
 
-            const rank = document.createElement('span');
-            rank.className = 'mf-cvboard-rank';
-            rank.textContent = ordinal(place);
-            row.appendChild(rank);
-
+            let crest = row.querySelector('.mf-cvboard-crest');
             if (b.logoUrl) {
-                const crest = document.createElement('img');
-                crest.className = 'mf-cvboard-crest';
-                crest.alt = '';
-                crest.setAttribute('aria-hidden', 'true');
-                applyCrestCutout(crest, b.logoUrl);
-                row.appendChild(crest);
-            } else {
+                if (!crest || crest.tagName !== 'IMG') {
+                    crest?.remove();
+                    crest = document.createElement('img');
+                    crest.className = 'mf-cvboard-crest';
+                    crest.alt = '';
+                    crest.setAttribute('aria-hidden', 'true');
+                    rank?.after(crest);
+                }
+                if (crest.dataset.logoSrc !== b.logoUrl) {
+                    applyCrestCutout(crest, b.logoUrl);
+                }
+            } else if (!crest || crest.tagName === 'IMG') {
+                crest?.remove();
                 const ph = document.createElement('span');
                 ph.className = 'mf-cvboard-crest mf-cvboard-crest--empty';
                 ph.setAttribute('aria-hidden', 'true');
-                row.appendChild(ph);
+                rank?.after(ph);
             }
 
-            const name = document.createElement('span');
-            name.className = 'mf-cvboard-name';
-            name.textContent = b.name;
-            row.appendChild(name);
+            const name = row.querySelector('.mf-cvboard-name');
+            if (name) name.textContent = b.name;
+            const dist = row.querySelector('.mf-cvboard-dist');
+            if (dist) dist.textContent = distText(b, i);
+            const splitCell = row.querySelector('.mf-cvboard-split');
+            if (splitCell) splitCell.textContent = splitText(b, i);
+        };
 
-            const dist = document.createElement('span');
-            dist.className = 'mf-cvboard-dist';
-            if (i === 0 && Number.isFinite(leadM)) {
-                dist.textContent = `${Math.max(0, Math.round(course - leadM))}m`;
-            } else if (Number.isFinite(leadM)) {
-                dist.textContent = `${Math.max(0, Math.round(leadM - b.m))}m`;
+        const makeRow = (b, i) => {
+            const row = document.createElement('div');
+            row.appendChild(document.createElement('span')).className =
+                'mf-cvboard-medal';
+            row.appendChild(document.createElement('span')).className =
+                'mf-cvboard-rank';
+            row.appendChild(document.createElement('span')).className =
+                'mf-cvboard-crest mf-cvboard-crest--empty';
+            row.appendChild(document.createElement('span')).className =
+                'mf-cvboard-name';
+            row.appendChild(document.createElement('span')).className =
+                'mf-cvboard-dist';
+            row.appendChild(document.createElement('span')).className =
+                'mf-cvboard-split';
+            fillRow(row, b, i);
+            return row;
+        };
+
+        const structureSig = `${ranked.map((b) => b.lane).join(',')}|q${qCut || 0}`;
+        const wasSplit = rootEl.classList.contains('mf-cvboard--split');
+        const wantSplit = !!split;
+
+        if (list.dataset.rowSig !== structureSig) {
+            list.replaceChildren();
+            ranked.forEach((b, i) => {
+                list.appendChild(makeRow(b, i));
+                if (qCut && i + 1 === qCut) list.appendChild(makeQualifyLine());
+            });
+            list.dataset.rowSig = structureSig;
+        } else {
+            const rows = [...list.querySelectorAll('.mf-cvboard-row')];
+            ranked.forEach((b, i) => {
+                if (rows[i]) fillRow(rows[i], b, i);
+            });
+        }
+
+        /* Toggle split after DOM is stable so orange/QF rules can ease-in */
+        if (wasSplit !== wantSplit) {
+            if (wantSplit) {
+                rootEl.classList.remove('mf-cvboard--split');
+                rootEl.style.setProperty('--mf-cvboard-shift', '0px');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (!rootEl) return;
+                        rootEl.classList.add('mf-cvboard--split');
+                        rootEl.style.setProperty(
+                            '--mf-cvboard-shift',
+                            `-${SHIFT_PX}px`,
+                        );
+                    });
+                });
             } else {
-                dist.textContent = '—';
+                rootEl.classList.remove('mf-cvboard--split');
+                rootEl.style.setProperty('--mf-cvboard-shift', '0px');
             }
-            row.appendChild(dist);
-
-            const splitCell = document.createElement('span');
-            splitCell.className = 'mf-cvboard-split';
-            const srow = splitByLane.get(b.lane);
-            if (split && srow && Number.isFinite(Number(srow.elapsed_ms))) {
-                splitCell.textContent =
-                    i === 0
-                        ? formatSplitAbs(srow.elapsed_ms)
-                        : formatSplitDelta(srow.elapsed_ms, leadSplitMs);
-            } else {
-                splitCell.textContent = '';
-            }
-            row.appendChild(splitCell);
-
-            list.appendChild(row);
-            if (qCut && place === qCut) {
-                list.appendChild(makeQualifyLine());
-            }
-        });
+        } else if (wantSplit) {
+            rootEl.classList.add('mf-cvboard--split');
+            rootEl.style.setProperty('--mf-cvboard-shift', `-${SHIFT_PX}px`);
+        } else {
+            rootEl.classList.remove('mf-cvboard--split');
+            rootEl.style.setProperty('--mf-cvboard-shift', '0px');
+        }
     }
 
     async function tick() {
