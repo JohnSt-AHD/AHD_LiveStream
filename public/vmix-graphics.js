@@ -2652,11 +2652,11 @@ function vgAppendMilfordDrawChrome(layer) {
     logoArt.setAttribute('aria-hidden', 'true');
     const logoMark = document.createElement('img');
     logoMark.className = 'mf-draw-logo-mark';
-    logoMark.src = 'assets/vmix/milford/draw-logo-mark.png?v=4';
+    logoMark.src = 'assets/vmix/milford/draw-logo-mark.png?v=6';
     logoMark.alt = '';
     const logoWord = document.createElement('img');
     logoWord.className = 'mf-draw-logo-word';
-    logoWord.src = 'assets/vmix/milford/draw-logo-word.png?v=4';
+    logoWord.src = 'assets/vmix/milford/draw-logo-word.png?v=6';
     logoWord.alt = '';
     logoArt.appendChild(logoMark);
     logoArt.appendChild(logoWord);
@@ -2694,11 +2694,11 @@ function vgAppendMilfordLowerChrome(layer) {
     logoArt.setAttribute('aria-hidden', 'true');
     const mark = document.createElement('img');
     mark.className = 'mf-lower-logo-mark';
-    mark.src = 'assets/vmix/milford/lower-logo-mark.png?v=8';
+    mark.src = 'assets/vmix/milford/lower-logo-mark.png?v=10';
     mark.alt = '';
     const word = document.createElement('img');
     word.className = 'mf-lower-logo-word';
-    word.src = 'assets/vmix/milford/lower-logo-word.png?v=8';
+    word.src = 'assets/vmix/milford/lower-logo-word.png?v=10';
     word.alt = '';
     logoArt.appendChild(mark);
     logoArt.appendChild(word);

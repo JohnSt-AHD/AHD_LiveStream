@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 180" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="mfLowerFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#101921" stop-opacity="0.96"/>
+      <stop offset="0.38" stop-color="#101921" stop-opacity="0.8"/>
+      <stop offset="0.68" stop-color="#101921" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#101921" stop-opacity="0.16"/>
+    </linearGradient>
+  </defs>
+  <!-- Top edge is the Milford logo mountain (Mitre Peak), with a short plateau under the bar. -->
+  <path fill="url(#mfLowerFade)" d="M0 48
+    L45 48 L90 48 L135 48 L180 48
+    L225 48 L270 48 L315 48
+    L360 48 L405 48 L450 44
+    L495 38 L540 14 L585 15
+    L630 32 L675 68 L720 106
+    L765 128 L810 148 L855 166 L900 180
+    L0 180 Z"/>
+</svg>

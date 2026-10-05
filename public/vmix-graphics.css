@@ -2097,17 +2097,19 @@ body.cv-clip-still .cv-clip-video {
 }
 
 [data-vmix-theme='rnz-milford'] .mf-draw-logo-mark {
-    left: 0;
-    top: 0;
+    left: 1px;
+    top: 8px;
     width: 162px;
-    height: 89px;
+    height: 76px;
+    object-fit: contain;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-draw-logo-word {
-    left: 9px;
-    top: 101px;
+    left: 4px;
+    top: 96px;
     width: 156px;
-    height: 49px;
+    height: 30px;
+    object-fit: contain;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-draw-kicker {
