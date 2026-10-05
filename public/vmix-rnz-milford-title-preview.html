@@ -1,13 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="vg-preview">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
-    <title>vMix — RNZ Milford Results Preview</title>
+    <title>vMix — RNZ Milford Title Preview</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="vmix-graphics.css?v=77">
+    <style>
+        /* Avoid a blank white tab before JS/CSS settle */
+        html, body {
+            margin: 0;
+            background: #232e32 !important;
+            min-height: 100%;
+        }
+    </style>
 </head>
-<body class="vmix-page" data-vmix-theme="rnz-milford">
+<body class="vmix-page vg-preview" data-vmix-theme="rnz-milford">
     <div class="vg-stage">
         <div class="vg-bg" id="vgBg" aria-hidden="true"></div>
         <div class="vg-map-wrap" id="vgMapWrap">
@@ -17,12 +25,11 @@
         <p class="vg-error" id="vgError" hidden></p>
     </div>
     <script>
-        /* Preview page: results autoplay, no layout editor. */
         (function () {
             const params = new URLSearchParams(location.search);
             let changed = false;
             if (!params.get('g') && !params.get('graphic')) {
-                params.set('g', 'r');
+                params.set('g', 't');
                 changed = true;
             }
             if (!params.get('preview')) {
@@ -37,10 +44,6 @@
                 params.set('regatta', 'nzmm2026');
                 changed = true;
             }
-            if (!params.get('race')) {
-                params.set('race', '1');
-                changed = true;
-            }
             if (changed) {
                 location.replace(`${location.pathname}?${params.toString()}`);
             }
@@ -52,28 +55,5 @@
     <script src="vmix-layout.js?v=47"></script>
     <script src="vmix-gt-import.js"></script>
     <script src="vmix-graphics.js?v=70"></script>
-    <script>
-        /* Prefer archived results for a filled preview when live sheet is empty. */
-        window.addEventListener('load', async () => {
-            const wait = () =>
-                new Promise((resolve) => {
-                    const tick = () => {
-                        if (window.VmixGraphics?.getState?.() !== 'idle') resolve();
-                        else setTimeout(tick, 100);
-                    };
-                    tick();
-                });
-            try {
-                await wait();
-                const code = new URLSearchParams(location.search).get('regatta') || 'nzmm2026';
-                const res = await fetch(`data/archives/${code}/latest/results.csv`);
-                if (!res.ok) return;
-                const text = await res.text();
-                window.VmixGraphics.seedResultsCsv?.(text);
-            } catch {
-                /* ignore */
-            }
-        });
-    </script>
 </body>
 </html>

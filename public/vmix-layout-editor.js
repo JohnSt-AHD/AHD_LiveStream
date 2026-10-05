@@ -5,6 +5,10 @@
     const LAYOUT_IDS = {
         title: [
             { id: 'title', label: 'Title block' },
+            { id: 'mf-title-bg', label: 'Milford title — background' },
+            { id: 'mf-title-tl', label: 'Milford title — TL orange mountain' },
+            { id: 'mf-title-mountains', label: 'Milford title — BR mountains' },
+            { id: 'mf-title-logo', label: 'Milford title — logo' },
             { id: 'title-code', label: 'Title — regatta code' },
             { id: 'title-date', label: 'Title — date' },
         ],

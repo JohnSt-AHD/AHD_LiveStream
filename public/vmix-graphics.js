@@ -990,7 +990,7 @@ function vgEnableBrowserPreview() {
         const hint = document.createElement('p');
         hint.className = 'vg-preview-hint';
         hint.textContent =
-            'Click anywhere to play the graphic · L play · O out · C clear';
+            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results';
         document.body.appendChild(hint);
     }
     vgFitPreviewStage();
@@ -999,19 +999,26 @@ function vgEnableBrowserPreview() {
         if (e.target.closest('.vg-layout-panel, .kp-ops, input, textarea, select, a, button, [data-kp-festive]')) {
             return;
         }
-        const raw = new URLSearchParams(location.search).get('g') || 'l';
-        const graphic = vgResolveGraphicAlias(raw);
-        if (!graphic) return;
-        if (vgPlayback.state !== 'idle') vgTriggerClear();
-        vgTriggerIn(graphic);
-        const video = vgGetBgVideo();
-        if (video) {
-            const playPromise = video.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(() => {});
-            }
-        }
+        vgPlayGraphicFromUrl();
     });
+}
+
+/** Play (or restart) the graphic from ?g= / ?graphic=. */
+function vgPlayGraphicFromUrl() {
+    const raw = new URLSearchParams(location.search).get('g') ||
+        new URLSearchParams(location.search).get('graphic') ||
+        'l';
+    const graphic = vgResolveGraphicAlias(raw);
+    if (!graphic) return;
+    if (vgPlayback.state !== 'idle') vgTriggerClear();
+    vgTriggerIn(graphic);
+    const video = vgGetBgVideo();
+    if (video) {
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+        }
+    }
 }
 
 function vgThemeConfig() {
@@ -2695,6 +2702,62 @@ function vgAppendMilfordResultsChrome(layer) {
     vgAppendMilfordBoardRuntimeChrome(layer, 'results');
 }
 
+function vgAppendMilfordTitleChrome(layer) {
+    const chrome = vgEl('div', 'mf-title-chrome');
+    chrome.dataset.vgLayout = 'mf-title-chrome';
+    chrome.setAttribute('aria-hidden', 'true');
+
+    const bg = vgEl('div', 'mf-title-bg');
+    bg.dataset.vgLayout = 'mf-title-bg';
+    chrome.appendChild(bg);
+
+    const tl = vgEl('div', 'mf-title-tl');
+    tl.dataset.vgLayout = 'mf-title-tl';
+    tl.setAttribute('aria-hidden', 'true');
+    tl.appendChild(
+        vgMilfordLowerImg(
+            'mf-title-tl-shadow',
+            'assets/vmix/milford/title-mountain-shadow.png?v=4',
+            null,
+        ),
+    );
+    tl.appendChild(
+        vgMilfordLowerImg(
+            'mf-title-tl-orange',
+            'assets/vmix/milford/title-mountain-orange.png?v=4',
+            null,
+        ),
+    );
+    chrome.appendChild(tl);
+
+    const mountains = vgEl('div', 'mf-draw-mountains mf-title-mountains');
+    mountains.dataset.vgLayout = 'mf-title-mountains';
+    mountains.setAttribute('aria-hidden', 'true');
+    const mtnFill = document.createElement('img');
+    mtnFill.className = 'mf-draw-mountains-fill';
+    mtnFill.src = 'assets/vmix/milford/draw-mountains-fill.png?v=1';
+    mtnFill.alt = '';
+    const mtnOutline = document.createElement('img');
+    mtnOutline.className = 'mf-draw-mountains-outline';
+    mtnOutline.src = 'assets/vmix/milford/draw-mountains-outline.png?v=1';
+    mtnOutline.alt = '';
+    mountains.appendChild(mtnFill);
+    mountains.appendChild(mtnOutline);
+    chrome.appendChild(mountains);
+
+    const logoArt = vgEl('div', 'mf-draw-logo-art mf-title-logo');
+    logoArt.dataset.vgLayout = 'mf-title-logo';
+    logoArt.setAttribute('aria-hidden', 'true');
+    const logoFull = document.createElement('img');
+    logoFull.className = 'mf-draw-logo-full';
+    logoFull.src = 'assets/vmix/milford/brand/milford-logo-colour-byline.svg?v=1';
+    logoFull.alt = '';
+    logoArt.appendChild(logoFull);
+    chrome.appendChild(logoArt);
+
+    layer.appendChild(chrome);
+}
+
 function vgAppendMilfordLowerChrome(layer) {
     const chrome = vgEl('div', 'mf-lower-chrome');
     chrome.dataset.vgLayout = 'mf-lower-chrome';
@@ -3186,7 +3249,7 @@ function vgRenderTitle(layer, race) {
         return;
     }
     if (vgIsMilfordTheme()) {
-        vgAppendMilfordBoardChrome(layer, 'title');
+        vgAppendMilfordTitleChrome(layer);
     }
     const codeEl = vgEl('h1', 'vg-title-code', headline);
     codeEl.dataset.vgLayout = 'title-code';
@@ -3894,6 +3957,11 @@ function vgBindKeyboard() {
         if (e.target.closest('input, textarea, select')) return;
         if (vgIsKarapiroTheme() && window.VmixKarapiro?.onKey(e)) return;
         const key = e.key.toLowerCase();
+        if (key === ' ' || key === 'enter') {
+            e.preventDefault();
+            vgPlayGraphicFromUrl();
+            return;
+        }
         if (key === 'o') {
             e.preventDefault();
             vgTriggerOut();
@@ -3944,6 +4012,8 @@ function vgBindKeyboard() {
         const graphic = vgGraphicFromShortcut(key) || VG_GRAPHIC_ALIASES[key];
         if (graphic) {
             e.preventDefault();
+            /* Restart even if another graphic is already playing (L used to look dead). */
+            if (vgPlayback.state !== 'idle') vgTriggerClear();
             vgTriggerIn(graphic);
         }
     });

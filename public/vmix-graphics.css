@@ -1478,31 +1478,35 @@ body.cv-clip-still .cv-clip-video {
     width: 1920px;
     height: 1080px;
     padding: 0;
-    text-align: left;
+    text-align: center;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-title-code,
 [data-vmix-theme='rnz-milford'] .vg-title-date {
     position: absolute;
-    z-index: 1;
+    z-index: 5;
     margin: 0;
     text-shadow: none;
     color: #fff;
+    text-align: center;
+    left: 410px;
+    width: 1100px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-title-code {
-    left: 380px;
-    top: 390px;
+    top: 400px;
     font-size: 72px;
     font-weight: 700;
     line-height: 1.1;
+    letter-spacing: 0.04em;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-title-date {
-    left: 380px;
-    top: 480px;
-    font-size: 32px;
+    top: 500px;
+    font-size: 28px;
     font-weight: 600;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.92);
 }
 
 [data-vmix-theme='rnz-milford'] {
@@ -1825,8 +1829,7 @@ body.cv-clip-still .cv-clip-video {
     animation: none !important;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .mf-board-intro--results,
-[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .mf-board-intro--title {
+[data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .mf-board-intro--results {
     animation:
         mf-board-intro-show 0.01s linear both,
         mf-board-intro-hide 0.01s linear var(--mf-intro-ms, 4.5s) forwards;
@@ -1836,16 +1839,8 @@ body.cv-clip-still .cv-clip-video {
     --mf-intro-ms: 6s;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .mf-board-intro--title {
-    --mf-intro-ms: 5s;
-}
-
 [data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .mf-board-plate--results {
     animation: vg-fade-in 0.01s linear 6s both;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .mf-board-plate--title {
-    animation: vg-fade-in 0.01s linear 5s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--leader.vg-layer--visible.vg-layer--fade-in .mf-board-intro--leader {
@@ -1865,18 +1860,6 @@ body.cv-clip-still .cv-clip-video {
     animation: vg-fade-in 0.01s linear 3s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .vg-title-code,
-[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .vg-title-date {
-    opacity: 0;
-    animation: vg-fade-in 0.4s ease 5s both;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .vg-title-code,
-[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .vg-title-date {
-    animation: none !important;
-    opacity: 1;
-}
-
 @keyframes mf-board-intro-show {
     to {
         opacity: 1;
@@ -1886,6 +1869,189 @@ body.cv-clip-still .cv-clip-video {
 @keyframes mf-board-intro-hide {
     to {
         opacity: 0;
+    }
+}
+
+/* Runtime title chrome (from 01 Title - Maadi 2026 Combined.mov) */
+[data-vmix-theme='rnz-milford'] .mf-title-chrome,
+[data-vmix-theme='rnz-milford'] .mf-title-bg,
+[data-vmix-theme='rnz-milford'] .mf-title-tl,
+[data-vmix-theme='rnz-milford'] .mf-title-tl-shadow,
+[data-vmix-theme='rnz-milford'] .mf-title-tl-orange,
+[data-vmix-theme='rnz-milford'] .mf-title-mountains,
+[data-vmix-theme='rnz-milford'] .mf-title-logo {
+    position: absolute;
+    pointer-events: none;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-chrome {
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    z-index: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-bg {
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    background: #232e32;
+    z-index: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-tl {
+    left: 0;
+    top: 0;
+    width: 900px;
+    height: 779px;
+    z-index: 2;
+    overflow: visible;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-tl-shadow,
+[data-vmix-theme='rnz-milford'] .mf-title-tl-orange {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: fill;
+    will-change: transform, opacity;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-tl-shadow {
+    z-index: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-tl-orange {
+    z-index: 2;
+    /* Settled slight transparency */
+    opacity: 0.88;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-mountains {
+    left: 1374px;
+    top: 667px;
+    width: 546px;
+    height: 413px;
+    z-index: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-title-logo {
+    left: 1695px;
+    top: 820px;
+    width: 180px;
+    height: 175px;
+    z-index: 4;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-title-bg,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-title-tl-shadow,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-title-tl-orange,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-fill,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-outline,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-full,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-title-code,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-title-date {
+    opacity: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-title-bg {
+    animation: mf-draw-fade-in 0.6s cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+
+/* Orange flies in from the left, eases into place */
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-title-tl-orange {
+    animation: mf-title-orange-fly 1.55s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+}
+
+/* Shadow follows ~1s behind the orange */
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-title-tl-shadow {
+    animation: mf-title-shadow-fly 1.55s cubic-bezier(0.16, 1, 0.3, 1) 1.12s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-outline {
+    opacity: 1;
+    animation: mf-draw-mountains-grow 2.4s cubic-bezier(0.33, 0, 0.2, 1) 0.55s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-fill {
+    opacity: 1;
+    -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 40%, transparent 100%);
+    -webkit-mask-size: 100% 0%;
+    mask-size: 100% 0%;
+    -webkit-mask-position: bottom;
+    mask-position: bottom;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation: mf-draw-mountains-fill-in 3.2s cubic-bezier(0.22, 0.61, 0.36, 1) 1.3s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-full {
+    animation: mf-draw-fade-in 0.7s ease 2.4s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-title-code {
+    animation: mf-title-text-in 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 1.1s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-title-date {
+    animation: mf-title-text-in 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 1.35s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-title-bg,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-title-tl-shadow,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-title-tl-orange,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-draw-mountains-fill,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-draw-mountains-outline,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-draw-logo-full,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .vg-title-code,
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .vg-title-date {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--title.kp-refresh .mf-title-tl-orange {
+    opacity: 0.88;
+}
+
+@keyframes mf-title-orange-fly {
+    from {
+        opacity: 0.88;
+        transform: translateX(-110%);
+    }
+    to {
+        opacity: 0.88;
+        transform: translateX(0);
+    }
+}
+
+@keyframes mf-title-shadow-fly {
+    from {
+        opacity: 1;
+        transform: translateX(-110%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes mf-title-text-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
