@@ -41,7 +41,7 @@ const VMIX_TRIGGERS = [
     { key: 'k', graphic: 'Live tracking', desc: 'KRI — demo live track. Karāpiro — live CV chainage (W / k). o to fade out' },
     { key: 'y', graphic: 'CV splits', desc: 'Karāpiro (Ged) only — 500/1000/1500 m placing board from CV race marks; o to fade out' },
     { key: 'i', graphic: 'CV start list', desc: 'Karāpiro (Ged) only — start pontoon PNG with lane tags in preview (clip video hidden); on-air (`live=1`) tags on camera; o to fade out' },
-    { key: 'j', graphic: 'CV positions', desc: 'Karāpiro (Ged) only — bottom-right placing table for stable CV crews; race clock, leader metres to go, gap to leader; o to fade out' },
+    { key: 'j', graphic: 'CV positions / leaderboard', desc: 'Karāpiro (Ged) — bottom-right placing table for stable CV crews. Milford — CV leaderboard (`cvboard`): placings, leader to-go, gaps, 500m split shift (Y or ?split=500); polls CV laptop /api/race · o to fade out' },
     { key: 'm', graphic: 'Weather map', desc: 'KRI and Karāpiro packs — full-screen Lake Karāpiro live weather (wind, temp, rain, 3 hr forecast); o to fade out' },
     { key: 'c', graphic: 'Clear', desc: 'Instant clear — idle, ready for any graphic' },
     { key: 'n', graphic: 'Next race', desc: 'Live race number +1 on daysheet (updates draw/LT/results on air)' },

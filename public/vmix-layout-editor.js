@@ -46,6 +46,13 @@
             { id: 'draw-logo', label: 'Draw — school logos', target: 'draw-logo' },
             { id: 'draw-crew', label: 'Draw — crew names', target: 'draw-crew' },
         ],
+        cvboard: [
+            { id: 'mf-cvboard', label: 'Milford CV board — root' },
+            { id: 'mf-cvboard-panel', label: 'Milford CV board — placing panel' },
+            { id: 'mf-cvboard-timer', label: 'Milford CV board — timer plate' },
+            { id: 'mf-cvboard-split-label', label: 'Milford CV board — SPLIT label' },
+            { id: 'mf-cvboard-list', label: 'Milford CV board — row list' },
+        ],
         results: [
             { id: 'results-head', label: 'Results — header block (all)', posMode: 'absolute' },
             { id: 'results-kicker', label: 'Results — kicker', posMode: 'transform' },
@@ -118,7 +125,7 @@
     }
 
     function milfordVideoGraphics() {
-        return ['draw', 'results', 'leader', 'speed'];
+        return ['draw', 'results', 'leader', 'speed', 'cvboard', 'title'];
     }
 
     function regionDefs(graphic) {
@@ -860,6 +867,7 @@
                 <option value="results">Results</option>
                 <option value="leader">Leader</option>
                 <option value="speed">Tracker</option>
+                <option value="cvboard">CV leaderboard</option>
                 <option value="schedule">Schedule</option>
             </select>
             <label for="vgLayoutRegion">Region</label>
@@ -1038,6 +1046,7 @@
             w: 'leader',
             s: 'schedule',
             g: 'speed',
+            j: 'cvboard',
         };
         editor.graphic = aliases[g] || g;
 

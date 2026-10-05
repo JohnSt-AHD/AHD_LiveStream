@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = leader · x = CV follow (Karāpiro) / CV leader (KRI) · h = CV boat tags (Karāpiro) / CV draw (KRI) · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = leader · j = CV leaderboard (Milford) / CV positions (Karāpiro) · x = CV follow (Karāpiro) / CV leader (KRI) · h = CV boat tags (Karāpiro) / CV draw (KRI) · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=1  &regatta=nzmm2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -30,6 +30,9 @@ const VG_GRAPHIC_ALIASES = {
     startlist: 'cvstart',
     cvpositions: 'cvpositions',
     positions: 'cvpositions',
+    cvboard: 'cvboard',
+    leaderboard: 'cvboard',
+    cvleaderboard: 'cvboard',
     s: 'schedule',
     g: 'speed',
     map: 'speed',
@@ -89,6 +92,7 @@ function vgGraphicFromShortcut(key) {
         if (k === 'w') return 'livetracking';
         if (k === '0') return 'tracker';
     }
+    if (k === 'j' && vgIsMilfordTheme()) return 'cvboard';
     return VG_GRAPHIC_ALIASES[k] || null;
 }
 
@@ -990,7 +994,7 @@ function vgEnableBrowserPreview() {
         const hint = document.createElement('p');
         hint.className = 'vg-preview-hint';
         hint.textContent =
-            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results';
+            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · Y split';
         document.body.appendChild(hint);
     }
     vgFitPreviewStage();
@@ -1082,7 +1086,8 @@ function vgMilfordCssGraphic(graphic) {
             g === 'results' ||
             g === 'leader' ||
             g === 'title' ||
-            g === 'speed')
+            g === 'speed' ||
+            g === 'cvboard')
     );
 }
 
@@ -2256,6 +2261,7 @@ function vgResetToIdle() {
     if (window.KriVmixLiveTracking) window.KriVmixLiveTracking.remove();
     if (window.KriVmixWeather) window.KriVmixWeather.remove();
     if (window.KriVmixCourseScroll) window.KriVmixCourseScroll.remove();
+    if (window.VmixMilfordCvBoard) window.VmixMilfordCvBoard.stop();
     vgSetStageState('idle');
     vgShowTextLayer(false);
     vgShowBackground(false);
@@ -2511,7 +2517,7 @@ function vgPrepareContent(graphic, raceParam) {
 
     const race = vgFindRace(raceParam);
 
-    if (!race && graphic !== 'title' && graphic !== 'schedule') {
+    if (!race && graphic !== 'title' && graphic !== 'schedule' && graphic !== 'cvboard') {
         if (err) {
             err.hidden = false;
             err.textContent = 'No race data — check regatta code and daysheet.';
@@ -2528,6 +2534,7 @@ function vgPrepareContent(graphic, raceParam) {
     else if (graphic === 'draw') vgRenderDraw(layer, race);
     else if (graphic === 'results') vgRenderResults(layer, race);
     else if (graphic === 'schedule') vgRenderSchedule(layer, raceParam);
+    else if (graphic === 'cvboard') vgRenderMilfordCvBoard(layer, race);
     else if (graphic === 'leader') {
         const lane = vgLeaderLane ?? vgGetLeaderLane();
         vgRenderLeader(layer, race, lane);
@@ -3825,6 +3832,68 @@ function vgRenderSchedule(layer, raceParam) {
     vgStartScheduleClock();
 }
 
+function vgRenderMilfordCvBoard(layer, race) {
+    vgSetLayerGraphicClass(layer, 'vg-layer--cvboard');
+    layer.dataset.vgLayout = 'cvboard';
+    if (!vgIsMilfordTheme()) {
+        layer.appendChild(vgEl('p', 'vg-error', 'CV board is Milford-only'));
+        return;
+    }
+
+    const root = vgEl('div', 'mf-cvboard');
+    root.dataset.vgLayout = 'mf-cvboard';
+    root.style.setProperty('--mf-cvboard-shift', '0px');
+
+    const shadow = document.createElement('img');
+    shadow.className = 'mf-cvboard-shadow';
+    shadow.src = 'assets/vmix/milford/cvboard-shadow.png?v=1';
+    shadow.alt = '';
+    shadow.setAttribute('aria-hidden', 'true');
+    root.appendChild(shadow);
+
+    const orange = document.createElement('img');
+    orange.className = 'mf-cvboard-orange';
+    orange.src = 'assets/vmix/milford/cvboard-orange.png?v=1';
+    orange.alt = '';
+    orange.setAttribute('aria-hidden', 'true');
+    root.appendChild(orange);
+
+    const panel = vgEl('div', 'mf-cvboard-panel');
+    panel.dataset.vgLayout = 'mf-cvboard-panel';
+    panel.appendChild(vgEl('div', 'mf-cvboard-panel-bg'));
+
+    const splitLabel = vgEl('div', 'mf-cvboard-split-label');
+    splitLabel.hidden = true;
+    splitLabel.dataset.vgLayout = 'mf-cvboard-split-label';
+    panel.appendChild(splitLabel);
+
+    const list = vgEl('div', 'mf-cvboard-list');
+    list.dataset.vgLayout = 'mf-cvboard-list';
+    panel.appendChild(list);
+    root.appendChild(panel);
+
+    const timer = vgEl('div', 'mf-cvboard-timer');
+    timer.dataset.vgLayout = 'mf-cvboard-timer';
+    timer.appendChild(vgEl('div', 'mf-cvboard-timer-bg'));
+    timer.appendChild(vgEl('span', 'mf-cvboard-clock', '0:00.0'));
+    const logo = document.createElement('img');
+    logo.className = 'mf-cvboard-logo';
+    logo.src = 'assets/vmix/milford/brand/milford-logo-colour-byline.svg?v=1';
+    logo.alt = 'Milford';
+    timer.appendChild(logo);
+    root.appendChild(timer);
+
+    const obase = document.createElement('img');
+    obase.className = 'mf-cvboard-obase';
+    obase.src = 'assets/vmix/milford/cvboard-orange-bar.png?v=1';
+    obase.alt = '';
+    obase.setAttribute('aria-hidden', 'true');
+    root.appendChild(obase);
+
+    layer.appendChild(root);
+    window.VmixMilfordCvBoard?.mount(root);
+}
+
 function vgRenderResults(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--results');
     layer.dataset.vgLayout = 'results';
@@ -4291,6 +4360,7 @@ window.VmixGraphics = {
     triggerOut: vgTriggerOut,
     triggerClear: vgTriggerClear,
     getState: () => vgPlayback.state,
+    getRace: () => vgFindRace(vgGetRaceParam()),
     devPreviewHold: vgDevPreviewHold,
     devSeekVideoHold: vgDevSeekVideoHold,
     devHoldVideoTimeMs: vgDevHoldVideoTimeMs,

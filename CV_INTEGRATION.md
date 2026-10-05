@@ -122,3 +122,13 @@ Venue offsets (match TouchDesigner):
 | `public/cv-position-client.js` | Poll + position line |
 
 Laptop side: `cv_cloud.py` in `cv-improvements`.
+
+## Milford CV leaderboard (placing board)
+
+Milford graphic **`j`** (`cvboard`) polls the CV laptop **`GET /api/race`** (chainage, clock, splits) — not `/api/cv-position`. Sample preview:
+
+```
+/vmix-rnz-milford-cvboard-preview.html
+```
+
+Or production overlay: `vmix-rnz-milford.html?g=j&preview=1` (falls back to sample when the laptop is unreachable). Press **Y** (or `?split=500`) to force the 500m split left-shift layout.

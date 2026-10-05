@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
-    <title>vMix — RNZ Milford Title Preview</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
-    <link rel="stylesheet" href="vmix-graphics.css?v=80">
+    <title>vMix — RNZ Milford CV Leaderboard Preview</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+    <link rel="stylesheet" href="vmix-graphics.css?v=94">
     <style>
         /* Avoid a blank white tab before JS/CSS settle */
         html, body {
@@ -29,7 +29,7 @@
             const params = new URLSearchParams(location.search);
             let changed = false;
             if (!params.get('g') && !params.get('graphic')) {
-                params.set('g', 't');
+                params.set('g', 'j');
                 changed = true;
             }
             if (!params.get('preview')) {
@@ -38,6 +38,10 @@
             }
             if (!params.get('autoplay') && !params.get('play')) {
                 params.set('autoplay', '1');
+                changed = true;
+            }
+            if (!params.get('sample')) {
+                params.set('sample', '1');
                 changed = true;
             }
             if (!params.get('regatta')) {
@@ -54,7 +58,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="vmix-layout.js?v=48"></script>
     <script src="vmix-gt-import.js"></script>
-    <script src="vmix-milford-cv-board.js?v=1"></script>
-    <script src="vmix-graphics.js?v=71"></script>
+    <script src="vmix-milford-cv-board.js?v=8"></script>
+    <script src="vmix-graphics.js?v=73"></script>
 </body>
 </html>

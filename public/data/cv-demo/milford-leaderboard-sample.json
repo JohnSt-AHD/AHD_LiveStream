@@ -1,0 +1,43 @@
+{
+  "course_m": 2000,
+  "leader_chainage_m": 175,
+  "clock": { "elapsed_ms": 354800 },
+  "round": "heat",
+  "division": "1",
+  "progression": "1-3=S; Rest Elim",
+  "splits": {
+    "active_mark": null,
+    "by_mark": {
+      "500": [
+        { "lane": 4, "placing": 1, "elapsed_ms": 103260 },
+        { "lane": 7, "placing": 2, "elapsed_ms": 103600 },
+        { "lane": 5, "placing": 3, "elapsed_ms": 104050 },
+        { "lane": 2, "placing": 4, "elapsed_ms": 105120 },
+        { "lane": 8, "placing": 5, "elapsed_ms": 105880 },
+        { "lane": 1, "placing": 6, "elapsed_ms": 106540 },
+        { "lane": 3, "placing": 7, "elapsed_ms": 107890 },
+        { "lane": 6, "placing": 8, "elapsed_ms": 109250 }
+      ]
+    }
+  },
+  "boats": [
+    { "lane": 4, "chainage_m": 175, "name": "Auckland", "abbr": "AKLC" },
+    { "lane": 7, "chainage_m": 175, "name": "Waikato", "abbr": "WKOC" },
+    { "lane": 5, "chainage_m": 174, "name": "Canterbury", "abbr": "CTYC" },
+    { "lane": 2, "chainage_m": 167, "name": "Otago", "abbr": "OTAC" },
+    { "lane": 8, "chainage_m": 165, "name": "North Shore", "abbr": "NSHC" },
+    { "lane": 1, "chainage_m": 163, "name": "Wellington", "abbr": "WELC" },
+    { "lane": 3, "chainage_m": 154, "name": "Bay of Plenty", "abbr": "BPCC" },
+    { "lane": 6, "chainage_m": 151, "name": "Southland", "abbr": "SLDB" }
+  ],
+  "draw": [
+    { "lane": 1, "label": "Wellington", "code": "welc" },
+    { "lane": 2, "label": "Otago", "code": "otac" },
+    { "lane": 3, "label": "Bay of Plenty", "code": "bpcc" },
+    { "lane": 4, "label": "Auckland", "code": "aklc" },
+    { "lane": 5, "label": "Canterbury", "code": "ctyc" },
+    { "lane": 6, "label": "Southland", "code": "sldb" },
+    { "lane": 7, "label": "Waikato", "code": "wkoc" },
+    { "lane": 8, "label": "North Shore", "code": "nshc" }
+  ]
+}
