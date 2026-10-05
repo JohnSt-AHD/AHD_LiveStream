@@ -1505,13 +1505,16 @@ body.cv-clip-still .cv-clip-video {
     font-weight: 600;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--lower {
+[data-vmix-theme='rnz-milford'] {
     --mf-navy: #101921;
     --mf-orange: #e66911;
     --mf-mountain: rgba(16, 25, 33, 0.72);
     --mf-bar-white: #ffffff;
     --mf-bar-rule: #1a1a1a;
     --mf-ease: ease-in-out;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--lower {
     left: 0;
     top: 0;
     right: auto;
@@ -1613,19 +1616,19 @@ body.cv-clip-still .cv-clip-video {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-dock {
     opacity: 0;
-    animation: mf-lower-dock-in 0.75s var(--mf-ease) both;
+    animation: mf-lower-dock-in 0.75s var(--mf-ease, ease-in-out) both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-mountains {
     opacity: 0;
     animation:
-        mf-lower-mountains-in 1.05s var(--mf-ease) 0.12s both,
+        mf-lower-mountains-in 1.05s var(--mf-ease, ease-in-out) 0.12s both,
         mf-lower-mountains-fade-loop 9s ease-in-out 1.2s infinite;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-bars {
     opacity: 0;
-    animation: mf-lower-bars-in 0.85s var(--mf-ease) 0.38s both;
+    animation: mf-lower-bars-in 0.85s var(--mf-ease, ease-in-out) 0.38s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-mark {
@@ -1635,14 +1638,14 @@ body.cv-clip-still .cv-clip-video {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .mf-lower-logo-word {
     opacity: 0;
-    animation: mf-lower-logo-word-in 0.55s var(--mf-ease) 0.72s both;
+    animation: mf-lower-logo-word-in 0.55s var(--mf-ease, ease-in-out) 0.72s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-meta,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-race-line,
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.vg-layer--visible.vg-layer--fade-in .vg-lower-event {
     opacity: 0;
-    animation: mf-lower-text-in 0.6s var(--mf-ease) 1.05s both;
+    animation: mf-lower-text-in 0.6s var(--mf-ease, ease-in-out) 1.05s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--lower.kp-refresh .mf-lower-logo-dock,
@@ -1822,16 +1825,11 @@ body.cv-clip-still .cv-clip-video {
     animation: none !important;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .mf-board-intro--draw,
 [data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .mf-board-intro--results,
 [data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .mf-board-intro--title {
     animation:
         mf-board-intro-show 0.01s linear both,
         mf-board-intro-hide 0.01s linear var(--mf-intro-ms, 4.5s) forwards;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .mf-board-intro--draw {
-    --mf-intro-ms: 4.5s;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .mf-board-intro--results {
@@ -1840,10 +1838,6 @@ body.cv-clip-still .cv-clip-video {
 
 [data-vmix-theme='rnz-milford'] .vg-layer--title.vg-layer--visible.vg-layer--fade-in .mf-board-intro--title {
     --mf-intro-ms: 5s;
-}
-
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .mf-board-plate--draw {
-    animation: vg-fade-in 0.01s linear 4.5s both;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .mf-board-plate--results {
@@ -1976,16 +1970,193 @@ body.cv-clip-still .cv-clip-video {
     text-shadow: none;
 }
 
+/* Runtime draw chrome (from Milford_Draw_25.mov) */
+[data-vmix-theme='rnz-milford'] .mf-draw-chrome,
+[data-vmix-theme='rnz-milford'] .mf-draw-bg,
+[data-vmix-theme='rnz-milford'] .mf-draw-mountains,
+[data-vmix-theme='rnz-milford'] .mf-draw-panel-wrap,
+[data-vmix-theme='rnz-milford'] .mf-draw-bars,
+[data-vmix-theme='rnz-milford'] .mf-draw-rule,
+[data-vmix-theme='rnz-milford'] .mf-draw-logo-art,
+[data-vmix-theme='rnz-milford'] .mf-draw-kicker,
+[data-vmix-theme='rnz-milford'] .mf-draw-lane-label {
+    position: absolute;
+    pointer-events: none;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-chrome {
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    z-index: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-bg {
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    z-index: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-mountains {
+    left: 1374px;
+    top: 667px;
+    width: 546px;
+    height: 413px;
+    z-index: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-mountains-fill,
+[data-vmix-theme='rnz-milford'] .mf-draw-mountains-outline {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: fill;
+    pointer-events: none;
+}
+
+/* Navy plate: lower-third-style soft spotlight sweep behind lanes/crew */
+[data-vmix-theme='rnz-milford'] .mf-draw-panel-wrap {
+    left: 0;
+    top: 0;
+    width: 1872px;
+    height: 1080px;
+    z-index: 2;
+    transform-origin: 28% 48%;
+    will-change: transform, opacity;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-panel {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* Lower-third-style soft spotlight sweep behind lanes/crew */
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.72) 0%,
+        rgba(0, 0, 0, 0.72) 32%,
+        rgba(0, 0, 0, 1) 50%,
+        rgba(0, 0, 0, 0.72) 68%,
+        rgba(0, 0, 0, 0.72) 100%
+    );
+    mask-image: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.72) 0%,
+        rgba(0, 0, 0, 0.72) 32%,
+        rgba(0, 0, 0, 1) 50%,
+        rgba(0, 0, 0, 0.72) 68%,
+        rgba(0, 0, 0, 0.72) 100%
+    );
+    -webkit-mask-size: 240% 100%;
+    mask-size: 240% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+}
+
+/* Static bar/rule PNGs replaced by CSS chips on draw (size-to-text). */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-bars,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-rule {
+    display: none;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-bars {
+    left: 147px;
+    top: 259px;
+    width: 383px;
+    height: 40px;
+    z-index: 2;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-rule {
+    left: 317px;
+    top: 298px;
+    width: 642px;
+    height: 4px;
+    z-index: 2;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-logo-art {
+    left: 1705px;
+    top: 830px;
+    width: 165px;
+    height: 150px;
+    z-index: 4;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-logo-mark,
+[data-vmix-theme='rnz-milford'] .mf-draw-logo-word {
+    position: absolute;
+    pointer-events: none;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-logo-mark {
+    left: 0;
+    top: 0;
+    width: 162px;
+    height: 89px;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-logo-word {
+    left: 9px;
+    top: 101px;
+    width: 156px;
+    height: 49px;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-kicker {
+    left: 131px;
+    top: 104px;
+    width: 160px;
+    height: 28px;
+    margin: 0;
+    z-index: 5;
+    color: #e46a12;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-shadow: none;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-draw-lane-label {
+    left: 185px;
+    top: 340px;
+    width: 80px;
+    height: 18px;
+    margin: 0;
+    z-index: 5;
+    color: #e46a12;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    text-shadow: none;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head,
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-head {
     left: 140px;
     top: 154px;
     width: 812px;
+    z-index: 6;
+}
+
+/* Include meta-on-bars in head box so clip-path expand doesn't hide race info */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head {
+    min-height: 160px;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-event {
-    margin: 20px 0 0;
-    font-size: 42px;
+    margin: 8px 0 0;
+    font-size: 36px;
+    font-weight: 600;
     line-height: 1.1;
     color: #fff;
 }
@@ -1997,7 +2168,101 @@ body.cv-clip-still .cv-clip-video {
     color: #1a1a1a;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-head .vg-draw-meta,
+/* Draw race bar: orange + white chips sized to text, centered labels */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-meta-bar {
+    position: absolute;
+    left: 7px;
+    top: 105px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: auto;
+    max-width: 980px;
+    height: 40px;
+    margin: 0;
+    padding: 0 10px; /* room for skewed ::before overhang */
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    z-index: 2;
+    overflow: visible;
+}
+
+/* Chips size to text; skewed ::before paints the parallelogram so labels stay
+   truly centered in a normal flex box (no clip/overlap math on the text). */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 40px;
+    padding: 0 24px;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -8px;
+    right: -8px;
+    transform: skewX(-18deg);
+    z-index: -1;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip-label {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45em;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--race {
+    color: #fff;
+    text-transform: uppercase;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--race .mf-draw-chip-label {
+    /* Optical nudge inside skewed orange parallelogram */
+    transform: translateX(-2px);
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--race::before {
+    background: #e46a12;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--info {
+    color: #000;
+    z-index: 2; /* white tile sits over orange at the join */
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--info::before {
+    background: #fff;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--info .vg-draw-meta-time,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-chip--info .vg-draw-meta-round-label {
+    color: #000;
+    min-width: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .mf-draw-meta-rule {
+    flex: 1 1 auto;
+    align-self: flex-end;
+    height: 3px;
+    min-width: 120px;
+    max-width: 640px;
+    margin: 0 0 0 10px;
+    background: rgba(220, 220, 220, 0.55);
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-head .vg-draw-meta {
     position: relative;
     margin: 49px 0 0 37px;
@@ -2009,162 +2274,448 @@ body.cv-clip-still .cv-clip-video {
     opacity: 1;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-race,
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-race {
     position: absolute;
     left: -8px;
-    top: -2px;
+    top: 10px;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round,
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-round {
     position: absolute;
-    left: 130px;
-    top: -2px;
+    left: 148px;
+    top: 10px;
     color: #000;
     white-space: nowrap;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-time,
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-time {
     display: inline-block;
     min-width: 5.25em;
     color: #000;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-meta-round-label,
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-meta-round-label {
     color: #000;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes,
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes {
-    left: 273px;
-    top: 378px;
-    width: 900px;
-    gap: 24px;
-    z-index: 1;
+/* Lane nums + logos: nums @ ~200, logos on white circles @ (266,380) */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes {
+    left: 200px;
+    top: 380px;
+    width: 920px;
+    gap: 27px;
+    z-index: 5;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes {
     left: 200px;
+    top: 378px;
     width: 1000px;
+    gap: 24px;
+    z-index: 1;
 }
 
 [data-vmix-theme='rnz-milford'] .vg-lane {
     background: transparent;
     padding: 0;
-    min-height: 53px;
-    column-gap: 12px;
+    min-height: 50px;
+    column-gap: 14px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-lane--draw,
+[data-vmix-theme='rnz-milford'] .vg-lane--draw {
+    grid-template-columns: 50px 50px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 16px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-n {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
 [data-vmix-theme='rnz-milford'] .vg-draw-lanes--results .vg-lane {
     grid-template-columns: 37px minmax(0, 1fr);
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(2) {
-    margin-left: 12.3px;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-logo,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-logo--empty {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 6px;
+    box-sizing: border-box;
+    object-fit: contain;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(3) {
-    margin-left: 24.6px;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-logo--empty {
+    color: transparent;
+    font-size: 0;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(4) {
-    margin-left: 36.9px;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-crew {
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(5) {
-    margin-left: 49.2px;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-club {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 50px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(6) {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(2) {
+    margin-left: 12.5px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(3) {
+    margin-left: 24.5px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(4) {
+    margin-left: 36.5px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(5) {
+    margin-left: 49px;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(6) {
     margin-left: 61.5px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(7) {
-    margin-left: 73.8px;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(7) {
+    margin-left: 73.5px;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8),
-[data-vmix-theme='rnz-milford'] .vg-layer--results .vg-draw-lanes .vg-lane:nth-child(8) {
-    margin-left: 86.1px;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-draw-lanes .vg-lane:nth-child(8) {
+    margin-left: 86px;
 }
 
-/* Draw: stagger logo + crew fade-in (0.2s between lanes) */
+/* Draw intro (Milford_Draw_25.mov): mountain grow, angled panel fly-in, soft settles */
 [data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in {
     animation: none;
     opacity: 1;
     visibility: visible;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-head {
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-bg,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-fill,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-outline,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-panel-wrap,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-bars,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-rule,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-kicker,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-mark,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-word,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-lane-label,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-head,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane {
     opacity: 0;
-    animation: vg-fade-in 0.65s ease 4.5s forwards;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane-club {
-    opacity: 0;
-    animation: vg-fade-in 0.5s ease forwards;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-bg {
+    animation: mf-draw-fade-in 1.6s cubic-bezier(0.33, 0, 0.2, 1) both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(1) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(1) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(1) .vg-lane-club {
-    animation-delay: 4.5s;
+/* Orange outline: hard grow from bottom (unchanged) */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-outline {
+    opacity: 1;
+    animation: mf-draw-mountains-grow 2.8s cubic-bezier(0.33, 0, 0.2, 1) 0.45s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(2) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(2) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(2) .vg-lane-club {
-    animation-delay: 4.7s;
+/* White fill: delayed soft rise after the orange outline starts */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-mountains-fill {
+    opacity: 1;
+    -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 100%);
+    mask-image: linear-gradient(to top, #000 40%, transparent 100%);
+    -webkit-mask-size: 100% 0%;
+    mask-size: 100% 0%;
+    -webkit-mask-position: bottom;
+    mask-position: bottom;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    animation: mf-draw-mountains-fill-in 3.8s cubic-bezier(0.22, 0.61, 0.36, 1) 1.45s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(3) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(3) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(3) .vg-lane-club {
-    animation-delay: 4.9s;
+/* Panel soft spotlight once the plate has fully settled (2.05s + 2.7s) */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-panel {
+    animation: mf-lower-mountains-fade-loop 9s ease-in-out 4.9s infinite;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(4) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(4) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(4) .vg-lane-club {
-    animation-delay: 5.1s;
+/* Only the navy plate rotates — text/logo/lanes stay upright.
+   Linear timing + ease-out baked into keyframes avoids segment-to-segment jumps. */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-panel-wrap {
+    animation: mf-draw-panel-in 2.7s linear 2.05s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(5) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(5) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(5) .vg-lane-club {
-    animation-delay: 5.3s;
+/* DRAW + race bar + titles: expand L→R like lower-third bars */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-kicker {
+    animation: mf-lower-bars-in 0.75s cubic-bezier(0.33, 0, 0.2, 1) 3.25s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(6) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(6) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(6) .vg-lane-club {
-    animation-delay: 5.5s;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-bars {
+    animation: mf-lower-bars-in 0.9s cubic-bezier(0.33, 0, 0.2, 1) 3.3s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(7) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(7) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(7) .vg-lane-club {
-    animation-delay: 5.7s;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-rule {
+    animation: mf-lower-bars-in 0.75s cubic-bezier(0.33, 0, 0.2, 1) 3.4s both;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(8) .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(8) .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in .vg-draw-lanes .vg-lane:nth-child(8) .vg-lane-club {
-    animation-delay: 5.9s;
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-head {
+    animation: mf-lower-bars-in 0.85s cubic-bezier(0.33, 0, 0.2, 1) 3.35s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-lane-label {
+    animation: mf-draw-fade-in 0.5s cubic-bezier(0.33, 0, 0.2, 1) 3.55s both;
+}
+
+/* Milford logo: fade only (no rotate / fly) */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-mark,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-word {
+    animation: mf-draw-fade-in 0.7s cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-mark {
+    animation-delay: 3.4s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-draw-logo-word {
+    animation-delay: 3.55s;
+}
+
+/* Lanes: cascade in from the right (whole row — kill global per-logo fade) */
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane {
+    animation: mf-draw-lane-from-right 0.55s cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane-logo,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane-logo--empty {
+    animation: none !important;
+    opacity: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(1) {
+    animation-delay: 3.7s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(2) {
+    animation-delay: 3.85s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(3) {
+    animation-delay: 4.0s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(4) {
+    animation-delay: 4.15s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(5) {
+    animation-delay: 4.3s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(6) {
+    animation-delay: 4.45s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(7) {
+    animation-delay: 4.6s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .vg-draw-lanes .vg-lane:nth-child(8) {
+    animation-delay: 4.75s;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-bg,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-mountains-fill,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-mountains-outline,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-panel-wrap,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-bars,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-rule,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-logo-art,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-logo-mark,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-logo-word,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-kicker,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-lane-label,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .vg-draw-head,
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .vg-draw-lanes .vg-lane {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-mountains-fill {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .mf-draw-panel {
+    animation: mf-lower-mountains-fade-loop 9s ease-in-out infinite !important;
+    opacity: 1;
+}
+
+@keyframes mf-draw-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes mf-draw-mountains-grow {
+    from {
+        clip-path: inset(100% 0 0 0);
+        opacity: 1;
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+}
+
+@keyframes mf-draw-mountains-fill-in {
+    from {
+        -webkit-mask-size: 100% 0%;
+        mask-size: 100% 0%;
+        opacity: 0;
+    }
+    55% {
+        opacity: 0.85;
+    }
+    to {
+        -webkit-mask-size: 100% 240%;
+        mask-size: 100% 240%;
+        opacity: 1;
+    }
+}
+
+/* Fly/rotate into the angled hold pose (PNG already has the trapezoid) */
+/* Progress = easeOutCubic(t); linear animation timing between steps */
+@keyframes mf-draw-panel-in {
+    0% {
+        transform: translate(120.00px, 10.00px) rotate(-26.000deg) scale(0.2800);
+        opacity: 0.00;
+    }
+    5% {
+        transform: translate(102.88px, 8.57px) rotate(-22.292deg) scale(0.3827);
+        opacity: 0.42;
+    }
+    10% {
+        transform: translate(87.48px, 7.29px) rotate(-18.954deg) scale(0.4751);
+        opacity: 0.83;
+    }
+    15% {
+        transform: translate(73.69px, 6.14px) rotate(-15.967deg) scale(0.5578);
+        opacity: 1.00;
+    }
+    20% {
+        transform: translate(61.44px, 5.12px) rotate(-13.312deg) scale(0.6314);
+        opacity: 1.00;
+    }
+    25% {
+        transform: translate(50.62px, 4.22px) rotate(-10.969deg) scale(0.6963);
+        opacity: 1.00;
+    }
+    30% {
+        transform: translate(41.16px, 3.43px) rotate(-8.918deg) scale(0.7530);
+        opacity: 1.00;
+    }
+    35% {
+        transform: translate(32.95px, 2.75px) rotate(-7.140deg) scale(0.8023);
+        opacity: 1.00;
+    }
+    40% {
+        transform: translate(25.92px, 2.16px) rotate(-5.616deg) scale(0.8445);
+        opacity: 1.00;
+    }
+    45% {
+        transform: translate(19.97px, 1.66px) rotate(-4.326deg) scale(0.8802);
+        opacity: 1.00;
+    }
+    50% {
+        transform: translate(15.00px, 1.25px) rotate(-3.250deg) scale(0.9100);
+        opacity: 1.00;
+    }
+    55% {
+        transform: translate(10.94px, 0.91px) rotate(-2.369deg) scale(0.9344);
+        opacity: 1.00;
+    }
+    60% {
+        transform: translate(7.68px, 0.64px) rotate(-1.664deg) scale(0.9539);
+        opacity: 1.00;
+    }
+    65% {
+        transform: translate(5.14px, 0.43px) rotate(-1.115deg) scale(0.9691);
+        opacity: 1.00;
+    }
+    70% {
+        transform: translate(3.24px, 0.27px) rotate(-0.702deg) scale(0.9806);
+        opacity: 1.00;
+    }
+    75% {
+        transform: translate(1.88px, 0.16px) rotate(-0.406deg) scale(0.9888);
+        opacity: 1.00;
+    }
+    80% {
+        transform: translate(0.96px, 0.08px) rotate(-0.208deg) scale(0.9942);
+        opacity: 1.00;
+    }
+    85% {
+        transform: translate(0.41px, 0.03px) rotate(-0.088deg) scale(0.9976);
+        opacity: 1.00;
+    }
+    90% {
+        transform: translate(0.12px, 0.01px) rotate(-0.026deg) scale(0.9993);
+        opacity: 1.00;
+    }
+    95% {
+        transform: translate(0.02px, 0.00px) rotate(-0.003deg) scale(0.9999);
+        opacity: 1.00;
+    }
+    100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+        opacity: 1.00;
+    }
+}
+
+@keyframes mf-draw-bars-in {
+    from {
+        clip-path: inset(0 100% 0 0);
+        opacity: 0;
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+}
+
+@keyframes mf-draw-lane-from-right {
+    from {
+        transform: translateX(56px);
+        opacity: 0;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
 }
 
 [data-vmix-theme='rnz-milford'] .vg-layer--results.vg-layer--visible.vg-layer--fade-in .vg-draw-head {
@@ -2245,10 +2796,6 @@ body.cv-clip-still .cv-clip-video {
     animation-delay: 7.4s;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .vg-draw-head,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .vg-draw-lanes .vg-lane-logo,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .vg-draw-lanes .vg-lane-logo--empty,
-[data-vmix-theme='rnz-milford'] .vg-layer--draw.kp-refresh .vg-draw-lanes .vg-lane-club,
 [data-vmix-theme='rnz-milford'] .vg-layer--results.kp-refresh .vg-draw-head,
 [data-vmix-theme='rnz-milford'] .vg-layer--results.kp-refresh .vg-draw-lanes .vg-lane-n,
 [data-vmix-theme='rnz-milford'] .vg-layer--results.kp-refresh .vg-draw-lanes .vg-lane-logo,
@@ -2283,7 +2830,6 @@ body.cv-clip-still .cv-clip-video {
     color: transparent;
 }
 
-[data-vmix-theme='rnz-milford'] .vg-layer--draw .vg-lane-n,
 [data-vmix-theme='rnz-milford'] .vg-lane-names {
     display: none;
 }

@@ -2140,8 +2140,9 @@ function vgEnterHold() {
         const bg = vgGetBgEl();
         if (bg) bg.classList.add('vg-bg--fade-in');
     }
-    vgShowTextLayer(true, { fadeIn: true });
+    /* Layout before fade-in so staggered CSS intros don't restart mid-cascade. */
     vgApplySavedLayout(vgPlayback.graphic);
+    vgShowTextLayer(true, { fadeIn: true });
     if (vgIsSpeedGraphic(vgPlayback.graphic) && vgMilfordCssGraphic('speed')) {
         vgLoadSpeedFrame();
         vgScheduleProfile(1000, () => {
@@ -2597,8 +2598,78 @@ function vgMilfordLowerImg(className, src, layoutId) {
     img.src = src;
     img.alt = '';
     img.setAttribute('aria-hidden', 'true');
-    img.dataset.vgLayout = layoutId;
+    if (layoutId) img.dataset.vgLayout = layoutId;
     return img;
+}
+
+function vgAppendMilfordDrawChrome(layer) {
+    const chrome = vgEl('div', 'mf-draw-chrome');
+    chrome.dataset.vgLayout = 'mf-draw-chrome';
+    chrome.setAttribute('aria-hidden', 'true');
+    chrome.appendChild(
+        vgMilfordLowerImg('mf-draw-bg', 'assets/vmix/milford/draw-bg.png?v=3', 'mf-draw-bg'),
+    );
+    const mountains = vgEl('div', 'mf-draw-mountains');
+    mountains.dataset.vgLayout = 'mf-draw-mountains';
+    mountains.setAttribute('aria-hidden', 'true');
+    const mtnFill = document.createElement('img');
+    mtnFill.className = 'mf-draw-mountains-fill';
+    mtnFill.src = 'assets/vmix/milford/draw-mountains-fill.png?v=1';
+    mtnFill.alt = '';
+    const mtnOutline = document.createElement('img');
+    mtnOutline.className = 'mf-draw-mountains-outline';
+    mtnOutline.src = 'assets/vmix/milford/draw-mountains-outline.png?v=1';
+    mtnOutline.alt = '';
+    mountains.appendChild(mtnFill);
+    mountains.appendChild(mtnOutline);
+    chrome.appendChild(mountains);
+    const panelWrap = vgEl('div', 'mf-draw-panel-wrap');
+    panelWrap.dataset.vgLayout = 'mf-draw-panel';
+    panelWrap.appendChild(
+        vgMilfordLowerImg(
+            'mf-draw-panel',
+            'assets/vmix/milford/draw-panel.png?v=6',
+            null,
+        ),
+    );
+    chrome.appendChild(panelWrap);
+    chrome.appendChild(
+        vgMilfordLowerImg(
+            'mf-draw-bars',
+            'assets/vmix/milford/draw-bars.png?v=1',
+            'mf-draw-bars',
+        ),
+    );
+    chrome.appendChild(
+        vgMilfordLowerImg(
+            'mf-draw-rule',
+            'assets/vmix/milford/draw-rule.png?v=1',
+            'mf-draw-rule',
+        ),
+    );
+    const logoArt = vgEl('div', 'mf-draw-logo-art');
+    logoArt.dataset.vgLayout = 'mf-draw-logo';
+    logoArt.setAttribute('aria-hidden', 'true');
+    const logoMark = document.createElement('img');
+    logoMark.className = 'mf-draw-logo-mark';
+    logoMark.src = 'assets/vmix/milford/draw-logo-mark.png?v=4';
+    logoMark.alt = '';
+    const logoWord = document.createElement('img');
+    logoWord.className = 'mf-draw-logo-word';
+    logoWord.src = 'assets/vmix/milford/draw-logo-word.png?v=4';
+    logoWord.alt = '';
+    logoArt.appendChild(logoMark);
+    logoArt.appendChild(logoWord);
+    chrome.appendChild(logoArt);
+    layer.appendChild(chrome);
+
+    const kicker = vgEl('p', 'mf-draw-kicker', 'DRAW');
+    kicker.dataset.vgLayout = 'mf-draw-kicker';
+    layer.appendChild(kicker);
+
+    const laneLabel = vgEl('p', 'mf-draw-lane-label', 'LANE');
+    laneLabel.dataset.vgLayout = 'mf-draw-lane-label';
+    layer.appendChild(laneLabel);
 }
 
 function vgAppendMilfordLowerChrome(layer) {
@@ -3236,10 +3307,10 @@ function vgThemeId() {
     return document.body?.dataset?.vmixTheme || '';
 }
 
-/** Lane numbers are baked into Milford draw; results (blank plate) uses HTML placing. */
+/** Milford draw/results use HTML lane numbers (panel plate is shape only). */
 function vgShowLaneNumber(mode) {
     const theme = vgThemeId();
-    if (theme === 'rnz-milford') return mode === 'results';
+    if (theme === 'rnz-milford') return true;
     return theme !== 'kri' && theme !== 'beachsprints-milford';
 }
 
@@ -3438,6 +3509,45 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
 function vgRenderMilfordRaceHead(head, race, layoutId) {
     const fullName = vgExpandEventName(race.eventType, vgState.lookup);
     head.appendChild(vgEl('h2', 'vg-draw-event', fullName));
+
+    /* Draw: CSS chips sized to text (orange race + white time/round). */
+    if (layoutId === 'draw-head' && vgIsMilfordTheme()) {
+        const meta = vgEl('div', 'vg-draw-meta mf-draw-meta-bar');
+        const raceChip = vgEl('span', 'mf-draw-chip mf-draw-chip--race');
+        raceChip.appendChild(
+            vgEl(
+                'span',
+                'mf-draw-chip-label',
+                `Race ${vgMilfordRaceChip(race)}`,
+            ),
+        );
+        meta.appendChild(raceChip);
+
+        const roundLabel = vgFormatRoundLabel(race.round, race.division);
+        const time = vgFormatCompactScheduleTime(race.startAt);
+        if (time || roundLabel) {
+            const infoChip = vgEl('span', 'mf-draw-chip mf-draw-chip--info');
+            const label = vgEl('span', 'mf-draw-chip-label');
+            if (time) {
+                label.appendChild(vgEl('span', 'vg-draw-meta-time', time));
+            }
+            if (time && roundLabel) {
+                label.appendChild(document.createTextNode(' '));
+            }
+            if (roundLabel) {
+                label.appendChild(
+                    vgEl('span', 'vg-draw-meta-round-label', roundLabel),
+                );
+            }
+            infoChip.appendChild(label);
+            meta.appendChild(infoChip);
+        }
+        meta.appendChild(vgEl('span', 'mf-draw-meta-rule'));
+        head.appendChild(meta);
+        head.dataset.vgLayout = layoutId;
+        return;
+    }
+
     const meta = vgEl('p', 'vg-draw-meta');
     meta.appendChild(vgEl('span', 'vg-draw-meta-race', `Race ${race.race}`));
     const roundLabel = vgFormatRoundLabel(race.round, race.division);
@@ -3512,7 +3622,7 @@ function vgRenderDraw(layer, race) {
     }
 
     if (vgIsMilfordTheme()) {
-        vgAppendMilfordBoardChrome(layer, 'draw');
+        vgAppendMilfordDrawChrome(layer);
     }
 
     const head = vgEl('div', 'vg-draw-head');
