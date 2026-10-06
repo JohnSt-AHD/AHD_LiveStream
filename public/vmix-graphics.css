@@ -4479,6 +4479,8 @@ body.cv-clip-still .cv-clip-video {
     justify-content: flex-start;
     gap: 6px;
     overflow: visible;
+    perspective: 900px;
+    perspective-origin: 50% 40%;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-row {
@@ -4492,6 +4494,73 @@ body.cv-clip-still .cv-clip-video {
     flex: 0 0 42px;
     color: #fff;
     font-family: Inter, "Segoe UI", sans-serif;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+/*
+ * Place pass: even Y travel (linear) + soft mid rotate/depth.
+ * --mf-flip-y = invert offset from old slot (set in JS).
+ */
+@keyframes mf-cvboard-row-rise {
+    0% {
+        transform: translateY(var(--mf-flip-y, 0px)) translateZ(0) rotateX(0deg) scale(1);
+    }
+    25% {
+        transform: translateY(calc(var(--mf-flip-y, 0px) * 0.75)) translateZ(16px)
+            rotateX(-6deg) scale(1.012);
+    }
+    50% {
+        transform: translateY(calc(var(--mf-flip-y, 0px) * 0.5)) translateZ(28px)
+            rotateX(-10deg) scale(1.02);
+    }
+    75% {
+        transform: translateY(calc(var(--mf-flip-y, 0px) * 0.25)) translateZ(16px)
+            rotateX(-6deg) scale(1.012);
+    }
+    100% {
+        transform: translateY(0) translateZ(0) rotateX(0deg) scale(1);
+    }
+}
+
+@keyframes mf-cvboard-row-fall {
+    0% {
+        transform: translateY(var(--mf-flip-y, 0px)) translateZ(0) rotateX(0deg) scale(1);
+    }
+    25% {
+        transform: translateY(calc(var(--mf-flip-y, 0px) * 0.75)) translateZ(-14px)
+            rotateX(6deg) scale(0.99);
+    }
+    50% {
+        transform: translateY(calc(var(--mf-flip-y, 0px) * 0.5)) translateZ(-24px)
+            rotateX(10deg) scale(0.985);
+    }
+    75% {
+        transform: translateY(calc(var(--mf-flip-y, 0px) * 0.25)) translateZ(-14px)
+            rotateX(6deg) scale(0.99);
+    }
+    100% {
+        transform: translateY(0) translateZ(0) rotateX(0deg) scale(1);
+    }
+}
+
+[data-vmix-theme='rnz-milford'] .mf-cvboard-row.mf-cvboard-row--animating {
+    will-change: transform;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-cvboard-row.mf-cvboard-row--rising {
+    z-index: 5;
+    animation: mf-cvboard-row-rise 0.6s linear both;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-cvboard-row.mf-cvboard-row--falling {
+    z-index: 1;
+    animation: mf-cvboard-row-fall 0.6s linear both;
+}
+
+/* QF sits between layers so riser crosses in front, dropper behind */
+[data-vmix-theme='rnz-milford'] .mf-cvboard-qline.mf-cvboard-qline--pass {
+    z-index: 3;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-medal {
@@ -4524,6 +4593,8 @@ body.cv-clip-still .cv-clip-video {
     margin-bottom: -5px;
     overflow: visible;
     pointer-events: none;
+    z-index: 2;
+    transform-style: preserve-3d;
 }
 
 [data-vmix-theme='rnz-milford'] .mf-cvboard-qline-rule {

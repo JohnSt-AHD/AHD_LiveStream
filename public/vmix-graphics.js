@@ -994,7 +994,7 @@ function vgEnableBrowserPreview() {
         const hint = document.createElement('p');
         hint.className = 'vg-preview-hint';
         hint.textContent =
-            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · Y split';
+            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · Y split · P animate swap 2nd/3rd';
         document.body.appendChild(hint);
     }
     vgFitPreviewStage();
@@ -4051,6 +4051,14 @@ function vgBindKeyboard() {
         }
         if (key === 'p') {
             e.preventDefault();
+            /* CV board preview: P = animated place swap (not previous-race step) */
+            if (
+                vgPlayback.graphic === 'cvboard' &&
+                window.VmixMilfordCvBoard?.useSample?.() &&
+                window.VmixMilfordCvBoard?.demoSwapPlaces?.(2, 3)
+            ) {
+                return;
+            }
             vgStepLiveRace(-1);
             return;
         }

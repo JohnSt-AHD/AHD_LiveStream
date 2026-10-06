@@ -11,6 +11,21 @@
     const PANEL_PAD_BOTTOM = 28;
     const ROW_H = 42;
     const ROW_GAP = 6;
+    /** Place-change pass duration (ms) — keep in sync with CSS. */
+    const FLIP_MS = 600;
+
+    function clearRowFlip(row) {
+        if (!row) return;
+        row.classList.remove(
+            'mf-cvboard-row--animating',
+            'mf-cvboard-row--rising',
+            'mf-cvboard-row--falling',
+        );
+        row.style.transition = '';
+        row.style.transform = '';
+        row.style.removeProperty('--mf-flip-y');
+        row.style.removeProperty('z-index');
+    }
 
     /** Transparent crest cutouts (same pipeline as Karāpiro / Regatta NZ). */
     const crestCutoutCache = new Map();
@@ -459,8 +474,9 @@
 
         const fillRow = (row, b, i) => {
             const place = i + 1;
-            row.className =
-                'mf-cvboard-row' + (i === 0 ? ' mf-cvboard-row--lead' : '');
+            /* Preserve pass-animation classes — className wipe was killing ~1s mid-flight */
+            row.classList.add('mf-cvboard-row');
+            row.classList.toggle('mf-cvboard-row--lead', i === 0);
             row.dataset.lane = String(b.lane);
 
             const medal = row.querySelector('.mf-cvboard-medal');
@@ -520,22 +536,124 @@
             return row;
         };
 
-        const structureSig = `${ranked.map((b) => b.lane).join(',')}|q${qCut || 0}`;
+        /* Crew set + QF cut — order changes use FLIP, not a full rebuild */
+        const crewSig = `${[...ranked]
+            .map((b) => b.lane)
+            .sort((a, b) => a - b)
+            .join(',')}|q${qCut || 0}`;
+        const orderSig = ranked.map((b) => b.lane).join(',');
         const wasSplit = rootEl.classList.contains('mf-cvboard--split');
         const wantSplit = !!split;
 
-        if (list.dataset.rowSig !== structureSig) {
+        const existingByLane = new Map(
+            [...list.querySelectorAll('.mf-cvboard-row')].map((r) => [
+                r.dataset.lane,
+                r,
+            ]),
+        );
+        let qlineEl = list.querySelector('.mf-cvboard-qline');
+        const sameCrews = list.dataset.crewSig === crewSig;
+        const orderChanged = list.dataset.orderSig !== orderSig;
+
+        if (!sameCrews) {
             list.replaceChildren();
             ranked.forEach((b, i) => {
                 list.appendChild(makeRow(b, i));
                 if (qCut && i + 1 === qCut) list.appendChild(makeQualifyLine());
             });
-            list.dataset.rowSig = structureSig;
-        } else {
-            const rows = [...list.querySelectorAll('.mf-cvboard-row')];
+            list.dataset.crewSig = crewSig;
+            list.dataset.orderSig = orderSig;
+            list.dataset.rowSig = `${orderSig}|q${qCut || 0}`;
+        } else if (!orderChanged) {
+            /* Same order — update cells only. Do not re-append rows or the
+               CSS pass animation gets cancelled by the next poll (~400ms). */
             ranked.forEach((b, i) => {
-                if (rows[i]) fillRow(rows[i], b, i);
+                const row = existingByLane.get(String(b.lane));
+                if (row) fillRow(row, b, i);
             });
+        } else {
+            const firstTops = new Map();
+            existingByLane.forEach((el, lane) => {
+                firstTops.set(lane, el.getBoundingClientRect().top);
+                clearRowFlip(el);
+                el.style.transition = 'none';
+            });
+            qlineEl?.classList.remove('mf-cvboard-qline--pass');
+
+            ranked.forEach((b, i) => {
+                const key = String(b.lane);
+                let row = existingByLane.get(key);
+                if (!row) {
+                    row = makeRow(b, i);
+                    existingByLane.set(key, row);
+                } else {
+                    fillRow(row, b, i);
+                }
+                list.appendChild(row);
+                if (qCut && i + 1 === qCut) {
+                    if (!qlineEl) qlineEl = makeQualifyLine();
+                    list.appendChild(qlineEl);
+                }
+            });
+
+            existingByLane.forEach((el, lane) => {
+                if (!ranked.some((b) => String(b.lane) === lane)) el.remove();
+            });
+            if (!qCut && qlineEl) qlineEl.remove();
+
+            list.dataset.orderSig = orderSig;
+            list.dataset.rowSig = `${orderSig}|q${qCut || 0}`;
+
+            const movers = [];
+            ranked.forEach((b) => {
+                const key = String(b.lane);
+                const row = existingByLane.get(key);
+                if (!row || !firstTops.has(key)) return;
+                const dy = firstTops.get(key) - row.getBoundingClientRect().top;
+                if (Math.abs(dy) < 0.5) return;
+                /* Invert: park at old visual Y before the pass animation */
+                row.style.setProperty('--mf-flip-y', `${dy}px`);
+                row.style.transform = `translateY(${dy}px)`;
+                /* dy > 0 → was below, now above → rising in front */
+                movers.push({ row, rising: dy > 0 });
+            });
+            if (movers.length) {
+                const qlineNow = list.querySelector('.mf-cvboard-qline');
+                if (qlineNow) qlineNow.classList.add('mf-cvboard-qline--pass');
+                void list.offsetHeight;
+                requestAnimationFrame(() => {
+                    movers.forEach(({ row, rising }) => {
+                        row.style.transition = '';
+                        row.style.transform = '';
+                        row.classList.add(
+                            'mf-cvboard-row--animating',
+                            rising
+                                ? 'mf-cvboard-row--rising'
+                                : 'mf-cvboard-row--falling',
+                        );
+                        const done = (ev) => {
+                            if (
+                                ev.target !== row ||
+                                (ev.animationName &&
+                                    !String(ev.animationName).includes(
+                                        'mf-cvboard-row-',
+                                    ))
+                            ) {
+                                return;
+                            }
+                            clearRowFlip(row);
+                            row.removeEventListener('animationend', done);
+                        };
+                        row.addEventListener('animationend', done);
+                        setTimeout(() => clearRowFlip(row), FLIP_MS + 100);
+                    });
+                    setTimeout(() => {
+                        list
+                            .querySelector('.mf-cvboard-qline')
+                            ?.classList.remove('mf-cvboard-qline--pass');
+                    }, FLIP_MS + 100);
+                });
+            }
         }
 
         /* Toggle split after DOM is stable so orange/QF rules can ease-in */
@@ -602,13 +720,44 @@
         tick();
     }
 
+    /**
+     * Sample/preview helper: swap chainage of two current placings (1-based).
+     * e.g. demoSwapPlaces(2, 3) — 2nd and 3rd trade positions.
+     */
+    function demoSwapPlaces(placeA = 2, placeB = 3) {
+        if (!sampleCache?.boats?.length) return false;
+        const snap = limitCrews(structuredClone(sampleCache));
+        const ranked = rankedBoats(snap);
+        const a = ranked[placeA - 1];
+        const b = ranked[placeB - 1];
+        if (!a || !b) return false;
+        const boatA = sampleCache.boats.find(
+            (x) => Number(x.lane) === Number(a.lane),
+        );
+        const boatB = sampleCache.boats.find(
+            (x) => Number(x.lane) === Number(b.lane),
+        );
+        if (!boatA || !boatB) return false;
+        const tmp = boatA.chainage_m;
+        boatA.chainage_m = boatB.chainage_m;
+        boatB.chainage_m = tmp;
+        /* Break ties so sort order actually flips */
+        if (Number(boatA.chainage_m) === Number(boatB.chainage_m)) {
+            boatA.chainage_m = Number(boatA.chainage_m) + 0.5;
+        }
+        tick();
+        return true;
+    }
+
     function onKey(e) {
         if (e.repeat) return;
         if (e.target.closest?.('input, textarea, select')) return;
-        if (e.key.toLowerCase() === 'y' && rootEl) {
+        const k = e.key.toLowerCase();
+        if (k === 'y' && rootEl) {
             e.preventDefault();
             toggleSplit();
         }
+        /* P is handled in vmix-graphics.js so it doesn't also step live race */
     }
 
     document.addEventListener('keydown', onKey);
@@ -617,6 +766,7 @@
         mount,
         stop,
         toggleSplit,
+        demoSwapPlaces,
         paint,
         useSample,
     };
