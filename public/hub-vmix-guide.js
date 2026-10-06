@@ -30,7 +30,7 @@ const VMIX_TRIGGERS = [
     { key: 'l', graphic: 'Lower third', desc: 'Milford: video in, text at 1s, pause at 1.5s; o fades text and finishes video' },
     { key: 'd', graphic: 'Draw', desc: 'Milford: continuous video; text at 5s, fades out at 25s; n/p steps race number ±1; o fades text early' },
     { key: 'r', graphic: 'Results', desc: 'Milford: text at 6s, auto text out at 16s, video plays through' },
-    { key: 'w', graphic: 'Leader', desc: 'KRI — leader box top-right (Milford placement, white panel + blue accents); fade in/out with o · 1–8 switch lane · Milford — leader video + lane text' },
+    { key: 'w', graphic: 'Leader', desc: 'Milford — race leader bar (club logo, crew name, Lane N); 1–8 switch lane; o to fade out. KRI — leader card top-right' },
     { key: 'x', graphic: 'CV follow', desc: 'Karāpiro — leader ticket on the lead boat with an arrow to the hull (X). KRI — leader box follows live CV position; crew from lane 1–8 · o to fade out' },
     { key: 'h', graphic: 'CV boat tags', desc: 'Karāpiro — small suit-strip lane tags on each CV boat (H). KRI — one line + crew card per CV boat slot · o to fade out' },
     { key: 'u', graphic: 'Course underlay', desc: 'KRI — procedural course underlay (sim / CrewSight). Karāpiro (Ged) — live drone CV course (same as vmix-ged-cv-course; crew tags + leader). o to fade out.' },
@@ -231,7 +231,7 @@ function hubRenderVmixGuide() {
         const leaderNote = document.createElement('p');
         leaderNote.className = 'hub-vmix-map-note';
         leaderNote.innerHTML =
-            '<strong>Leader (<code>w</code>):</strong> KRI — white panel top-right (same text placement as Milford GT); fade in with <code>w</code>, out with <code>o</code>. Set <strong>Leader lane</strong> on the hub (default 4); press <code>1</code>–<code>8</code> on air to switch lane. Milford — leader video pauses at 6s; text fades in after 2s.';
+            '<strong>Leader (<code>w</code>):</strong> Milford — runtime leader bar from Leader_3 (logo on orange, crew on navy, Lane N on the info bar); <code>1</code>–<code>8</code> switch lane; <code>o</code> out. Preview: <a href="vmix-rnz-milford-leader-preview.html">vmix-rnz-milford-leader-preview.html</a> (add <code>?dev=1</code> to edit layout). KRI — white panel top-right.';
         examples.appendChild(leaderNote);
 
         const cvLeaderNote = document.createElement('p');

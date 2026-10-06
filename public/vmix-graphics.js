@@ -994,7 +994,7 @@ function vgEnableBrowserPreview() {
         const hint = document.createElement('p');
         hint.className = 'vg-preview-hint';
         hint.textContent =
-            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · G tracker · Y split · P animate swap 2nd/3rd';
+            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · G tracker · W leader · Y split · P animate swap 2nd/3rd';
         document.body.appendChild(hint);
     }
     vgFitPreviewStage();
@@ -2573,7 +2573,6 @@ const VG_MF_BOARD_INTRO = {
     draw: { kind: 'anim' },
     results: { kind: 'anim' },
     title: { kind: 'anim' },
-    leader: { kind: 'sprite' },
     tracker: { kind: 'sprite' },
 };
 
@@ -3584,7 +3583,8 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
     }
 
     if (vgIsMilfordTheme()) {
-        vgAppendMilfordBoardChrome(layer, 'leader');
+        vgRenderMilfordLeader(layer, race, laneNum, opts);
+        return;
     }
 
     if (info.logoUrl) {
@@ -3608,6 +3608,112 @@ function vgRenderLeader(layer, race, laneNum, opts = {}) {
     crew.dataset.vgLayout = 'leader-crew';
     wrap.appendChild(crew);
     layer.appendChild(wrap);
+}
+
+function vgApplyMilfordLeaderCrestCutout(img, url) {
+    if (!url || !img) return;
+    img.dataset.logoSrc = url;
+    img.src = url;
+    if (!vgLeaderCrestCutoutCache) vgLeaderCrestCutoutCache = new Map();
+    const cached = vgLeaderCrestCutoutCache.get(url);
+    if (cached) {
+        img.src = cached;
+        return;
+    }
+    if (!vgLeaderCutoutModPromise) {
+        vgLeaderCutoutModPromise = import('./regatta-nz/logo-cutout.js').catch(() => null);
+    }
+    vgLeaderCutoutModPromise.then((mod) => {
+        if (!mod?.prepareLogoCutout) return;
+        mod.prepareLogoCutout(url).then((dataUrl) => {
+            const out = dataUrl || url;
+            vgLeaderCrestCutoutCache.set(url, out);
+            document.querySelectorAll('img.mf-leader-logo').forEach((el) => {
+                if (el.dataset.logoSrc === url) el.src = out;
+            });
+        });
+    });
+}
+
+let vgLeaderCrestCutoutCache = null;
+let vgLeaderCutoutModPromise = null;
+
+function vgRenderMilfordLeader(layer, race, laneNum, opts = {}) {
+    vgSetLayerGraphicClass(layer, 'vg-layer--leader');
+    layer.dataset.vgLayout = 'leader';
+    layer.replaceChildren();
+
+    const entry = vgFindDrawLane(race, laneNum);
+    if (!entry) return;
+
+    const club = vgParseClubCode(entry.code);
+    const info = vgClubInfo(club.id, vgState.lookup);
+
+    const root = vgEl('div', 'mf-leader');
+    root.dataset.vgLayout = 'mf-leader';
+    if (opts.fadeIn) root.classList.add('mf-leader--fade-in');
+
+    const chrome = vgEl('div', 'mf-leader-chrome');
+    chrome.dataset.vgLayout = 'mf-leader-chrome';
+    chrome.setAttribute('aria-hidden', 'true');
+
+    const navy = document.createElement('img');
+    navy.className = 'mf-leader-navy';
+    navy.src = 'assets/vmix/milford/leader-navy.png?v=4';
+    navy.alt = '';
+    navy.dataset.vgLayout = 'mf-leader-navy';
+    chrome.appendChild(navy);
+
+    const logoPlate = document.createElement('img');
+    logoPlate.className = 'mf-leader-logo-plate';
+    logoPlate.src = 'assets/vmix/milford/leader-logo-plate.png?v=4';
+    logoPlate.alt = '';
+    logoPlate.dataset.vgLayout = 'mf-leader-logo-plate';
+    chrome.appendChild(logoPlate);
+
+    const orange = document.createElement('img');
+    orange.className = 'mf-leader-orange';
+    orange.src = 'assets/vmix/milford/leader-orange.png?v=4';
+    orange.alt = '';
+    orange.dataset.vgLayout = 'mf-leader-orange';
+    chrome.appendChild(orange);
+
+    const infoWhite = document.createElement('img');
+    infoWhite.className = 'mf-leader-info-white';
+    infoWhite.src = 'assets/vmix/milford/leader-info-white.png?v=4';
+    infoWhite.alt = '';
+    infoWhite.dataset.vgLayout = 'mf-leader-info-white';
+    chrome.appendChild(infoWhite);
+
+    root.appendChild(chrome);
+
+    if (info.logoUrl) {
+        const img = document.createElement('img');
+        img.className = 'mf-leader-logo vg-leader-logo';
+        img.alt = '';
+        img.dataset.vgLayout = 'leader-logo';
+        root.appendChild(img);
+        vgApplyMilfordLeaderCrestCutout(img, info.logoUrl);
+    } else {
+        const empty = vgEl('span', 'mf-leader-logo mf-leader-logo--empty vg-leader-logo vg-leader-logo--empty', '—');
+        empty.dataset.vgLayout = 'leader-logo';
+        root.appendChild(empty);
+    }
+
+    const badge = vgEl('p', 'mf-leader-badge vg-leader-badge', 'Leader');
+    badge.dataset.vgLayout = 'leader-badge';
+    root.appendChild(badge);
+
+    const laneBadge = vgEl('p', 'mf-leader-lane vg-leader-badge-lane', `Lane ${laneNum}`);
+    laneBadge.dataset.vgLayout = 'leader-badge-lane';
+    root.appendChild(laneBadge);
+
+    const crewName = info.name || String(entry.code || '').trim();
+    const crew = vgEl('p', 'mf-leader-crew vg-leader-crew', crewName);
+    crew.dataset.vgLayout = 'leader-crew';
+    root.appendChild(crew);
+
+    layer.appendChild(root);
 }
 
 function vgRenderMilfordRaceHead(head, race, layoutId) {
