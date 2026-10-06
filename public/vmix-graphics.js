@@ -994,7 +994,7 @@ function vgEnableBrowserPreview() {
         const hint = document.createElement('p');
         hint.className = 'vg-preview-hint';
         hint.textContent =
-            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · Y split · P animate swap 2nd/3rd';
+            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · G tracker · Y split · P animate swap 2nd/3rd';
         document.body.appendChild(hint);
     }
     vgFitPreviewStage();
@@ -2155,7 +2155,9 @@ function vgEnterHold() {
     /* Layout before fade-in so staggered CSS intros don't restart mid-cascade. */
     vgApplySavedLayout(vgPlayback.graphic);
     vgShowTextLayer(true, { fadeIn: true });
-    if (vgIsSpeedGraphic(vgPlayback.graphic) && vgMilfordCssGraphic('speed')) {
+    if (vgMilfordRuntimeTracker()) {
+        /* Native pace + orange-dot chrome — no speed.html iframe */
+    } else if (vgIsSpeedGraphic(vgPlayback.graphic) && vgMilfordCssGraphic('speed')) {
         vgLoadSpeedFrame();
         vgScheduleProfile(1000, () => {
             if (!vgIsSpeedGraphic(vgPlayback.graphic)) return;
@@ -2262,6 +2264,7 @@ function vgResetToIdle() {
     if (window.KriVmixWeather) window.KriVmixWeather.remove();
     if (window.KriVmixCourseScroll) window.KriVmixCourseScroll.remove();
     if (window.VmixMilfordCvBoard) window.VmixMilfordCvBoard.stop();
+    if (window.VmixMilfordTracker) window.VmixMilfordTracker.stop();
     vgSetStageState('idle');
     vgShowTextLayer(false);
     vgShowBackground(false);
@@ -2448,11 +2451,19 @@ function vgTriggerClear() {
     vgResetToIdle();
 }
 
+function vgMilfordRuntimeTracker(graphic) {
+    return vgIsMilfordTheme() && vgIsSpeedGraphic(graphic ?? vgPlayback.graphic);
+}
+
 function vgPrepareTrackerContent() {
     const layer = vgGetLayerEl();
     if (!layer) return;
     layer.replaceChildren();
     vgSetLayerGraphicClass(layer, 'vg-layer--tracker');
+    if (vgMilfordRuntimeTracker('speed')) {
+        vgRenderMilfordTracker(layer);
+        return;
+    }
     if (vgMilfordCssGraphic('speed')) {
         vgAppendMilfordBoardChrome(layer, 'speed');
         return;
@@ -3897,6 +3908,66 @@ function vgRenderMilfordCvBoard(layer, race) {
     window.VmixMilfordCvBoard?.mount(root);
 }
 
+function vgRenderMilfordTracker(layer) {
+    vgSetLayerGraphicClass(layer, 'vg-layer--tracker');
+    layer.dataset.vgLayout = 'tracker';
+    if (!vgIsMilfordTheme()) {
+        layer.appendChild(vgEl('p', 'vg-error', 'Tracker is Milford-only'));
+        return;
+    }
+
+    const root = vgEl('div', 'mf-tracker');
+    root.dataset.vgLayout = 'mf-tracker';
+    root.style.setProperty('--mf-tracker-t', '0');
+
+    const bar = vgEl('div', 'mf-tracker-bar');
+    bar.dataset.vgLayout = 'mf-tracker-bar';
+    /* Orange behind navy so the navy mountain edge reads on top */
+    const orange = vgEl('div', 'mf-tracker-orange');
+    orange.appendChild(vgEl('div', 'mf-tracker-time mf-tracker-elapsed-value', '0:00.0'));
+    bar.appendChild(orange);
+    bar.appendChild(vgEl('div', 'mf-tracker-navy'));
+
+    const title = vgEl('div', 'mf-tracker-title');
+    title.innerHTML = 'RACE<br>TRACKER';
+    bar.appendChild(title);
+
+    const scale = vgEl('div', 'mf-tracker-scale');
+    scale.dataset.vgLayout = 'mf-tracker-scale';
+    const ticks = vgEl('div', 'mf-tracker-ticks');
+    [
+        ['0m', '', 0],
+        ['500m', '', 0.25],
+        ['1000m', '', 0.5],
+        ['1500m', '', 0.75],
+        ['2000m', 'mf-tracker-tick--end', 1],
+    ].forEach(([label, extra, t]) => {
+        const tick = vgEl('div', `mf-tracker-tick${extra ? ` ${extra}` : ''}`);
+        tick.style.setProperty('--tick-t', `${t * 100}%`);
+        tick.appendChild(document.createElement('i'));
+        tick.appendChild(vgEl('span', '', label));
+        ticks.appendChild(tick);
+    });
+    scale.appendChild(ticks);
+    const dot = vgEl('div', 'mf-tracker-dot');
+    dot.setAttribute('aria-hidden', 'true');
+    scale.appendChild(dot);
+    bar.appendChild(scale);
+
+    const pace = vgEl('div', 'mf-tracker-pace');
+    pace.dataset.vgLayout = 'mf-tracker-pace';
+    const paceLabel = vgEl('div', 'mf-tracker-pace-label');
+    paceLabel.innerHTML = 'RACE<br>PACE';
+    pace.appendChild(paceLabel);
+    pace.appendChild(vgEl('div', 'mf-tracker-pace-value', '—'));
+    pace.appendChild(vgEl('div', 'mf-tracker-pace-unit', '/500m'));
+    bar.appendChild(pace);
+
+    root.appendChild(bar);
+    layer.appendChild(root);
+    window.VmixMilfordTracker?.mount(root);
+}
+
 function vgRenderResults(layer, race) {
     vgSetLayerGraphicClass(layer, 'vg-layer--results');
     layer.dataset.vgLayout = 'results';
@@ -4325,7 +4396,7 @@ function vgDevPreviewHold(graphic) {
         }).catch(() => {});
         return;
     }
-    if (vgIsSpeedGraphic(graphic) && vgMilfordCssGraphic(graphic)) {
+    if (vgMilfordRuntimeTracker(graphic) || (vgIsSpeedGraphic(graphic) && vgMilfordCssGraphic(graphic))) {
         vgPrepareTrackerContent();
     } else if (vgIsSpeedGraphic(graphic) && vgIsVideoTheme()) {
         vgPrepareTrackerContent();
@@ -4346,7 +4417,10 @@ function vgDevPreviewHold(graphic) {
     }
     vgSetStageState('hold');
     vgShowBackground(!vgUsesCssBackground(graphic));
-    if (vgIsSpeedGraphic(graphic) && vgMilfordCssGraphic(graphic)) {
+    if (vgMilfordRuntimeTracker(graphic)) {
+        vgShowTextLayer(true);
+        vgApplySavedLayout(graphic);
+    } else if (vgIsSpeedGraphic(graphic) && vgMilfordCssGraphic(graphic)) {
         vgShowTextLayer(true);
         vgLoadSpeedFrame();
         vgShowMap(true, false);

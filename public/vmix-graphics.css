@@ -3131,6 +3131,300 @@ body.cv-clip-still .cv-clip-video {
     font-weight: 700;
 }
 
+/* Runtime Milford tracker (from Milford_Tracker.mov) */
+[data-vmix-theme='rnz-milford'] .mf-tracker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    pointer-events: none;
+    z-index: 4;
+    --mf-tracker-t: 0;
+    --mf-tracker-scale-left: 318px;
+    --mf-tracker-scale-w: 412px;
+    font-family: Inter, "Segoe UI", sans-serif;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-bar {
+    position: absolute;
+    left: 1149px;
+    bottom: 0;
+    width: 771px;
+    height: 177px;
+    overflow: visible;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-navy {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: url('assets/vmix/milford/tracker-navy.png?v=6') left bottom / 771px 177px no-repeat;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-orange {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: url('assets/vmix/milford/tracker-orange.png?v=4') left bottom / 771px 177px no-repeat;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-time {
+    position: absolute;
+    left: 40px;
+    bottom: 18px;
+    width: 120px;
+    height: 56px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 29px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-title {
+    position: absolute;
+    left: 242px;
+    bottom: 24px;
+    width: 90px;
+    z-index: 3;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1.05;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-scale {
+    position: absolute;
+    left: 360px;
+    right: 28px;
+    bottom: 16px;
+    height: 56px;
+    z-index: 3;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-ticks {
+    position: absolute;
+    inset: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-tick {
+    position: absolute;
+    left: var(--tick-t, 0);
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 48px;
+    color: #f3f5f6;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-tick i {
+    display: block;
+    width: 2px;
+    height: 18px;
+    background: #f3f5f6;
+    border-radius: 1px;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-tick--end i {
+    width: 8px;
+    height: 18px;
+    background: repeating-linear-gradient(
+        90deg,
+        #f3f5f6 0 2px,
+        transparent 2px 4px
+    );
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-tick span {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-dot {
+    position: absolute;
+    left: calc(var(--mf-tracker-t, 0) * 100%);
+    bottom: 34px;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    border-radius: 50%;
+    background: #e3690f;
+    box-shadow: 0 0 0 2px rgba(13, 26, 32, 0.55);
+    z-index: 3;
+    transition: left 0.35s linear;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-pace {
+    position: absolute;
+    right: 0;
+    top: 29px;
+    width: 368px;
+    height: 64px;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    column-gap: 14px;
+    padding: 0 22px 0 40px;
+    background: #f4f5f6;
+    color: #141414;
+    clip-path: polygon(28px 0, 100% 0, 100% 100%, 0 100%);
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-pace-label,
+[data-vmix-theme='rnz-milford'] .mf-tracker-pace-unit {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.05;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-pace-label {
+    text-align: left;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-pace-value {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-align: center;
+}
+
+[data-vmix-theme='rnz-milford'] .mf-tracker-pace-unit {
+    text-align: right;
+}
+
+/* Staggered slide-in from right; text fades in after plates settle */
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-orange {
+    animation: mf-tracker-slide-in 0.72s cubic-bezier(0.45, 0, 0.15, 1) 0s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-navy {
+    animation: mf-tracker-slide-in 0.72s cubic-bezier(0.45, 0, 0.15, 1) 0.1s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-scale {
+    animation: mf-tracker-slide-in 0.68s cubic-bezier(0.45, 0, 0.15, 1) 0.22s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-pace {
+    animation: mf-tracker-slide-in 0.68s cubic-bezier(0.45, 0, 0.15, 1) 0.14s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-title,
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-time {
+    opacity: 0;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-title {
+    animation: mf-tracker-text-fade-in 0.4s ease 0.95s forwards;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-in:not(.kp-refresh) .mf-tracker-time {
+    animation: mf-tracker-text-fade-in 0.4s ease 1.05s forwards;
+}
+
+/* Staggered slide-out to right — keep layer opaque so children animate */
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out {
+    animation: none;
+    opacity: 1;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out .mf-tracker-time {
+    animation: mf-tracker-text-fade-out 0.28s ease 0s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out .mf-tracker-title {
+    animation: mf-tracker-text-fade-out 0.28s ease 0.04s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out .mf-tracker-pace {
+    animation: mf-tracker-slide-out 0.55s cubic-bezier(0.55, 0, 0.2, 1) 0.12s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out .mf-tracker-scale {
+    animation: mf-tracker-slide-out 0.58s cubic-bezier(0.55, 0, 0.2, 1) 0.22s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out .mf-tracker-navy {
+    animation: mf-tracker-slide-out 0.62s cubic-bezier(0.55, 0, 0.2, 1) 0.32s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.vg-layer--visible.vg-layer--fade-out .mf-tracker-orange {
+    animation: mf-tracker-slide-out 0.62s cubic-bezier(0.55, 0, 0.2, 1) 0.42s both;
+}
+
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.kp-refresh .mf-tracker-orange,
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.kp-refresh .mf-tracker-navy,
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.kp-refresh .mf-tracker-pace,
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.kp-refresh .mf-tracker-title,
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.kp-refresh .mf-tracker-scale,
+[data-vmix-theme='rnz-milford'] .vg-layer--tracker.kp-refresh .mf-tracker-time {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+}
+
+@keyframes mf-tracker-slide-in {
+    from {
+        opacity: 0.35;
+        transform: translateX(110%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes mf-tracker-slide-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(110%);
+    }
+}
+
+@keyframes mf-tracker-text-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes mf-tracker-text-fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
 [data-vmix-theme='rnz-milford'] .vg-layer--leader {
     inset: 0;
     width: auto;

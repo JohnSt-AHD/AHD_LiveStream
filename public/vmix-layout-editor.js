@@ -84,6 +84,12 @@
             { id: 'leader-badge-lane', label: 'Leader — “Lane” + number' },
             { id: 'leader-crew', label: 'Leader — crew name' },
         ],
+        speed: [
+            { id: 'mf-tracker', label: 'Milford tracker — root' },
+            { id: 'mf-tracker-bar', label: 'Milford tracker — bar' },
+            { id: 'mf-tracker-pace', label: 'Milford tracker — race pace plate' },
+            { id: 'mf-tracker-scale', label: 'Milford tracker — 0–2000 m scale' },
+        ],
     };
 
     /** Map legacy / child ids to editor region ids. */

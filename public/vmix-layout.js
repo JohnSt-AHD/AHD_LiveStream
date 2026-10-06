@@ -371,7 +371,32 @@
             speed: {
                 _playback: {
                     textInMs: 0,
-                    outroMs: 500,
+                    outroMs: 1100,
+                },
+                'mf-tracker': {
+                    left: '0px',
+                    top: '0px',
+                    width: '1920px',
+                    height: '1080px',
+                },
+                'mf-tracker-bar': {
+                    left: '1149px',
+                    top: 'auto',
+                    bottom: '0px',
+                    width: '771px',
+                    height: '177px',
+                },
+                'mf-tracker-pace': {
+                    right: '0px',
+                    top: '29px',
+                    width: '368px',
+                    height: '64px',
+                },
+                'mf-tracker-scale': {
+                    left: '360px',
+                    right: '28px',
+                    bottom: '16px',
+                    height: '56px',
                 },
             },
             leader: {

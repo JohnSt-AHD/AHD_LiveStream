@@ -36,7 +36,7 @@ const VMIX_TRIGGERS = [
     { key: 'u', graphic: 'Course underlay', desc: 'KRI — procedural course underlay (sim / CrewSight). Karāpiro (Ged) — live drone CV course (same as vmix-ged-cv-course; crew tags + leader). o to fade out.' },
     { key: 's', graphic: 'Schedule', desc: 'KRI only — upcoming 10 races from hub live race (CSS gradient panel); fade in/out with o' },
     { key: 'o', graphic: 'Out', desc: 'Fade text and resume video to end (KRI: fade overlay out)' },
-    { key: 'g', graphic: 'Tracker', desc: 'Milford only — tracker video; route dots at 1s, speed + pause at 3s (fleet map setup); o finishes video' },
+    { key: 'g', graphic: 'Tracker', desc: 'Milford only — race tracker: CrewSight barge GPS pace (/500m) and orange-dot progress 0–2000 m; o to fade out' },
     { key: 'v', graphic: 'Speed chart', desc: 'KRI — demo speed chart. Karāpiro — live CV boat speed vs distance (Q). o to fade out' },
     { key: 'k', graphic: 'Live tracking', desc: 'KRI — demo live track. Karāpiro — live CV chainage (W / k). o to fade out' },
     { key: 'y', graphic: 'CV splits', desc: 'Karāpiro (Ged) only — 500/1000/1500 m placing board from CV race marks; o to fade out' },
