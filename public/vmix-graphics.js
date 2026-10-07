@@ -4226,7 +4226,7 @@ function vgHandleRemoteTrigger(raw) {
 function vgBindKeyboard() {
     document.addEventListener('keydown', (e) => {
         if (e.repeat) return;
-        if (e.target.closest('input, textarea, select')) return;
+        if (e.target?.closest?.('input, textarea, select')) return;
         if (vgIsKarapiroTheme() && window.VmixKarapiro?.onKey(e)) return;
         const key = e.key.toLowerCase();
         if (key === ' ' || key === 'enter') {
@@ -4251,12 +4251,14 @@ function vgBindKeyboard() {
         }
         if (key === 'p') {
             e.preventDefault();
-            /* CV board preview: P = animated place swap (not previous-race step) */
+            /* CV board preview: P = animated place swap (not previous-race step).
+               Never fall through to race-step on sample boards — that remounts
+               the layer (logo flash) when a swap is busy or returns false. */
             if (
                 vgPlayback.graphic === 'cvboard' &&
-                window.VmixMilfordCvBoard?.useSample?.() &&
-                window.VmixMilfordCvBoard?.demoSwapPlaces?.(2, 3)
+                window.VmixMilfordCvBoard?.useSample?.()
             ) {
+                window.VmixMilfordCvBoard.demoSwapPlaces?.(2, 3);
                 return;
             }
             vgStepLiveRace(-1);

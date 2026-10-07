@@ -582,9 +582,11 @@
                 if (row) fillRow(row, b, i);
             });
         } else {
+            /* Use offsetTop (layout px), not getBoundingClientRect — preview
+               stages CSS-scale .vg-stage, so viewport dy ≠ translateY px. */
             const firstTops = new Map();
             existingByLane.forEach((el, lane) => {
-                firstTops.set(lane, el.getBoundingClientRect().top);
+                firstTops.set(lane, el.offsetTop);
                 clearRowFlip(el);
                 el.style.transition = 'none';
             });
@@ -619,7 +621,7 @@
                 const key = String(b.lane);
                 const row = existingByLane.get(key);
                 if (!row || !firstTops.has(key)) return;
-                const dy = firstTops.get(key) - row.getBoundingClientRect().top;
+                const dy = firstTops.get(key) - row.offsetTop;
                 if (Math.abs(dy) < 0.5) return;
                 /* Invert: park at old visual Y before the pass animation */
                 row.style.setProperty('--mf-flip-y', `${dy}px`);
