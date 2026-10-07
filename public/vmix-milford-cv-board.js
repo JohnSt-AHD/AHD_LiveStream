@@ -40,10 +40,12 @@
 
     function applyCrestCutout(img, url) {
         if (!url || !img) return;
+        /* Already showing this crest (raw or cutout) — do not flash reload */
+        if (img.dataset.logoSrc === url && img.getAttribute('src')) return;
         img.dataset.logoSrc = url;
         const cached = crestCutoutCache.get(url);
         if (cached) {
-            img.src = cached;
+            if (img.getAttribute('src') !== cached) img.src = cached;
             return;
         }
         img.src = url;
@@ -54,7 +56,9 @@
                 crestCutoutCache.set(url, out);
                 if (!rootEl) return;
                 rootEl.querySelectorAll('img.mf-cvboard-crest').forEach((el) => {
-                    if (el.dataset.logoSrc === url) el.src = out;
+                    if (el.dataset.logoSrc === url && el.getAttribute('src') !== out) {
+                        el.src = out;
+                    }
                 });
             });
         });
@@ -64,6 +68,9 @@
     let sampleCache = null;
     let rootEl = null;
     let forceSplit = null;
+    /** Ignore paint/poll while a place-pass animation is running. */
+    let flipUntil = 0;
+    let paintGen = 0;
 
     function params() {
         return new URLSearchParams(location.search);
@@ -382,6 +389,9 @@
 
     function paint(snap) {
         if (!rootEl) return;
+        /* A second paint mid-pass clears --mf-flip-y and yields dy≈0 (no rotate,
+           just cell/logo updates). Hold off until the pass finishes. */
+        if (Date.now() < flipUntil) return;
         const ranked = rankedBoats(snap);
         const leadM = ranked[0]?.m;
         const course = courseLength(snap);
@@ -618,6 +628,7 @@
                 movers.push({ row, rising: dy > 0 });
             });
             if (movers.length) {
+                flipUntil = Date.now() + FLIP_MS + 120;
                 const qlineNow = list.querySelector('.mf-cvboard-qline');
                 if (qlineNow) qlineNow.classList.add('mf-cvboard-qline--pass');
                 void list.offsetHeight;
@@ -651,6 +662,7 @@
                         list
                             .querySelector('.mf-cvboard-qline')
                             ?.classList.remove('mf-cvboard-qline--pass');
+                        flipUntil = 0;
                     }, FLIP_MS + 100);
                 });
             }
@@ -685,8 +697,11 @@
     }
 
     async function tick() {
+        if (Date.now() < flipUntil) return;
+        const gen = ++paintGen;
         try {
             const snap = await fetchRace();
+            if (gen !== paintGen || Date.now() < flipUntil) return;
             paint(snap);
         } catch (err) {
             console.warn('Milford CV board poll failed', err);
@@ -711,6 +726,8 @@
             clearInterval(pollTimer);
             pollTimer = null;
         }
+        flipUntil = 0;
+        paintGen += 1;
         rootEl = null;
     }
 
@@ -725,7 +742,8 @@
      * e.g. demoSwapPlaces(2, 3) — 2nd and 3rd trade positions.
      */
     function demoSwapPlaces(placeA = 2, placeB = 3) {
-        if (!sampleCache?.boats?.length) return false;
+        if (!sampleCache?.boats?.length || !rootEl) return false;
+        if (Date.now() < flipUntil) return false;
         const snap = limitCrews(structuredClone(sampleCache));
         const ranked = rankedBoats(snap);
         const a = ranked[placeA - 1];
@@ -745,7 +763,9 @@
         if (Number(boatA.chainage_m) === Number(boatB.chainage_m)) {
             boatA.chainage_m = Number(boatA.chainage_m) + 0.5;
         }
-        tick();
+        /* Paint sync from sampleCache — avoid racing the 400ms poll tick */
+        paintGen += 1;
+        paint(limitCrews(structuredClone(sampleCache)));
         return true;
     }
 
