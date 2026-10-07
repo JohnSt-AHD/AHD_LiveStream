@@ -1,6 +1,6 @@
 /**
  * vMix broadcast graphics — title, lower third, draw, results, leader, tracker.
- * Keys: d/l/r/t = play in · w = leader · j = CV leaderboard (Milford) / CV positions (Karāpiro) · x = CV follow (Karāpiro) / CV leader (KRI) · h = CV boat tags (Karāpiro) / CV draw (KRI) · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
+ * Keys: d/l/r/t = play in · w = leader · j = CV leaderboard (Milford) / CV positions (Karāpiro) · x = CV follow (Karāpiro) / CV leader (KRI) · h = CV crew tags (Milford) / CV boat tags (Karāpiro) / CV draw (KRI) · u = course underlay · s = schedule · v = speed chart · k = live tracking · m = weather · g = tracker (Milford) · 1–8 = leader lane · n/p = next/prev race · o = out · c = clear.
  * URL: ?g=d  &race=1  &regatta=nzmm2026  (&autoplay=1 to run in on load)
  */
 const VG_GRAPHIC_ALIASES = {
@@ -20,6 +20,8 @@ const VG_GRAPHIC_ALIASES = {
     h: 'cvdraw',
     cvdraw: 'cvdraw',
     cvboattags: 'cvboattags',
+    cvcrewtags: 'cvcrewtags',
+    crewtags: 'cvcrewtags',
     u: 'coursescroll',
     coursescroll: 'coursescroll',
     course: 'coursescroll',
@@ -78,6 +80,7 @@ function vgGraphicFromShortcut(key) {
         if (k === 'h') return 'cvboattags';
     }
     if (k === 'x' && vgIsCssOverlayTheme()) return 'cvleader';
+    if (k === 'h' && vgIsMilfordTheme()) return 'cvcrewtags';
     if (k === 'h' && vgIsCssOverlayTheme()) return 'cvdraw';
     if (k === 'u' && vgIsCssOverlayTheme()) return vgIsKarapiroTheme() ? 'cvcourse' : 'coursescroll';
     if (k === 'm' && vgIsCssOverlayTheme()) return 'weather';
@@ -994,7 +997,7 @@ function vgEnableBrowserPreview() {
         const hint = document.createElement('p');
         hint.className = 'vg-preview-hint';
         hint.textContent =
-            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · G tracker · W leader · Y split · P animate swap 2nd/3rd';
+            'Click or Space to play · O out · C clear · T title · L lower · D draw · R results · J CV board · H crew tags · G tracker · W leader · Y split · P animate swap 2nd/3rd';
         document.body.appendChild(hint);
     }
     vgFitPreviewStage();
@@ -1087,7 +1090,8 @@ function vgMilfordCssGraphic(graphic) {
             g === 'leader' ||
             g === 'title' ||
             g === 'speed' ||
-            g === 'cvboard')
+            g === 'cvboard' ||
+            g === 'cvcrewtags')
     );
 }
 
@@ -2264,6 +2268,7 @@ function vgResetToIdle() {
     if (window.KriVmixWeather) window.KriVmixWeather.remove();
     if (window.KriVmixCourseScroll) window.KriVmixCourseScroll.remove();
     if (window.VmixMilfordCvBoard) window.VmixMilfordCvBoard.stop();
+    if (window.VmixMilfordCvCrewTags) window.VmixMilfordCvCrewTags.stop();
     if (window.VmixMilfordTracker) window.VmixMilfordTracker.stop();
     vgSetStageState('idle');
     vgShowTextLayer(false);
@@ -2528,7 +2533,13 @@ function vgPrepareContent(graphic, raceParam) {
 
     const race = vgFindRace(raceParam);
 
-    if (!race && graphic !== 'title' && graphic !== 'schedule' && graphic !== 'cvboard') {
+    if (
+        !race &&
+        graphic !== 'title' &&
+        graphic !== 'schedule' &&
+        graphic !== 'cvboard' &&
+        graphic !== 'cvcrewtags'
+    ) {
         if (err) {
             err.hidden = false;
             err.textContent = 'No race data — check regatta code and daysheet.';
@@ -2546,6 +2557,7 @@ function vgPrepareContent(graphic, raceParam) {
     else if (graphic === 'results') vgRenderResults(layer, race);
     else if (graphic === 'schedule') vgRenderSchedule(layer, raceParam);
     else if (graphic === 'cvboard') vgRenderMilfordCvBoard(layer, race);
+    else if (graphic === 'cvcrewtags') vgRenderMilfordCvCrewTags(layer, race);
     else if (graphic === 'leader') {
         const lane = vgLeaderLane ?? vgGetLeaderLane();
         vgRenderLeader(layer, race, lane);
@@ -4012,6 +4024,17 @@ function vgRenderMilfordCvBoard(layer, race) {
 
     layer.appendChild(root);
     window.VmixMilfordCvBoard?.mount(root);
+}
+
+function vgRenderMilfordCvCrewTags(layer, race) {
+    vgSetLayerGraphicClass(layer, 'vg-layer--cvcrewtags');
+    layer.dataset.vgLayout = 'cvcrewtags';
+    if (!vgIsMilfordTheme()) {
+        layer.appendChild(vgEl('p', 'vg-error', 'CV crew tags are Milford-only'));
+        return;
+    }
+    void race;
+    window.VmixMilfordCvCrewTags?.mount(layer);
 }
 
 function vgRenderMilfordTracker(layer) {

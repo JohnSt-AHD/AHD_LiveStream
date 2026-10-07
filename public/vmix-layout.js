@@ -489,6 +489,18 @@
                     color: '#ffffff',
                 },
             },
+            cvcrewtags: {
+                _playback: {
+                    textInMs: 0,
+                    outroMs: 500,
+                },
+                'mf-crewtags': {
+                    left: '0px',
+                    top: '0px',
+                    width: '1920px',
+                    height: '1080px',
+                },
+            },
             cvboard: {
                 _playback: {
                     textInMs: 0,
