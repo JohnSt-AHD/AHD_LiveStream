@@ -387,11 +387,11 @@
         }
     }
 
-    function paint(snap) {
+    function paint(snap, opts = {}) {
         if (!rootEl) return;
         /* A second paint mid-pass clears --mf-flip-y and yields dy≈0 (no rotate,
            just cell/logo updates). Hold off until the pass finishes. */
-        if (Date.now() < flipUntil) return;
+        if (!opts.skipFlip && Date.now() < flipUntil) return;
         const ranked = rankedBoats(snap);
         const leadM = ranked[0]?.m;
         const course = courseLength(snap);
@@ -574,13 +574,40 @@
             list.dataset.crewSig = crewSig;
             list.dataset.orderSig = orderSig;
             list.dataset.rowSig = `${orderSig}|q${qCut || 0}`;
-        } else if (!orderChanged) {
+        } else if (!orderChanged || opts.skipFlip) {
             /* Same order — update cells only. Do not re-append rows or the
-               CSS pass animation gets cancelled by the next poll (~400ms). */
-            ranked.forEach((b, i) => {
-                const row = existingByLane.get(String(b.lane));
-                if (row) fillRow(row, b, i);
-            });
+               CSS pass animation gets cancelled by the next poll (~400ms).
+               skipFlip: commit a demo swap after WAAPI has already moved rows. */
+            if (orderChanged) {
+                qlineEl?.classList.remove('mf-cvboard-qline--pass');
+                ranked.forEach((b, i) => {
+                    const key = String(b.lane);
+                    let row = existingByLane.get(key);
+                    if (!row) {
+                        row = makeRow(b, i);
+                        existingByLane.set(key, row);
+                    } else {
+                        clearRowFlip(row);
+                        fillRow(row, b, i);
+                    }
+                    list.appendChild(row);
+                    if (qCut && i + 1 === qCut) {
+                        if (!qlineEl) qlineEl = makeQualifyLine();
+                        list.appendChild(qlineEl);
+                    }
+                });
+                existingByLane.forEach((el, lane) => {
+                    if (!ranked.some((b) => String(b.lane) === lane)) el.remove();
+                });
+                if (!qCut && qlineEl) qlineEl.remove();
+                list.dataset.orderSig = orderSig;
+                list.dataset.rowSig = `${orderSig}|q${qCut || 0}`;
+            } else {
+                ranked.forEach((b, i) => {
+                    const row = existingByLane.get(String(b.lane));
+                    if (row) fillRow(row, b, i);
+                });
+            }
         } else {
             /* Use offsetTop (layout px), not getBoundingClientRect — preview
                stages CSS-scale .vg-stage, so viewport dy ≠ translateY px. */
@@ -740,16 +767,30 @@
     }
 
     /**
-     * Sample/preview helper: swap chainage of two current placings (1-based).
-     * e.g. demoSwapPlaces(2, 3) — 2nd and 3rd trade positions.
+     * Sample/preview helper: swap two placings (1-based) with an in-place pass.
+     * Animates the rows first (WAAPI), then commits DOM/data — avoids paint/poll
+     * FLIP races that flash and snap back under preview stage scale.
      */
     function demoSwapPlaces(placeA = 2, placeB = 3) {
+        if (!useSample()) return false;
         if (!sampleCache?.boats?.length || !rootEl) return false;
         if (Date.now() < flipUntil) return false;
+        const list = rootEl.querySelector('.mf-cvboard-list');
+        if (!list) return false;
+        const rows = [...list.querySelectorAll('.mf-cvboard-row')];
+        const i = Math.min(placeA, placeB) - 1;
+        const j = Math.max(placeA, placeB) - 1;
+        const rowFall = rows[i];
+        const rowRise = rows[j];
+        if (!rowFall || !rowRise) return false;
+
+        const gap = rowRise.offsetTop - rowFall.offsetTop;
+        if (Math.abs(gap) < 0.5) return false;
+
         const snap = limitCrews(structuredClone(sampleCache));
         const ranked = rankedBoats(snap);
-        const a = ranked[placeA - 1];
-        const b = ranked[placeB - 1];
+        const a = ranked[i];
+        const b = ranked[j];
         if (!a || !b) return false;
         const boatA = sampleCache.boats.find(
             (x) => Number(x.lane) === Number(a.lane),
@@ -758,16 +799,96 @@
             (x) => Number(x.lane) === Number(b.lane),
         );
         if (!boatA || !boatB) return false;
-        const tmp = boatA.chainage_m;
-        boatA.chainage_m = boatB.chainage_m;
-        boatB.chainage_m = tmp;
-        /* Break ties so sort order actually flips */
-        if (Number(boatA.chainage_m) === Number(boatB.chainage_m)) {
-            boatA.chainage_m = Number(boatA.chainage_m) + 0.5;
+
+        /* Trade chainage; keep the rising boat strictly ahead after the pass */
+        const mA = Number(boatA.chainage_m);
+        const mB = Number(boatB.chainage_m);
+        boatA.chainage_m = mB;
+        boatB.chainage_m = mA;
+        if (!(Number(boatB.chainage_m) > Number(boatA.chainage_m))) {
+            boatB.chainage_m = Number(boatA.chainage_m) + 1;
         }
-        /* Paint sync from sampleCache — avoid racing the 400ms poll tick */
+
+        /* Lock polls for the whole pass + commit */
+        flipUntil = Date.now() + FLIP_MS + 240;
         paintGen += 1;
-        paint(limitCrews(structuredClone(sampleCache)));
+
+        clearRowFlip(rowFall);
+        clearRowFlip(rowRise);
+        rowFall.getAnimations?.().forEach((anim) => anim.cancel());
+        rowRise.getAnimations?.().forEach((anim) => anim.cancel());
+
+        const qlineNow = list.querySelector('.mf-cvboard-qline');
+        qlineNow?.classList.add('mf-cvboard-qline--pass');
+        /* z-index only — do not add --rising/--falling (those CSS animations
+           fight this WAAPI transform and cancel the pass). */
+        rowFall.classList.add('mf-cvboard-row--animating');
+        rowRise.classList.add('mf-cvboard-row--animating');
+        rowFall.style.zIndex = '1';
+        rowRise.style.zIndex = '5';
+
+        const animOpts = { duration: FLIP_MS, easing: 'linear', fill: 'forwards' };
+        const animFall = rowFall.animate(
+            [
+                {
+                    transform:
+                        'translateY(0) translateZ(0) rotateX(0deg) scale(1)',
+                },
+                {
+                    transform: `translateY(${gap * 0.5}px) translateZ(-24px) rotateX(10deg) scale(0.985)`,
+                    offset: 0.5,
+                },
+                {
+                    transform: `translateY(${gap}px) translateZ(0) rotateX(0deg) scale(1)`,
+                },
+            ],
+            animOpts,
+        );
+        const animRise = rowRise.animate(
+            [
+                {
+                    transform:
+                        'translateY(0) translateZ(0) rotateX(0deg) scale(1)',
+                },
+                {
+                    transform: `translateY(${-gap * 0.5}px) translateZ(28px) rotateX(-10deg) scale(1.02)`,
+                    offset: 0.5,
+                },
+                {
+                    transform: `translateY(${-gap}px) translateZ(0) rotateX(0deg) scale(1)`,
+                },
+            ],
+            animOpts,
+        );
+
+        let finished = false;
+        const commit = () => {
+            if (finished) return;
+            finished = true;
+            qlineNow?.classList.remove('mf-cvboard-qline--pass');
+            /* Reorder DOM first, then drop WAAPI transforms in the same turn
+               so we never paint a frame at the pre-swap slots. */
+            paintGen += 1;
+            paint(limitCrews(structuredClone(sampleCache)), { skipFlip: true });
+            try {
+                animFall.cancel();
+            } catch {
+                /* ignore */
+            }
+            try {
+                animRise.cancel();
+            } catch {
+                /* ignore */
+            }
+            clearRowFlip(rowFall);
+            clearRowFlip(rowRise);
+            flipUntil = 0;
+        };
+
+        Promise.all([animFall.finished, animRise.finished])
+            .then(commit)
+            .catch(commit);
+        setTimeout(commit, FLIP_MS + 100);
         return true;
     }
 
