@@ -3678,7 +3678,7 @@ function vgRenderMilfordLeader(layer, race, laneNum, opts = {}) {
 
     const logoPlate = document.createElement('img');
     logoPlate.className = 'mf-leader-logo-plate';
-    logoPlate.src = 'assets/vmix/milford/leader-logo-plate.png?v=4';
+    logoPlate.src = 'assets/vmix/milford/leader-logo-plate.png?v=5';
     logoPlate.alt = '';
     logoPlate.dataset.vgLayout = 'mf-leader-logo-plate';
     chrome.appendChild(logoPlate);
