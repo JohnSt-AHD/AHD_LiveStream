@@ -4251,11 +4251,16 @@ function vgBindKeyboard() {
         }
         if (key === 'p') {
             e.preventDefault();
-            /* CV board: P = animated 2nd/3rd pass when sample/demo data is loaded.
+            /* CV board: P = animated 2nd/3rd pass on sample/offline demo feed.
                Never fall through to race-step on those boards — remount flashes logos. */
             if (vgPlayback.graphic === 'cvboard') {
                 if (window.VmixMilfordCvBoard?.demoSwapPlaces?.(2, 3)) return;
-                if (window.VmixMilfordCvBoard?.useSample?.()) return;
+                if (
+                    window.VmixMilfordCvBoard?.useSample?.() ||
+                    window.VmixMilfordCvBoard?.canDemoSwap?.()
+                ) {
+                    return;
+                }
             }
             vgStepLiveRace(-1);
             return;

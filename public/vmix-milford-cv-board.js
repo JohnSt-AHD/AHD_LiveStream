@@ -68,6 +68,8 @@
     let sampleCache = null;
     let rootEl = null;
     let forceSplit = null;
+    /** True while the board is painting demo/sample JSON (not live CV). */
+    let feedIsSample = false;
     /** Ignore paint/poll while a place-pass animation is running. */
     let flipUntil = 0;
     let paintGen = 0;
@@ -81,6 +83,12 @@
         if (p.get('sample') === '1' || p.get('sample') === 'true') return true;
         if (p.get('live') === '1') return false;
         return p.get('preview') === '1';
+    }
+
+    /** P demo-swap: URL sample/preview, or offline fallback sample feed. */
+    function canDemoSwap() {
+        if (params().get('live') === '1') return false;
+        return useSample() || feedIsSample;
     }
 
     function cvOrigin() {
@@ -371,17 +379,26 @@
 
     async function fetchRace() {
         if (useSample()) {
+            feedIsSample = true;
             const snap = await loadSample();
             return limitCrews(structuredClone(snap));
         }
         try {
+            /* Short timeout — hung 127.0.0.1 CV laptop left the board empty forever */
+            const ac = new AbortController();
+            const timer = setTimeout(() => ac.abort(), 1200);
             const res = await fetch(`${cvOrigin()}/api/race`, {
                 headers: { Accept: 'application/json' },
                 cache: 'no-store',
+                signal: ac.signal,
             });
+            clearTimeout(timer);
             if (!res.ok) throw new Error(String(res.status));
+            feedIsSample = false;
             return await res.json();
         } catch {
+            /* No CV laptop — same demo JSON as ?sample=1 so P can still animate */
+            feedIsSample = true;
             const snap = await loadSample();
             return limitCrews(structuredClone(snap));
         }
@@ -772,7 +789,7 @@
      * FLIP races that flash and snap back under preview stage scale.
      */
     function demoSwapPlaces(placeA = 2, placeB = 3) {
-        if (!useSample()) return false;
+        if (!canDemoSwap()) return false;
         if (!sampleCache?.boats?.length || !rootEl) return false;
         if (Date.now() < flipUntil) return false;
         const list = rootEl.querySelector('.mf-cvboard-list');
@@ -912,5 +929,6 @@
         demoSwapPlaces,
         paint,
         useSample,
+        canDemoSwap,
     };
 })(window);
