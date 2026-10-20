@@ -178,7 +178,8 @@
         const ageMin = (Date.now() - new Date(pos.fixTime).getTime()) / 60000;
         online = ageMin < 5;
       }
-      const rowing = d.rowing || attrs.rowing || {};
+      const rowing = d.rowing || attrs.rowing || {};
+
       out.push({
         deviceId,
         athleteId,
@@ -246,6 +247,11 @@
       }
       if (target.closest('#rnzMapFullscreenExitBtn')) {
         window.RnzMapFullscreen?.exit?.();
+        window.RnzChartFullscreen?.exit?.();
+        return true;
+      }
+      if (target.closest('#rnzChartExpandBtn')) {
+        window.RnzChartFullscreen?.enter?.();
         return true;
       }
       return false;

@@ -1831,9 +1831,12 @@ function updateMapMarkers() {
             const pace = formatDevicePace(position, device.name, athleteId);
             const fix = formatDateTime(position.fixTime);
             const addr = escapeHtml(position.address || 'Unknown');
-            const athleteLine = athleteId
-                ? `<div><strong>Athlete:</strong> ${escapeHtml(athleteId)}</div>`
-                : '';
+            const crew = deviceCrewFields(device);
+            const crewLine = crew.detail
+                ? `<div class="rnz-popup-crew">${escapeHtml(crew.detail)}</div>`
+                : athleteId
+                  ? `<div><strong>Athlete:</strong> ${escapeHtml(athleteId)}</div>`
+                  : '';
             const palette = devicePalette(device.id);
             const popupAccent = palette
                 ? `<div class="rnz-popup-accent" style="background:${palette.fill}"></div>`
@@ -1841,12 +1844,12 @@ function updateMapMarkers() {
             marker.bindPopup(
                 popupAccent +
                     `<div class="rnz-popup-body">` +
-                    `<div class="rnz-popup-title">${escapeHtml(device.name)}</div>` +
-                    athleteLine +
+                    `<div class="rnz-popup-title">${escapeHtml(crew.title)}</div>` +
+                    crewLine +
                     `<div><strong>Pace:</strong> ${pace}</div>` +
                     `<div><strong>Last fix:</strong> ${fix}</div>` +
                     `<div><strong>Location:</strong> ${addr}</div></div>`,
-                { maxWidth: 260, className: palette ? 'rnz-popup--device' : '' },
+                { maxWidth: 340, minWidth: 220, className: palette ? 'rnz-popup--device' : '' },
             );
         }
 
@@ -2279,13 +2282,16 @@ function renderOnWaterBoats(boundaryParts) {
                 const stroke = walkup ? '—' : formatStrokeRate(pos);
                 const fromRnz = walkup ? '—' : formatDistanceFromRnz(distM);
                 const crewMeta = crew.detail
-                    ? `<span class="rnz-meta-athlete" title="Coach and boat">${escapeHtml(crew.detail)}</span>`
-                    : athleteMetaHtml(device, { compact: true });
+                    ? `<p class="rnz-onwater-card-crew">${escapeHtml(crew.detail)}</p>`
+                    : '';
                 return (
                     `<article class="rnz-onwater-card${followUi.cardClasses}${palette ? ' rnz-onwater-card--device-color' : ''}" data-device-id="${device.id}"${colorAttrs}>` +
                     `<div class="rnz-onwater-card-head">` +
                     colorMark +
+                    `<div class="rnz-onwater-card-titles">` +
                     nameHtml +
+                    crewMeta +
+                    `</div>` +
                     `${followUi.headExtra}` +
                     `</div>` +
                     `<dl class="rnz-onwater-stats">` +
@@ -2293,11 +2299,10 @@ function renderOnWaterBoats(boundaryParts) {
                     `<div class="rnz-onwater-stat rnz-onwater-stat--stroke"><dt>Stroke</dt><dd>${stroke}</dd></div>` +
                     `<div class="rnz-onwater-stat rnz-onwater-stat--distance"><dt>From RNZ</dt><dd>${fromRnz}</dd></div>` +
                     `</dl>` +
-                    `<p class="rnz-onwater-geofence rnz-onwater-geofence--split">` +
-                    `<span class="rnz-onwater-geofence-left">` +
+                    `<p class="rnz-onwater-geofence">` +
                     `<span class="rnz-onwater-geofence-label">${walkup ? 'Status' : 'Geofence'}</span> ` +
-                    `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span></span>` +
-                    `${crewMeta}</p></article>`
+                    `<span class="rnz-onwater-geofence-value">${escapeHtml(geofenceLabel)}</span>` +
+                    `</p></article>`
                 );
             })
             .join('');
@@ -2477,19 +2482,56 @@ function showError(message) {
 
 function updateRnzFullscreenLayoutVars() {
     const header = document.querySelector('.rnz-header');
+    const stats = document.querySelector('.hub-stats-bar');
     const footer = document.querySelector('.rnz-footer');
-    const h = header ? Math.ceil(header.getBoundingClientRect().height) : 100;
-    const f = footer ? Math.ceil(footer.getBoundingClientRect().height) : 52;
+    const bottoms = [];
+    if (header) bottoms.push(header.getBoundingClientRect().bottom);
+    if (stats) {
+        const r = stats.getBoundingClientRect();
+        if (r.height > 0) bottoms.push(r.bottom);
+    }
+    const h = Math.ceil(Math.max(56, ...bottoms));
+    const f = footer ? Math.ceil(footer.getBoundingClientRect().height) : 0;
     document.documentElement.style.setProperty('--rnz-fs-header-h', `${h}px`);
     document.documentElement.style.setProperty('--rnz-fs-footer-h', `${f}px`);
 }
 
-function setRnzMapFullscreen(on) {
-    document.body.classList.toggle('rnz-map-fullscreen', on);
+function syncRnzFullscreenExitBtn() {
     const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
-    if (exitBtn) exitBtn.hidden = !on;
+    if (!exitBtn) return;
+    const anyOn = document.body.classList.contains('rnz-map-fullscreen')
+        || document.body.classList.contains('rnz-chart-fullscreen');
+    exitBtn.hidden = !anyOn;
+}
+
+function redrawRnzLiveSpeedChartSoon() {
+    setTimeout(() => {
+        if (typeof updateRnzLiveSpeedChart === 'function') updateRnzLiveSpeedChart();
+    }, 80);
+}
+
+function setRnzMapFullscreen(on) {
+    if (on) setRnzChartFullscreen(false);
+    document.body.classList.toggle('rnz-map-fullscreen', on);
+    syncRnzFullscreenExitBtn();
     if (on) updateRnzFullscreenLayoutVars();
     setTimeout(() => map && map.invalidateSize(), 80);
+}
+
+function setRnzChartFullscreen(on) {
+    if (on) {
+        document.body.classList.remove('rnz-map-fullscreen');
+        setTimeout(() => map && map.invalidateSize(), 80);
+    }
+    document.body.classList.toggle('rnz-chart-fullscreen', on);
+    const expandBtn = document.getElementById('rnzChartExpandBtn');
+    if (expandBtn) {
+        expandBtn.hidden = on;
+        expandBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    syncRnzFullscreenExitBtn();
+    if (on) updateRnzFullscreenLayoutVars();
+    redrawRnzLiveSpeedChartSoon();
 }
 
 window.RnzMapFullscreen = {
@@ -2498,9 +2540,16 @@ window.RnzMapFullscreen = {
     toggle: () => setRnzMapFullscreen(!document.body.classList.contains('rnz-map-fullscreen')),
 };
 
+window.RnzChartFullscreen = {
+    enter: () => setRnzChartFullscreen(true),
+    exit: () => setRnzChartFullscreen(false),
+    toggle: () => setRnzChartFullscreen(!document.body.classList.contains('rnz-chart-fullscreen')),
+};
+
 function wireRnzMapFullscreen() {
     const exitBtn = document.getElementById('rnzMapFullscreenExitBtn');
     const mapExpand = document.getElementById('rnzMapMobileExpandBtn');
+    const chartExpand = document.getElementById('rnzChartExpandBtn');
     if (mapExpand && mapExpand.dataset.bound !== '1') {
         mapExpand.dataset.bound = '1';
         mapExpand.addEventListener('click', (e) => {
@@ -2509,25 +2558,40 @@ function wireRnzMapFullscreen() {
             setRnzMapFullscreen(true);
         });
     }
+    if (chartExpand && chartExpand.dataset.bound !== '1') {
+        chartExpand.dataset.bound = '1';
+        chartExpand.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setRnzChartFullscreen(true);
+        });
+    }
     if (exitBtn && exitBtn.dataset.bound !== '1') {
         exitBtn.dataset.bound = '1';
         exitBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             setRnzMapFullscreen(false);
+            setRnzChartFullscreen(false);
         });
     }
-    if (!exitBtn && !mapExpand) return;
+    if (!exitBtn && !mapExpand && !chartExpand) return;
     if (document.documentElement.dataset.rnzFsBound === '1') return;
     document.documentElement.dataset.rnzFsBound = '1';
     window.addEventListener('resize', () => {
-        if (document.body.classList.contains('rnz-map-fullscreen')) {
-            updateRnzFullscreenLayoutVars();
-            setTimeout(() => map && map.invalidateSize(), 50);
-        }
+        const mapOn = document.body.classList.contains('rnz-map-fullscreen');
+        const chartOn = document.body.classList.contains('rnz-chart-fullscreen');
+        if (mapOn || chartOn) updateRnzFullscreenLayoutVars();
+        if (mapOn) setTimeout(() => map && map.invalidateSize(), 50);
+        if (chartOn) redrawRnzLiveSpeedChartSoon();
     });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && document.body.classList.contains('rnz-map-fullscreen')) {
+        if (e.key !== 'Escape') return;
+        if (document.body.classList.contains('rnz-chart-fullscreen')) {
+            setRnzChartFullscreen(false);
+            return;
+        }
+        if (document.body.classList.contains('rnz-map-fullscreen')) {
             setRnzMapFullscreen(false);
         }
     });

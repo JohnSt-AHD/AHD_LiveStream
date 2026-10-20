@@ -151,12 +151,17 @@
         canvas.height = Math.round(cssH * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+        const expanded = !!global.document.body?.classList.contains('rnz-chart-fullscreen');
         const w = cssW;
         const h = cssH;
-        const padL = 44;
-        const padR = 12;
-        const padT = 36;
-        const padB = series.some((s) => s.latestToken) ? 52 : 32;
+        const padL = expanded ? 64 : 44;
+        const padR = expanded ? 20 : 12;
+        const padT = expanded ? 52 : 36;
+        const padB = series.some((s) => s.latestToken) ? (expanded ? 72 : 52) : (expanded ? 48 : 32);
+        const titleSize = expanded ? 18 : 13;
+        const tickSize = expanded ? 13 : 10;
+        const legendSize = expanded ? 14 : 11;
+        const lineW = expanded ? 3.2 : 2.25;
         const plotW = w - padL - padR;
         const plotH = h - padT - padB;
 
@@ -169,13 +174,13 @@
         ctx.fillRect(0, 0, w, h);
 
         ctx.fillStyle = '#e2e8f0';
-        ctx.font = '600 13px "Source Sans 3", system-ui, sans-serif';
-        ctx.fillText(opts.title, padL, 20);
+        ctx.font = `600 ${titleSize}px "Source Sans 3", system-ui, sans-serif`;
+        ctx.fillText(opts.title, padL, expanded ? 28 : 20);
 
         const allPts = series.flatMap((s) => s.points);
         if (allPts.length < 2) {
             ctx.fillStyle = '#64748b';
-            ctx.font = '12px system-ui';
+            ctx.font = `${expanded ? 16 : 12}px system-ui`;
             ctx.fillText(opts.emptyMessage || 'Waiting for active device speeds…', padL, padT + 24);
             return;
         }
@@ -206,7 +211,7 @@
             ctx.lineTo(padL + plotW, py);
             ctx.stroke();
             ctx.fillStyle = '#64748b';
-            ctx.font = '10px system-ui';
+            ctx.font = `${tickSize}px system-ui`;
             ctx.textAlign = 'right';
             const label = opts.yFormat ? opts.yFormat(ty) : ty.toFixed(1);
             ctx.fillText(label, padL - 6, py + 3);
@@ -232,7 +237,7 @@
                 else ctx.lineTo(px, py);
             });
             ctx.strokeStyle = s.color;
-            ctx.lineWidth = 2.25;
+            ctx.lineWidth = lineW;
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
             ctx.stroke();
@@ -250,21 +255,21 @@
         for (const s of series) {
             if (!s.points.length) continue;
             ctx.fillStyle = s.color;
-            ctx.fillRect(lx, ly - 9, 10, 10);
+            ctx.fillRect(lx, ly - (expanded ? 11 : 9), expanded ? 12 : 10, expanded ? 12 : 10);
             ctx.fillStyle = '#94a3b8';
-            ctx.font = '11px system-ui';
+            ctx.font = `${legendSize}px system-ui`;
             const name = s.label;
             ctx.fillText(name, lx + 14, ly);
             if (s.latestToken && s.latestToken !== '—') {
-                ctx.font = '10px system-ui';
+                ctx.font = `${tickSize}px system-ui`;
                 ctx.fillStyle = '#64748b';
-                ctx.fillText(s.latestToken, lx + 14, ly - 12);
+                ctx.fillText(s.latestToken, lx + 14, ly - (expanded ? 16 : 12));
             }
             lx += Math.max(ctx.measureText(name).width, ctx.measureText(s.latestToken || '').width) + 28;
         }
 
         ctx.fillStyle = '#64748b';
-        ctx.font = '10px system-ui';
+        ctx.font = `${tickSize}px system-ui`;
         ctx.textAlign = 'right';
         ctx.fillText(opts.xLabel, w - padR, h - 6);
         if (opts.yLabel) {
