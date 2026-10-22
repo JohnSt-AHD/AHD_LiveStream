@@ -1776,6 +1776,14 @@ function updateMapMarkers() {
         const critical = showBoundaryCriticalAlert(device, position);
         let fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
         let stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
+        const coachLaunch =
+            String(device?.attributes?.role || position?.attributes?.role || '').toLowerCase() ===
+                'coach' ||
+            String(device?.attributes?.source || position?.attributes?.source || '').toLowerCase() ===
+                'manager' ||
+            String(device?.attributes?.boatClass || position?.attributes?.boatClass || '').toLowerCase() ===
+                'coach' ||
+            /^coach\s/i.test(String(device?.uniqueId || device?.name || ''));
         if (capsizeAlert) {
             fill = '#fecaca';
             stroke = '#b91c1c';
@@ -1793,6 +1801,10 @@ function updateMapMarkers() {
                 fill = palette.fill;
                 stroke = palette.stroke;
             }
+        }
+        if (coachLaunch && !capsizeAlert) {
+            fill = '#f59e0b';
+            stroke = '#b45309';
         }
         const fillOpacity =
             capsizeAlert || critical ? 0.92 : online || deviceColorsEnabled() ? 0.92 : 0.55;
@@ -1961,6 +1973,34 @@ function renderFenceAndLists(parts, stoppedState) {
     }
 }
 
+function syncRowsafeCapsizeDayLog() {
+    const log = window.CrewSightCapsizeDayLog;
+    const alarm = window.AltitudeHdCapsizeAlarm;
+    if (!log) return;
+    const activeIds = [];
+    const seen = new Set();
+    for (const d of devices || []) {
+        const pos = positions[d.id] ?? positions[d.uniqueId];
+        const tipped = Boolean(pos?.capsize) || Boolean(alarm?.readAlarm?.(pos));
+        if (!tipped) continue;
+        const uniqueId = String(d.uniqueId || d.name || d.id || '').trim();
+        if (!uniqueId || seen.has(uniqueId)) continue;
+        seen.add(uniqueId);
+        activeIds.push(uniqueId);
+        log.upsertActive({
+            deviceId: uniqueId,
+            name: d.name || uniqueId,
+            lat: pos?.latitude,
+            lon: pos?.longitude,
+        });
+        if (alarm?.isAlertAcknowledged?.(d.id, pos)) {
+            log.acknowledge([uniqueId], 'RowSafe', 'rowsafe');
+        }
+    }
+    log.markMissingCleared(activeIds);
+    log.renderList(document.getElementById('safetyCapsizeLog'));
+}
+
 function renderCapsizeAlerts() {
     if (!SAFETY_THEME.enableCapsize || !window.AltitudeHdCapsizeAlarm) return;
     const listEl = document.getElementById('safetyCapsizeList');
@@ -1971,12 +2011,14 @@ function renderCapsizeAlerts() {
         listEl,
         alerts,
         () => {
+            syncRowsafeCapsizeDayLog();
             renderCapsizeAlerts();
             updateMapMarkers();
             renderFleetDevices();
         },
         { alwaysVisible: SAFETY_THEME.capsizePanelAlwaysVisible },
     );
+    syncRowsafeCapsizeDayLog();
 }
 
 function rowsafeSnapshotFetch(options = {}) {

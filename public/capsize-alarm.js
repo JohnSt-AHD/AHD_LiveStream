@@ -274,10 +274,18 @@
         }
     }
 
+    function isAlertAcknowledged(deviceId, pos) {
+        const ack = loadJson(LS_ACK, {});
+        const alertId = alertIdFor(deviceId, pos);
+        return Boolean(ack[alertId] || ack[`${deviceId}:alarm`]);
+    }
+
     function acknowledgeCapsizeAlert(alertId, uniqueId) {
         const ack = loadJson(LS_ACK, {});
         ack[alertId] = Date.now();
         saveJson(LS_ACK, ack);
+        const log = global.CrewSightCapsizeDayLog;
+        if (log && uniqueId) log.acknowledge([uniqueId], 'RowSafe', 'rowsafe');
         void clearCapsizeAlertUpstream(uniqueId);
     }
 
@@ -326,7 +334,7 @@
                 const uniqueId = btn.getAttribute('data-capsize-device');
                 if (id) {
                     acknowledgeCapsizeAlert(id, uniqueId);
-                    if (typeof onAck === 'function') onAck();
+                    if (typeof onAck === 'function') onAck(uniqueId);
                 }
             });
         });
@@ -344,6 +352,8 @@
     bindAlarmAudioUnlock();
 
     global.AltitudeHdCapsizeAlarm = {
+        readAlarm,
+        isAlertAcknowledged,
         updateCapsizeAlerts,
         renderCapsizePanel,
         acknowledgeCapsizeAlert,
