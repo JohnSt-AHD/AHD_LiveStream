@@ -1973,7 +1973,7 @@ function renderFenceAndLists(parts, stoppedState) {
     }
 }
 
-function syncRowsafeCapsizeDayLog() {
+async function syncRowsafeCapsizeDayLog() {
     const log = window.CrewSightCapsizeDayLog;
     const alarm = window.AltitudeHdCapsizeAlarm;
     if (!log) return;
@@ -1997,8 +1997,22 @@ function syncRowsafeCapsizeDayLog() {
             log.acknowledge([uniqueId], 'RowSafe', 'rowsafe');
         }
     }
-    log.markMissingCleared(activeIds);
-    log.renderList(document.getElementById('safetyCapsizeLog'));
+    const listEl = document.getElementById('safetyCapsizeLog');
+    log.renderList(listEl);
+    let serverOk = false;
+    if (typeof log.fetchShared === 'function') {
+        try {
+            const events = await log.fetchShared();
+            if (Array.isArray(events)) {
+                log.replaceFromServer(events);
+                serverOk = true;
+            }
+        } catch {
+            /* keep local log if proxy/API is down */
+        }
+    }
+    if (!serverOk) log.markMissingCleared(activeIds);
+    log.renderList(listEl);
 }
 
 function renderCapsizeAlerts() {

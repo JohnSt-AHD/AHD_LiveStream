@@ -267,7 +267,11 @@
             await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ deviceId: id }),
+                body: JSON.stringify({
+                    deviceId: id,
+                    ackedBy: 'RowSafe',
+                    ackSource: 'rowsafe',
+                }),
             });
         } catch {
             /* ignore — local ack still hides the banner */

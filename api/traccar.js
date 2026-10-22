@@ -456,6 +456,19 @@ export default async function handler(req, res) {
             return;
         }
 
+        if (action === 'capsize-day-log' && useRowingSource(req)) {
+            if (!['GET', 'POST', 'OPTIONS'].includes(req.method)) {
+                res.status(405).json({ ok: false, error: 'Method not allowed' });
+                return;
+            }
+            if (req.method === 'OPTIONS') {
+                res.status(204).end();
+                return;
+            }
+            await rowingProxy(req, res, '/api/capsize-day-log');
+            return;
+        }
+
         if (action === 'logbook' && useRowingSource(req)) {
             if (!canUseRowing()) {
                 res.status(503).json({

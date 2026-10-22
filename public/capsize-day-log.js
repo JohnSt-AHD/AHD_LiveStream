@@ -108,6 +108,36 @@
         if (changed) saveStore(store);
     }
 
+    function replaceFromServer(events) {
+        if (!Array.isArray(events)) return;
+        const today = nzDayKey();
+        const local = loadStore();
+        const serverIds = new Set(events.map((e) => e.id));
+        const serverDevices = new Set(events.map((e) => e.deviceId));
+        const keepLocal = local.events.filter((e) => {
+            if (serverIds.has(e.id) || serverDevices.has(e.deviceId)) return false;
+            return e.status === 'active' && Date.now() - e.startedAt < 30_000;
+        });
+        saveStore({ day: today, events: events.concat(keepLocal) });
+    }
+
+    async function fetchShared() {
+        const ts = global.AltitudeHdTrackerSource;
+        const url = ts?.buildTraccarUrl
+            ? ts.buildTraccarUrl({ action: 'capsize-day-log' })
+            : '/api/traccar?action=capsize-day-log&source=rowing';
+        const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(() => ctrl.abort(), 4000) : null;
+        try {
+            const res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Capsize log ${res.status}`);
+            return Array.isArray(data.events) ? data.events : [];
+        } finally {
+            if (timer) clearTimeout(timer);
+        }
+    }
+
     function formatNzTime(ms) {
         return new Intl.DateTimeFormat('en-NZ', {
             timeZone: 'Pacific/Auckland',
@@ -116,6 +146,22 @@
             second: '2-digit',
             hour12: false,
         }).format(new Date(ms));
+    }
+
+    function formatAckLine(e) {
+        if (e.status === 'acknowledged') {
+            const when = e.ackedAt ? formatNzTime(e.ackedAt) : '';
+            const who = e.ackedBy || (e.ackSource === 'rowsafe' ? 'RowSafe' : 'CrewSight Manager');
+            const via =
+                e.ackSource === 'rowsafe' ? ' (RowSafe)' : e.ackSource === 'manager' ? ' (Manager)' : '';
+            return `Acknowledged ${when} by ${who}${via}`.replace(/\s+/g, ' ').trim();
+        }
+        if (e.status === 'cleared') {
+            return `Cleared ${e.ackedAt ? formatNzTime(e.ackedAt) : ''} · ${e.ackedBy || 'RowSafe or another Manager'}`
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+        return 'Active — not acknowledged';
     }
 
     function escapeHtml(value) {
@@ -140,16 +186,7 @@
                     e.lat != null && e.lon != null
                         ? `${Number(e.lat).toFixed(4)}, ${Number(e.lon).toFixed(4)}`
                         : 'No GPS';
-                let ack = 'Active — not acknowledged';
-                if (e.status === 'acknowledged') {
-                    const who =
-                        e.ackSource === 'manager'
-                            ? e.ackedBy || 'CrewSight Manager'
-                            : e.ackedBy || 'RowSafe';
-                    ack = `Acknowledged ${e.ackedAt ? formatNzTime(e.ackedAt) : ''} by ${who}`;
-                } else if (e.status === 'cleared') {
-                    ack = `Cleared ${e.ackedAt ? formatNzTime(e.ackedAt) : ''} · ${e.ackedBy || 'RowSafe or another Manager'}`;
-                }
+                const ack = formatAckLine(e);
                 return (
                     `<li class="rnz-capsize-log__item rnz-capsize-log__item--${escapeHtml(e.status)}">` +
                     `<strong>${escapeHtml(e.name)}</strong>` +
@@ -166,7 +203,10 @@
         upsertActive,
         acknowledge,
         markMissingCleared,
+        replaceFromServer,
+        fetchShared,
         formatNzTime,
+        formatAckLine,
         renderList,
     };
 })(typeof window !== 'undefined' ? window : globalThis);
