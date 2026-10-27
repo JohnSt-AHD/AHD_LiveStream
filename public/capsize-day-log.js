@@ -47,11 +47,15 @@
         const store = loadStore();
         const deviceId = String(input.deviceId || '').trim();
         if (!deviceId) return null;
-        const existing = store.events.find((e) => e.deviceId === deviceId && e.status === 'active');
+        const existing = store.events.find(
+            (e) =>
+                e.deviceId === deviceId &&
+                (e.status === 'active' || e.status === 'responding' || e.status === 'acknowledged'),
+        );
         const recentAck = store.events.find(
             (e) =>
                 e.deviceId === deviceId &&
-                e.status !== 'active' &&
+                e.status === 'cleared' &&
                 e.ackedAt != null &&
                 Date.now() - e.ackedAt < 60_000,
         );
@@ -82,9 +86,27 @@
         const now = Date.now();
         const ids = deviceIds ? new Set(deviceIds.map((id) => String(id))) : null;
         for (const e of store.events) {
-            if (e.status !== 'active') continue;
+            if (e.status !== 'active' && e.status !== 'responding' && e.status !== 'acknowledged') continue;
             if (ids && !ids.has(e.deviceId)) continue;
-            e.status = 'acknowledged';
+            e.status = 'responding';
+            e.ackedAt = now;
+            e.ackedBy = ackedBy || 'RowSafe';
+            e.ackSource = source || 'rowsafe';
+            if (e.respondingAt == null) e.respondingAt = now;
+            e.respondingBy = ackedBy || 'RowSafe';
+            e.respondingSource = source || 'rowsafe';
+        }
+        saveStore(store);
+    }
+
+    function markSafe(deviceIds, ackedBy, source) {
+        const store = loadStore();
+        const now = Date.now();
+        const ids = deviceIds ? new Set(deviceIds.map((id) => String(id))) : null;
+        for (const e of store.events) {
+            if (e.status !== 'active' && e.status !== 'responding' && e.status !== 'acknowledged') continue;
+            if (ids && !ids.has(e.deviceId)) continue;
+            e.status = 'cleared';
             e.ackedAt = now;
             e.ackedBy = ackedBy || 'RowSafe';
             e.ackSource = source || 'rowsafe';
@@ -97,7 +119,7 @@
         const live = new Set((stillActiveIds || []).map((id) => String(id)));
         let changed = false;
         for (const e of store.events) {
-            if (e.status !== 'active') continue;
+            if (e.status !== 'active' && e.status !== 'responding' && e.status !== 'acknowledged') continue;
             if (live.has(e.deviceId)) continue;
             e.status = 'cleared';
             e.ackedAt = Date.now();
@@ -116,7 +138,10 @@
         const serverDevices = new Set(events.map((e) => e.deviceId));
         const keepLocal = local.events.filter((e) => {
             if (serverIds.has(e.id) || serverDevices.has(e.deviceId)) return false;
-            return e.status === 'active' && Date.now() - e.startedAt < 30_000;
+            return (
+                (e.status === 'active' || e.status === 'responding' || e.status === 'acknowledged') &&
+                Date.now() - e.startedAt < 30_000
+            );
         });
         saveStore({ day: today, events: events.concat(keepLocal) });
     }
@@ -149,17 +174,29 @@
     }
 
     function formatAckLine(e) {
-        if (e.status === 'acknowledged') {
-            const when = e.ackedAt ? formatNzTime(e.ackedAt) : '';
-            const who = e.ackedBy || (e.ackSource === 'rowsafe' ? 'RowSafe' : 'CrewSight Manager');
+        if (e.status === 'responding' || e.status === 'acknowledged') {
+            const when = e.respondingAt || e.ackedAt ? formatNzTime(e.respondingAt || e.ackedAt) : '';
+            const who = e.respondingBy || e.ackedBy || (e.ackSource === 'rowsafe' ? 'A coach' : '');
             const via =
-                e.ackSource === 'rowsafe' ? ' (RowSafe)' : e.ackSource === 'manager' ? ' (Manager)' : '';
-            return `Acknowledged ${when} by ${who}${via}`.replace(/\s+/g, ' ').trim();
+                e.ackSource === 'rowsafe' || e.respondingSource === 'rowsafe'
+                    ? ' (RowSafe)'
+                    : e.ackSource === 'manager' || e.respondingSource === 'manager'
+                      ? ' (Manager)'
+                      : '';
+            const name = String(who || '').trim();
+            const line = name ? `${name} is on the way` : 'A coach is on the way';
+            return `${line} ${when}${via}`.replace(/\s+/g, ' ').trim();
         }
         if (e.status === 'cleared') {
-            return `Cleared ${e.ackedAt ? formatNzTime(e.ackedAt) : ''} · ${e.ackedBy || 'RowSafe or another Manager'}`
-                .replace(/\s+/g, ' ')
-                .trim();
+            const when = e.ackedAt ? formatNzTime(e.ackedAt) : '';
+            const who =
+                e.ackedBy ||
+                (e.ackSource === 'athlete'
+                    ? 'Athlete'
+                    : e.ackSource === 'rowsafe'
+                      ? 'RowSafe'
+                      : 'CrewSight Manager');
+            return `Crew safe · ${who} ${when}`.replace(/\s+/g, ' ').trim();
         }
         return 'Active — not acknowledged';
     }
@@ -202,6 +239,7 @@
         list,
         upsertActive,
         acknowledge,
+        markSafe,
         markMissingCleared,
         replaceFromServer,
         fetchShared,

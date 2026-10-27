@@ -60,6 +60,8 @@ let lastFenceParts = [];
 let lastStoppedState = {};
 /** Device IDs with active (unacknowledged) capsize alerts. */
 let activeCapsizeDeviceIds = new Set();
+/** Device IDs where a coach is on the way (still visible, not shouting). */
+let respondingCapsizeDeviceIds = new Set();
 
 function deviceColorsEnabled() {
     return Boolean(SAFETY_THEME.enableDeviceColors && window.RnzDeviceColors);
@@ -1773,6 +1775,7 @@ function updateMapMarkers() {
         const latlng = [lat, lon];
         const online = isPositionRecent(position.fixTime);
         const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
+        const capsizeResponding = !capsizeAlert && respondingCapsizeDeviceIds.has(device.id);
         const critical = showBoundaryCriticalAlert(device, position);
         let fill = critical ? '#fecaca' : online ? '#14b8a6' : '#94a3b8';
         let stroke = critical ? '#b91c1c' : online ? '#0f766e' : '#475569';
@@ -1787,6 +1790,9 @@ function updateMapMarkers() {
         if (capsizeAlert) {
             fill = '#fecaca';
             stroke = '#b91c1c';
+        } else if (capsizeResponding) {
+            fill = '#fde68a';
+            stroke = '#b45309';
         } else if (isKriDemoMode()) {
             if (device.demoMarkerFill) {
                 fill = device.demoMarkerFill;
@@ -1802,14 +1808,18 @@ function updateMapMarkers() {
                 stroke = palette.stroke;
             }
         }
-        if (coachLaunch && !capsizeAlert) {
+        if (coachLaunch && !capsizeAlert && !capsizeResponding) {
             fill = '#f59e0b';
             stroke = '#b45309';
         }
         const fillOpacity =
-            capsizeAlert || critical ? 0.92 : online || deviceColorsEnabled() ? 0.92 : 0.55;
-        const radius = capsizeAlert || critical ? 14 : 11;
-        const weight = capsizeAlert || critical ? 3 : 2;
+            capsizeAlert || capsizeResponding || critical
+                ? 0.92
+                : online || deviceColorsEnabled()
+                  ? 0.92
+                  : 0.55;
+        const radius = capsizeAlert || capsizeResponding || critical ? 14 : 11;
+        const weight = capsizeAlert || capsizeResponding || critical ? 3 : 2;
 
         let marker;
         if (isKriDemoBoatDevice(device)) {
@@ -1828,13 +1838,19 @@ function updateMapMarkers() {
                     color: stroke,
                     fillColor: fill,
                     fillOpacity,
-                    className: capsizeAlert ? 'rnz-marker-capsize' : '',
+                    className: capsizeAlert
+                        ? 'rnz-marker-capsize'
+                        : capsizeResponding
+                          ? 'rnz-marker-capsize-responding'
+                          : '',
                 }).addTo(map);
                 markersByDeviceId.set(device.id, marker);
             } else {
                 marker.setLatLng(latlng);
                 marker.setStyle({ fillColor: fill, color: stroke, radius, weight, fillOpacity });
                 setMarkerCapsizeFlash(marker, capsizeAlert);
+                const el = typeof marker.getElement === 'function' ? marker.getElement() : marker._path;
+                el?.classList.toggle('rnz-marker-capsize-responding', !!capsizeResponding && !capsizeAlert);
             }
         }
 
@@ -1849,6 +1865,15 @@ function updateMapMarkers() {
                 : athleteId
                   ? `<div><strong>Athlete:</strong> ${escapeHtml(athleteId)}</div>`
                   : '';
+            const capsizeLine = capsizeAlert
+                ? `<div><strong>Capsize:</strong> Active — not acknowledged</div>`
+                : capsizeResponding
+                  ? `<div><strong>Capsize:</strong> ${escapeHtml(
+                        window.AltitudeHdCapsizeAlarm?.onTheWayLine?.(
+                            position?.attributes?.capsizeRespondingBy || position?.capsizeRespondingBy,
+                        ) || 'A coach is on the way',
+                    )}</div>`
+                  : '';
             const palette = devicePalette(device.id);
             const popupAccent = palette
                 ? `<div class="rnz-popup-accent" style="background:${palette.fill}"></div>`
@@ -1858,6 +1883,7 @@ function updateMapMarkers() {
                     `<div class="rnz-popup-body">` +
                     `<div class="rnz-popup-title">${escapeHtml(crew.title)}</div>` +
                     crewLine +
+                    capsizeLine +
                     `<div><strong>Pace:</strong> ${pace}</div>` +
                     `<div><strong>Last fix:</strong> ${fix}</div>` +
                     `<div><strong>Location:</strong> ${addr}</div></div>`,
@@ -1993,8 +2019,11 @@ async function syncRowsafeCapsizeDayLog() {
             lat: pos?.latitude,
             lon: pos?.longitude,
         });
-        if (alarm?.isAlertAcknowledged?.(d.id, pos)) {
-            log.acknowledge([uniqueId], 'RowSafe', 'rowsafe');
+        if (alarm?.isAlertResponding?.(d.id, pos) || alarm?.readPhase?.(pos) === 'responding') {
+            const who =
+                String(pos?.attributes?.capsizeRespondingBy || pos?.capsizeRespondingBy || '').trim() ||
+                'A coach';
+            log.acknowledge([uniqueId], who, pos?.attributes?.capsizeRespondingSource || 'remote');
         }
     }
     const listEl = document.getElementById('safetyCapsizeLog');
@@ -2019,7 +2048,12 @@ function renderCapsizeAlerts() {
     if (!SAFETY_THEME.enableCapsize || !window.AltitudeHdCapsizeAlarm) return;
     const listEl = document.getElementById('safetyCapsizeList');
     const alerts = window.AltitudeHdCapsizeAlarm.updateCapsizeAlerts(devices, positions);
-    activeCapsizeDeviceIds = new Set(alerts.map((a) => a.deviceId));
+    activeCapsizeDeviceIds = new Set(
+        alerts.filter((a) => a.phase !== 'responding').map((a) => a.deviceId),
+    );
+    respondingCapsizeDeviceIds = new Set(
+        alerts.filter((a) => a.phase === 'responding').map((a) => a.deviceId),
+    );
     syncCapsizeMapAlertUi();
     window.AltitudeHdCapsizeAlarm.renderCapsizePanel(
         listEl,
@@ -2230,8 +2264,13 @@ function renderFleetDevices() {
         const statusText = walkup ? 'Check-in' : isOnline ? 'Online' : 'Offline';
         const critical = showBoundaryCriticalAlert(device, position);
         const capsizeAlert = activeCapsizeDeviceIds.has(device.id);
+        const capsizeResponding = !capsizeAlert && respondingCapsizeDeviceIds.has(device.id);
         const rowCriticalClass = critical ? ' rnz-fleet-row--critical' : '';
-        const rowCapsizeClass = capsizeAlert ? ' rnz-fleet-row--capsize-alert' : '';
+        const rowCapsizeClass = capsizeAlert
+            ? ' rnz-fleet-row--capsize-alert'
+            : capsizeResponding
+              ? ' rnz-fleet-row--capsize-responding'
+              : '';
         const groupName = escapeHtml(groupLabelForDevice(device));
         const hasLoc =
             position &&

@@ -55,6 +55,13 @@
             <nav class="rnz-header-nav" aria-label="RowSafe pages">
                 <a class="rnz-header-menu-btn" href="rowsafe-logbook.html">Logbook</a>
                 <a class="rnz-header-menu-btn" href="rowsafe-hazards.html">Hazards</a>
+                <a
+                    class="rnz-header-menu-btn"
+                    id="capsizeExplainerLink"
+                    href="https://rowing-app-recorder-pwa.vercel.app/capsize-explainer.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >How capsize alerts work (simulation)</a>
                 <a class="rnz-external" href="https://rowingnz.kiwi/rowsafe/" target="_blank" rel="noopener noreferrer">RowSafe on RowingHub ↗</a>
             </nav>
 
@@ -110,7 +117,7 @@
 
                         <div class="rnz-panel-inner rnz-panel-inner--critical safety-capsize-inner">
 
-                            <p class="rnz-block-hint">CrewSight capsize detection from the phone motion sensor. Beep and spoken “Capsize alert” repeat until acknowledged. Click a boat name to fly the map there.</p>
+                            <p class="rnz-block-hint">CrewSight capsize detection from the phone motion sensor. Beep and spoken “Capsize alert” repeat until someone is on the way. Use On the way if a coach is responding, or Crew is safe when the crew is OK. Click a boat name to fly the map there. <a id="capsizeExplainerHintLink" href="https://rowing-app-recorder-pwa.vercel.app/capsize-explainer.html" target="_blank" rel="noopener noreferrer">How capsize alerts work (simulation)</a></p>
 
                             <div id="safetyCapsizeList"></div>
 
@@ -345,6 +352,10 @@
 
         ·
 
+        <a id="capsizeExplainerFooterLink" href="https://rowing-app-recorder-pwa.vercel.app/capsize-explainer.html" target="_blank" rel="noopener noreferrer">How capsize alerts work (simulation)</a>
+
+        ·
+
         <a href="https://rowingnz.kiwi/">RowingHub</a>
 
         ·
@@ -416,6 +427,19 @@
     <script src="tracker-source-ui.js"></script>
 
     <script src="rowsafe-walkup-qr.js"></script>
+
+    <script>
+        (function () {
+            var local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            var href = local
+                ? 'http://localhost:5173/capsize-explainer.html'
+                : 'https://rowing-app-recorder-pwa.vercel.app/capsize-explainer.html';
+            ['capsizeExplainerLink', 'capsizeExplainerHintLink', 'capsizeExplainerFooterLink'].forEach(function (id) {
+                var a = document.getElementById(id);
+                if (a) a.href = href;
+            });
+        })();
+    </script>
 
 </body>
 

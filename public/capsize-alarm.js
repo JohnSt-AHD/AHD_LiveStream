@@ -4,6 +4,7 @@
  */
 (function (global) {
     const LS_ACK = 'altitudeHdCapsizeAck_v1';
+    const LS_ACK_NAME = 'crewsight_rowsafe_ack_name';
 
     /** Same pattern as CrewSight Manager: beep → “Capsize alert” → beep, every 5s until cleared. */
     const ALARM_EVERY_MS = 5000;
@@ -46,6 +47,79 @@
             return raw;
         }
         return null;
+    }
+
+    function readPhase(pos) {
+        const attrs = pos?.attributes || {};
+        if (
+            pos?.capsizePhase === 'responding' ||
+            pos?.capsizeResponding === true ||
+            attrs.capsizePhase === 'responding' ||
+            attrs.capsizeResponding === true
+        ) {
+            return 'responding';
+        }
+        return readAlarm(pos) ? 'active' : 'none';
+    }
+
+    function readRespondingBy(pos) {
+        const attrs = pos?.attributes || {};
+        return String(pos?.capsizeRespondingBy || attrs.capsizeRespondingBy || '').trim();
+    }
+
+    function onTheWayLine(name) {
+        const who = String(name || '').trim();
+        return who ? `${who} is on the way` : 'A coach is on the way';
+    }
+
+    function storedAckName() {
+        try {
+            return String(global.localStorage.getItem(LS_ACK_NAME) || '').trim();
+        } catch {
+            return '';
+        }
+    }
+
+    function saveAckName(name) {
+        const who = String(name || '').trim();
+        if (!who) return;
+        try {
+            global.localStorage.setItem(LS_ACK_NAME, who);
+        } catch {
+            /* ignore */
+        }
+    }
+
+    function resolveRowsafeName(kind) {
+        const existing = storedAckName();
+        if (existing) return existing;
+        if (typeof global.prompt !== 'function') {
+            return kind === 'safe' ? 'RowSafe' : 'A coach';
+        }
+        const asked = global.prompt(
+            kind === 'safe'
+                ? 'Name to show with Crew safe (optional)'
+                : 'Your name — shown as on the way',
+            '',
+        );
+        const who = String(asked || '').trim();
+        if (who) {
+            saveAckName(who);
+            return who;
+        }
+        return kind === 'safe' ? 'RowSafe' : 'A coach';
+    }
+
+    function normalizeAckRecord(value) {
+        if (value == null) return null;
+        if (typeof value === 'object') {
+            return {
+                at: Number(value.at) || Date.now(),
+                kind: value.kind === 'safe' ? 'safe' : 'responding',
+                by: String(value.by || '').trim(),
+            };
+        }
+        return { at: Number(value) || Date.now(), kind: 'responding', by: '' };
     }
 
     function alertIdFor(deviceId, pos) {
@@ -240,23 +314,34 @@
             if (!traccarAlarm) continue;
 
             const alertId = alertIdFor(d.id, pos);
-            if (ack[alertId] || ack[`${d.id}:alarm`]) continue;
+            const local = normalizeAckRecord(ack[alertId] || ack[`${d.id}:alarm`]);
+            if (local?.kind === 'safe') continue;
+            const phase =
+                local?.kind === 'responding' || readPhase(pos) === 'responding'
+                    ? 'responding'
+                    : 'active';
+            const respondingBy = readRespondingBy(pos) || local?.by || '';
             active.push({
                 alertId,
                 deviceId: d.id,
                 uniqueId: d.uniqueId || d.name || String(d.id),
                 deviceName: d.name || `Device ${d.id}`,
                 pos,
-                reason: `Device alarm: ${traccarAlarm}`,
+                phase,
+                respondingBy,
+                reason:
+                    phase === 'responding'
+                        ? onTheWayLine(respondingBy)
+                        : `Device alarm: ${traccarAlarm}`,
             });
         }
 
-        if (active.length) startAlarmLoop();
+        if (active.some((a) => a.phase === 'active')) startAlarmLoop();
         else stopAlarmLoop();
         return active;
     }
 
-    async function clearCapsizeAlertUpstream(uniqueId) {
+    async function clearCapsizeAlertUpstream(uniqueId, meta = {}) {
         const id = String(uniqueId || '').trim();
         if (!id) return;
         try {
@@ -269,28 +354,51 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     deviceId: id,
-                    ackedBy: 'RowSafe',
+                    ackedBy: meta.ackedBy || 'RowSafe',
                     ackSource: 'rowsafe',
+                    ackKind: meta.ackKind || 'responding',
+                    ...(meta.ackKind === 'safe' ? { notifyHelp: false } : {}),
                 }),
             });
         } catch {
-            /* ignore — local ack still hides the banner */
+            /* ignore — local ack still updates the panel */
         }
     }
 
     function isAlertAcknowledged(deviceId, pos) {
         const ack = loadJson(LS_ACK, {});
         const alertId = alertIdFor(deviceId, pos);
-        return Boolean(ack[alertId] || ack[`${deviceId}:alarm`]);
+        const local = normalizeAckRecord(ack[alertId] || ack[`${deviceId}:alarm`]);
+        return Boolean(local);
     }
 
-    function acknowledgeCapsizeAlert(alertId, uniqueId) {
+    function isAlertResponding(deviceId, pos) {
+        if (readPhase(pos) === 'responding') return true;
         const ack = loadJson(LS_ACK, {});
-        ack[alertId] = Date.now();
+        const alertId = alertIdFor(deviceId, pos);
+        const local = normalizeAckRecord(ack[alertId] || ack[`${deviceId}:alarm`]);
+        return local?.kind === 'responding';
+    }
+
+    function writeLocalAck(alertId, kind, by) {
+        const ack = loadJson(LS_ACK, {});
+        ack[alertId] = { at: Date.now(), kind, by };
         saveJson(LS_ACK, ack);
+    }
+
+    function acknowledgeCapsizeAlert(alertId, uniqueId, kind = 'responding') {
+        const ackKind = kind === 'safe' ? 'safe' : 'responding';
+        const by = resolveRowsafeName(ackKind);
+        writeLocalAck(alertId, ackKind, by);
         const log = global.CrewSightCapsizeDayLog;
-        if (log && uniqueId) log.acknowledge([uniqueId], 'RowSafe', 'rowsafe');
-        void clearCapsizeAlertUpstream(uniqueId);
+        if (log && uniqueId) {
+            if (ackKind === 'safe' && typeof log.markSafe === 'function') {
+                log.markSafe([uniqueId], by, 'rowsafe');
+            } else {
+                log.acknowledge([uniqueId], by, 'rowsafe');
+            }
+        }
+        void clearCapsizeAlertUpstream(uniqueId, { ackedBy: by, ackKind });
     }
 
     function renderCapsizePanel(container, alerts, onAck, options = {}) {
@@ -322,10 +430,19 @@
                     const nameHtml = hasLoc
                         ? `<button type="button" class="device-name--fly device-name--fly-inline" data-fly-lat="${a.pos.latitude}" data-fly-lng="${a.pos.longitude}" data-device-id="${a.deviceId}">${escapeHtml(a.deviceName)}</button>`
                         : `<strong>${escapeHtml(a.deviceName)}</strong>`;
+                    const responding = a.phase === 'responding';
+                    const status = responding
+                        ? `<span class="safety-capsize-status">${escapeHtml(onTheWayLine(a.respondingBy))}</span>`
+                        : `<span class="safety-capsize-status">${escapeHtml(a.reason)}</span>`;
+                    const respondBtn = responding
+                        ? ''
+                        : `<button type="button" class="safety-capsize-ack" data-capsize-ack="${escapeHtml(a.alertId)}" data-capsize-device="${escapeHtml(a.uniqueId || a.deviceName || '')}" data-capsize-kind="responding">On the way</button>`;
+                    const safeBtn = `<button type="button" class="safety-capsize-ack safety-capsize-ack--safe" data-capsize-ack="${escapeHtml(a.alertId)}" data-capsize-device="${escapeHtml(a.uniqueId || a.deviceName || '')}" data-capsize-kind="safe">Crew is safe</button>`;
                     return (
-                        `<li class="safety-capsize-item">` +
-                        `${nameHtml} — ${escapeHtml(a.reason)} ` +
-                        `<button type="button" class="safety-capsize-ack" data-capsize-ack="${escapeHtml(a.alertId)}" data-capsize-device="${escapeHtml(a.uniqueId || a.deviceName || '')}">Acknowledge</button>` +
+                        `<li class="safety-capsize-item${responding ? ' safety-capsize-item--responding' : ''}">` +
+                        `${nameHtml} — ${status} ` +
+                        respondBtn +
+                        safeBtn +
                         `</li>`
                     );
                 })
@@ -336,8 +453,9 @@
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-capsize-ack');
                 const uniqueId = btn.getAttribute('data-capsize-device');
+                const kind = btn.getAttribute('data-capsize-kind') || 'responding';
                 if (id) {
-                    acknowledgeCapsizeAlert(id, uniqueId);
+                    acknowledgeCapsizeAlert(id, uniqueId, kind);
                     if (typeof onAck === 'function') onAck(uniqueId);
                 }
             });
@@ -357,9 +475,12 @@
 
     global.AltitudeHdCapsizeAlarm = {
         readAlarm,
+        readPhase,
         isAlertAcknowledged,
+        isAlertResponding,
         updateCapsizeAlerts,
         renderCapsizePanel,
         acknowledgeCapsizeAlert,
+        onTheWayLine,
     };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -308,6 +308,7 @@ body.rnz-page .rnz-header-inner {
 .rnz-header-nav {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     flex-shrink: 0;
 }
@@ -481,7 +482,12 @@ body.rnz-page .rnz-header-inner {
     border-color: rgba(180, 35, 24, 0.4);
 }
 
-.rnz-capsize-log__item--acknowledged {
+.rnz-capsize-log__item--acknowledged,
+.rnz-capsize-log__item--responding {
+    border-color: rgba(180, 83, 9, 0.4);
+}
+
+.rnz-capsize-log__item--cleared {
     border-color: rgba(31, 107, 74, 0.35);
 }
 
@@ -1878,6 +1884,30 @@ body.rnz-page.course-view-open #courseViewOverlay {
 
 .safety-capsize-ack:hover {
     background: #f8fafc;
+}
+
+.safety-capsize-item--responding {
+    border-left: 3px solid #d97706;
+    padding-left: 0.4rem;
+}
+
+.safety-capsize-status {
+    font-weight: 600;
+}
+
+.safety-capsize-ack--safe {
+    background: #ecfdf5;
+    border-color: #99f6e4;
+    color: #0f766e;
+}
+
+.rnz-page .rnz-marker-capsize-responding {
+    filter: drop-shadow(0 0 0 #b45309);
+}
+
+.rnz-page .rnz-fleet-row--capsize-responding {
+    border-color: rgba(180, 83, 9, 0.45);
+    background: rgba(254, 243, 199, 0.7);
 }
 
 /* RNZ on-water device cards */
