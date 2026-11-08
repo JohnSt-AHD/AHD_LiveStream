@@ -78,6 +78,19 @@ body.rnz-page > *:not(#courseViewOverlay) {
     z-index: 2000;
 }
 
+.capsize-maintenance-banner {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    background: #b45309;
+    color: #fffbeb;
+    border-bottom: 3px solid #fbbf24;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.05rem;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+}
+
 .quiet-hours-banner[hidden] {
     display: none !important;
 }
