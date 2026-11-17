@@ -60,40 +60,40 @@ const html = `<!DOCTYPE html>
   <meta charset="utf-8" />
   <title>AHD · RNZ Livestream Season Pricing (Internal)</title>
   <style>
-    @page { size: A4; margin: 16mm 14mm 18mm; }
+    @page { size: A4; margin: 9mm 9mm 9mm; }
     * { box-sizing: border-box; }
     body {
       font-family: "Segoe UI", system-ui, sans-serif;
       color: #0f172a;
-      font-size: 10pt;
-      line-height: 1.4;
+      font-size: 8.5pt;
+      line-height: 1.25;
       margin: 0;
     }
     header {
-      border-bottom: 3px solid #0e7490;
-      padding-bottom: 10px;
-      margin-bottom: 14px;
+      border-bottom: 2px solid #0e7490;
+      padding-bottom: 4px;
+      margin-bottom: 5px;
     }
-    .brand { font-size: 18pt; font-weight: 800; color: #0e7490; margin: 0; }
-    .tagline { color: #64748b; margin: 4px 0 0; font-size: 9.5pt; }
+    .brand { font-size: 14pt; font-weight: 800; color: #0e7490; margin: 0; }
+    .tagline { color: #64748b; margin: 1px 0 0; font-size: 8pt; }
     h2 {
-      font-size: 11.5pt;
+      font-size: 9.5pt;
       color: #0e7490;
-      margin: 16px 0 6px;
+      margin: 7px 0 2px;
       border-bottom: 1px solid #ccfbf1;
-      padding-bottom: 3px;
+      padding-bottom: 1px;
     }
-    h3 { font-size: 10.5pt; margin: 12px 0 4px; color: #164e63; }
-    p { margin: 0 0 7px; }
+    h3 { font-size: 9pt; margin: 6px 0 2px; color: #164e63; }
+    p { margin: 0 0 3px; }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 6px 0 10px;
-      font-size: 9pt;
+      margin: 2px 0 4px;
+      font-size: 7.5pt;
     }
     th, td {
       border: 1px solid #cbd5e1;
-      padding: 5px 7px;
+      padding: 2px 5px;
       text-align: left;
       vertical-align: top;
     }
@@ -104,9 +104,9 @@ const html = `<!DOCTYPE html>
     .box {
       background: #ecfeff;
       border: 1px solid #99f6e4;
-      border-radius: 6px;
-      padding: 10px 12px;
-      margin: 8px 0 12px;
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin: 3px 0 4px;
     }
     .box.warn {
       background: #fff7ed;
@@ -116,29 +116,28 @@ const html = `<!DOCTYPE html>
       background: #fef2f2;
       border-color: #fecaca;
     }
-    .muted { color: #64748b; font-size: 8.5pt; }
+    .muted { color: #64748b; font-size: 7pt; margin-bottom: 2px; }
     .stats {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin: 8px 0 12px;
+      gap: 4px;
+      margin: 3px 0 4px;
     }
     .stat {
       border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      padding: 8px;
+      border-radius: 4px;
+      padding: 3px 5px;
     }
-    .stat .v { font-size: 12pt; font-weight: 700; color: #0e7490; }
-    .stat .l { font-size: 8pt; color: #64748b; margin-top: 2px; }
-    ul { margin: 4px 0 8px; padding-left: 16px; }
-    li { margin-bottom: 3px; }
-    .page-break { break-before: page; page-break-before: always; }
+    .stat .v { font-size: 10pt; font-weight: 700; color: #0e7490; }
+    .stat .l { font-size: 6.5pt; color: #64748b; margin-top: 0; }
+    ul, ol { margin: 2px 0 3px; padding-left: 14px; }
+    li { margin-bottom: 1px; }
     footer {
-      margin-top: 14px;
-      padding-top: 8px;
+      margin-top: 5px;
+      padding-top: 3px;
       border-top: 1px solid #e2e8f0;
       color: #94a3b8;
-      font-size: 8pt;
+      font-size: 6.5pt;
     }
   </style>
 </head>
@@ -265,8 +264,6 @@ const html = `<!DOCTYPE html>
   </table>
   <p class="muted">~$10k is slightly under the CPI day rate (${money(DAY_CPI, 2)}). Half-price only when Uni and Beach are both taken — rewards season take-up.</p>
 
-  <div class="page-break"></div>
-
   <h2>4. Core pricing &amp; cost pools</h2>
   <div class="box warn">
     <strong>Core only = ${money(CORE_PIN)} for 15 days</strong> (NZ 4 + NI 3 + SI 2 + Maadi 6) —
@@ -336,7 +333,7 @@ async function main() {
       path: pdfPath,
       format: 'A4',
       printBackground: true,
-      margin: { top: '14mm', bottom: '16mm', left: '12mm', right: '12mm' },
+      margin: { top: '8mm', bottom: '8mm', left: '8mm', right: '8mm' },
     });
   } finally {
     await browser.close();
