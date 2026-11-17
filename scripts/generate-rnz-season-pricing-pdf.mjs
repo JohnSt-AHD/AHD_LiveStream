@@ -23,8 +23,6 @@ const MAADI_WEIGHT = 1.35;
 const OTHER_WEIGHT = 1.0; // effective $/day falls via normalisation
 const DISCOUNT_THRESHOLD = 200_000;
 const EXCESS_KEEP = 0.5; // pay 50% of amount above threshold
-const MASTERS_LIST = 10_000;
-const MASTERS_SEASON = 5_000;
 const TODAY = new Date().toISOString().slice(0, 10);
 
 /** Package totals pinned to pre-Maadi-weight CPI rebuild */
@@ -54,22 +52,36 @@ const events = [
   { name: 'Beach / Coastal Champs', lyD: 1, agD: 3, bucket: 'other' },
 ].map((e) => ({ ...e, weight: weightFor(e.name) }));
 
+const fixedEvents = events.filter((e) => e.bucket === 'fixed');
+const otherEvents = events.filter((e) => e.bucket === 'other');
+
 function weightedUnits(dayKey, list = events) {
   return list.reduce((s, e) => s + e[dayKey] * e.weight, 0);
 }
 
 const unitsSame = weightedUnits('lyD');
-const unitsAgree = weightedUnits('agD');
 const unitsLy = unitsSame; // same day mix as last year
+const unitsFixedAgree = weightedUnits('agD', fixedEvents);
+const unitsOtherAgree = weightedUnits('agD', otherEvents);
 const rateLy = OLD_TOTAL / unitsLy;
 const rateSame = FLAT_SAME / unitsSame;
-const rateAgree = FLAT_AGREE / unitsAgree;
+/** Classic weighted unit rate — used as Masters 1-day fee (~$9,959) */
+const MASTERS_LIST = Math.round(rateSame);
+/** Full-season Masters still 50% off the day rate */
+const MASTERS_SEASON = Math.round(rateSame / 2);
+/**
+ * Agree-day fees: Fixed events share the Core pool (15d = FLAT_CORE) so Table 1
+ * Fixed total matches Package Core. Other events share the Extended remainder.
+ */
+const rateCoreAgree = FLAT_CORE / unitsFixedAgree;
+const rateOtherAgree = (FLAT_AGREE - FLAT_CORE) / unitsOtherAgree;
 
 function sameFee(e) {
   return e.lyD * e.weight * rateSame;
 }
 function agreeFee(e) {
-  return e.agD * e.weight * rateAgree;
+  const rate = e.bucket === 'fixed' ? rateCoreAgree : rateOtherAgree;
+  return e.agD * e.weight * rate;
 }
 /** Last-year $175k reallocated with the same Maadi / other weights */
 function lyFee(e) {
@@ -184,7 +196,7 @@ function buildInternalHtml() {
   </div>
 
   <h2>1. Cost table — last year · same+CPI · agreement days</h2>
-  <p class="muted">LY / Same / Agree columns all use Maadi ${MAADI_WEIGHT}× (others lower share). LY reallocates ${moneyR(OLD_TOTAL)}; Same/Agree keep the prior CPI package totals.</p>
+  <p class="muted">LY / Same use Maadi ${MAADI_WEIGHT}× inside the full-season pool. Agree Fixed lines share the Core pool (${moneyR(FLAT_CORE)} / 15d) so the Fixed total matches Package Core; Other lines share the Extended remainder. Masters = Classic weighted day rate ${moneyR(MASTERS_LIST)}.</p>
   <table>
     <thead>
       <tr>
@@ -221,10 +233,10 @@ function buildInternalHtml() {
       <tr class="total">
         <td>Fixed Events (Core)</td>
         <td class="num">14</td>
-        <td class="num">${moneyR(events.filter((e) => e.bucket === 'fixed').reduce((s, e) => s + lyFee(e), 0))}</td>
-        <td class="num">${moneyR(events.filter((e) => e.bucket === 'fixed').reduce((s, e) => s + sameFee(e), 0))}</td>
+        <td class="num">${moneyR(fixedEvents.reduce((s, e) => s + lyFee(e), 0))}</td>
+        <td class="num">${moneyR(fixedEvents.reduce((s, e) => s + sameFee(e), 0))}</td>
         <td class="num">15</td>
-        <td class="num">${moneyR(events.filter((e) => e.bucket === 'fixed').reduce((s, e) => s + agreeFee(e), 0))}</td>
+        <td class="num">${moneyR(FLAT_CORE)}</td>
       </tr>
       <tr class="accent">
         <td>Full season (ex Masters)</td>
@@ -471,9 +483,11 @@ function buildExternalHtml() {
     </tbody>
   </table>
   <p class="muted">
-    *Standalone fees are the agreement-day allocation within the Extended Classic pool
-    (Maadi higher share; other events lower). Package fees above are preferred when multiple
-    events are taken together. Fixed Events are not sold individually outside the Core package.
+    *Fixed Event standalone fees are the agreement-day share of the Core package
+    (${moneyR(FLAT_CORE)}); Other Events share the Extended remainder above Core.
+    Package fees above are preferred when multiple events are taken together.
+    Fixed Events are not sold individually outside the Core package.
+    Masters is priced at the Classic weighted day rate (${moneyR(MASTERS_LIST)}).
   </p>
 
   <h2>4. Masters Regatta add-on</h2>
