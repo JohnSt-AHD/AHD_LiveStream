@@ -17,7 +17,9 @@ const OLD_TOTAL = 175_000;
 const DAY_OLD = OLD_TOTAL / 16;
 const DAY_CPI = DAY_OLD * 1.03;
 const SAME_MIX_CPI = OLD_TOTAL * 1.03;
-const CORE_PIN = 175_000;
+/** Core = Fixed Events at agreement days (15) × CPI day rate — matches Table 1. */
+const CORE_DAYS = 15;
+const CORE_PIN = CORE_DAYS * DAY_CPI; // 168,984.375
 const MASTERS_LIST = 10_000;
 const MASTERS_SEASON = 5_000;
 const AGREE_FULL = Math.round((19.5 * DAY_CPI) / 500) * 500;
@@ -149,7 +151,7 @@ const html = `<!DOCTYPE html>
   <div class="stats">
     <div class="stat"><div class="v">${money(OLD_TOTAL)}</div><div class="l">Last year (16 days)</div></div>
     <div class="stat"><div class="v">${money(SAME_MIX_CPI)}</div><div class="l">Same mix + 3% CPI</div></div>
-    <div class="stat"><div class="v">${money(CORE_PIN)}</div><div class="l">Proposed Core (Fixed ×4)</div></div>
+    <div class="stat"><div class="v">${money(CORE_PIN)}</div><div class="l">Core — 15 Fixed days + CPI</div></div>
     <div class="stat"><div class="v">${money(AGREE_FULL)}</div><div class="l">Agreement-days Classic</div></div>
   </div>
 
@@ -222,9 +224,9 @@ const html = `<!DOCTYPE html>
     <tbody>
       <tr>
         <td>Core only</td>
-        <td>4 Fixed Events (Maadi locked in)</td>
+        <td>4 Fixed Events · <strong>15 days</strong> (agreement) · matches Table 1</td>
         <td class="num">${money(CORE_PIN)}</td>
-        <td class="num">Same headline $</td>
+        <td class="num">−${money(OLD_TOTAL - CORE_PIN)} vs LY full season</td>
       </tr>
       <tr class="accent">
         <td>Same as last season + CPI</td>
@@ -265,10 +267,11 @@ const html = `<!DOCTYPE html>
 
   <div class="page-break"></div>
 
-  <h2>4. “Why is Core still ~$175k?” — cost pools</h2>
+  <h2>4. Core pricing &amp; cost pools</h2>
   <div class="box warn">
-    <strong>Fixed days did not shrink in the RNZ draft.</strong>
-    NI Secondary goes 2 → 3 days, so Fixed is 14 → 15. Core-only is fewer <em>events</em> than last year’s paid six, not a lighter Fixed day load.
+    <strong>Core only = ${money(CORE_PIN)} for 15 days</strong> (NZ 4 + NI 3 + SI 2 + Maadi 6) —
+    the same figure as Table 1 “Fixed Events / Agree. + CPI”. Fixed days did not shrink in the RNZ draft
+    (NI 2 → 3); Core-only is fewer <em>events</em> than last year’s paid six, not a lighter Fixed day load.
   </div>
   <table>
     <thead>
@@ -282,7 +285,9 @@ const html = `<!DOCTYPE html>
       <tr><td>Travel / venue variable</td><td>5–10%</td><td>True mover with ± days and new venues</td></tr>
     </tbody>
   </table>
-  <p><strong>Say this:</strong> Last year’s $175k bought a season production platform, not 16 identical day-units. About 80–90% sits in standing crew, peak Maadi kit, and systems that still run for the four Fixed Events. Pure day maths on Fixed alone after CPI is ~${money(14 * DAY_CPI)} (same days) or ~${money(15 * DAY_CPI)} (agreement). Core at $175k is the platform price with Maadi inside.</p>
+  <p><strong>Say this:</strong> Last year’s ${money(OLD_TOTAL)} bought a season platform for six events / 16 days.
+  Core is the four Fixed Events only, priced at CPI × agreement days = <strong>${money(CORE_PIN)}</strong> (15 days).
+  Same-mix full season stays <strong>${money(SAME_MIX_CPI)}</strong> (+3% CPI only).</p>
 
   <h2>5. “So extra days are only ~$5k?”</h2>
   <div class="box danger">
@@ -295,7 +300,7 @@ const html = `<!DOCTYPE html>
   <h2>6. Suggested spoken path</h2>
   <ol>
     <li>Last year ${money(OLD_TOTAL)} = season platform for 6 events / 16 days.</li>
-    <li>Core (4 Fixed, Maadi in) stays ${money(CORE_PIN)} — standing cost pools, not a day chop.</li>
+    <li>Core (4 Fixed / 15 agreement days, Maadi in) = ${money(CORE_PIN)} — matches Table 1 Fixed + CPI.</li>
     <li>Want the same season as last year? ${money(SAME_MIX_CPI)} (+3% CPI). That’s the ~$5k conversation.</li>
     <li>Want draft day counts? Classic ~${money(AGREE_FULL)}.</li>
     <li>Masters +1 day: ${money(MASTERS_LIST)} à la carte, ${money(MASTERS_SEASON)} when Uni + Beach are both taken.</li>
@@ -303,7 +308,7 @@ const html = `<!DOCTYPE html>
 
   <footer>
     AltitudeHD internal negotiation aid · Generated ${new Date().toISOString().slice(0, 10)} ·
-    Method: $175,000/16 × 1.03 × days · Not a client-facing proposal · Not legal advice
+    Method: $175,000/16 × 1.03 × days · Core = 15 × CPI day rate · Not a client-facing proposal · Not legal advice
   </footer>
 </body>
 </html>
