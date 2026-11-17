@@ -60,6 +60,8 @@ function weightedUnits(dayKey, list = events) {
 
 const unitsSame = weightedUnits('lyD');
 const unitsAgree = weightedUnits('agD');
+const unitsLy = unitsSame; // same day mix as last year
+const rateLy = OLD_TOTAL / unitsLy;
 const rateSame = FLAT_SAME / unitsSame;
 const rateAgree = FLAT_AGREE / unitsAgree;
 
@@ -69,8 +71,9 @@ function sameFee(e) {
 function agreeFee(e) {
   return e.agD * e.weight * rateAgree;
 }
+/** Last-year $175k reallocated with the same Maadi / other weights */
 function lyFee(e) {
-  return e.lyD * DAY_OLD;
+  return e.lyD * e.weight * rateLy;
 }
 
 function contractPrice(listPrice) {
@@ -181,7 +184,7 @@ function buildInternalHtml() {
   </div>
 
   <h2>1. Cost table — last year · same+CPI · agreement days</h2>
-  <p class="muted">Same / Agree columns reallocate the previous CPI totals with Maadi ${MAADI_WEIGHT}× (others lower share).</p>
+  <p class="muted">LY / Same / Agree columns all use Maadi ${MAADI_WEIGHT}× (others lower share). LY reallocates ${moneyR(OLD_TOTAL)}; Same/Agree keep the prior CPI package totals.</p>
   <table>
     <thead>
       <tr>
@@ -218,7 +221,7 @@ function buildInternalHtml() {
       <tr class="total">
         <td>Fixed Events (Core)</td>
         <td class="num">14</td>
-        <td class="num">${moneyR(14 * DAY_OLD)}</td>
+        <td class="num">${moneyR(events.filter((e) => e.bucket === 'fixed').reduce((s, e) => s + lyFee(e), 0))}</td>
         <td class="num">${moneyR(events.filter((e) => e.bucket === 'fixed').reduce((s, e) => s + sameFee(e), 0))}</td>
         <td class="num">15</td>
         <td class="num">${moneyR(events.filter((e) => e.bucket === 'fixed').reduce((s, e) => s + agreeFee(e), 0))}</td>
