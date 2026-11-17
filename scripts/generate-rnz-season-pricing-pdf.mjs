@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Generate internal RNZ livestream season pricing PDF (CPI + day-count options).
+ * Generate RNZ livestream season pricing PDFs (internal + client-facing).
  * Usage: node scripts/generate-rnz-season-pricing-pdf.mjs
  */
-import { mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -17,26 +17,26 @@ const OLD_TOTAL = 175_000;
 const DAY_OLD = OLD_TOTAL / 16;
 const DAY_CPI = DAY_OLD * 1.03;
 const SAME_MIX_CPI = OLD_TOTAL * 1.03;
-/** Core = Fixed Events at agreement days (15) × CPI day rate — matches Table 1. */
 const CORE_DAYS = 15;
-const CORE_PIN = CORE_DAYS * DAY_CPI; // 168,984.375
+const CORE_PIN = CORE_DAYS * DAY_CPI;
 const MASTERS_LIST = 10_000;
 const MASTERS_SEASON = 5_000;
 const AGREE_FULL = Math.round((19.5 * DAY_CPI) / 500) * 500;
+const TODAY = new Date().toISOString().slice(0, 10);
 
 const money = (n, d = 0) =>
   `$${n.toLocaleString('en-NZ', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
 
 const events = [
-  { name: 'NZ Rowing Champs', lyD: 4, agD: 4 },
-  { name: 'NI Secondary School', lyD: 2, agD: 3 },
-  { name: 'SI Secondary School', lyD: 2, agD: 2 },
-  { name: 'Maadi Regatta', lyD: 6, agD: 6 },
-  { name: 'Universities Champs', lyD: 1, agD: 1.5 },
-  { name: 'Beach / Coastal Champs', lyD: 1, agD: 3 },
+  { name: 'NZ Rowing Champs', lyD: 4, agD: 4, bucket: 'fixed' },
+  { name: 'NI Secondary School', lyD: 2, agD: 3, bucket: 'fixed' },
+  { name: 'SI Secondary School', lyD: 2, agD: 2, bucket: 'fixed' },
+  { name: 'Maadi Regatta', lyD: 6, agD: 6, bucket: 'fixed' },
+  { name: 'Universities Champs', lyD: 1, agD: 1.5, bucket: 'other' },
+  { name: 'Beach / Coastal Champs', lyD: 1, agD: 3, bucket: 'other' },
 ];
 
-function eventRows() {
+function eventRowsInternal() {
   return events
     .map((e) => {
       const ly = e.lyD * DAY_OLD;
@@ -54,12 +54,9 @@ function eventRows() {
     .join('\n');
 }
 
-const html = `<!DOCTYPE html>
-<html lang="en-NZ">
-<head>
-  <meta charset="utf-8" />
-  <title>AHD · RNZ Livestream Season Pricing (Internal)</title>
-  <style>
+function sharedCss({ compact = false } = {}) {
+  if (compact) {
+    return `
     @page { size: A4; margin: 9mm 9mm 9mm; }
     * { box-sizing: border-box; }
     body {
@@ -83,7 +80,6 @@ const html = `<!DOCTYPE html>
       border-bottom: 1px solid #ccfbf1;
       padding-bottom: 1px;
     }
-    h3 { font-size: 9pt; margin: 6px 0 2px; color: #164e63; }
     p { margin: 0 0 3px; }
     table {
       width: 100%;
@@ -108,14 +104,8 @@ const html = `<!DOCTYPE html>
       padding: 4px 8px;
       margin: 3px 0 4px;
     }
-    .box.warn {
-      background: #fff7ed;
-      border-color: #fed7aa;
-    }
-    .box.danger {
-      background: #fef2f2;
-      border-color: #fecaca;
-    }
+    .box.warn { background: #fff7ed; border-color: #fed7aa; }
+    .box.danger { background: #fef2f2; border-color: #fecaca; }
     .muted { color: #64748b; font-size: 7pt; margin-bottom: 2px; }
     .stats {
       display: grid;
@@ -138,8 +128,106 @@ const html = `<!DOCTYPE html>
       border-top: 1px solid #e2e8f0;
       color: #94a3b8;
       font-size: 6.5pt;
+    }`;
+  }
+
+  return `
+    @page { size: A4; margin: 14mm 14mm 14mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #0f172a;
+      font-size: 10.5pt;
+      line-height: 1.4;
+      margin: 0;
     }
-  </style>
+    header {
+      border-bottom: 3px solid #0e7490;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .brand { font-size: 20pt; font-weight: 800; color: #0e7490; margin: 0; }
+    .brand-sub { font-size: 11pt; font-weight: 600; color: #164e63; margin: 2px 0 0; }
+    .tagline { color: #64748b; margin: 4px 0 0; font-size: 9.5pt; }
+    h2 {
+      font-size: 12pt;
+      color: #0e7490;
+      margin: 16px 0 6px;
+      border-bottom: 1px solid #ccfbf1;
+      padding-bottom: 3px;
+    }
+    p { margin: 0 0 8px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 12px;
+      font-size: 9.5pt;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfeff; font-weight: 600; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    tr.total td { font-weight: 700; background: #f8fafc; }
+    tr.accent td { background: #ecfeff; font-weight: 600; }
+    .box {
+      background: #ecfeff;
+      border: 1px solid #99f6e4;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin: 10px 0 14px;
+    }
+    .muted { color: #64748b; font-size: 9pt; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+    .stat {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .stat .v { font-size: 14pt; font-weight: 700; color: #0e7490; }
+    .stat .l { font-size: 8.5pt; color: #64748b; margin-top: 3px; }
+    ul { margin: 6px 0 10px; padding-left: 18px; }
+    li { margin-bottom: 4px; }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 8px 0 12px;
+    }
+    .card {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 11pt;
+      color: #0e7490;
+    }
+    footer {
+      margin-top: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      color: #94a3b8;
+      font-size: 8pt;
+    }`;
+}
+
+function buildInternalHtml() {
+  return `<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <title>AHD · RNZ Livestream Season Pricing (Internal)</title>
+  <style>${sharedCss({ compact: true })}</style>
 </head>
 <body>
   <header>
@@ -174,7 +262,7 @@ const html = `<!DOCTYPE html>
       </tr>
     </thead>
     <tbody>
-      ${eventRows()}
+      ${eventRowsInternal()}
       <tr>
         <td>Masters Regatta (new)</td>
         <td class="num">—</td>
@@ -262,7 +350,7 @@ const html = `<!DOCTYPE html>
       <tr class="accent"><td>Full season (all Fixed + Uni + Beach)</td><td class="num">${money(MASTERS_SEASON)} (50% off)</td></tr>
     </tbody>
   </table>
-  <p class="muted">~$10k is slightly under the CPI day rate (${money(DAY_CPI, 2)}). Half-price only when Uni and Beach are both taken — rewards season take-up.</p>
+  <p class="muted">~$10k is slightly under the CPI day rate (${money(DAY_CPI, 2)}). Half-price only when Uni and Beach are both taken.</p>
 
   <h2>4. Core pricing &amp; cost pools</h2>
   <div class="box warn">
@@ -304,48 +392,254 @@ const html = `<!DOCTYPE html>
   </ol>
 
   <footer>
-    AltitudeHD internal negotiation aid · Generated ${new Date().toISOString().slice(0, 10)} ·
+    AltitudeHD internal negotiation aid · Generated ${TODAY} ·
     Method: $175,000/16 × 1.03 × days · Core = 15 × CPI day rate · Not a client-facing proposal · Not legal advice
   </footer>
 </body>
-</html>
-`;
+</html>`;
+}
+
+function buildExternalHtml() {
+  const fixed = events.filter((e) => e.bucket === 'fixed');
+  const other = events.filter((e) => e.bucket === 'other');
+
+  return `<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <title>AltitudeHD · Livestream Season Proposal for Rowing New Zealand</title>
+  <style>${sharedCss({ compact: false })}</style>
+</head>
+<body>
+  <header>
+    <p class="brand">AltitudeHD</p>
+    <p class="brand-sub">Livestream season proposal · Rowing New Zealand</p>
+    <p class="tagline">2027–2029 season options · All figures exclude GST · Prepared ${TODAY}</p>
+  </header>
+
+  <p>
+    This proposal sets out livestream production packages for the national rowing calendar.
+    Fees reflect a <strong>3% CPI uplift</strong> on the prior season day rate, applied to the
+    broadcast days in each package.
+  </p>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="v">${money(CORE_PIN)}</div>
+      <div class="l">Core · 4 Fixed Events · 15 days</div>
+    </div>
+    <div class="stat">
+      <div class="v">${money(SAME_MIX_CPI)}</div>
+      <div class="l">Classic · same mix as last season · 16 days</div>
+    </div>
+    <div class="stat">
+      <div class="v">${money(AGREE_FULL)}</div>
+      <div class="l">Extended Classic · agreement day counts · 19.5 days</div>
+    </div>
+  </div>
+
+  <h2>1. What’s included</h2>
+  <div class="two-col">
+    <div class="card">
+      <h3>Core package — Fixed Events</h3>
+      <ul>
+        ${fixed.map((e) => `<li>${e.name} · ${e.agD} day${e.agD === 1 ? '' : 's'}</li>`).join('')}
+      </ul>
+      <p class="muted">${CORE_DAYS} livestream days · ${money(CORE_PIN)} ex GST</p>
+    </div>
+    <div class="card">
+      <h3>Optional Other Events</h3>
+      <ul>
+        ${other.map((e) => `<li>${e.name} · ${e.agD} day${e.agD === 1 ? '' : 's'} (agreement coverage)</li>`).join('')}
+        <li>Masters Regatta · 1 day (optional add-on)</li>
+      </ul>
+      <p class="muted">Priced as season packages or individual add-ons below.</p>
+    </div>
+  </div>
+
+  <h2>2. Season packages</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Package</th>
+        <th>Includes</th>
+        <th class="num">Days</th>
+        <th class="num">Fee (ex GST)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Core</strong></td>
+        <td>NZ Champs, NI Secondary, SI Secondary, Maadi</td>
+        <td class="num">15</td>
+        <td class="num">${money(CORE_PIN)}</td>
+      </tr>
+      <tr class="accent">
+        <td><strong>Classic Season</strong></td>
+        <td>Core + Universities + Beach/Coastal — same event mix as last season</td>
+        <td class="num">16</td>
+        <td class="num">${money(SAME_MIX_CPI)}</td>
+      </tr>
+      <tr>
+        <td><strong>Classic Season + Masters</strong></td>
+        <td>Classic Season + Masters Regatta (season rate)</td>
+        <td class="num">17</td>
+        <td class="num">${money(SAME_MIX_CPI + MASTERS_SEASON)}</td>
+      </tr>
+      <tr>
+        <td><strong>Extended Classic</strong></td>
+        <td>Core + Universities + Beach/Coastal at proposed longer day counts</td>
+        <td class="num">19.5</td>
+        <td class="num">${money(AGREE_FULL)}</td>
+      </tr>
+      <tr>
+        <td><strong>Extended Classic + Masters</strong></td>
+        <td>Extended Classic + Masters Regatta (season rate)</td>
+        <td class="num">20.5</td>
+        <td class="num">${money(AGREE_FULL + MASTERS_SEASON)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <strong>Recommended continuity option:</strong> Classic Season at
+    <strong>${money(SAME_MIX_CPI)}</strong> — the same six events and day mix as last season,
+    with a 3% CPI adjustment only (+${money(SAME_MIX_CPI - OLD_TOTAL)} vs ${money(OLD_TOTAL)}).
+  </div>
+
+  <h2>3. Event day counts</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>Type</th>
+        <th class="num">Last season days</th>
+        <th class="num">Proposed / agreement days</th>
+        <th class="num">Fee if taken alone*</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${events
+        .map((e) => {
+          const fee = e.agD * DAY_CPI;
+          return `<tr>
+            <td>${e.name}</td>
+            <td>${e.bucket === 'fixed' ? 'Fixed / Core' : 'Other'}</td>
+            <td class="num">${e.lyD}</td>
+            <td class="num">${e.agD}</td>
+            <td class="num">${money(fee)}</td>
+          </tr>`;
+        })
+        .join('\n')}
+      <tr>
+        <td>Masters Regatta</td>
+        <td>Optional add-on</td>
+        <td class="num">—</td>
+        <td class="num">1</td>
+        <td class="num">${money(MASTERS_LIST)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">
+    *Standalone fees use the CPI day rate (${money(DAY_CPI, 2)}/day) on proposed days.
+    Package pricing above is preferred when multiple events are taken together.
+    Fixed Events are not sold individually outside the Core package.
+  </p>
+
+  <h2>4. Masters Regatta add-on</h2>
+  <table>
+    <thead>
+      <tr><th>Selected with</th><th class="num">Masters fee (ex GST)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Core only, or Core + only one Other Event</td>
+        <td class="num">${money(MASTERS_LIST)}</td>
+      </tr>
+      <tr class="accent">
+        <td>Full Classic or Extended Classic (Core + Universities + Beach/Coastal)</td>
+        <td class="num">${money(MASTERS_SEASON)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Production scope (summary)</h2>
+  <ul>
+    <li>Multi-camera livestream production for each selected event day</li>
+    <li>Distribution via RNZ Authorised Platforms (e.g. rowingnz.kiwi and RNZ YouTube)</li>
+    <li>Graphics, partner branding integration, and agreed commentary plan</li>
+    <li>Post-event deliverables as agreed in the production schedule</li>
+  </ul>
+  <p class="muted">
+    Detailed technical specifications, host venue responsibilities, and payment schedule
+    are set out in the Livestreaming Production and Service Agreement.
+  </p>
+
+  <h2>6. Notes</h2>
+  <ul>
+    <li>All fees are in New Zealand dollars and <strong>exclude GST</strong>.</li>
+    <li>Classic Season preserves last season’s event mix at a CPI-only uplift.</li>
+    <li>Extended Classic reflects longer NI Secondary, Universities, and Beach/Coastal coverage.</li>
+    <li>Additional or substitute events (including Oceania Coastal) are quoted separately if required.</li>
+  </ul>
+
+  <footer>
+    AltitudeHD Limited · Prepared for Rowing New Zealand Incorporated · ${TODAY} ·
+    Proposal figures ex GST · Subject to signed agreement
+  </footer>
+</body>
+</html>`;
+}
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(ARTIFACTS, { recursive: true });
 
-  const htmlName = 'RNZ-Livestream-Season-Pricing-Internal.html';
-  const pdfName = 'RNZ-Livestream-Season-Pricing-Internal.pdf';
-  const htmlPath = join(OUT_DIR, htmlName);
-  const pdfPath = join(OUT_DIR, pdfName);
-
-  await writeFile(htmlPath, html, 'utf8');
+  const docs = [
+    {
+      base: 'RNZ-Livestream-Season-Pricing-Internal',
+      html: buildInternalHtml(),
+      pdfMargin: { top: '8mm', bottom: '8mm', left: '8mm', right: '8mm' },
+    },
+    {
+      base: 'RNZ-Livestream-Season-Pricing-External',
+      html: buildExternalHtml(),
+      pdfMargin: { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' },
+    },
+  ];
 
   const browser = await chromium.launch({
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || '/usr/local/bin/google-chrome',
     args: ['--no-sandbox', '--disable-dev-shm-usage'],
   });
+
   try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle' });
-    await page.pdf({
-      path: pdfPath,
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '8mm', bottom: '8mm', left: '8mm', right: '8mm' },
-    });
+    for (const doc of docs) {
+      const htmlPath = join(OUT_DIR, `${doc.base}.html`);
+      const pdfPath = join(OUT_DIR, `${doc.base}.pdf`);
+      await writeFile(htmlPath, doc.html, 'utf8');
+
+      const page = await browser.newPage();
+      try {
+        await page.setContent(doc.html, { waitUntil: 'networkidle' });
+        await page.pdf({
+          path: pdfPath,
+          format: 'A4',
+          printBackground: true,
+          margin: doc.pdfMargin,
+        });
+      } finally {
+        await page.close();
+      }
+
+      await copyFile(htmlPath, join(ARTIFACTS, `${doc.base}.html`));
+      await copyFile(pdfPath, join(ARTIFACTS, `${doc.base}.pdf`));
+      console.log(`Wrote ${pdfPath}`);
+    }
   } finally {
     await browser.close();
   }
 
-  // Copy to artifacts for easy download in Cloud Agent UI
-  const { copyFile } = await import('node:fs/promises');
-  await copyFile(htmlPath, join(ARTIFACTS, htmlName));
-  await copyFile(pdfPath, join(ARTIFACTS, pdfName));
-
-  console.log(`Wrote ${htmlPath}`);
-  console.log(`Wrote ${pdfPath}`);
   console.log(`Copied to ${ARTIFACTS}`);
 }
 
