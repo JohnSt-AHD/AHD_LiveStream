@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <title>AHD · RNZ Livestream Season Pricing (Internal)</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm 18mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #0f172a;
+      font-size: 10pt;
+      line-height: 1.4;
+      margin: 0;
+    }
+    header {
+      border-bottom: 3px solid #0e7490;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .brand { font-size: 18pt; font-weight: 800; color: #0e7490; margin: 0; }
+    .tagline { color: #64748b; margin: 4px 0 0; font-size: 9.5pt; }
+    h2 {
+      font-size: 11.5pt;
+      color: #0e7490;
+      margin: 16px 0 6px;
+      border-bottom: 1px solid #ccfbf1;
+      padding-bottom: 3px;
+    }
+    h3 { font-size: 10.5pt; margin: 12px 0 4px; color: #164e63; }
+    p { margin: 0 0 7px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0 10px;
+      font-size: 9pt;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 5px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ecfeff; font-weight: 600; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    tr.total td { font-weight: 700; background: #f8fafc; }
+    tr.accent td { background: #ecfeff; font-weight: 600; }
+    .box {
+      background: #ecfeff;
+      border: 1px solid #99f6e4;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 8px 0 12px;
+    }
+    .box.warn {
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+    .box.danger {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .muted { color: #64748b; font-size: 8.5pt; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 8px 0 12px;
+    }
+    .stat {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px;
+    }
+    .stat .v { font-size: 12pt; font-weight: 700; color: #0e7490; }
+    .stat .l { font-size: 8pt; color: #64748b; margin-top: 2px; }
+    ul { margin: 4px 0 8px; padding-left: 16px; }
+    li { margin-bottom: 3px; }
+    .page-break { break-before: page; page-break-before: always; }
+    footer {
+      margin-top: 14px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      color: #94a3b8;
+      font-size: 8pt;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="brand">AltitudeHD · Internal</p>
+    <p class="tagline">RNZ livestream season pricing — last year vs CPI vs agreement days · All figures ex GST</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="v">$175,000</div><div class="l">Last year (16 days)</div></div>
+    <div class="stat"><div class="v">$180,250</div><div class="l">Same mix + 3% CPI</div></div>
+    <div class="stat"><div class="v">$175,000</div><div class="l">Proposed Core (Fixed ×4)</div></div>
+    <div class="stat"><div class="v">$219,500</div><div class="l">Agreement-days Classic</div></div>
+  </div>
+
+  <div class="box">
+    <strong>Keep last season’s days &amp; regattas:</strong>
+    Same six events / 16 days as last year, +3% CPI only → <strong>$180,250</strong>
+    (+$5,250). This is the inflation-only path.
+  </div>
+
+  <h2>1. Cost table — last year · same+CPI · agreement days</h2>
+  <p class="muted">Day rate: $10,937.50 last year → $11,265.63 after 3% CPI.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th class="num">LY days</th>
+        <th class="num">LY fee</th>
+        <th class="num">Same days + CPI</th>
+        <th class="num">Agree. days</th>
+        <th class="num">Agree. + CPI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>NZ Rowing Champs</td>
+        <td class="num">4</td>
+        <td class="num">$43,750</td>
+        <td class="num">$45,063</td>
+        <td class="num">4</td>
+        <td class="num">$45,063</td>
+      </tr>
+<tr>
+        <td>NI Secondary School</td>
+        <td class="num">2</td>
+        <td class="num">$21,875</td>
+        <td class="num">$22,531</td>
+        <td class="num">3</td>
+        <td class="num">$33,797</td>
+      </tr>
+<tr>
+        <td>SI Secondary School</td>
+        <td class="num">2</td>
+        <td class="num">$21,875</td>
+        <td class="num">$22,531</td>
+        <td class="num">2</td>
+        <td class="num">$22,531</td>
+      </tr>
+<tr>
+        <td>Maadi Regatta</td>
+        <td class="num">6</td>
+        <td class="num">$65,625</td>
+        <td class="num">$67,594</td>
+        <td class="num">6</td>
+        <td class="num">$67,594</td>
+      </tr>
+<tr>
+        <td>Universities Champs</td>
+        <td class="num">1</td>
+        <td class="num">$10,938</td>
+        <td class="num">$11,266</td>
+        <td class="num">1.5</td>
+        <td class="num">$16,898</td>
+      </tr>
+<tr>
+        <td>Beach / Coastal Champs</td>
+        <td class="num">1</td>
+        <td class="num">$10,938</td>
+        <td class="num">$11,266</td>
+        <td class="num">3</td>
+        <td class="num">$33,797</td>
+      </tr>
+      <tr>
+        <td>Masters Regatta (new)</td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+        <td class="num">$10,000 list</td>
+        <td class="num">1</td>
+        <td class="num">$10,000 list</td>
+      </tr>
+      <tr class="total">
+        <td>Fixed Events (Core)</td>
+        <td class="num">14</td>
+        <td class="num">$153,125</td>
+        <td class="num">$157,719</td>
+        <td class="num">15</td>
+        <td class="num">$168,984</td>
+      </tr>
+      <tr class="accent">
+        <td>Full season (ex Masters)</td>
+        <td class="num">16</td>
+        <td class="num">$175,000</td>
+        <td class="num">$180,250</td>
+        <td class="num">19.5</td>
+        <td class="num">$219,680</td>
+      </tr>
+      <tr class="total">
+        <td>Full season + Masters (season rate)</td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+        <td class="num">$185,250</td>
+        <td class="num">20.5</td>
+        <td class="num">$224,500</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Package options</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Package</th>
+        <th>What it is</th>
+        <th class="num">Price</th>
+        <th class="num">vs last year</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Core only</td>
+        <td>4 Fixed Events (Maadi locked in)</td>
+        <td class="num">$175,000</td>
+        <td class="num">Same headline $</td>
+      </tr>
+      <tr class="accent">
+        <td>Same as last season + CPI</td>
+        <td>Same 6 regattas / 16 days</td>
+        <td class="num">$180,250</td>
+        <td class="num">+$5,250 (CPI only)</td>
+      </tr>
+      <tr>
+        <td>Same as LY + CPI + Masters</td>
+        <td>Above + Masters 1 day (season rate)</td>
+        <td class="num">$185,250</td>
+        <td class="num">+$10,250</td>
+      </tr>
+      <tr>
+        <td>Agreement-days Classic</td>
+        <td>Draft days 19.5 (NI/Uni/Beach longer)</td>
+        <td class="num">$219,500</td>
+        <td class="num">+$44,500</td>
+      </tr>
+      <tr>
+        <td>Agreement Classic + Masters</td>
+        <td>20.5 days · Masters at season rate</td>
+        <td class="num">$224,500</td>
+        <td class="num">+$49,500</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Masters add-on</h2>
+  <table>
+    <thead><tr><th>When</th><th class="num">Masters 1 day</th></tr></thead>
+    <tbody>
+      <tr><td>Standalone / Core only / partial extras</td><td class="num">$10,000</td></tr>
+      <tr class="accent"><td>Full season (all Fixed + Uni + Beach)</td><td class="num">$5,000 (50% off)</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">~$10k is slightly under the CPI day rate ($11,265.63). Half-price only when Uni and Beach are both taken — rewards season take-up.</p>
+
+  <div class="page-break"></div>
+
+  <h2>4. “Why is Core still ~$175k?” — cost pools</h2>
+  <div class="box warn">
+    <strong>Fixed days did not shrink in the RNZ draft.</strong>
+    NI Secondary goes 2 → 3 days, so Fixed is 14 → 15. Core-only is fewer <em>events</em> than last year’s paid six, not a lighter Fixed day load.
+  </div>
+  <table>
+    <thead>
+      <tr><th>Cost pool</th><th>Share of Core</th><th>Why it does not fall linearly with days</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Season standing crew &amp; key contractors</td><td>35–40%</td><td>Retained across the Fixed calendar — not hired per isolated day</td></tr>
+      <tr><td>Kit, vehicles, insurance, freight</td><td>20–25%</td><td>Peak kit list set by Maadi; amortised across the season</td></tr>
+      <tr><td>Maadi peak production</td><td>20–25%</td><td>Longest / heaviest event; locked inside Core</td></tr>
+      <tr><td>Platforms, graphics, IP, prep</td><td>10–15%</td><td>Largely season-fixed once RNZ is the client</td></tr>
+      <tr><td>Travel / venue variable</td><td>5–10%</td><td>True mover with ± days and new venues</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Say this:</strong> Last year’s $175k bought a season production platform, not 16 identical day-units. About 80–90% sits in standing crew, peak Maadi kit, and systems that still run for the four Fixed Events. Pure day maths on Fixed alone after CPI is ~$157,719 (same days) or ~$168,984 (agreement). Core at $175k is the platform price with Maadi inside.</p>
+
+  <h2>5. “So extra days are only ~$5k?”</h2>
+  <div class="box danger">
+    <strong>Do not price extra days at ~$5k.</strong>
+    The only honest ~$5k line is: same mix as last year + 3% CPI = $180,250
+    (+$5,250). That is <em>inflation on repeating last season</em> — not the marginal cost of days.
+    Agreement-day Classic is ~$219,500. Masters is $10,000 list / $5,000 with full season.
+  </div>
+
+  <h2>6. Suggested spoken path</h2>
+  <ol>
+    <li>Last year $175,000 = season platform for 6 events / 16 days.</li>
+    <li>Core (4 Fixed, Maadi in) stays $175,000 — standing cost pools, not a day chop.</li>
+    <li>Want the same season as last year? $180,250 (+3% CPI). That’s the ~$5k conversation.</li>
+    <li>Want draft day counts? Classic ~$219,500.</li>
+    <li>Masters +1 day: $10,000 à la carte, $5,000 when Uni + Beach are both taken.</li>
+  </ol>
+
+  <footer>
+    AltitudeHD internal negotiation aid · Generated 2026-11-17 ·
+    Method: $175,000/16 × 1.03 × days · Not a client-facing proposal · Not legal advice
+  </footer>
+</body>
+</html>
