@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 /**
  * Generate RNZ livestream season pricing PDFs (internal + client-facing).
- * - Maadi weighted higher; other events share the same package totals as the
- *   pre-weight CPI rebuild (reallocation, not a price rise)
- * - Package discount only applies when list > $200k
+ *
+ * Rate card: fee = setup + dayRate × days, with the same tier multiplier
+ * applied to both setup and day rate.
+ *   Standard 1.00× · NZ Champs ≈1.26× · Maadi ≈1.76× (both on setup & day)
+ * Last year ($175k / 16d) sets the base rates; Same+CPI scales ×1.03.
+ *
+ * Package discount only applies when list > $200k (pay threshold + 50% of excess).
  * Usage: node scripts/generate-rnz-season-pricing-pdf.mjs
  */
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
@@ -17,76 +21,71 @@ const OUT_DIR = join(ROOT, 'docs', 'proposals', 'rnz-livestream');
 const ARTIFACTS = '/opt/cursor/artifacts';
 
 const OLD_TOTAL = 175_000;
-const DAY_OLD = OLD_TOTAL / 16;
-const DAY_CPI = DAY_OLD * 1.03;
-const MAADI_WEIGHT = 1.35;
-const OTHER_WEIGHT = 1.0; // effective $/day falls via normalisation
+const CPI = 1.03;
 const DISCOUNT_THRESHOLD = 200_000;
-const EXCESS_KEEP = 0.5; // pay 50% of amount above threshold
+const EXCESS_KEEP = 0.5;
 const TODAY = new Date().toISOString().slice(0, 10);
 
-/** Package totals pinned to pre-Maadi-weight CPI rebuild */
-const FLAT_CORE = 15 * DAY_CPI; // 168,984.375
-const FLAT_SAME = 16 * DAY_CPI; // 180,250
-const FLAT_AGREE = 19.5 * DAY_CPI; // 219,679.6875
+/**
+ * Base rates that sum to $175k on last year's 16-day / 6-regatta mix.
+ * Multipliers apply to both setup and day; absolute rates are pinned so LY totals exactly.
+ * (6125 × 1.25 = 7656.25 — we use round commercial rates 7700 / 10750 ≈ 1.26× / 1.76×)
+ */
+const RATE_STD_LY = 6_125;
+const RATE_NZ_LY = 7_700;
+const RATE_MAADI_LY = 10_750;
+const MULT_STD = 1.0;
+const MULT_NZ = RATE_NZ_LY / RATE_STD_LY; // ≈ 1.26
+const MULT_MAADI = RATE_MAADI_LY / RATE_STD_LY; // ≈ 1.76
+const MULT_NZ_L = MULT_NZ.toFixed(2);
+const MULT_MAADI_L = MULT_MAADI.toFixed(2);
 
-const money = (n, d = 0) =>
-  `$${n.toLocaleString('en-NZ', {
-    minimumFractionDigits: d,
-    maximumFractionDigits: d,
-  })}`;
-
-const moneyR = (n) =>
-  `$${Math.round(n).toLocaleString('en-NZ')}`;
-
-function weightFor(name) {
-  return name.startsWith('Maadi') ? MAADI_WEIGHT : OTHER_WEIGHT;
-}
+const RATE_STD_CPI = RATE_STD_LY * CPI;
+const RATE_NZ_CPI = RATE_NZ_LY * CPI;
+const RATE_MAADI_CPI = RATE_MAADI_LY * CPI;
 
 const events = [
-  { name: 'NZ Rowing Champs', lyD: 4, agD: 4, bucket: 'fixed' },
-  { name: 'NI Secondary School', lyD: 2, agD: 3, bucket: 'fixed' },
-  { name: 'SI Secondary School', lyD: 2, agD: 2, bucket: 'fixed' },
-  { name: 'Maadi Regatta', lyD: 6, agD: 6, bucket: 'fixed' },
-  { name: 'Universities Champs', lyD: 1, agD: 1.5, bucket: 'other' },
-  { name: 'Beach / Coastal Champs', lyD: 1, agD: 3, bucket: 'other' },
-].map((e) => ({ ...e, weight: weightFor(e.name) }));
+  { name: 'NZ Rowing Champs', lyD: 4, agD: 4, bucket: 'fixed', tier: 'nz' },
+  { name: 'NI Secondary School', lyD: 2, agD: 3, bucket: 'fixed', tier: 'std' },
+  { name: 'SI Secondary School', lyD: 2, agD: 2, bucket: 'fixed', tier: 'std' },
+  { name: 'Maadi Regatta', lyD: 6, agD: 6, bucket: 'fixed', tier: 'maadi' },
+  { name: 'Universities Champs', lyD: 1, agD: 1.5, bucket: 'other', tier: 'std' },
+  { name: 'Beach / Coastal Champs', lyD: 1, agD: 3, bucket: 'other', tier: 'std' },
+];
 
 const fixedEvents = events.filter((e) => e.bucket === 'fixed');
-const otherEvents = events.filter((e) => e.bucket === 'other');
 
-function weightedUnits(dayKey, list = events) {
-  return list.reduce((s, e) => s + e[dayKey] * e.weight, 0);
+function tierRate(tier, cpi = false) {
+  if (tier === 'nz') return cpi ? RATE_NZ_CPI : RATE_NZ_LY;
+  if (tier === 'maadi') return cpi ? RATE_MAADI_CPI : RATE_MAADI_LY;
+  return cpi ? RATE_STD_CPI : RATE_STD_LY;
 }
 
-const unitsSame = weightedUnits('lyD');
-const unitsLy = unitsSame; // same day mix as last year
-const unitsFixedAgree = weightedUnits('agD', fixedEvents);
-const unitsOtherAgree = weightedUnits('agD', otherEvents);
-const rateLy = OLD_TOTAL / unitsLy;
-const rateSame = FLAT_SAME / unitsSame;
-/** Classic weighted unit rate — used as Masters 1-day fee (~$9,959) */
-const MASTERS_LIST = Math.round(rateSame);
-/** Full-season Masters still 50% off the day rate */
-const MASTERS_SEASON = Math.round(rateSame / 2);
-/**
- * Agree-day fees: Fixed events share the Core pool (15d = FLAT_CORE) so Table 1
- * Fixed total matches Package Core. Other events share the Extended remainder.
- */
-const rateCoreAgree = FLAT_CORE / unitsFixedAgree;
-const rateOtherAgree = (FLAT_AGREE - FLAT_CORE) / unitsOtherAgree;
+function tierMult(tier) {
+  if (tier === 'nz') return MULT_NZ;
+  if (tier === 'maadi') return MULT_MAADI;
+  return MULT_STD;
+}
 
-function sameFee(e) {
-  return e.lyD * e.weight * rateSame;
+/** fee = setup + dayRate × days (setup === dayRate for the tier) */
+function eventFee(e, dayKey, cpi = false) {
+  const rate = tierRate(e.tier, cpi);
+  const days = e[dayKey];
+  return rate + rate * days;
 }
-function agreeFee(e) {
-  const rate = e.bucket === 'fixed' ? rateCoreAgree : rateOtherAgree;
-  return e.agD * e.weight * rate;
+
+function sumFees(list, dayKey, cpi = false) {
+  return list.reduce((s, e) => s + eventFee(e, dayKey, cpi), 0);
 }
-/** Last-year $175k reallocated with the same Maadi / other weights */
-function lyFee(e) {
-  return e.lyD * e.weight * rateLy;
-}
+
+const LY_TOTAL = sumFees(events, 'lyD', false); // 175,000
+const SAME_CPI = sumFees(events, 'lyD', true); // 180,250
+const CORE_AGREE = sumFees(fixedEvents, 'agD', true);
+const EXTENDED_AGREE = sumFees(events, 'agD', true);
+
+/** Masters: standard 1-day = setup + day at CPI; season = 50% off */
+const MASTERS_LIST = Math.round(RATE_STD_CPI * 2);
+const MASTERS_SEASON = Math.round(MASTERS_LIST / 2);
 
 function contractPrice(listPrice) {
   if (listPrice <= DISCOUNT_THRESHOLD) {
@@ -99,11 +98,20 @@ function contractPrice(listPrice) {
   };
 }
 
-const pkgCore = contractPrice(FLAT_CORE);
-const pkgClassic = contractPrice(FLAT_SAME);
-const pkgClassicMasters = contractPrice(FLAT_SAME + MASTERS_SEASON);
-const pkgExtended = contractPrice(FLAT_AGREE);
-const pkgExtendedMasters = contractPrice(FLAT_AGREE + MASTERS_SEASON);
+const pkgCore = contractPrice(CORE_AGREE);
+const pkgClassic = contractPrice(SAME_CPI);
+const pkgClassicMasters = contractPrice(SAME_CPI + MASTERS_SEASON);
+const pkgExtended = contractPrice(EXTENDED_AGREE);
+const pkgExtendedMasters = contractPrice(EXTENDED_AGREE + MASTERS_SEASON);
+
+const money = (n, d = 0) =>
+  `$${n.toLocaleString('en-NZ', {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  })}`;
+
+const moneyR = (n) =>
+  `$${Math.round(n).toLocaleString('en-NZ')}`;
 
 function sharedCss({ compact = false } = {}) {
   if (compact) {
@@ -123,6 +131,7 @@ function sharedCss({ compact = false } = {}) {
     tr.total td { font-weight: 700; background: #f8fafc; }
     tr.accent td { background: #ecfeff; font-weight: 600; }
     tr.maadi td { background: #fff7ed; }
+    tr.nz td { background: #f0fdf4; }
     .box { background: #ecfeff; border: 1px solid #99f6e4; border-radius: 4px; padding: 4px 8px; margin: 3px 0 4px; }
     .box.warn { background: #fff7ed; border-color: #fed7aa; }
     .muted { color: #64748b; font-size: 7pt; margin-bottom: 2px; }
@@ -152,6 +161,7 @@ function sharedCss({ compact = false } = {}) {
     tr.total td { font-weight: 700; background: #f8fafc; }
     tr.accent td { background: #ecfeff; font-weight: 600; }
     tr.maadi td { background: #fff7ed; }
+    tr.nz td { background: #f0fdf4; }
     .box { background: #ecfeff; border: 1px solid #99f6e4; border-radius: 6px; padding: 12px 14px; margin: 10px 0 14px; }
     .muted { color: #64748b; font-size: 9pt; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 14px; }
@@ -166,6 +176,18 @@ function sharedCss({ compact = false } = {}) {
     footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 8pt; }`;
 }
 
+function rowClass(e) {
+  if (e.tier === 'maadi') return ' class="maadi"';
+  if (e.tier === 'nz') return ' class="nz"';
+  return '';
+}
+
+function tierLabel(e) {
+  if (e.tier === 'maadi') return ` (${MULT_MAADI_L}×)`;
+  if (e.tier === 'nz') return ` (${MULT_NZ_L}×)`;
+  return '';
+}
+
 function buildInternalHtml() {
   return `<!DOCTYPE html>
 <html lang="en-NZ">
@@ -177,26 +199,67 @@ function buildInternalHtml() {
 <body>
   <header>
     <p class="brand">AltitudeHD · Internal</p>
-    <p class="tagline">RNZ pricing — Maadi ${MAADI_WEIGHT}× inside same package totals · discount only above ${moneyR(DISCOUNT_THRESHOLD)} · ex GST</p>
+    <p class="tagline">RNZ pricing — setup + day rate card · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}× (both on setup &amp; day) · discount only above ${moneyR(DISCOUNT_THRESHOLD)} · ex GST</p>
   </header>
 
   <div class="stats">
-    <div class="stat"><div class="v">${moneyR(OLD_TOTAL)}</div><div class="l">Last year season</div></div>
-    <div class="stat"><div class="v">${moneyR(pkgCore.contract)}</div><div class="l">Core (15d) — same total as pre-weight</div></div>
+    <div class="stat"><div class="v">${moneyR(OLD_TOTAL)}</div><div class="l">Last year season (16d)</div></div>
+    <div class="stat"><div class="v">${moneyR(pkgCore.contract)}</div><div class="l">Core (15d agree) + CPI</div></div>
     <div class="stat"><div class="v">${moneyR(pkgClassic.contract)}</div><div class="l">Classic same-mix + CPI</div></div>
-    <div class="stat"><div class="v">${moneyR(pkgExtended.contract)}</div><div class="l">Extended after &gt;$200k discount</div></div>
+    <div class="stat"><div class="v">${moneyR(pkgExtended.contract)}</div><div class="l">Extended after discount</div></div>
   </div>
 
   <div class="box warn">
-    <strong>Reallocation:</strong> package totals match the previous CPI rebuild
-    (Core ${moneyR(FLAT_CORE)}, Classic ${moneyR(FLAT_SAME)}, Extended list ${moneyR(FLAT_AGREE)}).
-    Maadi is ${MAADI_WEIGHT}×; other events take a smaller share of the same pool.
-    <strong>Discount:</strong> only if package list &gt; ${moneyR(DISCOUNT_THRESHOLD)} —
-    then pay threshold + 50% of the excess.
+    <strong>Rate card:</strong> each regatta = <em>setup + day rate × days</em>.
+    The tier multiplier applies to <strong>both</strong> setup and day rate
+    (Standard ${MULT_STD}× · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}×).
+    Last-year base rates sum to ${moneyR(OLD_TOTAL)}; Same+CPI multiplies rates by ${((CPI - 1) * 100).toFixed(0)}%.
+    <strong>Discount:</strong> only if package list &gt; ${moneyR(DISCOUNT_THRESHOLD)} — then pay threshold + 50% of the excess.
   </div>
 
-  <h2>1. Cost table — last year · same+CPI · agreement days</h2>
-  <p class="muted">LY / Same use Maadi ${MAADI_WEIGHT}× inside the full-season pool. Agree Fixed lines share the Core pool (${moneyR(FLAT_CORE)} / 15d) so the Fixed total matches Package Core; Other lines share the Extended remainder. Masters = Classic weighted day rate ${moneyR(MASTERS_LIST)}.</p>
+  <h2>1. Rate card (LY base → +CPI)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th class="num">Mult</th>
+        <th class="num">Setup (LY)</th>
+        <th class="num">Day (LY)</th>
+        <th class="num">Setup (+CPI)</th>
+        <th class="num">Day (+CPI)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Standard</td>
+        <td class="num">${MULT_STD.toFixed(2)}×</td>
+        <td class="num">${moneyR(RATE_STD_LY)}</td>
+        <td class="num">${moneyR(RATE_STD_LY)}</td>
+        <td class="num">${moneyR(RATE_STD_CPI)}</td>
+        <td class="num">${moneyR(RATE_STD_CPI)}</td>
+      </tr>
+      <tr class="nz">
+        <td>NZ Rowing Champs</td>
+        <td class="num">${MULT_NZ_L}×</td>
+        <td class="num">${moneyR(RATE_NZ_LY)}</td>
+        <td class="num">${moneyR(RATE_NZ_LY)}</td>
+        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
+        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
+      </tr>
+      <tr class="maadi">
+        <td>Maadi Regatta</td>
+        <td class="num">${MULT_MAADI_L}×</td>
+        <td class="num">${moneyR(RATE_MAADI_LY)}</td>
+        <td class="num">${moneyR(RATE_MAADI_LY)}</td>
+        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
+        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">Worked shape (LY): 1-day standard ${moneyR(RATE_STD_LY * 2)} · 2-day ${moneyR(RATE_STD_LY * 3)} · NZ 4-day ${moneyR(RATE_NZ_LY * 5)} · Maadi 6-day ${moneyR(RATE_MAADI_LY * 7)}.</p>
+
+  <h2>2. Cost table — last year · same+CPI · agreement days</h2>
+  <p class="muted">Fee = setup + day × days at the tier rate. LY uses base rates (total ${moneyR(LY_TOTAL)}); Same/Agree use +${((CPI - 1) * 100).toFixed(0)}% CPI rates.</p>
   <table>
     <thead>
       <tr>
@@ -211,14 +274,13 @@ function buildInternalHtml() {
     <tbody>
       ${events
         .map((e) => {
-          const cls = e.weight > 1 ? ' class="maadi"' : '';
-          return `<tr${cls}>
-            <td>${e.name}${e.weight > 1 ? ` (${e.weight}×)` : ''}</td>
+          return `<tr${rowClass(e)}>
+            <td>${e.name}${tierLabel(e)}</td>
             <td class="num">${e.lyD}</td>
-            <td class="num">${moneyR(lyFee(e))}</td>
-            <td class="num">${moneyR(sameFee(e))}</td>
+            <td class="num">${moneyR(eventFee(e, 'lyD', false))}</td>
+            <td class="num">${moneyR(eventFee(e, 'lyD', true))}</td>
             <td class="num">${e.agD}</td>
-            <td class="num">${moneyR(agreeFee(e))}</td>
+            <td class="num">${moneyR(eventFee(e, 'agD', true))}</td>
           </tr>`;
         })
         .join('\n')}
@@ -233,31 +295,31 @@ function buildInternalHtml() {
       <tr class="total">
         <td>Fixed Events (Core)</td>
         <td class="num">14</td>
-        <td class="num">${moneyR(fixedEvents.reduce((s, e) => s + lyFee(e), 0))}</td>
-        <td class="num">${moneyR(fixedEvents.reduce((s, e) => s + sameFee(e), 0))}</td>
+        <td class="num">${moneyR(sumFees(fixedEvents, 'lyD', false))}</td>
+        <td class="num">${moneyR(sumFees(fixedEvents, 'lyD', true))}</td>
         <td class="num">15</td>
-        <td class="num">${moneyR(FLAT_CORE)}</td>
+        <td class="num">${moneyR(CORE_AGREE)}</td>
       </tr>
       <tr class="accent">
         <td>Full season (ex Masters)</td>
         <td class="num">16</td>
-        <td class="num">${moneyR(OLD_TOTAL)}</td>
-        <td class="num">${moneyR(FLAT_SAME)}</td>
+        <td class="num">${moneyR(LY_TOTAL)}</td>
+        <td class="num">${moneyR(SAME_CPI)}</td>
         <td class="num">19.5</td>
-        <td class="num">${moneyR(FLAT_AGREE)}</td>
+        <td class="num">${moneyR(EXTENDED_AGREE)}</td>
       </tr>
       <tr class="total">
         <td>Full season + Masters (season rate)</td>
         <td class="num">—</td>
         <td class="num">—</td>
-        <td class="num">${moneyR(FLAT_SAME + MASTERS_SEASON)}</td>
+        <td class="num">${moneyR(SAME_CPI + MASTERS_SEASON)}</td>
         <td class="num">20.5</td>
-        <td class="num">${moneyR(FLAT_AGREE + MASTERS_SEASON)}</td>
+        <td class="num">${moneyR(EXTENDED_AGREE + MASTERS_SEASON)}</td>
       </tr>
     </tbody>
   </table>
 
-  <h2>2. Package options</h2>
+  <h2>3. Package options</h2>
   <table>
     <thead>
       <tr>
@@ -270,7 +332,7 @@ function buildInternalHtml() {
     <tbody>
       <tr>
         <td>Core only</td>
-        <td>4 Fixed Events · <strong>15 days</strong> (agreement) · Maadi ${MAADI_WEIGHT}× inside same total</td>
+        <td>4 Fixed Events · <strong>15 days</strong> (agreement) · rate card + CPI</td>
         <td class="num">${moneyR(pkgCore.contract)}</td>
         <td class="num">−${moneyR(OLD_TOTAL - pkgCore.contract)} vs LY full season</td>
       </tr>
@@ -288,38 +350,54 @@ function buildInternalHtml() {
       </tr>
       <tr>
         <td>Agreement-days Classic</td>
-        <td>Draft days 19.5 · list ${moneyR(FLAT_AGREE)}, discount above ${moneyR(DISCOUNT_THRESHOLD)}</td>
+        <td>Draft days 19.5 · list ${moneyR(EXTENDED_AGREE)}${
+          pkgExtended.discount > 0
+            ? `, discount above ${moneyR(DISCOUNT_THRESHOLD)}`
+            : ''
+        }</td>
         <td class="num">${moneyR(pkgExtended.contract)}</td>
-        <td class="num">+${moneyR(pkgExtended.contract - OLD_TOTAL)} (save ${moneyR(pkgExtended.discount)})</td>
+        <td class="num">+${moneyR(pkgExtended.contract - OLD_TOTAL)}${
+          pkgExtended.discount > 0
+            ? ` (save ${moneyR(pkgExtended.discount)})`
+            : ''
+        }</td>
       </tr>
       <tr>
         <td>Agreement Classic + Masters</td>
         <td>20.5 days · Masters at season rate + same discount rule</td>
         <td class="num">${moneyR(pkgExtendedMasters.contract)}</td>
-        <td class="num">+${moneyR(pkgExtendedMasters.contract - OLD_TOTAL)} (save ${moneyR(pkgExtendedMasters.discount)})</td>
+        <td class="num">+${moneyR(pkgExtendedMasters.contract - OLD_TOTAL)}${
+          pkgExtendedMasters.discount > 0
+            ? ` (save ${moneyR(pkgExtendedMasters.discount)})`
+            : ''
+        }</td>
       </tr>
     </tbody>
   </table>
 
-  <h2>3. Masters add-on</h2>
+  <h2>4. Masters add-on</h2>
   <table>
     <thead><tr><th>When</th><th class="num">Masters 1 day</th></tr></thead>
     <tbody>
-      <tr><td>Standalone / Core only / partial extras</td><td class="num">${moneyR(MASTERS_LIST)}</td></tr>
+      <tr><td>Standalone / Core only / partial extras (standard 1-day = setup + day)</td><td class="num">${moneyR(MASTERS_LIST)}</td></tr>
       <tr class="accent"><td>Full season (all Fixed + Uni + Beach)</td><td class="num">${moneyR(MASTERS_SEASON)} (50% off)</td></tr>
     </tbody>
   </table>
 
-  <h2>4. Notes for the room</h2>
+  <h2>5. Notes for the room</h2>
   <div class="box">
-    Core / Classic prices are unchanged vs the pre-weight run. Only Extended (list ${moneyR(FLAT_AGREE)})
-    crosses ${moneyR(DISCOUNT_THRESHOLD)} and receives the uplift discount → <strong>${moneyR(pkgExtended.contract)}</strong>.
-    Maadi line rises (e.g. agree ${moneyR(agreeFee(events.find((e) => e.name.startsWith('Maadi'))))});
-    non-Maadi lines fall inside the same column totals.
+    Setup is charged once per regatta; extra days at the same venue only add the day rate.
+    NZ and Maadi run a higher multiplier on <strong>both</strong> setup and day (resource intensity).
+    Classic same-mix + CPI stays ${moneyR(SAME_CPI)}. Core agree is ${moneyR(CORE_AGREE)};
+    Extended list is ${moneyR(EXTENDED_AGREE)}${
+      pkgExtended.discount > 0
+        ? ` → ${moneyR(pkgExtended.contract)} after the &gt;${moneyR(DISCOUNT_THRESHOLD)} discount`
+        : ''
+    }.
   </div>
 
   <footer>
-    AltitudeHD internal · Generated ${TODAY} · Maadi ${MAADI_WEIGHT}× reallocated · discount only above ${moneyR(DISCOUNT_THRESHOLD)} · Not client-facing
+    AltitudeHD internal · Generated ${TODAY} · Setup+day rate card · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}× · Not client-facing
   </footer>
 </body>
 </html>`;
@@ -344,12 +422,14 @@ function buildExternalHtml() {
   </header>
 
   <p>
-    Fees reflect a <strong>3% CPI uplift</strong> on the prior season day rate.
-    Within each package, <strong>Maadi Regatta</strong> carries a higher resource share
-    (${MAADI_WEIGHT}×); other events share the remainder so <strong>Core and Classic package
-    totals stay the same</strong> as the standard CPI rebuild.
-    Where a package exceeds <strong>${moneyR(DISCOUNT_THRESHOLD)}</strong>, a discount applies
-    to the amount above that threshold.
+    Fees use a transparent <strong>setup + broadcast day</strong> rate card.
+    Each regatta pays a once-per-event setup; additional days at the same venue
+    add only the day rate. <strong>NZ Rowing Champs</strong> (${MULT_NZ_L}×) and
+    <strong>Maadi Regatta</strong> (${MULT_MAADI_L}×) apply a higher multiplier to
+    <strong>both</strong> setup and day rate to reflect resource intensity.
+    A <strong>3% CPI</strong> uplift is applied to last season’s rate card.
+    Where a package exceeds <strong>${moneyR(DISCOUNT_THRESHOLD)}</strong>, a discount
+    applies to the amount above that threshold.
   </p>
 
   <div class="stats">
@@ -363,11 +443,49 @@ function buildExternalHtml() {
     </div>
     <div class="stat">
       <div class="v">${moneyR(pkgExtended.contract)}</div>
-      <div class="l">Extended Classic · 19.5 days (after discount)</div>
+      <div class="l">Extended Classic · 19.5 days${
+        pkgExtended.discount > 0 ? ' (after discount)' : ''
+      }</div>
     </div>
   </div>
 
-  <h2>1. What’s included</h2>
+  <h2>1. Rate card</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th class="num">Multiplier</th>
+        <th class="num">Setup</th>
+        <th class="num">Broadcast day</th>
+        <th>Example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Standard</td>
+        <td class="num">${MULT_STD.toFixed(2)}×</td>
+        <td class="num">${moneyR(RATE_STD_CPI)}</td>
+        <td class="num">${moneyR(RATE_STD_CPI)}</td>
+        <td>1-day ${moneyR(RATE_STD_CPI * 2)} · 2-day ${moneyR(RATE_STD_CPI * 3)}</td>
+      </tr>
+      <tr class="nz">
+        <td>NZ Rowing Champs</td>
+        <td class="num">${MULT_NZ_L}×</td>
+        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
+        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
+        <td>4-day ${moneyR(RATE_NZ_CPI * 5)}</td>
+      </tr>
+      <tr class="maadi">
+        <td>Maadi Regatta</td>
+        <td class="num">${MULT_MAADI_L}×</td>
+        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
+        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
+        <td>6-day ${moneyR(RATE_MAADI_CPI * 7)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. What’s included</h2>
   <div class="two-col">
     <div class="card">
       <h3>Core package — Fixed Events</h3>
@@ -376,7 +494,7 @@ function buildExternalHtml() {
           .map(
             (e) =>
               `<li>${e.name} · ${e.agD} day${e.agD === 1 ? '' : 's'}${
-                e.weight > 1 ? ` · higher resource share` : ''
+                e.tier !== 'std' ? ` · ${tierMult(e.tier).toFixed(2)}× rate` : ''
               }</li>`
           )
           .join('')}
@@ -397,7 +515,7 @@ function buildExternalHtml() {
     </div>
   </div>
 
-  <h2>2. Season packages</h2>
+  <h2>3. Season packages</h2>
   <table>
     <thead>
       <tr>
@@ -445,31 +563,33 @@ function buildExternalHtml() {
     <strong>Recommended continuity option:</strong> Classic Season at
     <strong>${moneyR(pkgClassic.contract)}</strong> — the same six events and day mix as last season,
     with a 3% CPI adjustment only (+${moneyR(pkgClassic.contract - OLD_TOTAL)} vs ${moneyR(OLD_TOTAL)}).
-    Extended Classic list is ${moneyR(FLAT_AGREE)}; after the discount above ${moneyR(DISCOUNT_THRESHOLD)}
-    the fee is <strong>${moneyR(pkgExtended.contract)}</strong>.
+    Extended Classic list is ${moneyR(EXTENDED_AGREE)}${
+      pkgExtended.discount > 0
+        ? `; after the discount above ${moneyR(DISCOUNT_THRESHOLD)} the fee is <strong>${moneyR(pkgExtended.contract)}</strong>`
+        : ''
+    }.
   </div>
 
-  <h2>3. Event day counts</h2>
+  <h2>4. Event day counts &amp; fees</h2>
   <table>
     <thead>
       <tr>
         <th>Event</th>
         <th>Type</th>
         <th class="num">Last season days</th>
-        <th class="num">Proposed / agreement days</th>
-        <th class="num">Fee if taken alone*</th>
+        <th class="num">Proposed days</th>
+        <th class="num">Fee (agree + CPI)*</th>
       </tr>
     </thead>
     <tbody>
       ${events
         .map((e) => {
-          const cls = e.weight > 1 ? ' class="maadi"' : '';
-          return `<tr${cls}>
-            <td>${e.name}${e.weight > 1 ? ` (${e.weight}× resource share)` : ''}</td>
+          return `<tr${rowClass(e)}>
+            <td>${e.name}${tierLabel(e)}</td>
             <td>${e.bucket === 'fixed' ? 'Fixed / Core' : 'Other'}</td>
             <td class="num">${e.lyD}</td>
             <td class="num">${e.agD}</td>
-            <td class="num">${moneyR(agreeFee(e))}</td>
+            <td class="num">${moneyR(eventFee(e, 'agD', true))}</td>
           </tr>`;
         })
         .join('\n')}
@@ -483,14 +603,11 @@ function buildExternalHtml() {
     </tbody>
   </table>
   <p class="muted">
-    *Fixed Event standalone fees are the agreement-day share of the Core package
-    (${moneyR(FLAT_CORE)}); Other Events share the Extended remainder above Core.
-    Package fees above are preferred when multiple events are taken together.
-    Fixed Events are not sold individually outside the Core package.
-    Masters is priced at the Classic weighted day rate (${moneyR(MASTERS_LIST)}).
+    *Fees = setup + day rate × days at the CPI rate card. Package fees above are preferred
+    when multiple events are taken together.
   </p>
 
-  <h2>4. Masters Regatta add-on</h2>
+  <h2>5. Masters Regatta add-on</h2>
   <table>
     <thead>
       <tr><th>Selected with</th><th class="num">Masters fee (ex GST)</th></tr>
@@ -507,7 +624,7 @@ function buildExternalHtml() {
     </tbody>
   </table>
 
-  <h2>5. Production scope (summary)</h2>
+  <h2>6. Production scope (summary)</h2>
   <ul>
     <li>Multi-camera livestream production for each selected event day</li>
     <li>Distribution via RNZ Authorised Platforms (e.g. rowingnz.kiwi and RNZ YouTube)</li>
@@ -519,11 +636,11 @@ function buildExternalHtml() {
     are set out in the Livestreaming Production and Service Agreement.
   </p>
 
-  <h2>6. Notes</h2>
+  <h2>7. Notes</h2>
   <ul>
     <li>All fees are in New Zealand dollars and <strong>exclude GST</strong>.</li>
     <li>Classic Season preserves last season’s event mix at a CPI-only uplift.</li>
-    <li>Maadi’s higher resource share is funded inside the package by a lower share for other events — Core and Classic totals are unchanged vs the standard CPI rebuild.</li>
+    <li>Setup is once per regatta; NZ and Maadi multipliers apply to both setup and day rate.</li>
     <li>Packages above ${moneyR(DISCOUNT_THRESHOLD)} receive a 50% discount on the amount above that threshold.</li>
     <li>Additional or substitute events (including Oceania Coastal) are quoted separately if required.</li>
   </ul>
@@ -537,6 +654,13 @@ function buildExternalHtml() {
 }
 
 async function main() {
+  if (Math.round(LY_TOTAL) !== OLD_TOTAL) {
+    throw new Error(`LY total ${LY_TOTAL} !== ${OLD_TOTAL}`);
+  }
+  if (Math.round(SAME_CPI) !== Math.round(OLD_TOTAL * CPI)) {
+    throw new Error(`Same+CPI ${SAME_CPI} !== ${OLD_TOTAL * CPI}`);
+  }
+
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(ARTIFACTS, { recursive: true });
 
@@ -584,12 +708,15 @@ async function main() {
   }
 
   console.log({
+    ly: Math.round(LY_TOTAL),
     core: Math.round(pkgCore.contract),
     classic: Math.round(pkgClassic.contract),
-    extendedList: Math.round(FLAT_AGREE),
+    extendedList: Math.round(EXTENDED_AGREE),
     extendedContract: Math.round(pkgExtended.contract),
-    maadiAgree: Math.round(agreeFee(events.find((e) => e.name.startsWith('Maadi')))),
-    nzAgree: Math.round(agreeFee(events.find((e) => e.name.startsWith('NZ')))),
+    mastersList: MASTERS_LIST,
+    rateStdLy: RATE_STD_LY,
+    rateNzLy: RATE_NZ_LY,
+    rateMaadiLy: RATE_MAADI_LY,
   });
 }
 
