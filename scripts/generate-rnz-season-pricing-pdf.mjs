@@ -7,7 +7,7 @@
  *   Standard 1.00× · NZ Champs ≈1.26× · Maadi ≈1.76× (both on setup & day)
  * Last year ($175k / 16d) sets the base rates; Same+CPI scales ×1.03.
  *
- * Package discount only applies when list > $200k (pay threshold + 50% of excess).
+ * Package price = rate-card total (no threshold discount).
  * Usage: node scripts/generate-rnz-season-pricing-pdf.mjs
  */
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
@@ -22,8 +22,6 @@ const ARTIFACTS = '/opt/cursor/artifacts';
 
 const OLD_TOTAL = 175_000;
 const CPI = 1.03;
-const DISCOUNT_THRESHOLD = 200_000;
-const EXCESS_KEEP = 0.5;
 const TODAY = new Date().toISOString().slice(0, 10);
 
 /**
@@ -83,26 +81,19 @@ const SAME_CPI = sumFees(events, 'lyD', true); // 180,250
 const CORE_AGREE = sumFees(fixedEvents, 'agD', true);
 const EXTENDED_AGREE = sumFees(events, 'agD', true);
 
-/** Masters: standard 1-day = setup + day at CPI; season = 50% off */
+/** Masters: standard 1-day = setup + day at CPI (no season discount) */
 const MASTERS_LIST = Math.round(RATE_STD_CPI * 2);
-const MASTERS_SEASON = Math.round(MASTERS_LIST / 2);
+const MASTERS_SEASON = MASTERS_LIST;
 
-function contractPrice(listPrice) {
-  if (listPrice <= DISCOUNT_THRESHOLD) {
-    return { contract: listPrice, discount: 0 };
-  }
-  const excess = listPrice - DISCOUNT_THRESHOLD;
-  return {
-    contract: DISCOUNT_THRESHOLD + excess * EXCESS_KEEP,
-    discount: excess * (1 - EXCESS_KEEP),
-  };
+function packagePrice(listPrice) {
+  return { contract: listPrice, discount: 0 };
 }
 
-const pkgCore = contractPrice(CORE_AGREE);
-const pkgClassic = contractPrice(SAME_CPI);
-const pkgClassicMasters = contractPrice(SAME_CPI + MASTERS_SEASON);
-const pkgExtended = contractPrice(EXTENDED_AGREE);
-const pkgExtendedMasters = contractPrice(EXTENDED_AGREE + MASTERS_SEASON);
+const pkgCore = packagePrice(CORE_AGREE);
+const pkgClassic = packagePrice(SAME_CPI);
+const pkgClassicMasters = packagePrice(SAME_CPI + MASTERS_SEASON);
+const pkgExtended = packagePrice(EXTENDED_AGREE);
+const pkgExtendedMasters = packagePrice(EXTENDED_AGREE + MASTERS_SEASON);
 
 const money = (n, d = 0) =>
   `$${n.toLocaleString('en-NZ', {
@@ -199,14 +190,14 @@ function buildInternalHtml() {
 <body>
   <header>
     <p class="brand">AltitudeHD · Internal</p>
-    <p class="tagline">RNZ pricing — setup + day rate card · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}× (both on setup &amp; day) · discount only above ${moneyR(DISCOUNT_THRESHOLD)} · ex GST</p>
+    <p class="tagline">RNZ pricing — setup + day rate card · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}× (both on setup &amp; day) · ex GST</p>
   </header>
 
   <div class="stats">
     <div class="stat"><div class="v">${moneyR(OLD_TOTAL)}</div><div class="l">Last year season (16d)</div></div>
     <div class="stat"><div class="v">${moneyR(pkgCore.contract)}</div><div class="l">Core (15d agree) + CPI</div></div>
     <div class="stat"><div class="v">${moneyR(pkgClassic.contract)}</div><div class="l">Classic same-mix + CPI</div></div>
-    <div class="stat"><div class="v">${moneyR(pkgExtended.contract)}</div><div class="l">Extended after discount</div></div>
+    <div class="stat"><div class="v">${moneyR(pkgExtended.contract)}</div><div class="l">Extended (19.5d agree) + CPI</div></div>
   </div>
 
   <div class="box warn">
@@ -214,7 +205,7 @@ function buildInternalHtml() {
     The tier multiplier applies to <strong>both</strong> setup and day rate
     (Standard ${MULT_STD}× · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}×).
     Last-year base rates sum to ${moneyR(OLD_TOTAL)}; Same+CPI multiplies rates by ${((CPI - 1) * 100).toFixed(0)}%.
-    <strong>Discount:</strong> only if package list &gt; ${moneyR(DISCOUNT_THRESHOLD)} — then pay threshold + 50% of the excess.
+    Package fees are the rate-card totals (no threshold discount).
   </div>
 
   <h2>1. Rate card (LY base → +CPI)</h2>
@@ -309,7 +300,7 @@ function buildInternalHtml() {
         <td class="num">${moneyR(EXTENDED_AGREE)}</td>
       </tr>
       <tr class="total">
-        <td>Full season + Masters (season rate)</td>
+        <td>Full season + Masters</td>
         <td class="num">—</td>
         <td class="num">—</td>
         <td class="num">${moneyR(SAME_CPI + MASTERS_SEASON)}</td>
@@ -344,33 +335,21 @@ function buildInternalHtml() {
       </tr>
       <tr>
         <td>Same as LY + CPI + Masters</td>
-        <td>Above + Masters 1 day (season rate)</td>
+        <td>Above + Masters 1 day (standard setup + day)</td>
         <td class="num">${moneyR(pkgClassicMasters.contract)}</td>
         <td class="num">+${moneyR(pkgClassicMasters.contract - OLD_TOTAL)}</td>
       </tr>
       <tr>
         <td>Agreement-days Classic</td>
-        <td>Draft days 19.5 · list ${moneyR(EXTENDED_AGREE)}${
-          pkgExtended.discount > 0
-            ? `, discount above ${moneyR(DISCOUNT_THRESHOLD)}`
-            : ''
-        }</td>
+        <td>Draft days 19.5 · rate-card total ${moneyR(EXTENDED_AGREE)}</td>
         <td class="num">${moneyR(pkgExtended.contract)}</td>
-        <td class="num">+${moneyR(pkgExtended.contract - OLD_TOTAL)}${
-          pkgExtended.discount > 0
-            ? ` (save ${moneyR(pkgExtended.discount)})`
-            : ''
-        }</td>
+        <td class="num">+${moneyR(pkgExtended.contract - OLD_TOTAL)}</td>
       </tr>
       <tr>
         <td>Agreement Classic + Masters</td>
-        <td>20.5 days · Masters at season rate + same discount rule</td>
+        <td>20.5 days · Masters at standard 1-day rate</td>
         <td class="num">${moneyR(pkgExtendedMasters.contract)}</td>
-        <td class="num">+${moneyR(pkgExtendedMasters.contract - OLD_TOTAL)}${
-          pkgExtendedMasters.discount > 0
-            ? ` (save ${moneyR(pkgExtendedMasters.discount)})`
-            : ''
-        }</td>
+        <td class="num">+${moneyR(pkgExtendedMasters.contract - OLD_TOTAL)}</td>
       </tr>
     </tbody>
   </table>
@@ -379,8 +358,7 @@ function buildInternalHtml() {
   <table>
     <thead><tr><th>When</th><th class="num">Masters 1 day</th></tr></thead>
     <tbody>
-      <tr><td>Standalone / Core only / partial extras (standard 1-day = setup + day)</td><td class="num">${moneyR(MASTERS_LIST)}</td></tr>
-      <tr class="accent"><td>Full season (all Fixed + Uni + Beach)</td><td class="num">${moneyR(MASTERS_SEASON)} (50% off)</td></tr>
+      <tr class="accent"><td>Any package (standard 1-day = setup + day at CPI)</td><td class="num">${moneyR(MASTERS_LIST)}</td></tr>
     </tbody>
   </table>
 
@@ -388,12 +366,8 @@ function buildInternalHtml() {
   <div class="box">
     Setup is charged once per regatta; extra days at the same venue only add the day rate.
     NZ and Maadi run a higher multiplier on <strong>both</strong> setup and day (resource intensity).
-    Classic same-mix + CPI stays ${moneyR(SAME_CPI)}. Core agree is ${moneyR(CORE_AGREE)};
-    Extended list is ${moneyR(EXTENDED_AGREE)}${
-      pkgExtended.discount > 0
-        ? ` → ${moneyR(pkgExtended.contract)} after the &gt;${moneyR(DISCOUNT_THRESHOLD)} discount`
-        : ''
-    }.
+    Classic same-mix + CPI is ${moneyR(SAME_CPI)}. Core agree is ${moneyR(CORE_AGREE)};
+    Extended agree is ${moneyR(EXTENDED_AGREE)}. No package threshold discount.
   </div>
 
   <footer>
@@ -428,8 +402,7 @@ function buildExternalHtml() {
     <strong>Maadi Regatta</strong> (${MULT_MAADI_L}×) apply a higher multiplier to
     <strong>both</strong> setup and day rate to reflect resource intensity.
     A <strong>3% CPI</strong> uplift is applied to last season’s rate card.
-    Where a package exceeds <strong>${moneyR(DISCOUNT_THRESHOLD)}</strong>, a discount
-    applies to the amount above that threshold.
+    Package fees are the full rate-card totals.
   </p>
 
   <div class="stats">
@@ -443,9 +416,7 @@ function buildExternalHtml() {
     </div>
     <div class="stat">
       <div class="v">${moneyR(pkgExtended.contract)}</div>
-      <div class="l">Extended Classic · 19.5 days${
-        pkgExtended.discount > 0 ? ' (after discount)' : ''
-      }</div>
+      <div class="l">Extended Classic · 19.5 days</div>
     </div>
   </div>
 
@@ -540,7 +511,7 @@ function buildExternalHtml() {
       </tr>
       <tr>
         <td><strong>Classic Season + Masters</strong></td>
-        <td>Classic Season + Masters Regatta (season rate)</td>
+        <td>Classic Season + Masters Regatta</td>
         <td class="num">17</td>
         <td class="num">${moneyR(pkgClassicMasters.contract)}</td>
       </tr>
@@ -552,7 +523,7 @@ function buildExternalHtml() {
       </tr>
       <tr>
         <td><strong>Extended Classic + Masters</strong></td>
-        <td>Extended Classic + Masters Regatta (season rate)</td>
+        <td>Extended Classic + Masters Regatta</td>
         <td class="num">20.5</td>
         <td class="num">${moneyR(pkgExtendedMasters.contract)}</td>
       </tr>
@@ -563,11 +534,7 @@ function buildExternalHtml() {
     <strong>Recommended continuity option:</strong> Classic Season at
     <strong>${moneyR(pkgClassic.contract)}</strong> — the same six events and day mix as last season,
     with a 3% CPI adjustment only (+${moneyR(pkgClassic.contract - OLD_TOTAL)} vs ${moneyR(OLD_TOTAL)}).
-    Extended Classic list is ${moneyR(EXTENDED_AGREE)}${
-      pkgExtended.discount > 0
-        ? `; after the discount above ${moneyR(DISCOUNT_THRESHOLD)} the fee is <strong>${moneyR(pkgExtended.contract)}</strong>`
-        : ''
-    }.
+    Extended Classic is <strong>${moneyR(pkgExtended.contract)}</strong>.
   </div>
 
   <h2>4. Event day counts &amp; fees</h2>
@@ -613,13 +580,9 @@ function buildExternalHtml() {
       <tr><th>Selected with</th><th class="num">Masters fee (ex GST)</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Core only, or Core + only one Other Event</td>
-        <td class="num">${moneyR(MASTERS_LIST)}</td>
-      </tr>
       <tr class="accent">
-        <td>Full Classic or Extended Classic (Core + Universities + Beach/Coastal)</td>
-        <td class="num">${moneyR(MASTERS_SEASON)}</td>
+        <td>Any package (standard 1-day = setup + day at CPI)</td>
+        <td class="num">${moneyR(MASTERS_LIST)}</td>
       </tr>
     </tbody>
   </table>
@@ -641,7 +604,6 @@ function buildExternalHtml() {
     <li>All fees are in New Zealand dollars and <strong>exclude GST</strong>.</li>
     <li>Classic Season preserves last season’s event mix at a CPI-only uplift.</li>
     <li>Setup is once per regatta; NZ and Maadi multipliers apply to both setup and day rate.</li>
-    <li>Packages above ${moneyR(DISCOUNT_THRESHOLD)} receive a 50% discount on the amount above that threshold.</li>
     <li>Additional or substitute events (including Oceania Coastal) are quoted separately if required.</li>
   </ul>
 
