@@ -4,8 +4,9 @@
  *
  * Rate card: fee = setup + dayRate × days, with the same tier multiplier
  * applied to both setup and day rate.
- *   Standard 1.00× · NZ Champs ≈1.26× · Maadi ≈1.76× (both on setup & day)
- * Last year ($175k / 16d) sets the base rates; Same+CPI scales ×1.03.
+ *   Standard setup $6,000 · day $6,500
+ *   NZ Champs 1.25× · Maadi 1.75× (both on setup & day)
+ * Same+CPI scales rates ×1.03.
  *
  * Package discount only applies when list > $200k (pay threshold + 50% of excess).
  * Usage: node scripts/generate-rnz-season-pricing-pdf.mjs
@@ -26,23 +27,14 @@ const DISCOUNT_THRESHOLD = 200_000;
 const EXCESS_KEEP = 0.5;
 const TODAY = new Date().toISOString().slice(0, 10);
 
-/**
- * Base rates that sum to $175k on last year's 16-day / 6-regatta mix.
- * Multipliers apply to both setup and day; absolute rates are pinned so LY totals exactly.
- * (6125 × 1.25 = 7656.25 — we use round commercial rates 7700 / 10750 ≈ 1.26× / 1.76×)
- */
-const RATE_STD_LY = 6_125;
-const RATE_NZ_LY = 7_700;
-const RATE_MAADI_LY = 10_750;
+/** Standard base rates; NZ/Maadi multipliers apply to both setup and day */
+const SETUP_STD_LY = 6_000;
+const DAY_STD_LY = 6_500;
 const MULT_STD = 1.0;
-const MULT_NZ = RATE_NZ_LY / RATE_STD_LY; // ≈ 1.26
-const MULT_MAADI = RATE_MAADI_LY / RATE_STD_LY; // ≈ 1.76
+const MULT_NZ = 1.25;
+const MULT_MAADI = 1.75;
 const MULT_NZ_L = MULT_NZ.toFixed(2);
 const MULT_MAADI_L = MULT_MAADI.toFixed(2);
-
-const RATE_STD_CPI = RATE_STD_LY * CPI;
-const RATE_NZ_CPI = RATE_NZ_LY * CPI;
-const RATE_MAADI_CPI = RATE_MAADI_LY * CPI;
 
 const events = [
   { name: 'NZ Rowing Champs', lyD: 4, agD: 4, bucket: 'fixed', tier: 'nz' },
@@ -55,36 +47,45 @@ const events = [
 
 const fixedEvents = events.filter((e) => e.bucket === 'fixed');
 
-function tierRate(tier, cpi = false) {
-  if (tier === 'nz') return cpi ? RATE_NZ_CPI : RATE_NZ_LY;
-  if (tier === 'maadi') return cpi ? RATE_MAADI_CPI : RATE_MAADI_LY;
-  return cpi ? RATE_STD_CPI : RATE_STD_LY;
-}
-
 function tierMult(tier) {
   if (tier === 'nz') return MULT_NZ;
   if (tier === 'maadi') return MULT_MAADI;
   return MULT_STD;
 }
 
-/** fee = setup + dayRate × days (setup === dayRate for the tier) */
+function tierRates(tier, cpi = false) {
+  const m = tierMult(tier);
+  const scale = cpi ? CPI : 1;
+  return {
+    setup: SETUP_STD_LY * m * scale,
+    day: DAY_STD_LY * m * scale,
+  };
+}
+
+/** fee = setup + dayRate × days */
 function eventFee(e, dayKey, cpi = false) {
-  const rate = tierRate(e.tier, cpi);
-  const days = e[dayKey];
-  return rate + rate * days;
+  const { setup, day } = tierRates(e.tier, cpi);
+  return setup + day * e[dayKey];
 }
 
 function sumFees(list, dayKey, cpi = false) {
   return list.reduce((s, e) => s + eventFee(e, dayKey, cpi), 0);
 }
 
-const LY_TOTAL = sumFees(events, 'lyD', false); // 175,000
-const SAME_CPI = sumFees(events, 'lyD', true); // 180,250
+const LY_TOTAL = sumFees(events, 'lyD', false);
+const SAME_CPI = sumFees(events, 'lyD', true);
 const CORE_AGREE = sumFees(fixedEvents, 'agD', true);
 const EXTENDED_AGREE = sumFees(events, 'agD', true);
 
+const STD_LY = tierRates('std', false);
+const NZ_LY = tierRates('nz', false);
+const MAADI_LY = tierRates('maadi', false);
+const STD_CPI = tierRates('std', true);
+const NZ_CPI = tierRates('nz', true);
+const MAADI_CPI = tierRates('maadi', true);
+
 /** Masters: standard 1-day = setup + day at CPI; season = 50% off */
-const MASTERS_LIST = Math.round(RATE_STD_CPI * 2);
+const MASTERS_LIST = Math.round(STD_CPI.setup + STD_CPI.day);
 const MASTERS_SEASON = Math.round(MASTERS_LIST / 2);
 
 function contractPrice(listPrice) {
@@ -213,7 +214,9 @@ function buildInternalHtml() {
     <strong>Rate card:</strong> each regatta = <em>setup + day rate × days</em>.
     The tier multiplier applies to <strong>both</strong> setup and day rate
     (Standard ${MULT_STD}× · NZ ${MULT_NZ_L}× · Maadi ${MULT_MAADI_L}×).
-    Last-year base rates sum to ${moneyR(OLD_TOTAL)}; Same+CPI multiplies rates by ${((CPI - 1) * 100).toFixed(0)}%.
+    Standard setup ${moneyR(SETUP_STD_LY)} · day ${moneyR(DAY_STD_LY)}.
+    Same+CPI multiplies rates by ${((CPI - 1) * 100).toFixed(0)}%.
+    Prior contracted season reference: ${moneyR(OLD_TOTAL)}.
     <strong>Discount:</strong> only if package list &gt; ${moneyR(DISCOUNT_THRESHOLD)} — then pay threshold + 50% of the excess.
   </div>
 
@@ -233,30 +236,30 @@ function buildInternalHtml() {
       <tr>
         <td>Standard</td>
         <td class="num">${MULT_STD.toFixed(2)}×</td>
-        <td class="num">${moneyR(RATE_STD_LY)}</td>
-        <td class="num">${moneyR(RATE_STD_LY)}</td>
-        <td class="num">${moneyR(RATE_STD_CPI)}</td>
-        <td class="num">${moneyR(RATE_STD_CPI)}</td>
+        <td class="num">${moneyR(STD_LY.setup)}</td>
+        <td class="num">${moneyR(STD_LY.day)}</td>
+        <td class="num">${moneyR(STD_CPI.setup)}</td>
+        <td class="num">${moneyR(STD_CPI.day)}</td>
       </tr>
       <tr class="nz">
         <td>NZ Rowing Champs</td>
         <td class="num">${MULT_NZ_L}×</td>
-        <td class="num">${moneyR(RATE_NZ_LY)}</td>
-        <td class="num">${moneyR(RATE_NZ_LY)}</td>
-        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
-        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
+        <td class="num">${moneyR(NZ_LY.setup)}</td>
+        <td class="num">${moneyR(NZ_LY.day)}</td>
+        <td class="num">${moneyR(NZ_CPI.setup)}</td>
+        <td class="num">${moneyR(NZ_CPI.day)}</td>
       </tr>
       <tr class="maadi">
         <td>Maadi Regatta</td>
         <td class="num">${MULT_MAADI_L}×</td>
-        <td class="num">${moneyR(RATE_MAADI_LY)}</td>
-        <td class="num">${moneyR(RATE_MAADI_LY)}</td>
-        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
-        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
+        <td class="num">${moneyR(MAADI_LY.setup)}</td>
+        <td class="num">${moneyR(MAADI_LY.day)}</td>
+        <td class="num">${moneyR(MAADI_CPI.setup)}</td>
+        <td class="num">${moneyR(MAADI_CPI.day)}</td>
       </tr>
     </tbody>
   </table>
-  <p class="muted">Worked shape (LY): 1-day standard ${moneyR(RATE_STD_LY * 2)} · 2-day ${moneyR(RATE_STD_LY * 3)} · NZ 4-day ${moneyR(RATE_NZ_LY * 5)} · Maadi 6-day ${moneyR(RATE_MAADI_LY * 7)}.</p>
+  <p class="muted">Worked shape (LY): 1-day standard ${moneyR(STD_LY.setup + STD_LY.day)} · 2-day ${moneyR(STD_LY.setup + 2 * STD_LY.day)} · NZ 4-day ${moneyR(NZ_LY.setup + 4 * NZ_LY.day)} · Maadi 6-day ${moneyR(MAADI_LY.setup + 6 * MAADI_LY.day)}.</p>
 
   <h2>2. Cost table — last year · same+CPI · agreement days</h2>
   <p class="muted">Fee = setup + day × days at the tier rate. LY uses base rates (total ${moneyR(LY_TOTAL)}); Same/Agree use +${((CPI - 1) * 100).toFixed(0)}% CPI rates.</p>
@@ -340,7 +343,7 @@ function buildInternalHtml() {
         <td>Same as last season + CPI</td>
         <td>Same 6 regattas / 16 days</td>
         <td class="num">${moneyR(pkgClassic.contract)}</td>
-        <td class="num">+${moneyR(pkgClassic.contract - OLD_TOTAL)} (CPI only)</td>
+        <td class="num">+${moneyR(pkgClassic.contract - OLD_TOTAL)} vs LY ${moneyR(OLD_TOTAL)}</td>
       </tr>
       <tr>
         <td>Same as LY + CPI + Masters</td>
@@ -464,23 +467,23 @@ function buildExternalHtml() {
       <tr>
         <td>Standard</td>
         <td class="num">${MULT_STD.toFixed(2)}×</td>
-        <td class="num">${moneyR(RATE_STD_CPI)}</td>
-        <td class="num">${moneyR(RATE_STD_CPI)}</td>
-        <td>1-day ${moneyR(RATE_STD_CPI * 2)} · 2-day ${moneyR(RATE_STD_CPI * 3)}</td>
+        <td class="num">${moneyR(STD_CPI.setup)}</td>
+        <td class="num">${moneyR(STD_CPI.day)}</td>
+        <td>1-day ${moneyR(STD_CPI.setup + STD_CPI.day)} · 2-day ${moneyR(STD_CPI.setup + 2 * STD_CPI.day)}</td>
       </tr>
       <tr class="nz">
         <td>NZ Rowing Champs</td>
         <td class="num">${MULT_NZ_L}×</td>
-        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
-        <td class="num">${moneyR(RATE_NZ_CPI)}</td>
-        <td>4-day ${moneyR(RATE_NZ_CPI * 5)}</td>
+        <td class="num">${moneyR(NZ_CPI.setup)}</td>
+        <td class="num">${moneyR(NZ_CPI.day)}</td>
+        <td>4-day ${moneyR(NZ_CPI.setup + 4 * NZ_CPI.day)}</td>
       </tr>
       <tr class="maadi">
         <td>Maadi Regatta</td>
         <td class="num">${MULT_MAADI_L}×</td>
-        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
-        <td class="num">${moneyR(RATE_MAADI_CPI)}</td>
-        <td>6-day ${moneyR(RATE_MAADI_CPI * 7)}</td>
+        <td class="num">${moneyR(MAADI_CPI.setup)}</td>
+        <td class="num">${moneyR(MAADI_CPI.day)}</td>
+        <td>6-day ${moneyR(MAADI_CPI.setup + 6 * MAADI_CPI.day)}</td>
       </tr>
     </tbody>
   </table>
@@ -654,13 +657,6 @@ function buildExternalHtml() {
 }
 
 async function main() {
-  if (Math.round(LY_TOTAL) !== OLD_TOTAL) {
-    throw new Error(`LY total ${LY_TOTAL} !== ${OLD_TOTAL}`);
-  }
-  if (Math.round(SAME_CPI) !== Math.round(OLD_TOTAL * CPI)) {
-    throw new Error(`Same+CPI ${SAME_CPI} !== ${OLD_TOTAL * CPI}`);
-  }
-
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(ARTIFACTS, { recursive: true });
 
@@ -714,9 +710,12 @@ async function main() {
     extendedList: Math.round(EXTENDED_AGREE),
     extendedContract: Math.round(pkgExtended.contract),
     mastersList: MASTERS_LIST,
-    rateStdLy: RATE_STD_LY,
-    rateNzLy: RATE_NZ_LY,
-    rateMaadiLy: RATE_MAADI_LY,
+    setupStdLy: SETUP_STD_LY,
+    dayStdLy: DAY_STD_LY,
+    nzSetupLy: Math.round(NZ_LY.setup),
+    nzDayLy: Math.round(NZ_LY.day),
+    maadiSetupLy: Math.round(MAADI_LY.setup),
+    maadiDayLy: Math.round(MAADI_LY.day),
   });
 }
 
