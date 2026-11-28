@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <title>AHD · RNZ Livestream Season Pricing (Internal)</title>
+  <style>
+    @page { size: A4; margin: 9mm 9mm 9mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; color: #0f172a; font-size: 8.5pt; line-height: 1.25; margin: 0; }
+    header { border-bottom: 2px solid #0e7490; padding-bottom: 4px; margin-bottom: 5px; }
+    .brand { font-size: 14pt; font-weight: 800; color: #0e7490; margin: 0; }
+    .tagline { color: #64748b; margin: 1px 0 0; font-size: 8pt; }
+    h2 { font-size: 9.5pt; color: #0e7490; margin: 7px 0 2px; border-bottom: 1px solid #ccfbf1; padding-bottom: 1px; }
+    p { margin: 0 0 3px; }
+    table { width: 100%; border-collapse: collapse; margin: 2px 0 4px; font-size: 7.5pt; }
+    th, td { border: 1px solid #cbd5e1; padding: 2px 5px; text-align: left; vertical-align: top; }
+    th { background: #ecfeff; font-weight: 600; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    tr.total td { font-weight: 700; background: #f8fafc; }
+    tr.accent td { background: #ecfeff; font-weight: 600; }
+    tr.maadi td { background: #fff7ed; }
+    tr.nz td { background: #f0fdf4; }
+    .box { background: #ecfeff; border: 1px solid #99f6e4; border-radius: 4px; padding: 4px 8px; margin: 3px 0 4px; }
+    .box.warn { background: #fff7ed; border-color: #fed7aa; }
+    .muted { color: #64748b; font-size: 7pt; margin-bottom: 2px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 3px 0 4px; }
+    .stat { border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 5px; }
+    .stat .v { font-size: 10pt; font-weight: 700; color: #0e7490; }
+    .stat .l { font-size: 6.5pt; color: #64748b; }
+    ul, ol { margin: 2px 0 3px; padding-left: 14px; }
+    li { margin-bottom: 1px; }
+    footer { margin-top: 5px; padding-top: 3px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 6.5pt; }</style>
+</head>
+<body>
+  <header>
+    <p class="brand">AltitudeHD · Internal</p>
+    <p class="tagline">RNZ pricing — setup + day rate card · NZ 1.26× · Maadi 1.76× (both on setup &amp; day) · ex GST</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="v">$175,000</div><div class="l">Last year season (16d)</div></div>
+    <div class="stat"><div class="v">$161,324</div><div class="l">Core (15d agree) + CPI</div></div>
+    <div class="stat"><div class="v">$180,250</div><div class="l">Classic same-mix + CPI</div></div>
+    <div class="stat"><div class="v">$202,331</div><div class="l">Extended (19.5d agree) + CPI</div></div>
+  </div>
+
+  <div class="box warn">
+    <strong>Rate card:</strong> each regatta = <em>setup + day rate × days</em>.
+    The tier multiplier applies to <strong>both</strong> setup and day rate
+    (Standard 1× · NZ 1.26× · Maadi 1.76×).
+    Last-year base rates sum to $175,000; Same+CPI multiplies rates by 3%.
+    Package fees are the rate-card totals (no threshold discount).
+  </div>
+
+  <h2>1. Rate card (LY base → +CPI)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th class="num">Mult</th>
+        <th class="num">Setup (LY)</th>
+        <th class="num">Day (LY)</th>
+        <th class="num">Setup (+CPI)</th>
+        <th class="num">Day (+CPI)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Standard</td>
+        <td class="num">1.00×</td>
+        <td class="num">$6,125</td>
+        <td class="num">$6,125</td>
+        <td class="num">$6,309</td>
+        <td class="num">$6,309</td>
+      </tr>
+      <tr class="nz">
+        <td>NZ Rowing Champs</td>
+        <td class="num">1.26×</td>
+        <td class="num">$7,700</td>
+        <td class="num">$7,700</td>
+        <td class="num">$7,931</td>
+        <td class="num">$7,931</td>
+      </tr>
+      <tr class="maadi">
+        <td>Maadi Regatta</td>
+        <td class="num">1.76×</td>
+        <td class="num">$10,750</td>
+        <td class="num">$10,750</td>
+        <td class="num">$11,073</td>
+        <td class="num">$11,073</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">Worked shape (LY): 1-day standard $12,250 · 2-day $18,375 · NZ 4-day $38,500 · Maadi 6-day $75,250.</p>
+
+  <h2>2. Cost table — last year · same+CPI · agreement days</h2>
+  <p class="muted">Fee = setup + day × days at the tier rate. LY uses base rates (total $175,000); Same/Agree use +3% CPI rates.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th class="num">LY days</th>
+        <th class="num">LY fee</th>
+        <th class="num">Same days + CPI</th>
+        <th class="num">Agree. days</th>
+        <th class="num">Agree. + CPI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="nz">
+            <td>NZ Rowing Champs (1.26×)</td>
+            <td class="num">4</td>
+            <td class="num">$38,500</td>
+            <td class="num">$39,655</td>
+            <td class="num">4</td>
+            <td class="num">$39,655</td>
+          </tr>
+<tr>
+            <td>NI Secondary School</td>
+            <td class="num">2</td>
+            <td class="num">$18,375</td>
+            <td class="num">$18,926</td>
+            <td class="num">3</td>
+            <td class="num">$25,235</td>
+          </tr>
+<tr>
+            <td>SI Secondary School</td>
+            <td class="num">2</td>
+            <td class="num">$18,375</td>
+            <td class="num">$18,926</td>
+            <td class="num">2</td>
+            <td class="num">$18,926</td>
+          </tr>
+<tr class="maadi">
+            <td>Maadi Regatta (1.76×)</td>
+            <td class="num">6</td>
+            <td class="num">$75,250</td>
+            <td class="num">$77,508</td>
+            <td class="num">6</td>
+            <td class="num">$77,508</td>
+          </tr>
+<tr>
+            <td>Universities Champs</td>
+            <td class="num">1</td>
+            <td class="num">$12,250</td>
+            <td class="num">$12,618</td>
+            <td class="num">1.5</td>
+            <td class="num">$15,772</td>
+          </tr>
+<tr>
+            <td>Beach / Coastal Champs</td>
+            <td class="num">1</td>
+            <td class="num">$12,250</td>
+            <td class="num">$12,618</td>
+            <td class="num">3</td>
+            <td class="num">$25,235</td>
+          </tr>
+      <tr>
+        <td>Masters Regatta (new)</td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+        <td class="num">$12,618 list</td>
+        <td class="num">1</td>
+        <td class="num">$12,618 list</td>
+      </tr>
+      <tr class="total">
+        <td>Fixed Events (Core)</td>
+        <td class="num">14</td>
+        <td class="num">$150,500</td>
+        <td class="num">$155,015</td>
+        <td class="num">15</td>
+        <td class="num">$161,324</td>
+      </tr>
+      <tr class="accent">
+        <td>Full season (ex Masters)</td>
+        <td class="num">16</td>
+        <td class="num">$175,000</td>
+        <td class="num">$180,250</td>
+        <td class="num">19.5</td>
+        <td class="num">$202,331</td>
+      </tr>
+      <tr class="total">
+        <td>Full season + Masters</td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+        <td class="num">$192,868</td>
+        <td class="num">20.5</td>
+        <td class="num">$214,949</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Package options</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Package</th>
+        <th>What it is</th>
+        <th class="num">Price</th>
+        <th class="num">vs last year</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Core only</td>
+        <td>4 Fixed Events · <strong>15 days</strong> (agreement) · rate card + CPI</td>
+        <td class="num">$161,324</td>
+        <td class="num">−$13,676 vs LY full season</td>
+      </tr>
+      <tr class="accent">
+        <td>Same as last season + CPI</td>
+        <td>Same 6 regattas / 16 days</td>
+        <td class="num">$180,250</td>
+        <td class="num">+$5,250 (CPI only)</td>
+      </tr>
+      <tr>
+        <td>Same as LY + CPI + Masters</td>
+        <td>Above + Masters 1 day (standard setup + day)</td>
+        <td class="num">$192,868</td>
+        <td class="num">+$17,868</td>
+      </tr>
+      <tr>
+        <td>Agreement-days Classic</td>
+        <td>Draft days 19.5 · rate-card total $202,331</td>
+        <td class="num">$202,331</td>
+        <td class="num">+$27,331</td>
+      </tr>
+      <tr>
+        <td>Agreement Classic + Masters</td>
+        <td>20.5 days · Masters at standard 1-day rate</td>
+        <td class="num">$214,949</td>
+        <td class="num">+$39,949</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Masters add-on</h2>
+  <table>
+    <thead><tr><th>When</th><th class="num">Masters 1 day</th></tr></thead>
+    <tbody>
+      <tr class="accent"><td>Any package (standard 1-day = setup + day at CPI)</td><td class="num">$12,618</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. Notes for the room</h2>
+  <div class="box">
+    Setup is charged once per regatta; extra days at the same venue only add the day rate.
+    NZ and Maadi run a higher multiplier on <strong>both</strong> setup and day (resource intensity).
+    Classic same-mix + CPI is $180,250. Core agree is $161,324;
+    Extended agree is $202,331. No package threshold discount.
+  </div>
+
+  <footer>
+    AltitudeHD internal · Generated 2026-11-18 · Setup+day rate card · NZ 1.26× · Maadi 1.76× · Not client-facing
+  </footer>
+</body>
+</html>
